@@ -8,7 +8,7 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    --background: 39 57% 93%;
+    --background: 216 25% 97%; /* #F8F9FA */
     --foreground: 20 20% 15%;
 
     --card: 34 40% 96%;
@@ -126,8 +126,16 @@ All colors MUST be HSL.
     scrollbar-width: none;
   }
 
-  /* Global buffer for fixed bottom navigation (Senior fix) */
+  /* Global buffer for fixed bottom navigation */
   .pb-main-mobile {
-    padding-bottom: calc(7.5rem + env(safe-area-inset-bottom, 0px)) !important;
+    padding-bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px)) !important;
+  }
+
+  /* Unified card shadow token */
+  .card-shadow {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  }
+  .card-shadow-md {
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
   }
 }

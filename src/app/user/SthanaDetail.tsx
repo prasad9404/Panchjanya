@@ -100,11 +100,11 @@ export default function SthanaDetail() {
     const prevSthana = currentIndex > 0 ? allHotspots[currentIndex - 1] : null;
     const nextSthana = currentIndex < allHotspots.length - 1 ? allHotspots[currentIndex + 1] : null;
 
-    if (loading) return <div className="min-h-screen bg-background flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary" /></div>;
-    if (!hotspot) return <div className="min-h-screen flex items-center justify-center text-foreground">Sthana not found</div>;
+    if (loading) return <div className="min-h-full flex-1 bg-background flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary" /></div>;
+    if (!hotspot) return <div className="min-h-full flex-1 flex items-center justify-center text-foreground">Sthana not found</div>;
 
     return (
-        <div className="min-h-screen bg-background flex flex-col animate-in fade-in duration-300">
+        <div className="min-h-full flex-1 bg-background flex flex-col animate-in fade-in duration-300">
             {/* Header */}
             <div
                 className="sticky top-0 z-[1000] px-2 bg-card shadow-sm border-b border-border py-4 md:py-5"

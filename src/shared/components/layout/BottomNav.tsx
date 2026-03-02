@@ -7,8 +7,8 @@ export const BottomNav = () => {
     const isSthanaVandan = location.pathname.includes("sthana-vandan") || location.pathname.includes("/raj-viharan");
 
     return (
-        <nav className="fixed bottom-0 left-0 right-0 w-full z-50 bg-background/95 backdrop-blur-sm border-t border-border pb-safe shadow-lg supports-[backdrop-filter]:bg-background/60">
-            <div className="flex justify-between items-center h-20 px-6">
+        <nav className="fixed bottom-0 left-0 right-0 w-full z-50 bg-[#F8F9FA]/95 backdrop-blur-sm border-t border-gray-100 pb-safe shadow-[0_-4px_20px_rgba(0,0,0,0.03)] supports-[backdrop-filter]:bg-[#F8F9FA]/80">
+            <div className="flex justify-between items-center h-20 px-6 lg:px-12">
 
                 {isSthanaVandan ? (
                     <>

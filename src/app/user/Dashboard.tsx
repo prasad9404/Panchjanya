@@ -18,7 +18,7 @@ const Dashboard = () => {
     const userName = user?.displayName; // Fallback name from design
 
     return (
-        <div className="w-full min-h-screen bg-[#F9F6F0]">
+        <div className="w-full min-h-full flex-1 ">
             <div className="max-w-md mx-auto lg:max-w-4xl px-4 lg:px-6 space-y-8 animate-in fade-in duration-500">
 
                 {/* Top Bar */}

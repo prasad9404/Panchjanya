@@ -184,7 +184,7 @@ const SwamiYatra = () => {
     }, [isDragging]);
 
     return (
-        <div className="min-h-screen bg-background lg:bg-card font-sans flex flex-col pb-24 lg:pb-0 overflow-hidden">
+        <div className="min-h-full flex-1 bg-background lg:bg-card font-sans flex flex-col pb-24 lg:pb-0 overflow-hidden">
             {/* Header - Hidden in Fullscreen */}
             {/* Header - Hidden in Fullscreen */}
             {!isFullScreen && (
@@ -443,13 +443,6 @@ const SwamiYatra = () => {
                     </div>
                 </div>
 
-                {/* Start Navigation sticky footer */}
-                <div className="fixed bottom-20 lg:bottom-4 left-6 right-6 z-50">
-                    <Button className="w-full bg-accent-gold hover:bg-accent-gold/90 text-white text-base font-bold py-6 rounded-2xl flex items-center justify-center gap-2 uppercase tracking-wide">
-                        <Compass className="w-5 h-5 animate-pulse" />
-                        Start Navigation
-                    </Button>
-                </div>
             </div>
         </div>
     );

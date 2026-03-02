@@ -3,7 +3,9 @@ import { Toaster as Sonner } from "@/shared/components/ui/sonner";
 import { TooltipProvider } from "@/shared/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import { useEffect } from "react";
+import { useEffect, lazy, Suspense } from "react";
+import { PageLoader } from "@/shared/components/ui/PageLoader";
+import { ErrorBoundary } from "@/shared/components/layout/ErrorBoundary";
 
 import { AuthProvider } from "../auth/AuthContext";
 import { LanguageProvider } from "../shared/contexts/LanguageContext";
@@ -11,44 +13,44 @@ import { ThemeProvider } from "../shared/contexts/ThemeContext";
 import PrivateRoute from "@/shared/components/auth/PrivateRoute";
 
 // Layout
-import Layout from "../shared/components/layout/Layout";
+const Layout = lazy(() => import("../shared/components/layout/Layout"));
 
 // User Pages
-import Dashboard from "./user/Dashboard";
-import About from "./public/About";
-import Share from "./public/Share";
-import Explore from "./user/Explore";
-import Settings from "./user/Settings";
-import NotFound from "./public/NotFound";
+const Dashboard = lazy(() => import("./user/Dashboard"));
+const About = lazy(() => import("./public/About"));
+const Share = lazy(() => import("./public/Share"));
+const Explore = lazy(() => import("./user/Explore"));
+const Settings = lazy(() => import("./user/Settings"));
+const NotFound = lazy(() => import("./public/NotFound"));
 
-import TempleArchitecture from "@/app/user/TempleArchitecture";
-import ArchitectureViewer from "@/app/user/ArchitectureViewer";
-import SthanaVandan from "@/app/user/SthanaVandan";
-import SwamiYatra from "@/app/user/SwamiYatra";
-import Profile from "@/app/user/Profile";
-import Saved from "@/app/user/Saved";
-import Literature from "@/app/user/Literature";
-import SthanaDetail from "@/app/user/SthanaDetail";
-import AudioPlayer from "@/app/user/AudioPlayer";
-import VideoPlayer from "@/app/user/VideoPlayer";
-import VandanHistory from "@/app/user/VandanHistory";
-import WhatsNew from "@/app/user/WhatsNew";
-import Jigyasa from "@/app/user/Jigyasa";
-import ELibrary from "@/app/user/ELibrary";
-import HelpCenter from "@/app/public/HelpCenter";
+const TempleArchitecture = lazy(() => import("@/app/user/TempleArchitecture"));
+const ArchitectureViewer = lazy(() => import("@/app/user/ArchitectureViewer"));
+const SthanaVandan = lazy(() => import("@/app/user/SthanaVandan"));
+const SwamiYatra = lazy(() => import("@/app/user/SwamiYatra"));
+const Profile = lazy(() => import("@/app/user/Profile"));
+const Saved = lazy(() => import("@/app/user/Saved"));
+const Literature = lazy(() => import("@/app/user/Literature"));
+const SthanaDetail = lazy(() => import("@/app/user/SthanaDetail"));
+const AudioPlayer = lazy(() => import("@/app/user/AudioPlayer"));
+const VideoPlayer = lazy(() => import("@/app/user/VideoPlayer"));
+const VandanHistory = lazy(() => import("@/app/user/VandanHistory"));
+const WhatsNew = lazy(() => import("@/app/user/WhatsNew"));
+const Jigyasa = lazy(() => import("@/app/user/Jigyasa"));
+const ELibrary = lazy(() => import("@/app/user/ELibrary"));
+const HelpCenter = lazy(() => import("@/app/public/HelpCenter"));
 
 // Admin Pages
-import AdminLogin from "@/app/admin/AdminLogin";
-import AdminDashboard from "@/app/admin/AdminDashboard";
-import SthanaDirectory from "@/app/admin/SthanaDirectory";
+const AdminLogin = lazy(() => import("@/app/admin/AdminLogin"));
+const AdminDashboard = lazy(() => import("@/app/admin/AdminDashboard"));
+const SthanaDirectory = lazy(() => import("@/app/admin/SthanaDirectory"));
 
-import AdminAddTemple from "@/app/admin/AdminAddTemple";
-import AdminCsvImport from "@/app/admin/AdminCsvImport";
-import AdminCsvUpload from "./admin/AdminCsvUpload";
-import TempleArchitectureAdmin from "@/app/admin/TempleArchitectureAdmin";
-import ManageYatra from "@/app/admin/ManageYatra";
-import RajViharanAdmin from "@/app/admin/RajViharanAdmin";
-import AbbreviationsManager from "@/app/admin/AbbreviationsManager";
+const AdminAddTemple = lazy(() => import("@/app/admin/AdminAddTemple"));
+const AdminCsvImport = lazy(() => import("@/app/admin/AdminCsvImport"));
+const AdminCsvUpload = lazy(() => import("./admin/AdminCsvUpload"));
+const TempleArchitectureAdmin = lazy(() => import("@/app/admin/TempleArchitectureAdmin"));
+const ManageYatra = lazy(() => import("@/app/admin/ManageYatra"));
+const RajViharanAdmin = lazy(() => import("@/app/admin/RajViharanAdmin"));
+const AbbreviationsManager = lazy(() => import("@/app/admin/AbbreviationsManager"));
 
 const queryClient = new QueryClient();
 
@@ -63,131 +65,135 @@ const App = () => {
           <ThemeProvider>
             <LanguageProvider>
               <AuthProvider>
-                <Routes>
-                  {/* ---------------------- ADMIN AUTH ---------------------- */}
-                  <Route path="/admin/login" element={<AdminLogin />} />
+                <ErrorBoundary>
+                  <Suspense fallback={<PageLoader />}>
+                    <Routes>
+                      {/* ---------------------- ADMIN AUTH ---------------------- */}
+                      <Route path="/admin/login" element={<AdminLogin />} />
 
-                  {/* ---------------------- ADMIN PROTECTED ROUTES ---------------------- */}
-                  <Route
-                    path="/admin"
-                    element={
-                      <PrivateRoute adminRequired={true} >
-                        <AdminDashboard />
-                      </PrivateRoute>
-                    }
-                  />
+                      {/* ---------------------- ADMIN PROTECTED ROUTES ---------------------- */}
+                      <Route
+                        path="/admin"
+                        element={
+                          <PrivateRoute adminRequired={true} >
+                            <AdminDashboard />
+                          </PrivateRoute>
+                        }
+                      />
 
-                  <Route path="/admin/dashboard" element={
-                    <PrivateRoute adminRequired={true} >
-                      <AdminDashboard />
-                    </PrivateRoute>
-                  }
-                  />
+                      <Route path="/admin/dashboard" element={
+                        <PrivateRoute adminRequired={true} >
+                          <AdminDashboard />
+                        </PrivateRoute>
+                      }
+                      />
 
-                  <Route path="/admin/sthana-directory" element={
-                    <PrivateRoute adminRequired={true} >
-                      <SthanaDirectory />
-                    </PrivateRoute>
-                  }
-                  />
+                      <Route path="/admin/sthana-directory" element={
+                        <PrivateRoute adminRequired={true} >
+                          <SthanaDirectory />
+                        </PrivateRoute>
+                      }
+                      />
 
-                  <Route
-                    path="/admin/temples/add"
-                    element={
-                      <PrivateRoute adminRequired={true} >
-                        <AdminAddTemple />
-                      </PrivateRoute>
-                    }
-                  />
+                      <Route
+                        path="/admin/temples/add"
+                        element={
+                          <PrivateRoute adminRequired={true} >
+                            <AdminAddTemple />
+                          </PrivateRoute>
+                        }
+                      />
 
 
-                  <Route
-                    path="/admin/csv-import"
-                    element={
-                      <PrivateRoute adminRequired={true}>
-                        <AdminCsvImport />
-                      </PrivateRoute>
-                    }
-                  />
+                      <Route
+                        path="/admin/csv-import"
+                        element={
+                          <PrivateRoute adminRequired={true}>
+                            <AdminCsvImport />
+                          </PrivateRoute>
+                        }
+                      />
 
-                  <Route
-                    path="/admin/manage-yatra"
-                    element={
-                      <PrivateRoute adminRequired={true}>
-                        <ManageYatra />
-                      </PrivateRoute>
-                    }
-                  />
+                      <Route
+                        path="/admin/manage-yatra"
+                        element={
+                          <PrivateRoute adminRequired={true}>
+                            <ManageYatra />
+                          </PrivateRoute>
+                        }
+                      />
 
-                  <Route
-                    path="/admin/raj-viharan"
-                    element={
-                      <PrivateRoute adminRequired={true}>
-                        <RajViharanAdmin />
-                      </PrivateRoute>
-                    }
-                  />
+                      <Route
+                        path="/admin/raj-viharan"
+                        element={
+                          <PrivateRoute adminRequired={true}>
+                            <RajViharanAdmin />
+                          </PrivateRoute>
+                        }
+                      />
 
-                  <Route
-                    path="/admin/abbreviations"
-                    element={
-                      <PrivateRoute adminRequired={true}>
-                        <AbbreviationsManager />
-                      </PrivateRoute>
-                    }
-                  />
+                      <Route
+                        path="/admin/abbreviations"
+                        element={
+                          <PrivateRoute adminRequired={true}>
+                            <AbbreviationsManager />
+                          </PrivateRoute>
+                        }
+                      />
 
-                  <Route
-                    path="/admin/csv-upload"
-                    element={
-                      <PrivateRoute adminRequired={true}>
-                        <AdminCsvUpload />
-                      </PrivateRoute>
-                    }
-                  />
+                      <Route
+                        path="/admin/csv-upload"
+                        element={
+                          <PrivateRoute adminRequired={true}>
+                            <AdminCsvUpload />
+                          </PrivateRoute>
+                        }
+                      />
 
-                  {/* ---------------------- USER ROUTES WITH LAYOUT ---------------------- */}
-                  <Route element={<Layout />}>
-                    <Route path="/" element={<Dashboard />} />
-                    <Route path="/dashboard" element={<Dashboard />} />
-                    <Route path="/dashboard/sthana-vandan" element={<SthanaVandan />} />
-                    <Route path="/raj-viharan" element={<SwamiYatra />} />
-                    <Route path="/explore" element={<Explore />} />
-                    <Route path="/about" element={<About />} />
-                    <Route path="/share" element={<Share />} />
-                    <Route path="/settings" element={<Settings />} />
-                    <Route path="/profile" element={<Profile />} />
-                    <Route path="/saved" element={<Saved />} />
-                    <Route path="/literature" element={<Literature />} />
-                    <Route path="/vandan-history" element={<VandanHistory />} />
-                    <Route path="/whats-new" element={<WhatsNew />} />
-                    <Route path="/jigyasa" element={<Jigyasa />} />
-                    <Route path="/e-library" element={<ELibrary />} />
-                    <Route path="/help-center" element={<HelpCenter />} />
-                  </Route>
+                      {/* ---------------------- USER ROUTES WITH LAYOUT ---------------------- */}
+                      <Route element={<Layout />}>
+                        <Route path="/" element={<Dashboard />} />
+                        <Route path="/dashboard" element={<Dashboard />} />
+                        <Route path="/dashboard/sthana-vandan" element={<SthanaVandan />} />
+                        <Route path="/raj-viharan" element={<SwamiYatra />} />
+                        <Route path="/explore" element={<Explore />} />
+                        <Route path="/about" element={<About />} />
+                        <Route path="/share" element={<Share />} />
+                        <Route path="/settings" element={<Settings />} />
+                        <Route path="/profile" element={<Profile />} />
+                        <Route path="/saved" element={<Saved />} />
+                        <Route path="/literature" element={<Literature />} />
+                        <Route path="/vandan-history" element={<VandanHistory />} />
+                        <Route path="/whats-new" element={<WhatsNew />} />
+                        <Route path="/jigyasa" element={<Jigyasa />} />
+                        <Route path="/e-library" element={<ELibrary />} />
+                        <Route path="/help-center" element={<HelpCenter />} />
+                      </Route>
 
-                  {/* ---------------------- MEDIA PLAYERS (FULLSCREEN) ---------------------- */}
-                  <Route path="/audio/:id" element={<AudioPlayer />} />
-                  <Route path="/video/:id" element={<VideoPlayer />} />
+                      {/* ---------------------- MEDIA PLAYERS (FULLSCREEN) ---------------------- */}
+                      <Route path="/audio/:id" element={<AudioPlayer />} />
+                      <Route path="/video/:id" element={<VideoPlayer />} />
 
-                  {/* ---------------------- TEMPLE ARCHITECTURE (USER) ---------------------- */}
-                  <Route path="/temple/:id/architecture" element={<TempleArchitecture />} />
-                  <Route path="/temple/:id/architecture-view" element={<ArchitectureViewer />} />
-                  <Route path="/temple/:id/architecture/sthana/:sthanaId" element={<SthanaDetail />} />
+                      {/* ---------------------- TEMPLE ARCHITECTURE (USER) ---------------------- */}
+                      <Route path="/temple/:id/architecture" element={<TempleArchitecture />} />
+                      <Route path="/temple/:id/architecture-view" element={<ArchitectureViewer />} />
+                      <Route path="/temple/:id/architecture/sthana/:sthanaId" element={<SthanaDetail />} />
 
-                  {/* ---------------------- ADMIN ARCHITECTURE ---------------------- */}
-                  <Route
-                    path="/admin/architecture/:id"
-                    element={
-                      <PrivateRoute adminRequired={true}>
-                        <TempleArchitectureAdmin />
-                      </PrivateRoute>
-                    }
-                  />
+                      {/* ---------------------- ADMIN ARCHITECTURE ---------------------- */}
+                      <Route
+                        path="/admin/architecture/:id"
+                        element={
+                          <PrivateRoute adminRequired={true}>
+                            <TempleArchitectureAdmin />
+                          </PrivateRoute>
+                        }
+                      />
 
-                  {/* ---------------------- 404 ---------------------- */}
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
+                      {/* ---------------------- 404 ---------------------- */}
+                      <Route path="*" element={<NotFound />} />
+                    </Routes>
+                  </Suspense>
+                </ErrorBoundary>
               </AuthProvider>
             </LanguageProvider>
           </ThemeProvider>
