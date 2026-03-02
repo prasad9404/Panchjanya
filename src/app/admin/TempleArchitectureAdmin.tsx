@@ -1,6 +1,7 @@
 // src/pages/admin/TempleArchitectureAdmin.tsx
 import { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import AdminLayout from "@/shared/components/admin/AdminLayout";
 
 import { v4 as uuidv4 } from "uuid";
 import { Hotspot, Leela, GlanceItem, AbbreviationItem, CustomBlock } from "@/types";
@@ -950,11 +951,24 @@ export default function TempleArchitectureAdmin() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F9F6F0] pb-12">
-      <div className="max-w-7xl mx-auto px-6 pt-8 space-y-8">
+    <AdminLayout>
+      <div className="space-y-6">
+        {/* Back Button */}
+        <div className="mb-6">
+          <Button
+            variant="ghost"
+            onClick={() => navigate("/admin/sthana-directory")}
+            className="group flex items-center gap-2 text-slate-500 hover:text-slate-700 font-bold transition-all px-0 hover:bg-transparent"
+          >
+            <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center group-hover:bg-slate-200 transition-all">
+              <ArrowLeft className="w-4 h-4" />
+            </div>
+            Back to Directory
+          </Button>
+        </div>
 
-        {/* Step Navigation Header */}
-        <div className="bg-white p-2 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between z-10 overflow-x-auto">
+        {/* Header Block */}
+        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="flex items-center gap-4">
             <Button
               variant="ghost"
@@ -2473,8 +2487,7 @@ export default function TempleArchitectureAdmin() {
             </div>
           )
         }
-      </div >
-      {/* )} */}
-    </div >
+      </div>
+    </AdminLayout>
   );
 }

@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { collection, onSnapshot, query, orderBy, addDoc, updateDoc, deleteDoc, doc, getDocs } from "firebase/firestore";
 import { db } from "@/auth/firebase";
 import AdminLayout from "@/shared/components/admin/AdminLayout";
@@ -22,6 +23,7 @@ import {
     Loader2,
     ArrowUp,
     ArrowDown,
+    ArrowLeft,
     Save,
     X,
     Compass,
@@ -96,6 +98,7 @@ function LocationPicker({ lat, lng, onSelect }: { lat?: number, lng?: number, on
 }
 
 export default function RajViharanAdmin() {
+    const navigate = useNavigate();
     const [places, setPlaces] = useState<YatraPlace[]>([]);
     const [loading, setLoading] = useState(true);
     const [selectedPlace, setSelectedPlace] = useState<YatraPlace | null>(null);
@@ -360,6 +363,20 @@ export default function RajViharanAdmin() {
     return (
         <AdminLayout>
             <div className="space-y-6 pb-20">
+                {/* Back Button */}
+                <div className="mb-6">
+                    <Button
+                        variant="ghost"
+                        onClick={() => navigate("/admin/dashboard")}
+                        className="group flex items-center gap-2 text-slate-500 hover:text-slate-700 font-bold transition-all px-0 hover:bg-transparent"
+                    >
+                        <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center group-hover:bg-slate-200 transition-all">
+                            <ArrowLeft className="w-4 h-4" />
+                        </div>
+                        Back to Dashboard
+                    </Button>
+                </div>
+
                 {/* Content Header */}
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm transition-all duration-300">
                     <div className="space-y-1">

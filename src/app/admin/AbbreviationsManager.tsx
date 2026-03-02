@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { db } from "@/auth/firebase";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { v4 as uuidv4 } from "uuid";
 import { AbbreviationItem } from "@/types";
-import { X, Save, Trash2, ArrowUp, ArrowDown, Plus, ChevronDown, Info } from "lucide-react";
+import { X, Save, Trash2, ArrowUp, ArrowDown, Plus, ChevronDown, Info, ArrowLeft } from "lucide-react";
 import { Button } from "@/shared/components/ui/button";
 import { Input } from "@/shared/components/ui/input";
 import { Label } from "@/shared/components/ui/label";
@@ -53,6 +54,7 @@ const CUSTOM_ICONS = [
 ];
 
 export default function AbbreviationsManager() {
+    const navigate = useNavigate();
     const { toast } = useToast();
     const { user } = useAuth();
     const [abbreviationItems, setAbbreviationItems] = useState<AbbreviationItem[]>([]);
@@ -169,6 +171,20 @@ export default function AbbreviationsManager() {
     return (
         <AdminLayout>
             <div className="font-[Manrope] min-h-screen bg-slate-50/50 pb-20">
+                {/* Back Button */}
+                <div className="mb-6">
+                    <Button
+                        variant="ghost"
+                        onClick={() => navigate(-1)}
+                        className="group flex items-center gap-2 text-slate-500 hover:text-slate-700 font-bold transition-all px-0 hover:bg-transparent"
+                    >
+                        <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center group-hover:bg-slate-200 transition-all">
+                            <ArrowLeft className="w-4 h-4" />
+                        </div>
+                        Back to Dashboard
+                    </Button>
+                </div>
+
                 {/* Header */}
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
                     <div>

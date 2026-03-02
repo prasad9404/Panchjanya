@@ -112,7 +112,7 @@ export default function AdminDashboard() {
   }, []);
 
   return (
-    <AdminLayout hideTopbar={true}>
+    <AdminLayout>
       <div className="font-sans min-h-screen bg-[#F9F6F0] -m-6 p-6">
         <div className="max-w-7xl mx-auto">
 

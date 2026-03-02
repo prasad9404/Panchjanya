@@ -52,7 +52,15 @@ const ManageYatra = lazy(() => import("@/app/admin/ManageYatra"));
 const RajViharanAdmin = lazy(() => import("@/app/admin/RajViharanAdmin"));
 const AbbreviationsManager = lazy(() => import("@/app/admin/AbbreviationsManager"));
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 5, // 5 minutes
+      refetchOnWindowFocus: false, // Reduce redundant background requests
+      retry: 1, // Minimize wait on failures
+    },
+  },
+});
 
 const App = () => {
   return (

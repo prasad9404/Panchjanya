@@ -23,7 +23,8 @@ import {
     ChevronDown,
     Filter,
     MoreVertical,
-    Info
+    Info,
+    ArrowLeft
 } from "lucide-react";
 import { useToast } from "@/shared/hooks/use-toast";
 import { Badge } from "@/shared/components/ui/badge";
@@ -147,9 +148,23 @@ export default function SthanaDirectory() {
     };
 
     return (
-        <AdminLayout hideTopbar={true}>
+        <AdminLayout>
             <div className="font-sans min-h-screen bg-[#F9F6F0] -m-6 p-6 pb-20">
                 <div className="max-w-7xl mx-auto">
+                    {/* Back Button */}
+                    <div className="mb-6">
+                        <Button
+                            variant="ghost"
+                            onClick={() => navigate("/admin/dashboard")}
+                            className="group flex items-center gap-2 text-slate-500 hover:text-slate-700 font-bold transition-all px-0 hover:bg-transparent"
+                        >
+                            <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center group-hover:bg-slate-200 transition-all">
+                                <ArrowLeft className="w-4 h-4" />
+                            </div>
+                            Back to Dashboard
+                        </Button>
+                    </div>
+
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
                         <div>
                             <h1 className="text-3xl font-serif font-bold text-slate-900 tracking-tight">

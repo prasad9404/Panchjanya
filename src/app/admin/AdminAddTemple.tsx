@@ -14,7 +14,7 @@ export default function AdminAddTemple() {
   const navigate = useNavigate();
 
   return (
-    <AdminLayout hideTopbar={true}>
+    <AdminLayout>
       <div className="min-h-screen bg-[#F9F6F0] -m-6 p-6">
         <div className="max-w-7xl mx-auto space-y-8">
 
@@ -22,9 +22,9 @@ export default function AdminAddTemple() {
             <Button
               variant="ghost"
               onClick={() => navigate("/admin/sthana-directory")}
-              className="group flex items-center gap-2 hover:bg-white/50 text-slate-600 font-bold rounded-xl px-4"
+              className="group flex items-center gap-2 text-slate-500 hover:text-slate-700 font-bold transition-all px-0 hover:bg-transparent"
             >
-              <div className="bg-white p-2 rounded-lg shadow-sm border border-slate-200 group-hover:bg-blue-900 group-hover:text-white transition-all">
+              <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center group-hover:bg-slate-200 transition-all">
                 <ArrowLeft className="w-4 h-4" />
               </div>
               Back to Directory

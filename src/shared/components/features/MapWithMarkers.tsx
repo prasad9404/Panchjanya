@@ -4,11 +4,15 @@ import { useEffect, useRef, useMemo } from "react";
 import type { Temple } from "@/types";
 
 // Spiritual Marker Generator
-const createCustomMarker = (isActive: boolean) => {
+// Spiritual Marker Generator - Memoized for performance
+const markerIcons = new Map<boolean, L.DivIcon>();
+const getCustomMarker = (isActive: boolean) => {
+  if (markerIcons.has(isActive)) return markerIcons.get(isActive)!;
+
   const color = isActive ? "#FF9933" : "#C04000"; // Saffron vs Deep Maroon-ish Red
   const size = 52;
 
-  return L.divIcon({
+  const icon = L.divIcon({
     className: "custom-temple-marker",
     html: `
       <div style="
@@ -44,6 +48,8 @@ const createCustomMarker = (isActive: boolean) => {
     iconSize: [52, 52],
     iconAnchor: [26, 52],
   });
+  markerIcons.set(isActive, icon);
+  return icon;
 };
 
 interface MapWithMarkersProps {
@@ -163,7 +169,7 @@ export default function MapWithMarkers({ temples, onTempleClick, selectedTempleI
           <Marker
             key={temple.id}
             position={[temple.renderLat, temple.renderLng]}
-            icon={createCustomMarker(selectedTempleId === temple.id)}
+            icon={getCustomMarker(selectedTempleId === temple.id)}
             zIndexOffset={selectedTempleId === temple.id ? 1000 : 0}
             eventHandlers={{
               click: () => onTempleClick(temple.id),

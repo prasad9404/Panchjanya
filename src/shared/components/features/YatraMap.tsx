@@ -1,6 +1,6 @@
 import { MapContainer, TileLayer, Marker, Polyline, Tooltip, useMap, useMapEvents } from "react-leaflet";
 import L from "leaflet";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import "leaflet/dist/leaflet.css";
 
 export interface YatraLocation {
@@ -14,7 +14,27 @@ export interface YatraLocation {
     locationLink?: string;
 }
 
-const createNumberedMarker = (sequence: number, status: string, isHighlighted: boolean = false, customColor?: string) => {
+// Memoize Marker Icons to prevent recreation on every render
+const arrowIcons = new Map<number, L.DivIcon>();
+const getArrowIcon = (angle: number) => {
+    if (arrowIcons.has(angle)) return arrowIcons.get(angle)!;
+    const icon = L.divIcon({
+        className: 'arrow-marker',
+        html: `<div style="transform: rotate(${angle}deg); width: 12px; height: 12px; display: flex; items-center; justify-center;">
+                 <img src="/icons/left-arrow.png" style="width: 100%; height: auto; opacity: 0.8;" />
+               </div>`,
+        iconSize: [12, 12],
+        iconAnchor: [6, 6],
+    });
+    arrowIcons.set(angle, icon);
+    return icon;
+};
+
+const markerIcons = new Map<string, L.DivIcon>();
+const getNumberedMarker = (sequence: number, status: string, isHighlighted: boolean, customColor?: string) => {
+    const key = `${sequence}-${status}-${isHighlighted}-${customColor || ''}`;
+    if (markerIcons.has(key)) return markerIcons.get(key)!;
+
     // Base color selection
     const baseColor = customColor || (
         status === "current" ? "#F59E0B" : // Amber-500
@@ -22,30 +42,21 @@ const createNumberedMarker = (sequence: number, status: string, isHighlighted: b
                 "#10B981" // Emerald-500 (Upcoming)
     );
 
-    // Visual configuration
     const isUpcoming = status === "upcoming";
     const mainBg = isHighlighted ? "#EF4444" : (isUpcoming ? "white" : baseColor);
     const borderColor = isHighlighted ? "white" : (isUpcoming ? baseColor : "white");
     const textColor = isHighlighted ? "white" : (isUpcoming ? baseColor : "white");
     const pulseClass = isHighlighted ? "animate-pulse" : "";
 
-    return L.divIcon({
+    const icon = L.divIcon({
         className: `custom-number-marker ${isHighlighted ? 'active-marker' : ''}`,
         html: `
             <div class="${pulseClass}" style="
-                width: 52px;
-                height: 52px;
-                background-color: ${mainBg};
-                border: 3px solid ${borderColor};
-                border-radius: 50%;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                color: ${textColor};
-                font-weight: bold;
-                font-size: 20px;
-                box-shadow: 0 0 15px rgba(0,0,0,0.3);
-                transition: all 0.3s ease;
+                width: 52px; height: 52px; background-color: ${mainBg};
+                border: 3px solid ${borderColor}; border-radius: 50%;
+                display: flex; align-items: center; justify-content: center;
+                color: ${textColor}; font-weight: bold; font-size: 20px;
+                box-shadow: 0 0 15px rgba(0,0,0,0.3); transition: all 0.3s ease;
             ">
                 ${sequence}
             </div>
@@ -53,6 +64,8 @@ const createNumberedMarker = (sequence: number, status: string, isHighlighted: b
         iconSize: [52, 52],
         iconAnchor: [26, 26],
     });
+    markerIcons.set(key, icon);
+    return icon;
 };
 
 function MapBounds({ locations }: { locations: YatraLocation[] }) {
@@ -68,11 +81,6 @@ function MapBounds({ locations }: { locations: YatraLocation[] }) {
     }, [locations, map]);
 
     return null;
-}
-
-interface YatraMapProps {
-    locations: YatraLocation[];
-    highlightedId?: string;
 }
 
 function MapCenter({ locations, highlightedId }: { locations: YatraLocation[], highlightedId?: string }) {
@@ -92,30 +100,29 @@ function MapCenter({ locations, highlightedId }: { locations: YatraLocation[], h
     return null;
 }
 
+interface YatraMapProps {
+    locations: YatraLocation[];
+    highlightedId?: string;
+}
+
 function RouteArrows({ locations }: { locations: YatraLocation[] }) {
     const map = useMap();
     const [zoom, setZoom] = useState(map.getZoom());
 
     useEffect(() => {
         const syncZoom = () => setZoom(map.getZoom());
-        syncZoom();
-        map.on('zoomend moveend load resize', syncZoom);
+        map.on('zoomend moveend resize', syncZoom);
         return () => {
-            map.off('zoomend moveend load resize', syncZoom);
+            map.off('zoomend moveend resize', syncZoom);
         };
-    }, [map, locations]);
+    }, [map]);
 
-    useMapEvents({
-        zoomend: () => setZoom(map.getZoom()),
-        moveend: () => setZoom(map.getZoom()),
-    });
+    // Optimize: Reduce density as zoom level decreases
+    const desiredPixelGap = zoom > 12 ? 15 : zoom > 8 ? 30 : 60;
 
-    // Desired visual gap between arrows in pixels for a continuous look
-    const desiredPixelGap = 12;
-
-    const routeCoordinates = locations
+    const routeCoordinates = useMemo(() => [...locations]
         .sort((a, b) => a.sequence - b.sequence)
-        .map(l => ({ lat: l.latitude, lng: l.longitude, id: l.id }));
+        .map(l => ({ lat: l.latitude, lng: l.longitude, id: l.id })), [locations]);
 
     if (routeCoordinates.length < 2) return null;
 
@@ -124,7 +131,6 @@ function RouteArrows({ locations }: { locations: YatraLocation[] }) {
     routeCoordinates.slice(0, -1).forEach((coord, idx) => {
         const nextCoord = routeCoordinates[idx + 1];
 
-        // Project to pixel coordinates at current zoom level
         const p1 = map.project(L.latLng(coord.lat, coord.lng), zoom);
         const p2 = map.project(L.latLng(nextCoord.lat, nextCoord.lng), zoom);
 
@@ -132,23 +138,15 @@ function RouteArrows({ locations }: { locations: YatraLocation[] }) {
         const dy = p2.y - p1.y;
         const pixelDistance = Math.sqrt(dx * dx + dy * dy);
 
-        // Calculate how many arrows fit with the desired pixel gap
         const numArrows = Math.floor(pixelDistance / desiredPixelGap);
+        const angle = Math.round((Math.atan2(dy, dx) * (180 / Math.PI)) + 180);
+        const icon = getArrowIcon(angle);
 
-        // Use pixel-based angle for rotation (Leaflet Y increases downwards)
-        // Add 180 because left-arrow.png points Left by default
-        const angle = (Math.atan2(dy, dx) * (180 / Math.PI)) + 180;
-
-        // Skip near endpoints to avoid marker overlap
-        const skipPixels = 10; // Pixels to skip from each end
+        const skipPixels = 20;
 
         for (let i = 1; i <= numArrows; i++) {
             const currentPixelDist = i * desiredPixelGap;
-
-            // Boundary checks in pixels
-            if (currentPixelDist < skipPixels || currentPixelDist > pixelDistance - skipPixels) {
-                continue;
-            }
+            if (currentPixelDist < skipPixels || currentPixelDist > pixelDistance - skipPixels) continue;
 
             const ratio = currentPixelDist / pixelDistance;
             const arrowLat = coord.lat + (nextCoord.lat - coord.lat) * ratio;
@@ -156,26 +154,11 @@ function RouteArrows({ locations }: { locations: YatraLocation[] }) {
 
             arrows.push(
                 <Marker
-                    key={`arrow-${coord.id}-${nextCoord.id}-${i}`}
+                    key={`arrow-${coord.id}-${idx}-${i}`}
                     position={[arrowLat, arrowLng]}
-                    icon={L.divIcon({
-                        className: 'arrow-marker',
-                        html: `
-                            <div style="
-                                transform: rotate(${angle}deg);
-                                width: 12px;
-                                height: 12px;
-                                display: flex;
-                                align-items: center;
-                                justify-content: center;
-                            ">
-                                <img src="/icons/left-arrow.png" style="width: 100%; height: auto; opacity: 1;" />
-                            </div>
-                        `,
-                        iconSize: [12, 12],
-                        iconAnchor: [6, 6],
-                    })}
+                    icon={icon}
                     zIndexOffset={-500}
+                    interactive={false}
                 />
             );
         }
@@ -209,7 +192,7 @@ export default function YatraMap({ locations, highlightedId }: YatraMapProps) {
                     <Marker
                         key={loc.id}
                         position={[loc.latitude, loc.longitude]}
-                        icon={createNumberedMarker(loc.sequence, loc.status, loc.id === highlightedId, loc.pinColor)}
+                        icon={getNumberedMarker(loc.sequence, loc.status, loc.id === highlightedId, loc.pinColor)}
                         zIndexOffset={loc.id === highlightedId ? 2000 : 1000}
                     >
                         <Tooltip direction="top" offset={[0, -26]} opacity={1}>
