@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { collection, onSnapshot, doc, setDoc, deleteDoc, getDoc, query, where } from "firebase/firestore";
 import { db } from "@/auth/firebase";
 import { Temple } from "@/types";
@@ -75,7 +75,7 @@ function getIconBySthan(sthan: string | undefined): L.Icon {
 }
 
 // Inner Map Component to handle center/zoom updates
-function MapEffect({ temples }: { temples: Temple[] }) {
+function MapEffect({ temples, resetTrigger }: { temples: Temple[]; resetTrigger: number }) {
     const map = useMap();
     useEffect(() => {
         if (temples.length > 0) {
@@ -84,7 +84,7 @@ function MapEffect({ temples }: { temples: Temple[] }) {
                 map.fitBounds(bounds, { padding: [50, 50] });
             }
         }
-    }, [temples, map]);
+    }, [temples, map, resetTrigger]);
     return null;
 }
 
@@ -277,6 +277,7 @@ const Explore = () => {
     const navigate = useNavigate();
     const { t } = useLanguage();
     const [selectedTemple, setSelectedTemple] = useState<Temple | null>(null);
+    const [resetTrigger, setResetTrigger] = useState(0);
 
     // Load sthan types and generate icons
     useEffect(() => {
@@ -458,21 +459,23 @@ const Explore = () => {
     });
 
     // Client-side filtering for Search and Sthana Category (Substring matches)
-    const filteredTemples = temples.filter(temple => {
-        const matchesSearch = !searchQuery ||
-            temple.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            temple.city?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            temple.district?.toLowerCase().includes(searchQuery.toLowerCase());
+    const filteredTemples = useMemo(() => {
+        return temples.filter(temple => {
+            const matchesSearch = !searchQuery ||
+                temple.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                temple.city?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                temple.district?.toLowerCase().includes(searchQuery.toLowerCase());
 
-        const matchesSthana = !appliedSthanaType || (
-            ((temple as any).sthan && (temple as any).sthan.toLowerCase().includes(appliedSthanaType.toLowerCase())) ||
-            (temple.sthana && temple.sthana.toLowerCase().includes(appliedSthanaType.toLowerCase())) ||
-            (temple.description_text && temple.description_text.toLowerCase().includes(appliedSthanaType.toLowerCase())) ||
-            (temple.description && temple.description.toLowerCase().includes(appliedSthanaType.toLowerCase()))
-        );
+            const matchesSthana = !appliedSthanaType || (
+                ((temple as any).sthan && (temple as any).sthan.toLowerCase().includes(appliedSthanaType.toLowerCase())) ||
+                (temple.sthana && temple.sthana.toLowerCase().includes(appliedSthanaType.toLowerCase())) ||
+                (temple.description_text && temple.description_text.toLowerCase().includes(appliedSthanaType.toLowerCase())) ||
+                (temple.description && temple.description.toLowerCase().includes(appliedSthanaType.toLowerCase()))
+            );
 
-        return matchesSearch && matchesSthana;
-    });
+            return matchesSearch && matchesSthana;
+        });
+    }, [temples, searchQuery, appliedSthanaType]);
 
     const activeFiltersCount = (appliedDistrict ? 1 : 0) + (appliedTaluka ? 1 : 0) + (appliedSthanaType ? 1 : 0);
 
@@ -681,7 +684,7 @@ const Explore = () => {
                         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
                     />
 
-                    <MapEffect temples={filteredTemples} />
+                    <MapEffect temples={filteredTemples} resetTrigger={resetTrigger} />
 
                     {/* Render each temple with its own TempleMarker component */}
                     {filteredTemples.map((temple) => (
@@ -694,6 +697,18 @@ const Explore = () => {
                         )
                     ))}
                 </MapContainer>
+
+                {/* Reset Zoom Button */}
+                <div className="absolute bottom-24 right-4 z-[400] pointer-events-auto">
+                    <Button
+                        onClick={() => setResetTrigger(prev => prev + 1)}
+                        className="h-10 px-4 rounded-full bg-background/95 backdrop-blur-md border border-border/40 text-landing-primary dark:text-primary shadow-lg hover:bg-accent/10 flex items-center gap-2 font-bold text-xs transition-all active:scale-95"
+                        title="Reset Map Zoom"
+                    >
+                        <Compass className="w-4 h-4" />
+                        Reset Zoom
+                    </Button>
+                </div>
             </div>
 
         </div>

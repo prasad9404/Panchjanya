@@ -1,59 +1,12 @@
-import { useState, useMemo } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Card } from "@/shared/components/ui/card";
 import { Button } from "@/shared/components/ui/button";
-import MapWithMarkers from "@/shared/components/features/MapWithMarkers";
-import { TempleDetails } from "@/shared/components/features/TempleDetails";
-import { Compass, Map as MapIcon, ChevronRight, Info, Navigation, ChevronLeft, Bell, Loader2 } from "lucide-react";
+import { Compass, Info, ChevronLeft, Bell, Loader2 } from "lucide-react";
 import { useTemples } from "@/shared/hooks/useTemples";
 import { LazyImage } from "@/shared/components/ui/LazyImage";
 
-interface YatraPlace {
-    id: string;
-    name: string;
-    nameEn: string;
-    description: string;
-    sequence: number;
-    status: "visited" | "stayed" | "revisited";
-}
-
 const SthanaVandan = () => {
     const { data: temples = [], isLoading } = useTemples();
-    const [selectedTempleId, setSelectedTempleId] = useState<string | null>(null);
-    const [isDetailsPanelOpen, setIsDetailsPanelOpen] = useState(false);
-
-    // Search & Filter State
-    const [searchQuery, setSearchQuery] = useState("");
-    const [selectedDistrict, setSelectedDistrict] = useState("");
-    const [selectedTaluka, setSelectedTaluka] = useState("");
-
-    // 🔍 Optimized Filtering
-    const filteredTemples = useMemo(() => {
-        let filtered = temples;
-        if (searchQuery) {
-            filtered = filtered.filter((temple) =>
-                temple.name.toLowerCase().includes(searchQuery.toLowerCase())
-            );
-        }
-        if (selectedDistrict) {
-            filtered = filtered.filter(
-                (temple) => temple.district?.toLowerCase() === selectedDistrict.toLowerCase()
-            );
-        }
-        if (selectedTaluka) {
-            filtered = filtered.filter(
-                (temple) => temple.taluka?.toLowerCase() === selectedTaluka.toLowerCase()
-            );
-        }
-        return filtered;
-    }, [temples, searchQuery, selectedDistrict, selectedTaluka]);
-
-
-    const handleTempleClick = (id: string) => {
-        setSelectedTempleId(id);
-    };
-
-    const selectedTemple = temples.find((t) => t.id === selectedTempleId) || null;
 
     // Filter temples with architectural data
     const architectureTemples = temples.filter(
@@ -110,80 +63,6 @@ const SthanaVandan = () => {
                 </Card>
             </div>
 
-            <div className="space-y-6 pt-2 px-6">
-                <div className="flex items-center justify-between border-l-4 border-primary pl-3">
-                    <h2 className="font-heading font-bold text-xl text-landing-primary dark:text-primary">Heritage Map</h2>
-                    <Link to="/explore" className="text-xs font-bold text-accent-gold uppercase tracking-widest cursor-pointer hover:text-primary">
-                        view all
-                    </Link>
-                </div>
-
-                <div className="h-[500px] w-full rounded-3xl overflow-hidden border border-border/50 bg-accent/5 relative">
-                    <MapWithMarkers
-                        temples={filteredTemples}
-                        onTempleClick={handleTempleClick}
-                        selectedTempleId={selectedTempleId}
-                    />
-
-                    {selectedTemple && !isDetailsPanelOpen && (
-                        <div className="absolute bottom-4 left-4 right-4 z-[400] lg:w-96 lg:left-auto lg:right-4">
-                            <Card className="p-3 flex items-center gap-3 shadow-xl bg-card/95 backdrop-blur-sm border-none animate-in slide-in-from-bottom-4">
-                                <LazyImage
-                                    src={selectedTemple.images?.[0] || "/placeholder-temple.jpg"}
-                                    alt={selectedTemple.name}
-                                    containerClassName="w-16 h-16 bg-accent/10 rounded-lg flex-shrink-0 border border-accent/20"
-                                    className="w-full h-full object-cover"
-                                />
-
-                                <div className="flex-1 min-w-0 flex flex-col justify-center">
-                                    <h3 className="font-bold text-sm lg:text-base text-landing-primary dark:text-primary truncate leading-tight mb-0.5">
-                                        {selectedTemple.name}
-                                    </h3>
-                                    <p className="text-[11px] lg:text-xs text-muted-foreground truncate flex items-center gap-1">
-                                        <MapIcon className="w-3 h-3" />
-                                        {(() => {
-                                            const city = selectedTemple.city?.trim();
-                                            const district = selectedTemple.district?.trim();
-                                            if (city && district && city.toLowerCase() !== district.toLowerCase()) {
-                                                return `${city}, ${district}`;
-                                            }
-                                            if (city || district) return city || district;
-                                            return typeof selectedTemple.location === 'string' ? selectedTemple.location : "Ancient Heritage";
-                                        })()}
-                                    </p>
-                                </div>
-
-                                <div className="flex items-center gap-1">
-                                    <Link to={`/temple/${selectedTemple.id}/architecture`}>
-                                        <Button size="icon" variant="ghost" className="h-8 w-8 rounded-full text-accent-gold hover:bg-accent/10 hover:text-primary" title="Architecture View">
-                                            <Compass className="w-4 h-4" />
-                                        </Button>
-                                    </Link>
-
-                                    <Button
-                                        size="icon"
-                                        variant="ghost"
-                                        className="h-8 w-8 rounded-full text-blue-600 hover:bg-blue-50 hover:text-blue-700"
-                                        title="Get Directions"
-                                        onClick={() => {
-                                            if (selectedTemple.latitude && selectedTemple.longitude) {
-                                                window.open(`https://www.google.com/maps/dir/?api=1&destination=${selectedTemple.latitude},${selectedTemple.longitude}`, "_blank");
-                                            }
-                                        }}
-                                    >
-                                        <Navigation className="w-4 h-4" />
-                                    </Button>
-
-                                    <Button size="icon" variant="ghost" onClick={() => setIsDetailsPanelOpen(true)} className="h-8 w-8 rounded-full hover:bg-accent/10" title="View Details">
-                                        <ChevronRight className="w-5 h-5 text-muted-foreground" />
-                                    </Button>
-                                </div>
-                            </Card>
-                        </div>
-                    )}
-                </div>
-            </div>
-
             <div className="space-y-6 pt-4 pb-10 px-6">
                 <div className="flex items-center justify-between border-l-4 border-primary pl-3">
                     <h2 className="font-heading font-bold text-xl text-landing-primary dark:text-primary">Architectural Archive</h2>
@@ -227,12 +106,6 @@ const SthanaVandan = () => {
                     )}
                 </div>
             </div>
-
-            <TempleDetails
-                isOpen={isDetailsPanelOpen}
-                onClose={() => setIsDetailsPanelOpen(false)}
-                temple={selectedTemple}
-            />
         </div>
     );
 };

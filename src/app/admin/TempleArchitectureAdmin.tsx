@@ -168,7 +168,7 @@ export default function TempleArchitectureAdmin() {
 
   // New Temple Metadata & Sections
   const [todaysName, setTodaysName] = useState("");
-  const [todaysNameTitle, setTodaysNameTitle] = useState("Todays Name");
+  const [todaysNameTitle, setTodaysNameTitle] = useState("");
   const [address, setAddress] = useState("");
   const [taluka, setTaluka] = useState("");
   const [district, setDistrict] = useState("");
@@ -268,7 +268,7 @@ export default function TempleArchitectureAdmin() {
           setArchHotspots(data.hotspots || []);
 
           setTodaysName(data.todaysName || "");
-          setTodaysNameTitle(data.todaysNameTitle || "Todays Name");
+          setTodaysNameTitle(data.todaysNameTitle || "");
           setAddress(data.address || "");
           setTaluka(data.taluka || "");
           setDistrict(data.district || "");

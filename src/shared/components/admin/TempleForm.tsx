@@ -29,7 +29,7 @@ export default function TempleForm({ templeId }: TempleFormProps) {
 
     // ── Basic Information ──
     const [name, setName] = useState("");
-    const [todaysNameTitle, setTodaysNameTitle] = useState("Todays Name");
+    const [todaysNameTitle, setTodaysNameTitle] = useState("");
     const [todaysName, setTodaysName] = useState("");
     const [address, setAddress] = useState("");
     const [taluka, setTaluka] = useState("");
@@ -70,7 +70,7 @@ export default function TempleForm({ templeId }: TempleFormProps) {
 
                 if (data) {
                     setName(data.name || "");
-                    setTodaysNameTitle(data.todaysNameTitle || "Todays Name");
+                    setTodaysNameTitle(data.todaysNameTitle || "");
                     setTodaysName(data.todaysName || "");
                     setAddress(data.address || "");
                     setTaluka(data.taluka || "");
