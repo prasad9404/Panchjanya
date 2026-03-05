@@ -5,46 +5,13 @@ import { Button } from '@/shared/components/ui/button';
 import { Input } from '@/shared/components/ui/input';
 import { Label } from '@/shared/components/ui/label';
 import { Plus, Trash2, Pencil, GripVertical } from 'lucide-react';
-import { getSthanTypes, createSthanType, updateSthanType, deleteSthanType, generateColoredPinSVG, getSthanPinInfo, updateSthanTypesOrder } from '@/shared/utils/sthanTypes';
+import {
+    getSthanTypes, createSthanType, updateSthanType, deleteSthanType,
+    getSthanPinInfo, updateSthanTypesOrder, PIN_SERIES
+} from '@/shared/utils/sthanTypes';
 import { SthanType, PinType } from '@/shared/types/sthanType';
 import { useToast } from '@/shared/hooks/use-toast';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
-
-const COLOR_SETS = [
-    { value: '#0e3c6f', label: 'Blue', series: 'blue' },
-    { value: '#d4af37', label: 'Golden', series: 'gold' },
-] as const;
-
-type IconKey = 'empty' | 'temple' | 'shikhara' | 'mandir' | 'asan' | 'dot';
-
-const PIN_MAP: Record<typeof COLOR_SETS[number]['series'], Record<IconKey, PinType>> = {
-    blue: {
-        empty: 'pin_empty',
-        temple: 'pin_temple1',
-        shikhara: 'pin_shikhara',
-        mandir: 'pin_mandir',
-        asan: 'pin_aasan',
-        dot: 'pin_dot'
-    },
-    gold: {
-        empty: 'pin_empty_gold',
-        temple: 'pin_1_1',
-        shikhara: 'pin_1_2',
-        mandir: 'pin_1_3',
-        asan: 'pin_1_4',
-        dot: 'pin_1_5'
-    }
-};
-
-const ICON_OPTIONS: { key: IconKey; label: string }[] = [
-    { key: 'temple', label: 'Temple' },
-    { key: 'shikhara', label: 'Shikhara' },
-    { key: 'mandir', label: 'Mandir' },
-    { key: 'asan', label: 'Aasan' },
-    { key: 'dot', label: 'Dot' },
-    { key: 'empty', label: 'Empty' },
-];
-
 
 
 export function SthanTypeManager() {
@@ -55,8 +22,9 @@ export function SthanTypeManager() {
 
     // Form state
     const [name, setName] = useState('');
-    const [color, setColor] = useState('#d4af37'); // Default to Golden
-    const [pinType, setPinType] = useState<PinType>('pin_1_1'); // Default to Golden Temple
+    const [color, setColor] = useState(PIN_SERIES[0].defaultColor);
+    const [selectedSeriesId, setSelectedSeriesId] = useState<string>(PIN_SERIES[0].id);
+    const [pinType, setPinType] = useState<PinType>(`${PIN_SERIES[0].folder}/${PIN_SERIES[0].files[0]}`);
 
     const { toast } = useToast();
 
@@ -128,7 +96,14 @@ export function SthanTypeManager() {
         setEditingId(type.id);
         setName(type.name);
         setColor(type.color);
-        setPinType(type.pinType || 'pin_empty');
+        const pinTypePath = type.pinType || `${PIN_SERIES[0].folder}/${PIN_SERIES[0].files[0]}`;
+        setPinType(pinTypePath);
+
+        // Find matching series for editing if it's a new style pin
+        if (pinTypePath.startsWith('/icons/pins/')) {
+            const series = PIN_SERIES.find(s => pinTypePath.includes(s.folder));
+            if (series) setSelectedSeriesId(series.id);
+        }
     };
 
     const handleDelete = async (id: string) => {
@@ -189,8 +164,9 @@ export function SthanTypeManager() {
     const resetForm = () => {
         setEditingId(null);
         setName('');
-        setColor('#d4af37');
-        setPinType('pin_1_1');
+        setColor(PIN_SERIES[0].defaultColor);
+        setSelectedSeriesId(PIN_SERIES[0].id);
+        setPinType(`${PIN_SERIES[0].folder}/${PIN_SERIES[0].files[0]}`);
     };
 
     return (
@@ -224,32 +200,28 @@ export function SthanTypeManager() {
                                 />
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="color">Color Set *</Label>
-                                <div className="flex gap-3">
-                                    {COLOR_SETS.map((set) => (
+                                <Label htmlFor="series">Pin Series *</Label>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 h-40 overflow-y-auto pr-2 custom-scrollbar">
+                                    {PIN_SERIES.map((series) => (
                                         <button
-                                            key={set.series}
+                                            key={series.id}
                                             type="button"
                                             onClick={() => {
-                                                const currentIconKey = (Object.entries(PIN_MAP.blue).find(([_, v]) => v === pinType)?.[0] ||
-                                                    Object.entries(PIN_MAP.gold).find(([_, v]) => v === pinType)?.[0] ||
-                                                    'temple') as IconKey;
-                                                setColor(set.value);
-                                                setPinType(PIN_MAP[set.series][currentIconKey]);
+                                                setSelectedSeriesId(series.id);
+                                                setColor(series.defaultColor);
+                                                setPinType(`${series.folder}/${series.files[0]}`);
                                             }}
-                                            className={`flex-1 flex items-center justify-center gap-2 p-3 rounded-xl border-2 transition-all ${color === set.value
+                                            className={`flex items-center text-left gap-2 p-2 rounded-xl border-2 transition-all ${selectedSeriesId === series.id
                                                 ? 'border-blue-500 bg-blue-50 shadow-sm'
                                                 : 'border-slate-200 bg-white hover:border-slate-300'
                                                 }`}
                                         >
-                                            <div
-                                                className="w-4 h-4 rounded-full border border-slate-300"
-                                                style={{ backgroundColor: set.value }}
+                                            <img
+                                                src={`${series.folder}/${series.files[series.files.length - 1]}`}
+                                                className="w-8 h-8 object-contain"
+                                                alt={series.name}
                                             />
-                                            <span className="text-sm font-medium">{set.label}</span>
-                                            {color === set.value && (
-                                                <span className="text-[10px] font-bold text-blue-600 uppercase ml-auto">✓</span>
-                                            )}
+                                            <span className="text-xs font-medium leading-tight flex-1">{series.name}</span>
                                         </button>
                                     ))}
                                 </div>
@@ -257,43 +229,31 @@ export function SthanTypeManager() {
                         </div>
 
                         <div className="space-y-3">
-                            <Label>Pin Icon Type</Label>
-                            <div className="grid grid-cols-3 gap-2">
-                                {ICON_OPTIONS.map((option) => {
-                                    const currentSeries = COLOR_SETS.find(s => s.value === color)?.series || 'gold';
-                                    const specificPinType = PIN_MAP[currentSeries][option.key];
+                            <Label>Select Pin Style</Label>
+                            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2">
+                                {PIN_SERIES.find(s => s.id === selectedSeriesId)?.files.map((file) => {
+                                    const fullPath = `${PIN_SERIES.find(s => s.id === selectedSeriesId)?.folder}/${file}`;
+                                    const isSelected = pinType === fullPath;
                                     return (
                                         <button
-                                            key={option.key}
+                                            key={file}
                                             type="button"
-                                            onClick={() => setPinType(specificPinType)}
-                                            className={`flex flex-col items-center gap-1.5 p-2.5 rounded-xl border-2 transition-all ${pinType === specificPinType
+                                            onClick={() => setPinType(fullPath)}
+                                            className={`flex flex-col items-center gap-2 p-2 rounded-xl border-2 transition-all ${isSelected
                                                 ? 'border-blue-500 bg-blue-50 shadow-sm'
                                                 : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50'
                                                 }`}
                                         >
-                                            {(() => {
-                                                const { src } = getSthanPinInfo('original', specificPinType);
-                                                return (
-                                                    <div className="relative w-10 h-10">
-                                                        <div
-                                                            className="absolute inset-0 bg-white"
-                                                            style={{ clipPath: 'circle(40% at 50% 40%)' }}
-                                                        />
-                                                        <img
-                                                            src={src}
-                                                            alt={option.label}
-                                                            className="relative z-10 w-full h-full object-contain"
-                                                        />
-                                                    </div>
-                                                );
-                                            })()}
-                                            <span className="text-[11px] font-medium text-slate-600 text-center leading-tight">
-                                                {option.label}
+                                            <div className="relative w-12 h-12">
+                                                <img
+                                                    src={fullPath}
+                                                    alt={file}
+                                                    className="relative z-10 w-full h-full object-contain"
+                                                />
+                                            </div>
+                                            <span className="text-[10px] text-slate-500 font-medium truncate w-full text-center">
+                                                {file.replace('.svg', '').replace('.png', '')}
                                             </span>
-                                            {pinType === specificPinType && (
-                                                <span className="text-[9px] font-bold text-blue-600 uppercase tracking-wide">✓ Selected</span>
-                                            )}
                                         </button>
                                     );
                                 })}
@@ -347,35 +307,32 @@ export function SthanTypeManager() {
                                                                 const { src, filter } = getSthanPinInfo(type.color, type.pinType);
                                                                 return (
                                                                     <div className="relative w-8 h-8 flex-shrink-0">
-                                                                        <div
-                                                                            className="absolute inset-0 bg-white"
-                                                                            style={{ clipPath: 'circle(40% at 50% 40%)' }}
-                                                                        />
                                                                         <img
                                                                             src={src}
                                                                             style={filter ? { filter } : undefined}
                                                                             alt={type.name}
-                                                                            className="relative z-10 w-full h-full object-contain"
+                                                                            className="relative w-full h-full object-contain drop-shadow-sm"
                                                                         />
                                                                     </div>
                                                                 );
                                                             })()}
                                                             <div className="flex-1">
                                                                 <div className="font-medium text-sm">{type.name}</div>
-                                                                <div className="text-xs text-slate-500 flex items-center gap-1.5">
-                                                                    <span
-                                                                        className="inline-block w-2.5 h-2.5 rounded-full border border-slate-300"
-                                                                        style={{ backgroundColor: type.color }}
-                                                                    />
-                                                                    {type.color}
-                                                                    <span className="text-slate-300">·</span>
+                                                                <div className="text-xs text-slate-500 flex items-center gap-1.5 pt-1">
                                                                     {(() => {
-                                                                        const iconKey = Object.entries(PIN_MAP.blue).find(([_, v]) => v === type.pinType)?.[0] ||
-                                                                            Object.entries(PIN_MAP.gold).find(([_, v]) => v === type.pinType)?.[0] ||
-                                                                            'custom';
-                                                                        const iconLabel = ICON_OPTIONS.find(o => o.key === iconKey)?.label || 'Custom';
-                                                                        const seriesLabel = COLOR_SETS.find(s => s.value === type.color)?.label || 'Custom';
-                                                                        return `${seriesLabel} - ${iconLabel}`;
+                                                                        const seriesMatch = PIN_SERIES.find(s => type.pinType?.includes(s.folder));
+                                                                        if (seriesMatch) {
+                                                                            const fileParts = type.pinType?.split('/') || [];
+                                                                            const fileName = fileParts[fileParts.length - 1];
+                                                                            return (
+                                                                                <>
+                                                                                    <span className="truncate max-w-[120px]" title={seriesMatch.name}>{seriesMatch.name}</span>
+                                                                                    <span className="text-slate-300">·</span>
+                                                                                    <span>{fileName}</span>
+                                                                                </>
+                                                                            );
+                                                                        }
+                                                                        return <span>Legacy Pin</span>;
                                                                     })()}
                                                                 </div>
                                                             </div>

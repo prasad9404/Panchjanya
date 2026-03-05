@@ -285,7 +285,6 @@ const Explore = () => {
             const types = await getSthanTypes();
             setSthanTypes(types);
 
-            // Generate icons for each sthan type
             types.forEach(st => {
                 const { src, filter, needsFilter } = getSthanPinInfo(st.color, st.pinType);
                 if (needsFilter) {
@@ -568,12 +567,12 @@ const Explore = () => {
                                             key={st.id}
                                             className="flex items-center gap-2.5 group cursor-default p-1 rounded-lg hover:bg-[#F5F1E8] transition-colors"
                                         >
-                                            <div className="w-8 h-8 shrink-0 flex items-center justify-center transition-transform duration-300 group-hover:scale-110">
+                                            <div className="relative w-8 h-8 shrink-0 flex items-center justify-center transition-transform duration-300 group-hover:scale-110">
                                                 <img
                                                     src={src}
                                                     alt={st.name}
                                                     style={needsFilter ? { filter } : undefined}
-                                                    className="w-7 h-7 object-contain drop-shadow-sm"
+                                                    className="relative z-10 w-7 h-7 object-contain drop-shadow-sm"
                                                 />
                                             </div>
                                             <span className="text-sm font-semibold text-[#6B6B6B] truncate leading-tight group-hover:text-[#2D2D2D] transition-colors">
