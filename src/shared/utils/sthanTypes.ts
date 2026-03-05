@@ -94,7 +94,7 @@ export const updateSthanTypesOrder = async (reorderedTypes: SthanType[]): Promis
  * The 5 new icon-based pins from /icons/pins/. Each has a different
  * interior icon but the same map-pin shape. Color is applied via CSS filter.
  */
-const PIN_ICON_MAP: Record<string, string> = {
+export const PIN_ICON_MAP: Record<string, string> = {
     pin_empty: '/icons/pins/4.svg',
     pin_temple1: '/icons/pins/4.1.svg',
     pin_shikhara: '/icons/pins/4.2.svg',
@@ -109,6 +109,58 @@ const PIN_ICON_MAP: Record<string, string> = {
     pin_1_5: '/icons/pins/1.5.svg',
     pin_empty_gold: '/icons/pins/1.svg',
 };
+
+export const PIN_SERIES = [
+    {
+        id: '1',
+        name: 'Series 1 (Shri Krishna)',
+        folder: '/icons/pins/1 Shri_Krishna_Pin',
+        defaultColor: '#F59E0B',
+        files: ['1.1.svg', '1.2.svg', '1.3.svg', '1.4.svg', '1.5.svg', 'Shri_Krishna_Pin.svg']
+    },
+    {
+        id: '2',
+        name: 'Series 2 (Shri Dattatray Prabhu)',
+        folder: '/icons/pins/2 Shri_Dattatray_Prabhu_Pin',
+        defaultColor: '#EC4899',
+        files: ['2.1.svg', '2.2.svg', '2.3.svg', '2.4.svg', '2.5.svg', 'Shri_Dattatray_Prabhu_Pin.svg']
+    },
+    {
+        id: '3',
+        name: 'Series 3 (Shri Chakrapani Prabhu)',
+        folder: '/icons/pins/3 Shri_Chakrapani_Prabhu_Pin',
+        defaultColor: '#8B5CF6',
+        files: ['3.1.svg', '3.2.svg', '3.3.svg', '3.4.svg', '3.5.svg', 'Shri_Chakrapani_Prabhu_Pin.svg']
+    },
+    {
+        id: '4',
+        name: 'Series 4 (Shri Govind Prabhu)',
+        folder: '/icons/pins/4 Shri_Govind_Prabhu_Pin',
+        defaultColor: '#EF4444',
+        files: ['4.1.svg', '4.2.svg', '4.3.svg', '4.4.svg', '4.5.svg', 'Shri_Govind_Prabhu_Pin.svg']
+    },
+    {
+        id: '5',
+        name: 'Series 5 (Shri Chakradhar Swami)',
+        folder: '/icons/pins/5 Shri_Chakradhar_Swami_Pin',
+        defaultColor: '#3B82F6',
+        files: ['5.1.svg', '5.2.svg', '5.3.svg', '5.4.svg', '5.5.svg', 'Shri_Chakradhar_Swami_Pin.svg']
+    },
+    {
+        id: '6',
+        name: 'Series 6 (Mandalik Sthan)',
+        folder: '/icons/pins/6 Mandalik_Sthan_Pin',
+        defaultColor: '#10B981',
+        files: ['6.1.svg', '6.2.svg', '6.5.svg', 'Mandalik_Sthan_Pin.svg']
+    },
+    {
+        id: '7',
+        name: 'Series 7',
+        folder: '/icons/pins/7',
+        defaultColor: '#6366F1',
+        files: ['7.1.svg', '7.2.svg', '7.3.svg', '7.4.svg', '7.5.svg', '7.svg']
+    }
+];
 
 /**
  * Convert hex color string to HSL.
@@ -174,6 +226,15 @@ export interface PinRenderInfo {
  * Preferred API for new code.
  */
 export const getSthanPinInfo = (color: string, pinType?: string): PinRenderInfo => {
+    // Check if new path-based PIN
+    if (pinType && pinType.startsWith('/icons/pins/')) {
+        return {
+            src: pinType,
+            filter: '',
+            needsFilter: false
+        };
+    }
+
     const isOriginal = color === 'original' || color === '' || !color || color === '#0e3c6f' || color === '#d4af37';
 
     if (pinType && pinType in PIN_ICON_MAP) {
@@ -195,10 +256,8 @@ export const getPinImageHtml = (color: string, pinType: string | undefined, size
     const info = getSthanPinInfo(color, pinType);
     const filterStyle = info.needsFilter ? `filter:${info.filter};` : '';
 
-    // Create a container with a white circular background positioned behind the pin head
     return `
         <div style="position:relative; width:${size}px; height:${size}px;">
-            <div style="position:absolute; top:0; left:0; width:100%; height:100%; background:white; clip-path:circle(40% at 50% 40%); z-index:0;"></div>
             <img src="${info.src}" style="position:relative; width:100%; height:100%; object-fit:contain; ${filterStyle} z-index:1;" />
         </div>
     `;
