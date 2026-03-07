@@ -35,9 +35,8 @@ export default function AdminSidebar() {
     <aside className="w-72 bg-[#111827] text-white flex flex-col shrink-0 border-r border-white/5 font-[Manrope]">
       {/* Branding */}
       <div className="p-6 flex items-center gap-3">
-        <div className="w-10 h-10 bg-[#1E3A8A]/20 rounded-lg flex items-center justify-center p-1.5 border border-[#1E3A8A]/30 text-[#1E3A8A]">
-          {/* Placeholder for Logo or Icon */}
-          <LayoutDashboard className="w-full h-full text-[#1E3A8A]" />
+        <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center p-1 border border-[#1E3A8A]/30 shrink-0">
+          <img src="/icons/Main logo.svg" alt="Logo" className="w-full h-full object-contain" />
         </div>
         <div>
           <h1 className="text-lg font-extrabold tracking-tight text-white">Panchajanya</h1>

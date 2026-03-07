@@ -22,11 +22,11 @@ const Dashboard = () => {
             <div className="max-w-md mx-auto lg:max-w-4xl px-4 lg:px-6 space-y-8 animate-in fade-in duration-500">
 
                 {/* Top Bar */}
-                <div className="relative flex items-center justify-center py-4">
-                    <div className="absolute left-0 top-1/2 -translate-y-1/2 w-10 h-10 bg-green-900/10 rounded-full flex items-center justify-center border border-green-900/20">
-                        <img src="/icons/Logo.svg" alt="Logo" className="w-12 h-12 object-contain opacity-100" />
+                <div className="relative flex items-center justify-center py-4 md:py-6">
+                    <div className="absolute left-0 w-16 h-16 md:w-20 md:h-20 bg-white rounded-full flex flex-shrink-0 items-center justify-center shadow-sm p-1 z-10">
+                        <img src="/icons/Main logo.svg" alt="Logo" className="w-full h-full object-contain opacity-100" />
                     </div>
-                    <h1 className="text-2xl font-heading font-bold text-[#0f3c6e]">Panchajanya</h1>
+                    <h1 className="text-2xl md:text-3xl font-heading font-bold text-[#0f3c6e] pl-16 md:pl-0">Panchajanya</h1>
                 </div>
 
                 {/* Greeting Section */}
