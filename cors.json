@@ -1,19 +1,25 @@
 [
     {
         "origin": [
+            "http://localhost:5173",
+            "http://localhost:3000",
             "https://panchjanya-4a344.web.app",
             "https://panchjanya-4a344.firebaseapp.com"
         ],
         "method": [
             "GET",
+            "PUT",
+            "POST",
+            "DELETE",
             "HEAD"
         ],
         "maxAgeSeconds": 3600,
         "responseHeader": [
             "Content-Type",
+            "Authorization",
             "Content-Length",
-            "Content-Encoding",
-            "Cache-Control"
+            "User-Agent",
+            "x-goog-resumable"
         ]
     }
 ]
