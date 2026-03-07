@@ -111,21 +111,65 @@ service firebase.storage {
     match /temples/{templeId}/hero/{fileName} {
       allow read: if true;
       allow create,
-            update: if isAdmin() && isValidImage();
+            update: if isSignedIn() && isValidImage();
       allow delete: if isAdmin();
     }
 
     match /temples/{templeId}/gallery/{fileName} {
       allow read: if true;
       allow create,
-            update: if isAdmin() && isValidImage();
+            update: if isSignedIn() && isValidImage();
       allow delete: if isAdmin();
     }
 
     match /temples/{templeId}/documents/{fileName} {
       allow read: if true;
       allow create,
-            update: if isAdmin() && isValidPdf();
+            update: if isSignedIn() && isValidPdf();
+      allow delete: if isAdmin();
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    //  ARCHITECTURAL & PRESENT VIEWS
+    //  Path: architecture/{templeId}/{fileName}
+    //        present/{templeId}/{fileName}
+    // ═══════════════════════════════════════════════════════════════
+
+    match /architecture/{templeId}/{fileName} {
+      allow read: if true;
+      allow create,
+            update: if isSignedIn() && isValidImage();
+      allow delete: if isAdmin();
+    }
+
+    match /present/{templeId}/{fileName} {
+      allow read: if true;
+      allow create,
+            update: if isSignedIn() && isValidImage();
+      allow delete: if isAdmin();
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    //  HOTSPOT ASSETS (Leelas, Sthana Photos)
+    //  Path: hotspots/{templeId}/{hotspotId}/{stage}/{fileName}
+    // ═══════════════════════════════════════════════════════════════
+
+    match /hotspots/{templeId}/{hotspotId}/{stage}/{fileName} {
+      allow read: if true;
+      allow create,
+            update: if isSignedIn() && isValidImage();
+      allow delete: if isAdmin();
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    //  PILGRIMAGE (YATRA) ASSETS
+    //  Path: yatra/{placeId}/{fileName}
+    // ═══════════════════════════════════════════════════════════════
+
+    match /yatra/{placeId}/{fileName} {
+      allow read: if true;
+      allow create,
+            update: if isSignedIn() && isValidImage();
       allow delete: if isAdmin();
     }
 

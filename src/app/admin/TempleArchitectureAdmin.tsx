@@ -101,23 +101,40 @@ const HotspotMarker = ({
       style={{
         top: `${hotspot.y}%`,
         left: `${hotspot.x}%`,
-        transform: `translate(-50%, -50%) scale(${isHovered ? 1.2 : 1})`,
-        opacity: isHovered ? 1 : 0.8
+        transform: `translate(-50%, -100%) scale(${isHovered ? 1.2 : 1})`,
+        opacity: isHovered ? 1 : 0.9
       }}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      <div className="relative flex items-center justify-center cursor-pointer group">
-        {/* Simple Numbered Circle */}
-        <div className={`w-8 h-8 rounded-full shadow-lg border-2 border-white flex items-center justify-center font-black text-xs text-white transition-all duration-300
-                    ${viewType === 'architectural' ? 'bg-slate-700 hover:bg-slate-800' : 'bg-blue-600 hover:bg-blue-700'}
-                    ${isHovered ? 'ring-4 ring-blue-500/30' : ''}`}>
-          {hotspot.number}
+      <div className="relative flex flex-col items-center cursor-pointer group">
+        {/* Drop Pin UI */}
+        <div className="relative flex items-center justify-center">
+          {/* Custom SVG Pin */}
+          <svg
+            width="32"
+            height="40"
+            viewBox="0 0 32 40"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+            className={`drop-shadow-md transition-all duration-300 ${viewType === 'architectural' ? 'text-slate-700' : 'text-blue-600'} ${isHovered ? 'filter drop-shadow-xl scale-110' : ''}`}
+          >
+            <path
+              d="M16 0C7.16344 0 0 7.16344 0 16C0 24.8366 16 40 16 40C16 40 32 24.8366 32 16C32 7.16344 24.8366 0 16 0Z"
+              fill="currentColor"
+            />
+            <circle cx="16" cy="16" r="11" fill="white" />
+          </svg>
+
+          {/* Number inside the pin circle */}
+          <span className={`absolute top-[7px] left-1/2 -translate-x-1/2 font-black text-[10px] transition-colors duration-300 ${viewType === 'architectural' ? 'text-slate-800' : 'text-blue-700'}`}>
+            {hotspot.number}
+          </span>
         </div>
 
         {/* Edit/Delete Icons on Hover */}
         {isHovered && (
-          <div className="absolute -top-10 left-1/2 -translate-x-1/2 flex items-center gap-1.5 p-1 bg-white rounded-xl shadow-2xl border border-slate-200 animate-in fade-in zoom-in slide-in-from-bottom-2">
+          <div className="absolute -top-12 left-1/2 -translate-x-1/2 flex items-center gap-1.5 p-1 bg-white rounded-xl shadow-2xl border border-slate-200 animate-in fade-in zoom-in slide-in-from-bottom-2">
             <Button
               size="icon"
               variant="ghost"
@@ -2178,19 +2195,31 @@ export default function TempleArchitectureAdmin() {
               </div>
             ) : (
               <div className="space-y-8 max-w-4xl mx-auto">
-                {/* Editing Header */}
-                <div className="flex items-center justify-between sticky top-20 z-40 bg-[#F9F6F0]/80 backdrop-blur-md py-4">
-                  <div className="flex items-center gap-4">
-                    <Button variant="outline" size="icon" onClick={() => setSelectedHotspot(null)} className="rounded-xl">
-                      <ChevronLeft className="w-4 h-4" />
-                    </Button>
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-2xl bg-blue-900 text-white flex items-center justify-center font-black text-lg">
-                        {selectedHotspot.number}
+                {/* Editing Header (Redesigned to match main nav) */}
+                <div className="sticky top-0 z-50 py-4 -mx-6 px-6 bg-[#F9F6F0]/80 backdrop-blur-md">
+                  <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row items-center justify-between gap-6 max-w-4xl mx-auto">
+                    <div className="flex items-center gap-4">
+                      <Button
+                        variant="ghost"
+                        onClick={() => setSelectedHotspot(null)}
+                        className="rounded-xl hover:bg-slate-50 text-slate-500 font-bold"
+                      >
+                        <LucideIcons.ArrowLeft className="w-4 h-4 mr-2" />
+                        Back to List
+                      </Button>
+                      <div className="w-px h-8 bg-slate-100" />
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-2xl bg-blue-900 text-white flex items-center justify-center font-black text-lg shadow-lg shadow-blue-900/10">
+                          {selectedHotspot.number}
+                        </div>
+                        <h2 className="text-xl font-serif font-bold text-primary truncate max-w-[200px] md:max-w-sm">
+                          {selectedHotspot.title || `Edit Sthana #${selectedHotspot.number}`}
+                        </h2>
                       </div>
-                      <h2 className="text-2xl font-serif font-bold text-primary truncate max-w-sm">
-                        {selectedHotspot.title || `Edit Sthana #${selectedHotspot.number}`}
-                      </h2>
+                    </div>
+                    <div className="hidden md:flex items-center gap-3 pr-2">
+                      <div className="w-1.5 h-6 bg-slate-200 rounded-full" />
+                      <span className="text-xs font-black uppercase tracking-widest text-slate-400">sthana details</span>
                     </div>
                   </div>
                 </div>
