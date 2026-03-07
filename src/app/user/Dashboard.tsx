@@ -21,20 +21,23 @@ const Dashboard = () => {
         <div className="w-full min-h-full flex-1 ">
             <div className="max-w-md mx-auto lg:max-w-4xl px-4 lg:px-6 space-y-8 animate-in fade-in duration-500">
 
-                {/* Top Bar */}
-                <div className="relative flex items-center justify-center py-4 md:py-6">
-                    <div className="absolute left-0 w-16 h-16 md:w-20 md:h-20 bg-white rounded-full flex flex-shrink-0 items-center justify-center shadow-sm p-1 z-10">
-                        <img src="/icons/Main logo.svg" alt="Logo" className="w-full h-full object-contain opacity-100" />
-                    </div>
-                    <h1 className="text-2xl md:text-3xl font-heading font-bold text-[#0f3c6e] pl-16 md:pl-0">Panchajanya</h1>
+                {/* Top Bar - Homepage Logo Header */}
+                <div className="flex flex-col items-center justify-center pt-6 pb-2 md:pt-8 md:pb-4 w-full cursor-default">
+                    <img
+                        src="/icons/Homepage logo.svg"
+                        alt="Panchajanya Homepage Logo"
+                        className="h-16 md:h-20 lg:h-24 w-auto max-w-[85%] object-contain drop-shadow-[0_4px_12px_rgba(15,60,110,0.15)] transition-transform duration-500 ease-out hover:scale-[1.02]"
+                    />
                 </div>
 
                 {/* Greeting Section */}
-                <div className="space-y-2 mt-4 lg:mt-0 text-left">
-                    <h1 className="text-3xl lg:text-4xl font-heading font-bold text-[#0f3c6e]">
-                        {userName}
-                    </h1>
-                    <p className="text-amber-600 italic text-center font-medium font-serif text-lg">
+                <div className="flex flex-col items-center space-y-1 mb-4 lg:mb-6">
+                    {userName && (
+                        <h1 className="text-2xl lg:text-3xl font-heading font-bold text-[#0f3c6e]">
+                            {userName}
+                        </h1>
+                    )}
+                    <p className="text-[#D97706] italic font-medium font-serif text-lg tracking-wide">
                         Jai Shri Chakradhar
                     </p>
                 </div>
