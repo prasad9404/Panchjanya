@@ -29,7 +29,7 @@ import {
 import { useToast } from "@/shared/hooks/use-toast";
 import { Badge } from "@/shared/components/ui/badge";
 import { SthanTypeManager } from "@/shared/components/admin/SthanTypeManager";
-import { getSthanTypes } from "@/shared/utils/sthanTypes";
+import { getSthanTypes, AVATAR_TYPES } from "@/shared/utils/sthanTypes";
 import { SthanType } from "@/shared/types/sthanType";
 
 export default function SthanaDirectory() {
@@ -41,6 +41,7 @@ export default function SthanaDirectory() {
     const [selectedDistrict, setSelectedDistrict] = useState<string>("District");
     const [selectedTaluka, setSelectedTaluka] = useState<string>("Taluka");
     const [selectedSthan, setSelectedSthan] = useState<string>("Sthan Type");
+    const [selectedAvatar, setSelectedAvatar] = useState<string>("Avatar Type");
     const [sthanTypes, setSthanTypes] = useState<SthanType[]>([]);
 
     const navigate = useNavigate();
@@ -138,9 +139,12 @@ export default function SthanaDirectory() {
         const matchesDistrict = selectedDistrict === "District" || t.district === selectedDistrict;
         const matchesTaluka = selectedTaluka === "Taluka" || t.taluka === selectedTaluka;
         const matchesSthan = selectedSthan === "Sthan Type" || t.sthan === selectedSthan;
-        // const matchesStatus = ... (Implement when status field exists)
 
-        return matchesSearch && matchesDistrict && matchesTaluka && matchesSthan;
+        // Avatar type filter: look up the sthan type record to get its avatarType
+        const sthanTypeRecord = sthanTypes.find(st => st.name === t.sthan);
+        const matchesAvatar = selectedAvatar === "Avatar Type" || sthanTypeRecord?.avatarType === selectedAvatar;
+
+        return matchesSearch && matchesDistrict && matchesTaluka && matchesSthan && matchesAvatar;
     });
 
     const formatDate = (date: Date) => {
@@ -251,6 +255,24 @@ export default function SthanaDirectory() {
                             </DropdownMenu>
 
 
+                            {/* Avatar Type Filter */}
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="outline" className="h-12 px-4 rounded-xl border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-bold min-w-[130px] justify-between">
+                                        {selectedAvatar === "Avatar Type" ? "Avatar" : selectedAvatar.split("–")[0].trim()}
+                                        <ChevronDown className="w-4 h-4 ml-2 opacity-50" />
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="w-[240px] max-h-[320px] overflow-y-auto">
+                                    <DropdownMenuItem onClick={() => setSelectedAvatar("Avatar Type")} className="font-bold cursor-pointer">All Avatars</DropdownMenuItem>
+                                    {AVATAR_TYPES.map(a => (
+                                        <DropdownMenuItem key={a.id} onClick={() => setSelectedAvatar(a.label)} className="cursor-pointer">
+                                            {a.label}
+                                        </DropdownMenuItem>
+                                    ))}
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+
                             {/* Sthan Type Filter */}
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
@@ -261,12 +283,18 @@ export default function SthanaDirectory() {
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end">
                                     <DropdownMenuItem onClick={() => setSelectedSthan("Sthan Type")} className="font-bold cursor-pointer">All Types</DropdownMenuItem>
-                                    {sthanTypes.map(st => (
-                                        <DropdownMenuItem key={st.id} onClick={() => setSelectedSthan(st.name)} className="cursor-pointer">
-                                            <div className="w-3 h-3 rounded mr-2" style={{ backgroundColor: st.color }} />
-                                            {st.name}
-                                        </DropdownMenuItem>
-                                    ))}
+                                    {sthanTypes
+                                        .filter(st => {
+                                            if (selectedAvatar === "Avatar Type") return true;
+                                            // Ensure we match the group or the label if needed, but usually label is what's stored
+                                            return st.avatarType === selectedAvatar;
+                                        })
+                                        .map(st => (
+                                            <DropdownMenuItem key={st.id} onClick={() => setSelectedSthan(st.name)} className="cursor-pointer">
+                                                <div className="w-2.5 h-2.5 rounded-full mr-2.5 shrink-0" style={{ backgroundColor: st.color }} />
+                                                <span className="truncate">{st.name}</span>
+                                            </DropdownMenuItem>
+                                        ))}
                                 </DropdownMenuContent>
                             </DropdownMenu>
                         </div>
@@ -331,18 +359,20 @@ export default function SthanaDirectory() {
                                         {/* Sthan Type Badge */}
                                         {temple.sthan && (
                                             <div className="mb-2">
-                                                <span
-                                                    className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide"
-                                                    style={{
-                                                        backgroundColor: temple.sthan === 'Avasthan' ? '#D4AF37' :
-                                                            temple.sthan === 'Asan' ? '#0E3C6F' :
-                                                                temple.sthan === 'Vasti' ? '#228B22' :
-                                                                    temple.sthan === 'Mandalik' ? '#6A0DAD' : '#94a3b8',
-                                                        color: 'white'
-                                                    }}
-                                                >
-                                                    {temple.sthan}
-                                                </span>
+                                                {(() => {
+                                                    const typeInfo = sthanTypes.find(st => st.name === temple.sthan);
+                                                    return (
+                                                        <span
+                                                            className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide"
+                                                            style={{
+                                                                backgroundColor: typeInfo?.color || '#94a3b8',
+                                                                color: 'white'
+                                                            }}
+                                                        >
+                                                            {temple.sthan}
+                                                        </span>
+                                                    );
+                                                })()}
                                             </div>
                                         )}
 

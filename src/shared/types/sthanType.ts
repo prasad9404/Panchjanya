@@ -7,6 +7,7 @@ export interface SthanType {
     color: string;
     order: number;
     pinType?: PinType;
+    avatarType?: string;
     createdAt: string;
     updatedAt: string;
 }
@@ -16,6 +17,7 @@ export interface CreateSthanTypeInput {
     color: string;
     order: number;
     pinType?: PinType;
+    avatarType?: string;
 }
 
 export interface UpdateSthanTypeInput {
@@ -23,4 +25,5 @@ export interface UpdateSthanTypeInput {
     color?: string;
     order?: number;
     pinType?: PinType;
+    avatarType?: string;
 }

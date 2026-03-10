@@ -18,7 +18,7 @@ import { useLanguage } from "@/shared/contexts/LanguageContext";
 import { useAuth } from "@/auth/AuthContext";
 import { cn } from "@/shared/lib/utils";
 import DataTableFilter from "@/shared/components/ui/data-table-filter";
-import { getSthanTypes, getSthanPinInfo } from "@/shared/utils/sthanTypes";
+import { getSthanTypes, getSthanPinInfo, AVATAR_TYPES } from "@/shared/utils/sthanTypes";
 import { SthanType } from "@/shared/types/sthanType";
 
 
@@ -268,11 +268,13 @@ const Explore = () => {
     const [pendingDistrict, setPendingDistrict] = useState<string>("");
     const [pendingTaluka, setPendingTaluka] = useState<string>("");
     const [pendingSthanaType, setPendingSthanaType] = useState<string>("");
+    const [pendingAvatarType, setPendingAvatarType] = useState<string>("");
 
     // Applied states (for Firestore query and results)
     const [appliedDistrict, setAppliedDistrict] = useState<string>("");
     const [appliedTaluka, setAppliedTaluka] = useState<string>("");
     const [appliedSthanaType, setAppliedSthanaType] = useState<string>("");
+    const [appliedAvatarType, setAppliedAvatarType] = useState<string>("");
 
     const navigate = useNavigate();
     const { t } = useLanguage();
@@ -445,17 +447,19 @@ const Explore = () => {
             label: `${t} (${allTemplesForOptions.filter(curr => curr.taluka === t && (!pendingDistrict || curr.district === pendingDistrict)).length})`
         }));
 
-    // 4. Dynamic Sthana Category Options from Database
-    const sthanaOptions = sthanTypes.map(st => {
-        const count = allTemplesForOptions.filter(t => {
-            const templeSthan = (t as any).sthan || t.sthana || "";
-            return templeSthan.toLowerCase().includes(st.name.toLowerCase());
-        }).length;
-        return {
-            value: st.name,
-            label: `${st.name} (${count})`
-        };
-    });
+    // 4. Dynamic Sthana Category Options — filtered by applied avatar type if set
+    const sthanaOptions = sthanTypes
+        .filter(st => !appliedAvatarType || st.avatarType === appliedAvatarType)
+        .map(st => {
+            const count = allTemplesForOptions.filter(t => {
+                const templeSthan = (t as any).sthan || t.sthana || "";
+                return templeSthan.toLowerCase().includes(st.name.toLowerCase());
+            }).length;
+            return {
+                value: st.name,
+                label: `${st.name} (${count})`
+            };
+        });
 
     // Client-side filtering for Search and Sthana Category (Substring matches)
     const filteredTemples = useMemo(() => {
@@ -472,17 +476,21 @@ const Explore = () => {
                 (temple.description && temple.description.toLowerCase().includes(appliedSthanaType.toLowerCase()))
             );
 
-            return matchesSearch && matchesSthana;
-        });
-    }, [temples, searchQuery, appliedSthanaType]);
+            // Avatar type filter: look up the sthan type record for this temple
+            const sthanTypeRecord = sthanTypes.find(st => st.name === (temple as any).sthan || st.name === temple.sthana);
+            const matchesAvatar = !appliedAvatarType || sthanTypeRecord?.avatarType === appliedAvatarType;
 
-    const activeFiltersCount = (appliedDistrict ? 1 : 0) + (appliedTaluka ? 1 : 0) + (appliedSthanaType ? 1 : 0);
+            return matchesSearch && matchesSthana && matchesAvatar;
+        });
+    }, [temples, searchQuery, appliedSthanaType, appliedAvatarType, sthanTypes]);
+
+    const activeFiltersCount = (appliedDistrict ? 1 : 0) + (appliedTaluka ? 1 : 0) + (appliedSthanaType ? 1 : 0) + (appliedAvatarType ? 1 : 0);
 
     const handleApplyFilters = () => {
-        console.log("🎯 Applying Filters to Database:", { pendingDistrict, pendingTaluka, pendingSthanaType });
         setAppliedDistrict(pendingDistrict);
         setAppliedTaluka(pendingTaluka);
         setAppliedSthanaType(pendingSthanaType);
+        setAppliedAvatarType(pendingAvatarType);
         setShowFilters(false);
     };
 
@@ -490,9 +498,11 @@ const Explore = () => {
         setPendingDistrict("");
         setPendingTaluka("");
         setPendingSthanaType("");
+        setPendingAvatarType("");
         setAppliedDistrict("");
         setAppliedTaluka("");
         setAppliedSthanaType("");
+        setAppliedAvatarType("");
     };
 
     return (
@@ -629,6 +639,21 @@ const Explore = () => {
                                         className="w-full bg-background border-border h-9 text-xs"
                                     />
                                 </div>
+                            </div>
+
+                            {/* Avatar Type Filter */}
+                            <div className="pt-1">
+                                <label className="block text-[11px] font-bold text-muted-foreground mb-1.5 uppercase tracking-wider px-1">Avatar Type</label>
+                                <DataTableFilter
+                                    label="All Avatars"
+                                    options={AVATAR_TYPES.map(a => ({ value: a.label, label: a.label }))}
+                                    selectedValues={pendingAvatarType ? [pendingAvatarType] : []}
+                                    onChange={(values) => {
+                                        setPendingAvatarType(values[0] || "");
+                                        setPendingSthanaType("");
+                                    }}
+                                    className="w-full bg-background border-border h-9 text-xs"
+                                />
                             </div>
 
                             {/* Sthana Row */}

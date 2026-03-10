@@ -11,7 +11,7 @@ import { useToast } from "@/shared/hooks/use-toast";
 import { ArrowLeft, Save, ExternalLink } from "lucide-react";
 import { useAuth } from "@/auth/AuthContext";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/components/ui/select";
-import { getSthanTypes } from "@/shared/utils/sthanTypes";
+import { getSthanTypes, AVATAR_TYPES } from "@/shared/utils/sthanTypes";
 import { SthanType } from "@/shared/types/sthanType";
 
 interface TempleFormProps {
@@ -35,6 +35,7 @@ export default function TempleForm({ templeId }: TempleFormProps) {
     const [taluka, setTaluka] = useState("");
     const [district, setDistrict] = useState("");
     const [sthan, setSthan] = useState("");
+    const [avatarTypeFilter, setAvatarTypeFilter] = useState("");
 
     // ── Location ──
     const [latitude, setLatitude] = useState("");
@@ -307,21 +308,45 @@ export default function TempleForm({ templeId }: TempleFormProps) {
                                 </div>
                             </div>
 
-                            {/* Sthan Type */}
-                            <div className="space-y-2">
-                                <Label className="text-sm font-semibold text-slate-700">Sthan Type *</Label>
-                                <Select value={sthan} onValueChange={setSthan} required>
-                                    <SelectTrigger className="h-12 rounded-xl border-slate-200">
-                                        <SelectValue placeholder="Select Sthan Type" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {sthanTypes.map((st) => (
-                                            <SelectItem key={st.id} value={st.name}>
-                                                {st.name}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
+                            {/* Avatar Type Filter + Sthan Type */}
+                            <div className="space-y-4">
+                                <div className="space-y-2">
+                                    <Label className="text-sm font-semibold text-slate-700">Avatar Type <span className="text-slate-400 font-normal">(filter)</span></Label>
+                                    <Select value={avatarTypeFilter || '__all__'} onValueChange={(v) => { setAvatarTypeFilter(v === '__all__' ? '' : v); setSthan(""); }}>
+                                        <SelectTrigger className="h-12 rounded-xl border-slate-200">
+                                            <SelectValue placeholder="— All Avatars —" />
+                                        </SelectTrigger>
+                                        <SelectContent className="max-h-72">
+                                            <SelectItem value="__all__">— All Avatars —</SelectItem>
+                                            {AVATAR_TYPES.map((a) => (
+                                                <SelectItem key={a.id} value={a.label}>{a.label}</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label className="text-sm font-semibold text-slate-700">Sthan Type *</Label>
+                                    <Select value={sthan} onValueChange={setSthan} required>
+                                        <SelectTrigger className="h-12 rounded-xl border-slate-200 bg-white">
+                                            <SelectValue placeholder="Select Sthan Type" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {sthanTypes
+                                                .filter(st => !avatarTypeFilter || st.avatarType === avatarTypeFilter)
+                                                .map((st) => (
+                                                    <SelectItem key={st.id} value={st.name}>
+                                                        <div className="flex items-center gap-2">
+                                                            <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: st.color }} />
+                                                            <span>{st.name}</span>
+                                                        </div>
+                                                    </SelectItem>
+                                                ))}
+                                            {sthanTypes.filter(st => !avatarTypeFilter || st.avatarType === avatarTypeFilter).length === 0 && (
+                                                <div className="px-3 py-2 text-sm text-slate-400 italic font-medium">No types available for this avatar</div>
+                                            )}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
                             </div>
                         </div>
                     </div>
