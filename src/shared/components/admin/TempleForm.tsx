@@ -13,6 +13,7 @@ import { useAuth } from "@/auth/AuthContext";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/components/ui/select";
 import { getSthanTypes, AVATAR_TYPES } from "@/shared/utils/sthanTypes";
 import { SthanType } from "@/shared/types/sthanType";
+import { Switch } from "@/shared/components/ui/switch";
 
 interface TempleFormProps {
     templeId?: string;
@@ -41,6 +42,10 @@ export default function TempleForm({ templeId }: TempleFormProps) {
     const [latitude, setLatitude] = useState("");
     const [longitude, setLongitude] = useState("");
     const [locationLink, setLocationLink] = useState("");
+
+    // ── Administration ──
+    const [isVerified, setIsVerified] = useState(false);
+    const [isComplete, setIsComplete] = useState(false);
 
     // Load sthan types
     useEffect(() => {
@@ -80,6 +85,8 @@ export default function TempleForm({ templeId }: TempleFormProps) {
                     setLatitude(String(data.latitude ?? data.location?.lat ?? ""));
                     setLongitude(String(data.longitude ?? data.location?.lng ?? ""));
                     setLocationLink(data.locationLink || "");
+                    setIsVerified(data.isVerified || false);
+                    setIsComplete(data.isComplete || false);
                 } else {
                     toast({ title: "Error", description: "Temple not found", variant: "destructive" });
                     navigate("/admin/dashboard");
@@ -123,6 +130,8 @@ export default function TempleForm({ templeId }: TempleFormProps) {
                 locationLink,
                 updatedAt: new Date().toISOString(),
                 updatedBy: user.uid,
+                isVerified,
+                isComplete,
             };
 
             const method = templeId ? "PUT" : "POST";
@@ -407,6 +416,40 @@ export default function TempleForm({ templeId }: TempleFormProps) {
                                         className="h-12 pl-10 rounded-xl border-slate-200 focus:border-blue-500 focus:ring-blue-500"
                                     />
                                     <ExternalLink className="absolute left-3.5 top-3.5 w-4 h-4 text-slate-400 group-focus-within:text-blue-500 transition-colors" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* ── 3. Administration ── */}
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
+                        <div>
+                            <h2 className="text-xl font-bold text-slate-900">Administration</h2>
+                            <p className="mt-2 text-sm leading-relaxed text-slate-500 font-medium">
+                                Manually manage the verification and completion status of this sthana.
+                            </p>
+                        </div>
+                        <div className="lg:col-span-2 space-y-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="flex items-center justify-between p-4 bg-white rounded-xl border border-slate-200">
+                                    <div className="space-y-0.5">
+                                        <Label className="text-base font-bold text-slate-900">Verified Status</Label>
+                                        <p className="text-sm text-slate-500">Mark as verified.</p>
+                                    </div>
+                                    <Switch
+                                        checked={isVerified}
+                                        onCheckedChange={setIsVerified}
+                                    />
+                                </div>
+                                <div className="flex items-center justify-between p-4 bg-white rounded-xl border border-slate-200">
+                                    <div className="space-y-0.5">
+                                        <Label className="text-base font-bold text-slate-900">Data Completion</Label>
+                                        <p className="text-sm text-slate-500">Mark as complete.</p>
+                                    </div>
+                                    <Switch
+                                        checked={isComplete}
+                                        onCheckedChange={setIsComplete}
+                                    />
                                 </div>
                             </div>
                         </div>

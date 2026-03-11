@@ -1,5 +1,6 @@
-// src/components/admin/SthanTypeManager.tsx
-import { useState, useEffect } from 'react';
+"use client";
+
+import { useState, useEffect, useMemo } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/shared/components/ui/dialog';
 import { Button } from '@/shared/components/ui/button';
 import { Input } from '@/shared/components/ui/input';
@@ -21,12 +22,11 @@ export function SthanTypeManager() {
     const [loading, setLoading] = useState(false);
     const [editingId, setEditingId] = useState<string | null>(null);
 
-    // Form state
     const [name, setName] = useState('');
-    const [color, setColor] = useState(PIN_SERIES[0].defaultColor);
-    const [selectedSeriesId, setSelectedSeriesId] = useState<string>(PIN_SERIES[0].id);
-    const [pinType, setPinType] = useState<PinType>(`${PIN_SERIES[0].folder}/${PIN_SERIES[0].files[0]}`);
     const [avatarType, setAvatarType] = useState<string>('');
+    const [selectedSeriesId, setSelectedSeriesId] = useState<string>('');
+    const [pinType, setPinType] = useState<PinType>('');
+    const [color, setColor] = useState('#D4AF37');
 
     const { toast } = useToast();
 
@@ -52,12 +52,36 @@ export function SthanTypeManager() {
         }
     };
 
+    const handleAvatarChange = (id: string) => {
+        const val = id === '__none__' ? '' : id;
+        setAvatarType(val);
+
+        // Auto-select series based on avatar mapping
+        let seriesId = '';
+        if (val === 'shri-krishna') seriesId = '1';
+        else if (val === 'shri-dattatray') seriesId = '2';
+        else if (val === 'shri-chakrapani') seriesId = '3';
+        else if (val.startsWith('shri-govind')) seriesId = '4';
+        else if (val.startsWith('shri-chakradhar')) seriesId = '5';
+
+        if (seriesId) {
+            handleSeriesChange(seriesId);
+        } else {
+            // Reset series selection if no direct mapping
+            setSelectedSeriesId('');
+            setPinType('');
+        }
+    };
+
     const handleSeriesChange = (seriesId: string) => {
         const series = PIN_SERIES.find(s => s.id === seriesId);
         if (!series) return;
         setSelectedSeriesId(seriesId);
         setColor(series.defaultColor);
-        setPinType(`${series.folder}/${series.files[0]}`);
+        // Default to first pin in series
+        if (series.files.length > 0) {
+            setPinType(`${series.folder}/${series.files[0]}` as PinType);
+        }
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -67,6 +91,33 @@ export function SthanTypeManager() {
             toast({
                 title: 'Validation Error',
                 description: 'Please enter a sthan type name',
+                variant: 'destructive',
+            });
+            return;
+        }
+
+        if (!avatarType) {
+            toast({
+                title: 'Validation Error',
+                description: 'Please select an Avatar Type',
+                variant: 'destructive',
+            });
+            return;
+        }
+
+        if (!selectedSeriesId) {
+            toast({
+                title: 'Validation Error',
+                description: 'Please select a Pin Series',
+                variant: 'destructive',
+            });
+            return;
+        }
+
+        if (!pinType) {
+            toast({
+                title: 'Validation Error',
+                description: 'Please select a Pin Style',
                 variant: 'destructive',
             });
             return;
@@ -107,10 +158,11 @@ export function SthanTypeManager() {
         setName(type.name);
         setColor(type.color);
         setAvatarType(type.avatarType || '');
-        const pinTypePath = type.pinType || `${PIN_SERIES[0].folder}/${PIN_SERIES[0].files[0]}`;
-        setPinType(pinTypePath);
 
         // Find matching series for editing if it's a new style pin
+        const pinTypePath = type.pinType || '';
+        setPinType(pinTypePath as PinType);
+
         if (pinTypePath.startsWith('/icons/pins/')) {
             const series = PIN_SERIES.find(s => pinTypePath.includes(s.folder));
             if (series) setSelectedSeriesId(series.id);
@@ -175,11 +227,19 @@ export function SthanTypeManager() {
     const resetForm = () => {
         setEditingId(null);
         setName('');
-        setColor(PIN_SERIES[0].defaultColor);
-        setSelectedSeriesId(PIN_SERIES[0].id);
-        setPinType(`${PIN_SERIES[0].folder}/${PIN_SERIES[0].files[0]}`);
         setAvatarType('');
+        setSelectedSeriesId('');
+        setPinType('');
+        setColor('#D4AF37');
     };
+
+    const groupedAvatars = useMemo(() => {
+        return AVATAR_TYPES.reduce((acc, avatar) => {
+            if (!acc[avatar.group]) acc[avatar.group] = [];
+            acc[avatar.group].push(avatar);
+            return acc;
+        }, {} as Record<string, typeof AVATAR_TYPES>);
+    }, []);
 
     const selectedSeries = PIN_SERIES.find(s => s.id === selectedSeriesId);
 
@@ -191,7 +251,7 @@ export function SthanTypeManager() {
                     Manage Sthan Types
                 </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-3xl max-h-[90vh] p-0 overflow-hidden flex flex-col">
+            <DialogContent className="max-w-3xl max-h-[90vh] p-0 flex flex-col">
                 <DialogHeader className="p-6 pb-0">
                     <DialogTitle>Manage Sthan Types</DialogTitle>
                 </DialogHeader>
@@ -216,42 +276,40 @@ export function SthanTypeManager() {
                                 />
                             </div>
 
-                            {/* Row 2: Avatar Type */}
+                            {/* Row 2: Avatar Type Dropdown */}
                             <div className="space-y-2">
-                                <Label htmlFor="avatarType">
-                                    Avatar Type
-                                    <span className="ml-1.5 text-slate-400 font-normal text-xs">(deity classification)</span>
-                                </Label>
-                                <Select value={avatarType || '__none__'} onValueChange={(v) => setAvatarType(v === '__none__' ? '' : v)}>
-                                    <SelectTrigger id="avatarType" className="w-full bg-white">
+                                <Label htmlFor="avatarType" className="text-sm font-bold text-slate-700">Avatar Type *</Label>
+                                <Select value={avatarType || '__none__'} onValueChange={handleAvatarChange}>
+                                    <SelectTrigger 
+                                        id="avatarType" 
+                                        className="w-full bg-white h-12 rounded-xl border-slate-200 focus:ring-blue-500"
+                                    >
                                         <SelectValue placeholder="— Select Avatar —" />
                                     </SelectTrigger>
-                                    <SelectContent className="max-h-72 z-[100]">
+                                    <SelectContent className="max-h-72 z-[1100] rounded-xl border-slate-200 shadow-xl">
                                         <SelectItem value="__none__">— None —</SelectItem>
-                                        {(AVATAR_TYPES || []).length > 0 && Array.from(new Set(AVATAR_TYPES.map(a => a.group))).map(group => (
-                                            <SelectGroup key={group}>
-                                                <SelectLabel className="px-2 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400 select-none">
-                                                    {group}
-                                                </SelectLabel>
-                                                {AVATAR_TYPES.filter(a => a.group === group).map(a => (
-                                                    <SelectItem key={a.id} value={a.label}>
-                                                        {a.label}
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectGroup>
+                                        {AVATAR_TYPES.map(a => (
+                                            <SelectItem key={a.id} value={a.id} className="cursor-pointer focus:bg-slate-50 rounded-lg m-1">
+                                                <span className="font-semibold text-sm pl-2">{a.label}</span>
+                                            </SelectItem>
                                         ))}
                                     </SelectContent>
                                 </Select>
                             </div>
 
-                            {/* Row 3: Pin Series Dropdown */}
+                            {/* Row 3: Pin Series Dropdown (Dependent) */}
                             <div className="space-y-2">
                                 <Label htmlFor="pinSeries" className="text-sm font-bold text-slate-700">Pin Series *</Label>
-                                <Select value={selectedSeriesId} onValueChange={handleSeriesChange}>
-                                    <SelectTrigger id="pinSeries" className="w-full bg-white h-12 rounded-xl border-slate-200 focus:ring-blue-500">
+                                <Select 
+                                    key={`series-${avatarType}`}
+                                    value={selectedSeriesId} 
+                                    onValueChange={handleSeriesChange}
+                                    disabled={!avatarType}
+                                >
+                                    <SelectTrigger id="pinSeries" className="w-full bg-white h-12 rounded-xl border-slate-200 focus:ring-blue-500 disabled:bg-slate-50 disabled:opacity-50">
                                         <SelectValue placeholder="Select a pin series" />
                                     </SelectTrigger>
-                                    <SelectContent className="max-h-72 z-[100] rounded-xl border-slate-200 shadow-xl">
+                                    <SelectContent className="max-h-[500px] z-[1100] rounded-xl border-slate-200 shadow-xl">
                                         {(PIN_SERIES || []).map(series => (
                                             <SelectItem key={series.id} value={series.id} className="cursor-pointer focus:bg-slate-50 rounded-lg m-1">
                                                 <div className="flex items-center gap-3">
@@ -273,11 +331,45 @@ export function SthanTypeManager() {
                                 </Select>
                             </div>
 
-                            {/* Row 4: Pin Style (from selected series) */}
+                            {/* Row 4: Pin Type Dropdown (Dependent) */}
+                            <div className="space-y-2">
+                                <Label htmlFor="pinType" className="text-sm font-bold text-slate-700">Pin Type *</Label>
+                                <Select 
+                                    key={`pin-${selectedSeriesId}`}
+                                    value={pinType} 
+                                    onValueChange={(v) => setPinType(v as PinType)}
+                                    disabled={!selectedSeriesId}
+                                >
+                                    <SelectTrigger id="pinType" className="w-full bg-white h-12 rounded-xl border-slate-200 focus:ring-blue-500 disabled:bg-slate-50 disabled:opacity-50">
+                                        <SelectValue placeholder="Select Pin Type" />
+                                    </SelectTrigger>
+                                    <SelectContent className="max-h-[500px] z-[100] rounded-xl border-slate-200 shadow-xl">
+                                        {selectedSeries?.files.map(file => {
+                                            const fullPath = `${selectedSeries.folder}/${file}`;
+                                            return (
+                                                <SelectItem key={file} value={fullPath} className="cursor-pointer focus:bg-slate-50 rounded-lg m-1">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center border border-slate-100 p-1 shrink-0">
+                                                            <img
+                                                                src={fullPath}
+                                                                alt=""
+                                                                className="w-full h-full object-contain"
+                                                            />
+                                                        </div>
+                                                        <span className="font-semibold text-sm">{file}</span>
+                                                    </div>
+                                                </SelectItem>
+                                            );
+                                        })}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+
+                            {/* Row 5: Style Selection Grid (Visual Preview) */}
                             {selectedSeries && (
                                 <div className="space-y-3 animate-in fade-in slide-in-from-top-2 duration-300">
                                     <div className="flex items-center justify-between px-1">
-                                        <Label className="text-sm font-bold text-slate-700">Select Style</Label>
+                                        <Label className="text-sm font-bold text-slate-700">Visual Selector</Label>
                                         <span className="text-[10px] font-black uppercase tracking-widest text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">
                                             {selectedSeries.files.length} Styles
                                         </span>
@@ -290,7 +382,7 @@ export function SthanTypeManager() {
                                                 <button
                                                     key={file}
                                                     type="button"
-                                                    onClick={() => setPinType(fullPath)}
+                                                    onClick={() => setPinType(fullPath as PinType)}
                                                     className={`group relative flex flex-col items-center gap-2 p-2.5 rounded-xl border-2 transition-all ${isSelected
                                                         ? 'border-blue-500 bg-blue-50/50 shadow-md scale-105 z-10'
                                                         : 'border-slate-100 hover:border-slate-200 hover:bg-slate-50 active:scale-95'

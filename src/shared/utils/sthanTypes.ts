@@ -67,21 +67,21 @@ export const PIN_SERIES = [
         name: 'Series 7',
         folder: '/icons/pins/7',
         defaultColor: '#6366F1',
-        files: ['7.1.svg', '7.2.svg', '7.3.svg', '7.4.svg', '7.5.svg', '7.svg']
+        files: ['7.svg', '7.1.svg', '7.2.svg', '7.3.svg', '7.4.svg', '7.5.svg']
     },
     {
         id: '8',
         name: 'Series 8',
         folder: '/icons/pins/8',
         defaultColor: '#14B8A6',
-        files: ['8.1.svg', '8.2.svg', '8.3.svg', '8.4.svg', '8.5.svg', '8.png']
+        files: ['8.svg', '8.1.svg', '8.2.svg', '8.3.svg', '8.4.svg', '8.5.svg']
     },
     {
         id: '9',
         name: 'Series 9',
         folder: '/icons/pins/9',
         defaultColor: '#F97316',
-        files: ['9.1.svg', '9.2.svg', '9.3.svg', '9.4.svg', '9.5.svg', '9.png']
+        files: ['9.svg', '9.1.svg', '9.2.svg', '9.3.svg', '9.4.svg', '9.5.svg']
     }
 ];
 

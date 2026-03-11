@@ -209,6 +209,8 @@ export default function TempleArchitectureAdmin() {
   const [sthanTypes, setSthanTypes] = useState<SthanType[]>([]);
   const [avatarTypeFilter, setAvatarTypeFilter] = useState("");
   const [selectedHotspot, setSelectedHotspot] = useState<Hotspot | null>(null);
+  const [isVerified, setIsVerified] = useState(false);
+  const [isComplete, setIsComplete] = useState(false);
 
   const [repositioningId, setRepositioningId] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
@@ -307,6 +309,8 @@ export default function TempleArchitectureAdmin() {
           setContactName(data.contactName || "");
           setContactNumber(data.contactNumber || "");
           setSthan(data.sthan || "");
+          setIsVerified(data.isVerified || false);
+          setIsComplete(data.isComplete || false);
 
           if (presentHotspotsData.length > 0) {
             setPresentHotspots(presentHotspotsData);
@@ -475,6 +479,8 @@ export default function TempleArchitectureAdmin() {
       contactName,
       contactNumber,
       sthan,
+      isVerified,
+      isComplete,
       hotspots: archHotspots,
       // present_hotspots is handled exclusively via subcollection for isolation
       // present_hotspots: presentHotspots, 
@@ -1029,14 +1035,52 @@ export default function TempleArchitectureAdmin() {
         {/* Step 1: Sthan Info */}
         {currentStep === 'sthan-info' && (
           <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 pb-32">
-            <div className="flex items-center justify-between mb-10">
-              <div className="space-y-1">
-                <h1 className="text-3xl font-serif font-bold text-primary tracking-tight">Temple Configuration</h1>
-                <p className="text-sm text-slate-500 font-medium">Configure primary metadata and descriptive content blocks.</p>
+            <div className="flex flex-col gap-6 mb-10">
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <h1 className="text-3xl font-serif font-bold text-primary tracking-tight">Temple Configuration</h1>
+                  <p className="text-sm text-slate-500 font-medium">Configure primary metadata and descriptive content blocks.</p>
+                </div>
+                <Button onClick={saveTempleDetails} className="bg-blue-900 text-white hover:bg-blue-800 rounded-xl px-8 h-12 shadow-lg shadow-blue-900/20">
+                  <Save className="w-4 h-4 mr-2" /> Save Changes
+                </Button>
               </div>
-              <Button onClick={saveTempleDetails} className="bg-blue-900 text-white hover:bg-blue-800 rounded-xl px-8 h-12 shadow-lg shadow-blue-900/20">
-                <Save className="w-4 h-4 mr-2" /> Save Changes
-              </Button>
+
+              {/* Status Control Bar */}
+              <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-wrap items-center gap-6">
+                <div className="flex items-center gap-2 pr-4 border-r border-slate-100">
+                  <LucideIcons.ShieldCheck className="w-5 h-5 text-blue-600" />
+                  <span className="text-xs font-black uppercase tracking-widest text-slate-400">Status Control</span>
+                </div>
+                
+                <div className="flex items-center gap-3">
+                  <div className="space-y-0.5">
+                    <Label className="text-sm font-bold text-slate-900 text-nowrap">Verified Sthan</Label>
+                  </div>
+                  <Switch
+                    checked={isVerified}
+                    onCheckedChange={setIsVerified}
+                  />
+                </div>
+
+                <div className="w-px h-6 bg-slate-100 hidden md:block" />
+
+                <div className="flex items-center gap-3">
+                  <div className="space-y-0.5">
+                    <Label className="text-sm font-bold text-slate-900 text-nowrap">Data Complete</Label>
+                  </div>
+                  <Switch
+                    checked={isComplete}
+                    onCheckedChange={setIsComplete}
+                  />
+                </div>
+
+                <div className="hidden lg:flex flex-1 justify-end">
+                  <p className="text-[10px] text-slate-400 font-medium italic">
+                    ℹ️ Manual overrides for sthana verification and completion status.
+                  </p>
+                </div>
+              </div>
             </div>
 
             <div className="space-y-12">

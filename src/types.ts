@@ -92,9 +92,10 @@ export interface Temple {
     hotspots?: Hotspot[];
     presentHotspots?: Hotspot[];
     present_hotspots?: Hotspot[];
-    createdAt?: any;
     updatedAt?: any;
     is_published?: boolean;
+    isVerified?: boolean;
+    isComplete?: boolean;
 }
 
 export interface YatraPlace {

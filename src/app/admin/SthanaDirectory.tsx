@@ -42,6 +42,7 @@ export default function SthanaDirectory() {
     const [selectedTaluka, setSelectedTaluka] = useState<string>("Taluka");
     const [selectedSthan, setSelectedSthan] = useState<string>("Sthan Type");
     const [selectedAvatar, setSelectedAvatar] = useState<string>("Avatar Type");
+    const [selectedStatus, setSelectedStatus] = useState<string>("Status");
     const [sthanTypes, setSthanTypes] = useState<SthanType[]>([]);
 
     const navigate = useNavigate();
@@ -144,7 +145,24 @@ export default function SthanaDirectory() {
         const sthanTypeRecord = sthanTypes.find(st => st.name === t.sthan);
         const matchesAvatar = selectedAvatar === "Avatar Type" || sthanTypeRecord?.avatarType === selectedAvatar;
 
-        return matchesSearch && matchesDistrict && matchesTaluka && matchesSthan && matchesAvatar;
+        // Status filter logic
+        const matchesStatus = (() => {
+            if (selectedStatus === "Status") return true;
+            
+            // Heuristic for Complete vs Draft
+            const isBasicComplete = t.name && t.sthan && t.district;
+            const hasContent = (t.images && t.images.length > 0) || (t.hotspots && t.hotspots.length > 0) || t.address;
+            const isComplete = isBasicComplete && hasContent;
+
+            if (selectedStatus === "Verified") return t.isVerified === true;
+            if (selectedStatus === "Unverified") return t.isVerified !== true;
+            if (selectedStatus === "Complete") return isComplete;
+            if (selectedStatus === "Draft") return !isComplete;
+            
+            return true;
+        })();
+
+        return matchesSearch && matchesDistrict && matchesTaluka && matchesSthan && matchesAvatar && matchesStatus;
     });
 
     const formatDate = (date: Date) => {
@@ -297,6 +315,23 @@ export default function SthanaDirectory() {
                                         ))}
                                 </DropdownMenuContent>
                             </DropdownMenu>
+
+                            {/* Status Filter */}
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="outline" className="h-12 px-4 rounded-xl border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-bold min-w-[120px] justify-between">
+                                        {selectedStatus}
+                                        <ChevronDown className="w-4 h-4 ml-2 opacity-50" />
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="w-[180px]">
+                                    <DropdownMenuItem onClick={() => setSelectedStatus("Status")} className="font-bold cursor-pointer">All Status</DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => setSelectedStatus("Verified")} className="cursor-pointer">Verified</DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => setSelectedStatus("Unverified")} className="cursor-pointer">Non-Verified</DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => setSelectedStatus("Complete")} className="cursor-pointer">Complete</DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => setSelectedStatus("Draft")} className="cursor-pointer">Draft/Incomplete</DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
                         </div>
                     </div>
 
@@ -335,9 +370,9 @@ export default function SthanaDirectory() {
                                             <h3 className="text-lg font-heading font-extrabold text-[#1E3A8A] truncate pr-4">
                                                 {temple.name}
                                             </h3>
-                                            {/* Verified Badge (Mock) */}
+                                            {/* Verified Badge */}
                                             <div className="shrink-0">
-                                                {Math.random() > 0.3 ? (
+                                                {temple.isVerified ? (
                                                     <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-[#C9A961]/10 text-[#a88b48] border border-[#C9A961]/20 uppercase tracking-wide">
                                                         Verified
                                                     </span>
