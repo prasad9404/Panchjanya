@@ -250,12 +250,47 @@ export const TempleDetails = ({ isOpen, onClose, temple }: TempleDetailsProps) =
                     <Compass className="w-3.5 h-3.5" />
                     Viraat Sthana
                   </div>
-                  <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-primary/10 text-primary rounded-full text-[9px] font-bold uppercase tracking-wider border border-primary/20">
-                    <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
-                      <polyline points="20 6 9 17 4 12"></polyline>
-                    </svg>
-                    Verified by Panchajanya
-                  </div>
+                  {(() => {
+                    const isBasicComplete = Boolean(temple.name && ((temple as any).sthan || temple.sthana) && temple.district);
+                    const hasImages = Boolean(temple.images?.length > 0 || temple.architectureImage || temple.presentImage);
+                    const hasSthanDetails = Boolean(temple.sthana_info_text || temple.sthana);
+                    const hasTempleInfo = Boolean(temple.description_text || temple.description || temple.address);
+                    const isFullyComplete = temple.isComplete || (isBasicComplete && hasImages && hasSthanDetails && hasTempleInfo);
+
+                    if (temple.isVerified) {
+                      return (
+                        <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#C9A961]/10 text-[#a88b48] rounded-full text-[9px] font-bold uppercase tracking-wider border border-[#C9A961]/20">
+                          <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                          </svg>
+                          Verified by Panchajanya
+                        </div>
+                      );
+                    } else if (isFullyComplete) {
+                      return (
+                        <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-50 text-emerald-600 rounded-full text-[9px] font-bold uppercase tracking-wider border border-emerald-100">
+                          Archive Complete
+                        </div>
+                      );
+                    } else if (isBasicComplete) {
+                      return (
+                        <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-50 text-amber-600 rounded-full text-[9px] font-bold uppercase tracking-wider border border-amber-100">
+                          Incomplete Archive
+                        </div>
+                      );
+                    } else {
+                      return (
+                        <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-slate-100 text-slate-500 rounded-full text-[9px] font-bold uppercase tracking-wider border border-slate-200">
+                          Draft Record
+                        </div>
+                      );
+                    }
+                  })()}
+                  {!temple.isVerified && (
+                    <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-rose-50 text-rose-500 rounded-full text-[9px] font-bold uppercase tracking-wider border border-rose-100">
+                      Non Verified
+                    </div>
+                  )}
                 </div>
 
                 <h1 className="font-heading text-3xl lg:text-4xl font-black text-foreground tracking-tighter leading-[0.95]">

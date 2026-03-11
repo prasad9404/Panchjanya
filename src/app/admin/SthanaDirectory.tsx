@@ -149,15 +149,17 @@ export default function SthanaDirectory() {
         const matchesStatus = (() => {
             if (selectedStatus === "Status") return true;
             
-            // Heuristic for Complete vs Draft
-            const isBasicComplete = t.name && t.sthan && t.district;
-            const hasContent = (t.images && t.images.length > 0) || (t.hotspots && t.hotspots.length > 0) || t.address;
-            const isComplete = isBasicComplete && hasContent;
+            const isBasicComplete = Boolean(t.name && t.sthan && t.district);
+            const hasImages = Boolean(t.images?.length > 0 || t.architectureImage || t.presentImage);
+            const hasSthanDetails = Boolean(t.sthana_info_text || t.sthana);
+            const hasTempleInfo = Boolean(t.description_text || t.description || t.address);
+            const isFullyComplete = t.isComplete || (isBasicComplete && hasImages && hasSthanDetails && hasTempleInfo);
 
             if (selectedStatus === "Verified") return t.isVerified === true;
             if (selectedStatus === "Unverified") return t.isVerified !== true;
-            if (selectedStatus === "Complete") return isComplete;
-            if (selectedStatus === "Draft") return !isComplete;
+            if (selectedStatus === "Complete") return isFullyComplete;
+            if (selectedStatus === "Incomplete") return !isFullyComplete && isBasicComplete;
+            if (selectedStatus === "Draft") return !isFullyComplete && !isBasicComplete;
             
             return true;
         })();
@@ -329,7 +331,8 @@ export default function SthanaDirectory() {
                                     <DropdownMenuItem onClick={() => setSelectedStatus("Verified")} className="cursor-pointer">Verified</DropdownMenuItem>
                                     <DropdownMenuItem onClick={() => setSelectedStatus("Unverified")} className="cursor-pointer">Non-Verified</DropdownMenuItem>
                                     <DropdownMenuItem onClick={() => setSelectedStatus("Complete")} className="cursor-pointer">Complete</DropdownMenuItem>
-                                    <DropdownMenuItem onClick={() => setSelectedStatus("Draft")} className="cursor-pointer">Draft/Incomplete</DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => setSelectedStatus("Incomplete")} className="cursor-pointer">Incomplete</DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => setSelectedStatus("Draft")} className="cursor-pointer">Draft</DropdownMenuItem>
                                 </DropdownMenuContent>
                             </DropdownMenu>
                         </div>
@@ -370,16 +373,45 @@ export default function SthanaDirectory() {
                                             <h3 className="text-lg font-heading font-extrabold text-[#1E3A8A] truncate pr-4">
                                                 {temple.name}
                                             </h3>
-                                            {/* Verified Badge */}
-                                            <div className="shrink-0">
+                                            {/* Status Badges */}
+                                            <div className="shrink-0 flex flex-col items-end gap-1.5">
                                                 {temple.isVerified ? (
                                                     <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-[#C9A961]/10 text-[#a88b48] border border-[#C9A961]/20 uppercase tracking-wide">
                                                         Verified
                                                     </span>
                                                 ) : (
-                                                    <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-500 border border-slate-200 uppercase tracking-wide">
-                                                        Pending
-                                                    </span>
+                                                    <>
+                                                        <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-rose-50 text-rose-600 border border-rose-100 uppercase tracking-wide">
+                                                            Non Verified
+                                                        </span>
+                                                        {(() => {
+                                                            const isBasicComplete = Boolean(temple.name && temple.sthan && temple.district);
+                                                            const hasImages = Boolean(temple.images?.length > 0 || temple.architectureImage || temple.presentImage);
+                                                            const hasSthanDetails = Boolean(temple.sthana_info_text || temple.sthana);
+                                                            const hasTempleInfo = Boolean(temple.description_text || temple.description || temple.address);
+                                                            const isFullyComplete = temple.isComplete || (isBasicComplete && hasImages && hasSthanDetails && hasTempleInfo);
+
+                                                            if (isFullyComplete) {
+                                                                return (
+                                                                    <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-600 border border-emerald-100 uppercase tracking-wide">
+                                                                        Complete
+                                                                    </span>
+                                                                );
+                                                            } else if (isBasicComplete) {
+                                                                return (
+                                                                    <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-600 border border-amber-100 uppercase tracking-wide">
+                                                                        Incomplete
+                                                                    </span>
+                                                                );
+                                                            } else {
+                                                                return (
+                                                                    <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-500 border border-slate-200 uppercase tracking-wide">
+                                                                        Draft
+                                                                    </span>
+                                                                );
+                                                            }
+                                                        })()}
+                                                    </>
                                                 )}
                                             </div>
                                         </div>
