@@ -44,22 +44,24 @@ export const AVATAR_SAMBANDH_CONFIG: {
     },
     {
         id: 'shri-govind',
-        label: 'Shri Govind Prabhu (Complete)',
+        label: 'Shri Govind Prabhu',
         shortLabel: 'Govind',
         color: '#16A34A', // Green
         count: 17,
         subdivisions: [
+            { id: 'complete', label: 'Complete', count: 17 },
             { id: 'purvardh', label: 'Purvardh', count: 5 },
             { id: 'uttarardh', label: 'Uttarardh', count: 12 },
         ],
     },
     {
         id: 'shri-chakradhar',
-        label: 'Shri Chakradhar Swami (Complete)',
+        label: 'Shri Chakradhar Swami',
         shortLabel: 'Chakradhar',
         color: '#2563EB', // Blue
         count: 150,
         subdivisions: [
+            { id: 'complete', label: 'Complete', count: 150 },
             { id: 'ekank', label: 'Ekank', count: 60 },
             { id: 'purvardh', label: 'Purvardh', count: 50 },
             { id: 'uttarardh', label: 'Uttarardh', count: 40 },
@@ -80,11 +82,31 @@ export const TOTAL_STHAN_COUNT = AVATAR_SAMBANDH_CONFIG.reduce((sum, a) => sum +
 
 /**
  * Returns the brand color for a given avatar sambandh id.
+ * Now "Normalization-aware" to handle database variations.
  */
 export const getAvatarColor = (avatarSambandh?: string): string => {
-    if (!avatarSambandh) return '#94A3B8';
-    const cfg = AVATAR_SAMBANDH_CONFIG.find(a => a.id === avatarSambandh);
+    const canonicalId = normalizeAvatarId(avatarSambandh);
+    if (!canonicalId) return '#94A3B8';
+    const cfg = AVATAR_SAMBANDH_CONFIG.find(a => a.id === canonicalId);
     return cfg?.color ?? '#94A3B8';
+};
+
+/**
+ * Normalized avatar IDs from various possible database variations.
+ * Ensures 'chakrapani' -> 'shri-chakrapani', etc.
+ */
+export const normalizeAvatarId = (id?: string): string => {
+    if (!id) return '';
+    const cleanId = id.toLowerCase().trim();
+    
+    if (cleanId.includes('krishna')) return 'shri-krishna';
+    if (cleanId.includes('dattatray') || cleanId.includes('datta')) return 'shri-dattatray';
+    if (cleanId.includes('chakrapani')) return 'shri-chakrapani';
+    if (cleanId.includes('govind')) return 'shri-govind';
+    if (cleanId.includes('chakradhar')) return 'shri-chakradhar';
+    if (cleanId.includes('mandalik')) return 'mandalik';
+    
+    return cleanId; // Return as-is if no match
 };
 
 /**
@@ -109,42 +131,42 @@ export const PIN_SERIES = [
         id: '1',
         name: 'Series 1 (Shri Krishna)',
         folder: '/icons/pins/1 Shri_Krishna_Pin',
-        defaultColor: '#F59E0B',
+        defaultColor: '#EC4899', // Pink
         files: ['1.1.svg', '1.2.svg', '1.3.svg', '1.4.svg', '1.5.svg', 'Shri_Krishna_Pin.svg']
     },
     {
         id: '2',
         name: 'Series 2 (Shri Dattatray Prabhu)',
         folder: '/icons/pins/2 Shri_Dattatray_Prabhu_Pin',
-        defaultColor: '#EC4899',
+        defaultColor: '#F59E0B', // Yellow
         files: ['2.1.svg', '2.2.svg', '2.3.svg', '2.4.svg', '2.5.svg', 'Shri_Dattatray_Prabhu_Pin.svg']
     },
     {
         id: '3',
         name: 'Series 3 (Shri Chakrapani Prabhu)',
         folder: '/icons/pins/3 Shri_Chakrapani_Prabhu_Pin',
-        defaultColor: '#8B5CF6',
+        defaultColor: '#9B1C1C', // Maroon
         files: ['3.1.svg', '3.2.svg', '3.3.svg', '3.4.svg', '3.5.svg', 'Shri_Chakrapani_Prabhu_Pin.svg']
     },
     {
         id: '4',
         name: 'Series 4 (Shri Govind Prabhu)',
         folder: '/icons/pins/4 Shri_Govind_Prabhu_Pin',
-        defaultColor: '#EF4444',
+        defaultColor: '#16A34A', // Green
         files: ['4.1.svg', '4.2.svg', '4.3.svg', '4.4.svg', '4.5.svg', 'Shri_Govind_Prabhu_Pin.svg']
     },
     {
         id: '5',
         name: 'Series 5 (Shri Chakradhar Swami)',
         folder: '/icons/pins/5 Shri_Chakradhar_Swami_Pin',
-        defaultColor: '#3B82F6',
+        defaultColor: '#2563EB', // Blue
         files: ['5.1.svg', '5.2.svg', '5.3.svg', '5.4.svg', '5.5.svg', 'Shri_Chakradhar_Swami_Pin.svg']
     },
     {
         id: '6',
         name: 'Series 6 (Mandalik Sthan)',
         folder: '/icons/pins/6 Mandalik_Sthan_Pin',
-        defaultColor: '#10B981',
+        defaultColor: '#92400E', // Brown
         files: ['6.1.svg', '6.2.svg', '6.5.svg', 'Mandalik_Sthan_Pin.svg']
     },
     {
@@ -169,6 +191,42 @@ export const PIN_SERIES = [
         files: ['9.svg', '9.1.svg', '9.2.svg', '9.3.svg', '9.4.svg', '9.5.svg']
     }
 ];
+
+/**
+ * Returns valid Sthan Types for a specific avatar.
+ * Prioritizes records with a matching avatarSambandh.
+ * For records without avatarSambandh (legacy), it matches by name-set only if 
+ * the name isn't already "claimed" by a record with a different avatarSambandh.
+ */
+export const getValidSthanTypes = (avatarId: string, allTypes: SthanType[]): SthanType[] => {
+    if (!avatarId) return allTypes;
+
+    // 1. Explicitly tagged types take precedence
+    const taggedTypes = allTypes.filter(t => t.avatarSambandh === avatarId);
+    
+    // 2. If we have tagged types, we prefer them exclusively to avoid duplicates
+    // However, we still check for legacy types that might not be tagged yet
+    if (taggedTypes.length > 0) {
+        return taggedTypes;
+    }
+
+    // 3. Fallback for Mandalik
+    if (avatarId === 'mandalik') {
+        return allTypes.filter(t => t.name === 'Mandalik' && (!t.avatarSambandh || t.avatarSambandh === 'mandalik'));
+    }
+
+    // 4. Fallback for Standard avatars
+    const standardAvatars = ['shri-krishna', 'shri-dattatray', 'shri-chakrapani', 'shri-govind', 'shri-chakradhar'];
+    if (standardAvatars.includes(avatarId)) {
+        const validNames = ['Mahasthan', 'Avasthan', 'Vasti', 'Asan', 'Vasti Sthan', 'Asan Sthan'];
+        return allTypes.filter(t => 
+            validNames.includes(t.name) && 
+            (!t.avatarSambandh || t.avatarSambandh === avatarId)
+        );
+    }
+
+    return [];
+};
 
 /**
  * Fetch all sthan types from Firestore
@@ -271,6 +329,7 @@ export const PIN_ICON_MAP: Record<string, string> = {
     pin_aasan: '/icons/pins/4.4.svg',
     pin_dot: '/icons/pins/4.5.svg',
     pin_mahasthan: '/icons/mahasthan pin.svg',
+    pin_mandalik: '/icons/pins/6 Mandalik_Sthan_Pin/6.5.svg',
     pin_1_1: '/icons/pins/1.1.svg',
     pin_1_2: '/icons/pins/1.2.svg',
     pin_1_3: '/icons/pins/1.3.svg',
@@ -278,8 +337,6 @@ export const PIN_ICON_MAP: Record<string, string> = {
     pin_1_5: '/icons/pins/1.5.svg',
     pin_empty_gold: '/icons/pins/1.svg',
 };
-
-
 
 /**
  * Avatar (deity) type hierarchy for classifying Sthan Types.
@@ -347,17 +404,101 @@ export interface PinRenderInfo {
 }
 
 /**
- * Get full pin render info for any pinType + color.
- * Preferred API for new code.
+ * Helper to map sthan names to the specific icon index (1-5) used in our SVG naming convention.
+ * 1: Mahasthan, 2: Mandalik/Shikhara, 3: Avasthan, 4: Asan, 5: Vasti/Dot
  */
-export const getSthanPinInfo = (color: string, pinType?: string): PinRenderInfo => {
-    // Check if new path-based PIN
+export const getSthanIndex = (name: string): string => {
+    if (!name) return '';
+    
+    // 1. Try to extract numeric style from a path (e.g. /icons/pins/2 Shri.../2.3.svg -> '3')
+    const pathMatch = name.match(/[1-9]\.([1-5])\.svg$/);
+    if (pathMatch) return pathMatch[1];
+
+    const n = name.toLowerCase();
+    
+    // 2. Specific style keywords
+    if (n.includes('mahasthan')) return '1';
+    if (n.includes('shikhara') || n.includes('mandalik')) return '2';
+    if (n.includes('avasthan') || n.includes('mandir')) return '3';
+    if (n.includes('asan')) return '4';
+    if (n.includes('vasti') || n.includes('vishti') || n.includes('dot')) return '5';
+    
+    return '';
+};
+
+/**
+ * Get full pin render info for any pinType + color.
+ * Now "Avatar-Aware" and "Persisted pinIcon Aware".
+ */
+export const getSthanPinInfo = (color: string, pinType?: string, avatarId?: string, sthanName?: string, pinIcon?: string, sthanTypeId?: string, allSthanTypes?: SthanType[]): PinRenderInfo => {
+    // 1. New Highest Priority: Linked Sthan Type ID from "Manage Sthan Types"
+    if (sthanTypeId && allSthanTypes && allSthanTypes.length > 0) {
+        const matchedType = allSthanTypes.find(t => t.id === sthanTypeId);
+        if (matchedType?.pinType) {
+            // If the pinType in config is a full path, use it directly
+            if (matchedType.pinType.startsWith('/icons/pins/')) {
+                return { src: matchedType.pinType, filter: '', needsFilter: false };
+            }
+            // If it's a key in the map
+            if (matchedType.pinType in PIN_ICON_MAP) {
+                const isOriginal = color === 'original' || color === '' || !color || color === '#0e3c6f' || color === '#d4af37';
+                return {
+                    src: PIN_ICON_MAP[matchedType.pinType],
+                    filter: isOriginal ? '' : hexToFilter(color),
+                    needsFilter: !isOriginal
+                };
+            }
+        }
+    }
+
+    // 2. Secondary Priority: Persisted pinIcon field (legacy or manual override)
+    if (pinIcon) {
+        if (pinIcon.startsWith('/icons/pins/')) {
+            return { src: pinIcon, filter: '', needsFilter: false };
+        }
+        if (pinIcon in PIN_ICON_MAP) {
+            const isOriginal = color === 'original' || color === '' || !color || color === '#0e3c6f' || color === '#d4af37';
+            return {
+                src: PIN_ICON_MAP[pinIcon],
+                filter: isOriginal ? '' : hexToFilter(color),
+                needsFilter: !isOriginal
+            };
+        }
+    }
+
+    const canonicalAvatarId = normalizeAvatarId(avatarId);
+    
+    // 2. Avatar series secondary priority
+    if (canonicalAvatarId) {
+        const series = PIN_SERIES.find(s => s.id === canonicalAvatarId || s.name.toLowerCase().includes(canonicalAvatarId.split('-').pop() || ''));
+        if (series) {
+            const index = getSthanIndex(pinType || sthanName || '');
+            
+            // Map the canonical ID back to the numeric series ID for folder/file matching
+            let numericId = '';
+            if (canonicalAvatarId === 'shri-krishna') numericId = '1';
+            else if (canonicalAvatarId === 'shri-dattatray') numericId = '2';
+            else if (canonicalAvatarId === 'shri-chakrapani') numericId = '3';
+            else if (canonicalAvatarId === 'shri-govind') numericId = '4';
+            else if (canonicalAvatarId === 'shri-chakradhar') numericId = '5';
+            else if (canonicalAvatarId === 'mandalik') numericId = '6';
+
+            if (numericId && index) {
+                const specificFile = `${numericId}.${index}.svg`;
+                if (series.files.includes(specificFile)) {
+                    return {
+                        src: `${series.folder}/${specificFile}`,
+                        filter: '',
+                        needsFilter: false
+                    };
+                }
+            }
+        }
+    }
+
+    // 3. Fallback to existing logic if no avatar-specific pin found
     if (pinType && pinType.startsWith('/icons/pins/')) {
-        return {
-            src: pinType,
-            filter: '',
-            needsFilter: false
-        };
+        return { src: pinType, filter: '', needsFilter: false };
     }
 
     const isOriginal = color === 'original' || color === '' || !color || color === '#0e3c6f' || color === '#d4af37';
@@ -370,15 +511,14 @@ export const getSthanPinInfo = (color: string, pinType?: string): PinRenderInfo 
         };
     }
 
-    // Fallback for custom geometric pins (legacy)
     return { src: generateSthanPinSVG(color, pinType), filter: '', needsFilter: false };
 };
 
 /**
  * Generate an HTML <img> string for use inside Leaflet L.divIcon({ html }).
  */
-export const getPinImageHtml = (color: string, pinType: string | undefined, size = 40): string => {
-    const info = getSthanPinInfo(color, pinType);
+export const getPinImageHtml = (color: string, pinType: string | undefined, size = 40, avatarId?: string, sthanName?: string, pinIcon?: string, sthanTypeId?: string, allSthanTypes?: SthanType[]): string => {
+    const info = getSthanPinInfo(color, pinType, avatarId, sthanName, pinIcon, sthanTypeId, allSthanTypes);
     const filterStyle = info.needsFilter ? `filter:${info.filter};` : '';
 
     return `
@@ -390,8 +530,7 @@ export const getPinImageHtml = (color: string, pinType: string | undefined, size
 
 /**
  * Generate pin image path with custom color — dispatches by pinType.
- * For icon-based pins, returns the PNG src path directly.
- * Use getSthanPinInfo() for full info including CSS color filter.
+ * (Legacy/Fallback)
  */
 export const generateSthanPinSVG = (color: string, pinType?: string): string => {
     if (pinType && pinType in PIN_ICON_MAP) return PIN_ICON_MAP[pinType];
@@ -413,10 +552,11 @@ export const generateSthanPinSVG = (color: string, pinType?: string): string => 
  */
 export const seedSthanTypes = async (): Promise<void> => {
     const defaultTypes: CreateSthanTypeInput[] = [
-        { name: 'Avasthan', color: '#D4AF37', order: 1, pinType: 'pin_mandir' },
-        { name: 'Asan', color: '#0E3C6F', order: 2, pinType: 'pin_aasan' },
-        { name: 'Vasti', color: '#228B22', order: 3, pinType: 'pin_empty' },
-        { name: 'Mandalik', color: '#6A0DAD', order: 4, pinType: 'pin_shikhara' },
+        { name: 'Mahasthan', color: '#B22222', order: 1, pinType: 'pin_mahasthan' },
+        { name: 'Avasthan', color: '#D4AF37', order: 2, pinType: 'pin_mandir' },
+        { name: 'Asan', color: '#0E3C6F', order: 3, pinType: 'pin_aasan' },
+        { name: 'Vasti', color: '#228B22', order: 4, pinType: 'pin_empty' },
+        { name: 'Mandalik', color: '#6A0DAD', order: 5, pinType: 'pin_shikhara' },
     ];
 
     try {

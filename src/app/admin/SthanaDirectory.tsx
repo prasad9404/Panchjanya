@@ -33,7 +33,11 @@ import {
 import { useToast } from "@/shared/hooks/use-toast";
 import { Badge } from "@/shared/components/ui/badge";
 import { SthanTypeManager } from "@/shared/components/admin/SthanTypeManager";
-import { getSthanTypes, AVATAR_SAMBANDH_CONFIG } from "@/shared/utils/sthanTypes";
+import { 
+    getSthanTypes, 
+    AVATAR_SAMBANDH_CONFIG, 
+    getAvatarColor 
+} from "@/shared/utils/sthanTypes";
 import { SthanType } from "@/shared/types/sthanType";
 
 export default function SthanaDirectory() {
@@ -150,24 +154,29 @@ export default function SthanaDirectory() {
         let matchesAvatar = true;
         
         if (selectedAvatarSambandh !== "ALL") {
-            const tAvatarS = t.avatarSambandh;
-            const tAvatarSub = t.avatarSubdivision;
+            const tAvatarS = t.primaryAvatar || t.avatarSambandh;
+            
+            let tAvatarSubArray: string[] = [];
+            if (t.avatarSubTypes && Array.isArray(t.avatarSubTypes)) {
+                tAvatarSubArray = t.avatarSubTypes;
+            } else if (t.avatarSubdivision) {
+                tAvatarSubArray = [t.avatarSubdivision];
+            }
 
             // Legacy fallback
             let resAvatarS = tAvatarS;
-            let resAvatarSub = tAvatarSub;
 
             if (!resAvatarS) {
                 const typeRecord = sthanTypes.find(st => st.name === t.sthan);
                 if (typeRecord) {
                     resAvatarS = typeRecord.avatarSambandh;
-                    resAvatarSub = typeRecord.avatarSubdivision;
+                    tAvatarSubArray = typeRecord.avatarSubdivision ? [typeRecord.avatarSubdivision] : [];
                 }
             }
 
             if (resAvatarS !== selectedAvatarSambandh) {
                 matchesAvatar = false;
-            } else if (selectedAvatarSubdivision && resAvatarSub !== selectedAvatarSubdivision) {
+            } else if (selectedAvatarSubdivision && !tAvatarSubArray.includes(selectedAvatarSubdivision)) {
                 matchesAvatar = false;
             }
         }
@@ -204,8 +213,14 @@ export default function SthanaDirectory() {
         };
 
         temples.forEach((t: any) => {
-            let resAvatarS = t.avatarSambandh;
-            let resAvatarSub = t.avatarSubdivision;
+            let resAvatarS = t.primaryAvatar || t.avatarSambandh;
+            let resAvatarSub = "";
+            
+            if (t.avatarSubTypes && t.avatarSubTypes.length > 0) {
+                resAvatarSub = t.avatarSubTypes[0];
+            } else {
+                resAvatarSub = t.avatarSubdivision;
+            }
 
             // Apply legacy fallback for counting
             if (!resAvatarS && t.sthan) {
@@ -568,7 +583,7 @@ export default function SthanaDirectory() {
                                                         <span
                                                             className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide"
                                                             style={{
-                                                                backgroundColor: typeInfo?.color || '#94a3b8',
+                                                                backgroundColor: getAvatarColor(typeInfo?.avatarSambandh) || typeInfo?.color || '#94a3b8',
                                                                 color: 'white'
                                                             }}
                                                         >

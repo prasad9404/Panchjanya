@@ -24,7 +24,7 @@ import { useLanguage } from "@/shared/contexts/LanguageContext";
 import { useAuth } from "@/auth/AuthContext";
 import { cn } from "@/shared/lib/utils";
 import DataTableFilter from "@/shared/components/ui/data-table-filter";
-import { getSthanTypes, AVATAR_SAMBANDH_CONFIG, getSthanPinInfo, getPinImageHtml } from "@/shared/utils/sthanTypes";
+import { getSthanTypes, AVATAR_SAMBANDH_CONFIG, getSthanPinInfo, getPinImageHtml, normalizeAvatarId, getAvatarColor } from "@/shared/utils/sthanTypes";
 import { SthanType } from "@/shared/types/sthanType";
 
 
@@ -67,17 +67,59 @@ const templePinIcon = new L.Icon({
 
 const sthanIconsMap: Record<string, L.DivIcon> = {};
 
-// Helper function to get icon by sthan type
-function getIconBySthan(sthan: string | undefined): L.Icon | L.DivIcon {
-    if (!sthan) return templePinIcon;
+// Helper function to get icon by sthan type and primary avatar
+function getIconForTemple(temple: Temple, sthanTypes: SthanType[]): L.Icon | L.DivIcon {
+    if (!temple) return templePinIcon;
 
-    const normalizedSthan = sthan.trim();
-
-    if (normalizedSthan in sthanIconsMap) {
-        return sthanIconsMap[normalizedSthan];
+    // 1. Get Primary Avatar Color
+    let avatarColor = "#0e3c6f"; // default blue
+    let primaryAvatarId = (temple as any).primaryAvatar || (temple as any).avatarSambandh;
+    const sthanTypeId = (temple as any).sthanTypeId || "";
+    
+    // Legacy fallback for avatar resolution
+    if (!primaryAvatarId && !sthanTypeId) {
+        const sName = (temple as any).sthan || temple.sthana;
+        const sType = sthanTypes.find(st => st.name === sName);
+        if (sType) {
+            primaryAvatarId = sType.avatarSambandh;
+        }
     }
 
-    return templePinIcon;
+    if (primaryAvatarId) {
+        const canonicalId = normalizeAvatarId(primaryAvatarId);
+        const avatarConfig = AVATAR_SAMBANDH_CONFIG.find(a => a.id === canonicalId);
+        if (avatarConfig) {
+            avatarColor = avatarConfig.color;
+            primaryAvatarId = canonicalId; // use canonical for further logic
+        }
+    }
+    
+    // 2. Get Sthan Pin Type (Fallback for legacy)
+    let pinType = "circle";
+    const sName = (temple as any).sthan || temple.sthana;
+    if (!sthanTypeId) {
+        const sType = sthanTypes.find(st => st.name === sName);
+        if (sType && sType.pinType) {
+            pinType = sType.pinType;
+        }
+    }
+    
+    // 3. Generate icon (or fetch from cache)
+    const pinIcon = (temple as any).pinIcon || "";
+    const cacheKey = `${primaryAvatarId}_${sthanTypeId || sName}_${pinIcon}`;
+    if (sthanIconsMap[cacheKey]) return sthanIconsMap[cacheKey];
+    
+    const html = getPinImageHtml(avatarColor, pinType, 52, primaryAvatarId, sName, pinIcon, sthanTypeId, sthanTypes);
+    const icon = L.divIcon({
+        html,
+        className: 'custom-sthan-pin',
+        iconSize: [52, 52],
+        iconAnchor: [26, 52],
+        popupAnchor: [0, -48]
+    });
+    
+    sthanIconsMap[cacheKey] = icon;
+    return icon;
 }
 
 // Inner Map Component to handle center/zoom updates
@@ -95,7 +137,7 @@ function MapEffect({ temples, resetTrigger }: { temples: Temple[]; resetTrigger:
 }
 
 // Separate TempleMarker component to fix React closure issue
-function TempleMarker({ temple, onSelect }: { temple: Temple; onSelect: (temple: Temple) => void }) {
+function TempleMarker({ temple, onSelect, sthanTypes }: { temple: Temple; onSelect: (temple: Temple) => void; sthanTypes: SthanType[] }) {
     const navigate = useNavigate();
     const { t } = useLanguage();
     const { user } = useAuth();
@@ -160,7 +202,7 @@ function TempleMarker({ temple, onSelect }: { temple: Temple; onSelect: (temple:
     return (
         <Marker
             position={[temple.latitude || 0, temple.longitude || 0]}
-            icon={getIconBySthan(temple.sthana || (temple as any).sthan)}
+            icon={getIconForTemple(temple, sthanTypes)}
             eventHandlers={{
                 click: () => onSelect(temple),
                 popupopen: () => setIsPopupOpen(true),
@@ -296,10 +338,12 @@ const Explore = () => {
         const loadSthanTypes = async () => {
             const types = await getSthanTypes();
             
-            // Populate icons map using the fetched results directly, not the stale state
+            // Populate icons map using the fetched results directly
             types.forEach(st => {
-                const html = getPinImageHtml(st.color || '#0e3c6f', st.pinType, 52);
-                sthanIconsMap[st.name] = L.divIcon({
+                const avatarColor = getAvatarColor(st.avatarSambandh);
+                const html = getPinImageHtml(avatarColor, st.pinType, 52, st.avatarSambandh, st.name, '', st.id, types);
+                const cacheKey = `${st.avatarSambandh}_${st.id}_`;
+                sthanIconsMap[cacheKey] = L.divIcon({
                     html,
                     className: 'custom-sthan-pin',
                     iconSize: [52, 52],
@@ -472,15 +516,27 @@ const Explore = () => {
 
         allTemplesForOptions.forEach(t => {
             const temp = t as any;
-            if (temp.avatarSambandh) {
-                counts.byAvatar[temp.avatarSambandh] = (counts.byAvatar[temp.avatarSambandh] || 0) + 1;
+            
+            // Resolve primary avatar
+            const resAvatarS = temp.primaryAvatar || temp.avatarSambandh;
+            
+            // Resolve sub division
+            let resAvatarSub = "";
+            if (temp.avatarSubTypes && temp.avatarSubTypes.length > 0) {
+                resAvatarSub = temp.avatarSubTypes[0]; // just count the first one for backwards compatibility or general counts
+            } else {
+                resAvatarSub = temp.avatarSubdivision;
             }
-            if (temp.avatarSubdivision) {
-                counts.bySubdivision[temp.avatarSubdivision] = (counts.bySubdivision[temp.avatarSubdivision] || 0) + 1;
+
+            if (resAvatarS) {
+                counts.byAvatar[resAvatarS] = (counts.byAvatar[resAvatarS] || 0) + 1;
+            }
+            if (resAvatarSub) {
+                counts.bySubdivision[resAvatarSub] = (counts.bySubdivision[resAvatarSub] || 0) + 1;
             }
 
             // Legacy fallback if fields are missing
-            if (!temp.avatarSambandh && (temp.sthan || temp.sthana)) {
+            if (!resAvatarS && (temp.sthan || temp.sthana)) {
                 const sName = temp.sthan || temp.sthana;
                 const sType = sthanTypes.find(st => st.name === sName);
                 if (sType?.avatarSambandh) {
@@ -511,24 +567,33 @@ const Explore = () => {
             // Avatar hierarchy logic
             if (appliedAvatarSambandh === "ALL") return matchesSearch && matchesSthana;
 
-            const tAvatarS = (temple as any).avatarSambandh;
-            const tAvatarSub = (temple as any).avatarSubdivision;
+            // Resolve primary avatar
+            let resAvatarS = (temple as any).primaryAvatar || (temple as any).avatarSambandh;
+            
+            // Resolve sub-type (array supported)
+            let resAvatarSubArray: string[] = [];
+            if ((temple as any).avatarSubTypes && Array.isArray((temple as any).avatarSubTypes)) {
+                resAvatarSubArray = (temple as any).avatarSubTypes;
+            } else if ((temple as any).avatarSubdivision) {
+                resAvatarSubArray = [(temple as any).avatarSubdivision];
+            }
 
             // Try to resolve temple's avatar info if missing (legacy data)
-            let resAvatarS = tAvatarS;
-            let resAvatarSub = tAvatarSub;
-
             if (!resAvatarS) {
                 const sName = (temple as any).sthan || temple.sthana;
                 const sType = sthanTypes.find(st => st.name === sName);
                 if (sType) {
                     resAvatarS = sType.avatarSambandh;
-                    resAvatarSub = sType.avatarSubdivision;
+                    resAvatarSubArray = sType.avatarSubdivision ? [sType.avatarSubdivision] : [];
                 }
             }
 
             if (resAvatarS !== appliedAvatarSambandh) return false;
-            if (appliedAvatarSubdivision && resAvatarSub !== appliedAvatarSubdivision) return false;
+            
+            if (appliedAvatarSubdivision) {
+                // If the filter is applied, ensure the required subdivision is in the temple's subtypes array
+                if (!resAvatarSubArray.includes(appliedAvatarSubdivision)) return false;
+            }
 
             return matchesSearch && matchesSthana;
         });
@@ -654,7 +719,7 @@ const Explore = () => {
                                                                         </AccordionTrigger>
                                                                         <AccordionContent className="pb-0 pt-1 space-y-0.5">
                                                                             {subSthans.map(st => {
-                                                                                const { src, filter, needsFilter } = getSthanPinInfo(st.color, st.pinType);
+                                                                                const { src, filter, needsFilter } = getSthanPinInfo(st.color, st.pinType, avatar.id, st.name);
                                                                                 return (
                                                                                     <div
                                                                                         key={st.id}
@@ -682,7 +747,7 @@ const Explore = () => {
                                                     ) : (
                                                         <div className="space-y-0.5 pl-3 border-l-2 ml-1" style={{ borderColor: `${avatar.color}40` }}>
                                                             {directSthans.map(st => {
-                                                                const { src, filter, needsFilter } = getSthanPinInfo(st.color, st.pinType);
+                                                                const { src, filter, needsFilter } = getSthanPinInfo(st.color, st.pinType, avatar.id, st.name);
                                                                 return (
                                                                     <div
                                                                         key={st.id}
@@ -867,6 +932,7 @@ const Explore = () => {
                                 key={temple.id}
                                 temple={temple}
                                 onSelect={setSelectedTemple}
+                                sthanTypes={sthanTypes}
                             />
                         )
                     ))}

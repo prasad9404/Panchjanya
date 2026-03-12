@@ -54,6 +54,11 @@ export interface CustomBlock {
     content: string;
 }
 
+export interface RelatedAvatar {
+    avatar: string;
+    subtype: string[];
+}
+
 export interface Temple {
     id: string;
     name: string;
@@ -70,6 +75,19 @@ export interface Temple {
     location: string | { lat: number; lng: number; address?: string };
     latitude: number;
     longitude: number;
+    
+    // Avatar Hierarchy Fields
+    primaryAvatar?: string;
+    primarySubtype?: string[];
+    relatedAvatars?: RelatedAvatar[];
+    sthanType?: string; // Standardized Sthan Type field
+    sthanTypeId?: string; // Link to Manage Sthan Types ID
+    pinIcon?: string; // Persisted pin icon path or key
+    
+    // Legacy fields
+    avatarSambandh?: string;
+    avatarSubdivision?: string;
+
     description?: string;
     description_title?: string;
     description_text?: string;

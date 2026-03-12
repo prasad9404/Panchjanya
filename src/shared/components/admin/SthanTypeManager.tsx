@@ -106,7 +106,7 @@ export function SthanTypeManager() {
             return;
         }
         if (hasSubdivisions && !avatarSubdivision) {
-            toast({ title: 'Validation Error', description: 'Please select a Subdivision', variant: 'destructive' });
+            toast({ title: 'Validation Error', description: 'Please select an Avatar Sub Type', variant: 'destructive' });
             return;
         }
         if (!selectedSeriesId) {
@@ -295,7 +295,7 @@ export function SthanTypeManager() {
                                 {/* Level 1: Avatar Sambandh */}
                                 <div className="space-y-2">
                                     <Label htmlFor="avatarSambandh" className="text-sm font-bold text-slate-700">
-                                        Avatar Sambandh *
+                                        Primary Avatar *
                                     </Label>
                                     <Select value={avatarSambandh || '__none__'} onValueChange={handleAvatarChange}>
                                         <SelectTrigger
@@ -339,7 +339,7 @@ export function SthanTypeManager() {
                                 {/* Level 2: Subdivision (conditional) */}
                                 <div className="space-y-2">
                                     <Label htmlFor="avatarSubdivision" className="text-sm font-bold text-slate-700">
-                                        Subdivision {hasSubdivisions ? '*' : <span className="font-normal text-slate-400 text-xs">(N/A)</span>}
+                                        Avatar Sub Type {hasSubdivisions ? '*' : <span className="font-normal text-slate-400 text-xs">(N/A)</span>}
                                     </Label>
                                     <Select
                                         key={`subdiv-${avatarSambandh}`}
@@ -355,14 +355,16 @@ export function SthanTypeManager() {
                                         </SelectTrigger>
                                         <SelectContent className="max-h-72 z-[1100] rounded-xl border-slate-200 shadow-xl">
                                             {hasSubdivisions ? (
-                                                selectedAvatarCfg!.subdivisions.map(sub => (
-                                                    <SelectItem key={sub.id} value={sub.id} className="cursor-pointer focus:bg-slate-50 rounded-lg m-1">
-                                                        <div className="flex items-center justify-between gap-4 w-full">
-                                                            <span className="font-semibold text-sm">{sub.label}</span>
-                                                            <span className="text-[10px] text-slate-400">{sub.count} Sthans</span>
-                                                        </div>
-                                                    </SelectItem>
-                                                ))
+                                                selectedAvatarCfg!.subdivisions
+                                                    .filter(sub => sub.id !== 'complete')
+                                                    .map(sub => (
+                                                        <SelectItem key={sub.id} value={sub.id} className="cursor-pointer focus:bg-slate-50 rounded-lg m-1">
+                                                            <div className="flex items-center justify-between gap-4 w-full">
+                                                                <span className="font-semibold text-sm">{sub.label}</span>
+                                                                <span className="text-[10px] text-slate-400">{sub.count} Sthans</span>
+                                                            </div>
+                                                        </SelectItem>
+                                                    ))
                                             ) : (
                                                 <div className="px-3 py-2 text-sm text-slate-400 italic">This avatar has no sub-periods</div>
                                             )}
@@ -549,19 +551,19 @@ export function SthanTypeManager() {
 
                                                                     {/* Info */}
                                                                     <div className="flex-1 min-w-0">
-                                                                        <div className="font-semibold text-sm text-slate-900">{type.name}</div>
-                                                                        <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
+                                                                        <div className="font-bold text-sm text-[#1E3A8A]">{type.name}</div>
+                                                                        <div className="flex items-center gap-1.5 flex-wrap mt-1">
                                                                             {/* Avatar chip */}
                                                                             {avatarCfg && (
                                                                                 <span
-                                                                                    className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wide border"
+                                                                                    className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wide border shadow-sm"
                                                                                     style={{
-                                                                                        backgroundColor: `${avatarColor}15`,
-                                                                                        color: avatarColor,
-                                                                                        borderColor: `${avatarColor}40`,
+                                                                                        backgroundColor: `${getAvatarColor(avatarCfg.id)}15`,
+                                                                                        color: getAvatarColor(avatarCfg.id),
+                                                                                        borderColor: `${getAvatarColor(avatarCfg.id)}40`,
                                                                                     }}
                                                                                 >
-                                                                                    <span className="w-1.5 h-1.5 rounded-full inline-block" style={{ backgroundColor: avatarColor }} />
+                                                                                    <span className="w-1.5 h-1.5 rounded-full inline-block" style={{ backgroundColor: getAvatarColor(avatarCfg.id) }} />
                                                                                     {avatarCfg.shortLabel}
                                                                                 </span>
                                                                             )}
@@ -577,7 +579,7 @@ export function SthanTypeManager() {
                                                                                 const seriesMatch = PIN_SERIES.find(s => type.pinType?.includes(s.folder));
                                                                                 if (seriesMatch) {
                                                                                     const fileName = type.pinType?.split('/').pop() || '';
-                                                                                    return <span className="text-[10px] text-slate-400">{seriesMatch.name.split('(')[0].trim()} · {fileName}</span>;
+                                                                                    return <span className="text-[10px] text-slate-400 font-medium">{seriesMatch.name.split('(')[0].trim()} · {fileName}</span>;
                                                                                 }
                                                                                 return <span className="text-[10px] text-slate-400">Legacy Pin</span>;
                                                                             })()}

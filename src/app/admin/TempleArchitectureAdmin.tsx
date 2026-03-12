@@ -29,11 +29,15 @@ import {
 } from "@/shared/components/ui/popover";
 import { Switch } from "@/shared/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/components/ui/select";
-import { getSthanTypes, AVATAR_TYPES } from "@/shared/utils/sthanTypes";
+import { getSthanTypes, AVATAR_SAMBANDH_CONFIG, getValidSthanTypes, getAvatarColor, normalizeAvatarId, PIN_SERIES } from "@/shared/utils/sthanTypes";
 import { SthanType } from "@/shared/types/sthanType";
+import { cn } from "@/shared/lib/utils";
 import { useToast } from "@/shared/hooks/use-toast";
 import { useAuth } from "@/auth/AuthContext";
 import { ImageUpload } from "@/shared/components/admin/ImageUpload";
+import ReactSelect from "react-select";
+import { RelatedAvatarsSelect } from "@/shared/components/admin/RelatedAvatarsSelect";
+import { RelatedAvatar } from "@/types";
 
 // Local UI state interfaces - The robust interfaces are in @/types
 
@@ -206,8 +210,13 @@ export default function TempleArchitectureAdmin() {
   const [contactName, setContactName] = useState("");
   const [contactNumber, setContactNumber] = useState("");
   const [sthan, setSthan] = useState("");
+  const [sthanTypeId, setSthanTypeId] = useState("");
   const [sthanTypes, setSthanTypes] = useState<SthanType[]>([]);
-  const [avatarTypeFilter, setAvatarTypeFilter] = useState("");
+  const [primaryAvatar, setPrimaryAvatar] = useState("");
+  const [primarySubtype, setPrimarySubtype] = useState<string[]>([]);
+  const [relatedAvatars, setRelatedAvatars] = useState<RelatedAvatar[]>([]);
+  const [pinIcon, setPinIcon] = useState("");
+  
   const [selectedHotspot, setSelectedHotspot] = useState<Hotspot | null>(null);
   const [isVerified, setIsVerified] = useState(false);
   const [isComplete, setIsComplete] = useState(false);
@@ -308,7 +317,24 @@ export default function TempleArchitectureAdmin() {
           setContactDetails(data.contactDetails || "");
           setContactName(data.contactName || "");
           setContactNumber(data.contactNumber || "");
-          setSthan(data.sthan || "");
+          setSthan(data.sthanType || data.sthan || "");
+          setSthanTypeId(data.sthanTypeId || "");
+          setPrimaryAvatar(data.primaryAvatar || data.avatarSambandh || "");
+          setPrimarySubtype(data.primarySubtype || data.avatarSubTypes || (data.avatarSubdivision ? [data.avatarSubdivision] : []));
+          
+          
+          if (Array.isArray(data.relatedAvatars)) {
+            if (data.relatedAvatars.length > 0 && typeof data.relatedAvatars[0] === 'string') {
+                setRelatedAvatars(data.relatedAvatars.map((id: string) => ({ avatar: id, subtype: [] })));
+            } else {
+                setRelatedAvatars(data.relatedAvatars);
+            }
+          } else {
+            setRelatedAvatars([]);
+          }
+
+          setPinIcon(data.pinIcon || "");
+
           setIsVerified(data.isVerified || false);
           setIsComplete(data.isComplete || false);
 
@@ -479,6 +505,12 @@ export default function TempleArchitectureAdmin() {
       contactName,
       contactNumber,
       sthan,
+      sthanType: sthan, // Standardized field
+      sthanTypeId,
+      primaryAvatar,
+      primarySubtype,
+      relatedAvatars,
+      pinIcon,
       isVerified,
       isComplete,
       hotspots: archHotspots,
@@ -1151,45 +1183,114 @@ export default function TempleArchitectureAdmin() {
                       />
                     </div>
                   </div>
-                  {/* Avatar Type Filter + Sthan Type */}
-                  <div className="space-y-4">
+                  <div className="space-y-6">
                     <div className="space-y-2">
-                      <Label className="text-sm font-semibold text-slate-700">Avatar Type <span className="text-slate-400 font-normal text-xs">(filter)</span></Label>
-                      <Select value={avatarTypeFilter || '__all__'} onValueChange={(v) => { setAvatarTypeFilter(v === '__all__' ? '' : v); setSthan(""); }}>
-                        <SelectTrigger className="h-12 rounded-xl border-slate-200">
-                          <SelectValue placeholder="— All Avatars —" />
-                        </SelectTrigger>
-                        <SelectContent className="max-h-72">
-                          <SelectItem value="__all__">— All Avatars —</SelectItem>
-                          {AVATAR_TYPES.map((a) => (
-                            <SelectItem key={a.id} value={a.label}>{a.label}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                        <Label className="text-sm font-semibold text-slate-700">Primary Avatar *</Label>
+                        <Select
+                            value={primaryAvatar}
+                            onValueChange={(v) => {
+                                setPrimaryAvatar(v);
+                                setPrimarySubtype([]); // reset subtypes
+                            }}
+                            required
+                        >
+                            <SelectTrigger className="h-12 rounded-xl border-slate-200 bg-white">
+                                <SelectValue placeholder="Select Primary Avatar">
+                                    {primaryAvatar ? (() => {
+                                        const cfg = AVATAR_SAMBANDH_CONFIG.find(a => a.id === primaryAvatar);
+                                        return cfg ? (
+                                            <span className="flex items-center gap-2">
+                                                <span className="w-3 h-3 rounded-full shrink-0 inline-block" style={{ backgroundColor: cfg.color }} />
+                                                {cfg.label}
+                                            </span>
+                                        ) : 'Select Primary Avatar';
+                                    })() : 'Select Primary Avatar'}
+                                </SelectValue>
+                            </SelectTrigger>
+                            <SelectContent className="max-h-72">
+                                {AVATAR_SAMBANDH_CONFIG.map((av) => (
+                                    <SelectItem key={av.id} value={av.id}>
+                                        <div className="flex items-center gap-2.5">
+                                            <span className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: av.color }} />
+                                            <span>{av.label}</span>
+                                        </div>
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
                     </div>
+
+                    {((AVATAR_SAMBANDH_CONFIG.find(a => a.id === primaryAvatar)?.subdivisions.length || 0) > 0) && (
+                        <div className="space-y-2 animate-in fade-in duration-300">
+                            <Label className="text-sm font-semibold text-slate-700">Avatar Sub Type(s)</Label>
+                            <ReactSelect
+                                isMulti
+                                options={AVATAR_SAMBANDH_CONFIG.find(a => a.id === primaryAvatar)?.subdivisions.filter(s => s.id !== 'complete').map(s => ({ value: s.id, label: s.label }))}
+                                value={AVATAR_SAMBANDH_CONFIG.find(a => a.id === primaryAvatar)?.subdivisions
+                                    .filter(s => primarySubtype.includes(s.id))
+                                    .map(s => ({ value: s.id, label: s.label }))}
+                                onChange={(selected) => setPrimarySubtype(selected ? selected.map((s: any) => s.value) : [])}
+                                placeholder="Select Sub Types..."
+                                className="react-select-container text-sm"
+                                classNamePrefix="react-select"
+                                styles={{
+                                    control: (base) => ({
+                                        ...base,
+                                        minHeight: '48px',
+                                        borderRadius: '0.75rem',
+                                        borderColor: '#e2e8f0',
+                                        boxShadow: 'none',
+                                        '&:hover': { borderColor: '#cbd5e1' }
+                                    })
+                                }}
+                            />
+                        </div>
+                    )}
+
                     <div className="space-y-2">
                       <Label className="text-sm font-semibold text-slate-700">Sthan Type *</Label>
-                      <Select value={sthan} onValueChange={setSthan}>
+                      <Select 
+                        value={sthan} 
+                        onValueChange={(v) => {
+                                        setSthan(v);
+                                        // Find the type object to get its ID and pinType
+                                        const typeObj = sthanTypes.find(t => t.name === v);
+                                        if (typeObj) {
+                                          setSthanTypeId(typeObj.id);
+                                          if (typeObj.pinType) {
+                                            setPinIcon(typeObj.pinType);
+                                          }
+                                        }
+                                      }}
+                      >
                         <SelectTrigger className="h-12 rounded-xl border-slate-200 bg-white">
                           <SelectValue placeholder="Select Sthan Type" />
                         </SelectTrigger>
                         <SelectContent>
-                          {sthanTypes
-                            .filter(st => !avatarTypeFilter || st.avatarType === avatarTypeFilter)
-                            .map(st => (
-                              <SelectItem key={st.id} value={st.name}>
-                                <div className="flex items-center gap-2">
-                                  <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: st.color }} />
-                                  <span>{st.name}</span>
-                                </div>
-                              </SelectItem>
-                            ))}
-                          {sthanTypes.filter(st => !avatarTypeFilter || st.avatarType === avatarTypeFilter).length === 0 && (
-                            <div className="px-3 py-2 text-sm text-slate-400 italic font-medium">No types available for this avatar</div>
+                              {getValidSthanTypes(primaryAvatar, sthanTypes).map(st => (
+                                  <SelectItem key={st.id} value={st.name}>
+                                    <div className="flex items-center gap-2">
+                                      <div 
+                                        className="w-2.5 h-2.5 rounded-full shrink-0" 
+                                        style={{ backgroundColor: getAvatarColor(st.avatarSambandh) || st.color }} 
+                                      />
+                                      <span>{st.name}</span>
+                                    </div>
+                                  </SelectItem>
+                                ))}
+                          {getValidSthanTypes(primaryAvatar, sthanTypes).length === 0 && (
+                            <div className="px-3 py-2 text-sm text-slate-400 italic">No types available for this avatar</div>
                           )}
                         </SelectContent>
                       </Select>
+                      <p className="text-xs text-slate-400">Defines the default map pin icon.</p>
                     </div>
+
+                    <RelatedAvatarsSelect 
+                        value={relatedAvatars} 
+                        onChange={setRelatedAvatars} 
+                        excludeAvatarId={primaryAvatar}
+                    />
                   </div>
                 </div>
               </div>

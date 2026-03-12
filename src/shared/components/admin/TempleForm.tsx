@@ -11,9 +11,13 @@ import { useToast } from "@/shared/hooks/use-toast";
 import { ArrowLeft, Save, ExternalLink } from "lucide-react";
 import { useAuth } from "@/auth/AuthContext";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/components/ui/select";
-import { getSthanTypes, AVATAR_SAMBANDH_CONFIG } from "@/shared/utils/sthanTypes";
+import { getSthanTypes, AVATAR_SAMBANDH_CONFIG, getValidSthanTypes, getAvatarColor, normalizeAvatarId, PIN_SERIES } from "@/shared/utils/sthanTypes";
 import { SthanType } from "@/shared/types/sthanType";
 import { Switch } from "@/shared/components/ui/switch";
+import ReactSelect from "react-select";
+import { RelatedAvatarsSelect } from "./RelatedAvatarsSelect";
+import { RelatedAvatar } from "@/types";
+import { cn } from "@/shared/lib/utils";
 
 interface TempleFormProps {
     templeId?: string;
@@ -36,8 +40,13 @@ export default function TempleForm({ templeId }: TempleFormProps) {
     const [taluka, setTaluka] = useState("");
     const [district, setDistrict] = useState("");
     const [sthan, setSthan] = useState("");
-    const [avatarSambandhFilter, setAvatarSambandhFilter] = useState("");
-    const [avatarSubdivisionFilter, setAvatarSubdivisionFilter] = useState("");
+    const [sthanTypeId, setSthanTypeId] = useState("");
+    const [pinIcon, setPinIcon] = useState("");
+    
+    // New Hierarchy Fields
+    const [primaryAvatar, setPrimaryAvatar] = useState("");
+    const [primarySubtype, setPrimarySubtype] = useState<string[]>([]);
+    const [relatedAvatars, setRelatedAvatars] = useState<RelatedAvatar[]>([]);
 
     // ── Location ──
     const [latitude, setLatitude] = useState("");
@@ -83,11 +92,27 @@ export default function TempleForm({ templeId }: TempleFormProps) {
                     setTaluka(data.taluka || "");
                     setDistrict(data.district || "");
                     setSthan(data.sthan || "");
-                    setAvatarSambandhFilter(data.avatarSambandh || "");
-                    setAvatarSubdivisionFilter(data.avatarSubdivision || "");
+                    setSthanTypeId(data.sthanTypeId || "");
+                    
+                    // Legacy fallback loading
+                    setPrimaryAvatar(data.primaryAvatar || data.avatarSambandh || "");
+                    setPrimarySubtype(data.primarySubtype || data.avatarSubTypes || (data.avatarSubdivision ? [data.avatarSubdivision] : []));
+                    
+                    // Handle Related Avatars Conversion
+                    if (Array.isArray(data.relatedAvatars)) {
+                        if (data.relatedAvatars.length > 0 && typeof data.relatedAvatars[0] === 'string') {
+                            setRelatedAvatars(data.relatedAvatars.map((id: string) => ({ avatar: id, subtype: [] })));
+                        } else {
+                            setRelatedAvatars(data.relatedAvatars);
+                        }
+                    } else {
+                        setRelatedAvatars([]);
+                    }
+
                     setLatitude(String(data.latitude ?? data.location?.lat ?? ""));
                     setLongitude(String(data.longitude ?? data.location?.lng ?? ""));
                     setLocationLink(data.locationLink || "");
+                    setPinIcon(data.pinIcon || "");
                     setIsVerified(data.isVerified || false);
                     setIsComplete(data.isComplete || false);
                 } else {
@@ -107,6 +132,12 @@ export default function TempleForm({ templeId }: TempleFormProps) {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!user) return;
+        
+        if (!primaryAvatar) {
+            toast({ title: "Validation Error", description: "Primary Avatar is required.", variant: "destructive" });
+            return;
+        }
+
         setLoading(true);
 
         try {
@@ -127,12 +158,23 @@ export default function TempleForm({ templeId }: TempleFormProps) {
                 taluka,
                 district,
                 sthan,
-                avatarSambandh: avatarSambandhFilter || undefined,
-                avatarSubdivision: avatarSubdivisionFilter || undefined,
+                
+                // New Fields
+                primaryAvatar,
+                primarySubtype,
+                relatedAvatars,
+                sthanType: sthan, // Standardized field
+                sthanTypeId, // Link to Manage Sthan Types
+                
+                // Legacy fields for backward compatibility
+                avatarSambandh: primaryAvatar,
+                avatarSubdivision: primarySubtype.length > 0 ? primarySubtype[0] : undefined,
+
                 latitude: latNum,
                 longitude: lngNum,
                 location: { lat: latNum, lng: lngNum },
                 locationLink,
+                pinIcon,
                 updatedAt: new Date().toISOString(),
                 updatedBy: user.uid,
                 isVerified,
@@ -202,6 +244,10 @@ export default function TempleForm({ templeId }: TempleFormProps) {
         );
     }
 
+    // Dynamic Options for React Select
+    const primaryAvatarConfig = AVATAR_SAMBANDH_CONFIG.find(a => a.id === primaryAvatar);
+    const showSubTypes = primaryAvatarConfig && primaryAvatarConfig.subdivisions.length > 0;
+    
     return (
         <div className="min-h-screen bg-[#F9F6F0] pb-20">
             <div className="max-w-7xl mx-auto px-6 pt-8 space-y-8">
@@ -322,125 +368,122 @@ export default function TempleForm({ templeId }: TempleFormProps) {
                                 </div>
                             </div>
 
-                            {/* Avatar Sambandh → Subdivision → Sthan Type (3-level cascade) */}
-                            <div className="space-y-4">
-                                {/* Level 1: Avatar Sambandh */}
+                            <Separator className="bg-slate-200/60 my-6" />
+
+                            <div className="space-y-6">
                                 <div className="space-y-2">
-                                    <Label className="text-sm font-semibold text-slate-700">
-                                        Avatar Sambandh <span className="text-slate-400 font-normal">(filter)</span>
-                                    </Label>
+                                    <Label className="text-sm font-semibold text-slate-700">Primary Avatar *</Label>
                                     <Select
-                                        value={avatarSambandhFilter || '__all__'}
+                                        value={primaryAvatar}
                                         onValueChange={(v) => {
-                                            setAvatarSambandhFilter(v === '__all__' ? '' : v);
-                                            setAvatarSubdivisionFilter('');
-                                            setSthan('');
+                                            setPrimaryAvatar(v);
+                                            setPrimarySubtype([]); // reset when primary changes
                                         }}
+                                        required
                                     >
-                                        <SelectTrigger className="h-12 rounded-xl border-slate-200">
-                                            <SelectValue placeholder="— All Avatars —">
-                                                {avatarSambandhFilter ? (() => {
-                                                    const cfg = AVATAR_SAMBANDH_CONFIG.find(a => a.id === avatarSambandhFilter);
+                                        <SelectTrigger className="h-12 rounded-xl border-slate-200 bg-white">
+                                            <SelectValue placeholder="Select Primary Avatar">
+                                                {primaryAvatar ? (() => {
+                                                    const cfg = AVATAR_SAMBANDH_CONFIG.find(a => a.id === primaryAvatar);
                                                     return cfg ? (
                                                         <span className="flex items-center gap-2">
                                                             <span className="w-3 h-3 rounded-full shrink-0 inline-block" style={{ backgroundColor: cfg.color }} />
                                                             {cfg.label}
                                                         </span>
-                                                    ) : '— All Avatars —';
-                                                })() : '— All Avatars —'}
+                                                    ) : 'Select Primary Avatar';
+                                                })() : 'Select Primary Avatar'}
                                             </SelectValue>
                                         </SelectTrigger>
-                                        <SelectContent className="max-h-72">
-                                            <SelectItem value="__all__">— All Avatars —</SelectItem>
+                                        <SelectContent>
                                             {AVATAR_SAMBANDH_CONFIG.map((av) => (
                                                 <SelectItem key={av.id} value={av.id}>
                                                     <div className="flex items-center gap-2.5">
                                                         <span className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: av.color }} />
-                                                        <div className="flex flex-col">
-                                                            <span className="font-semibold text-sm">{av.label}</span>
-                                                            <span className="text-[10px] text-slate-400">{av.count} Sthans</span>
-                                                        </div>
+                                                        <span>{av.label}</span>
                                                     </div>
                                                 </SelectItem>
                                             ))}
                                         </SelectContent>
                                     </Select>
+                                    <p className="text-xs text-slate-400">Controls the color of the map pin and primary categorization.</p>
                                 </div>
 
-                                {/* Level 2: Subdivision (conditional) */}
-                                {(() => {
-                                    const cfg = AVATAR_SAMBANDH_CONFIG.find(a => a.id === avatarSambandhFilter);
-                                    if (!cfg || cfg.subdivisions.length === 0) return null;
-                                    return (
-                                        <div className="space-y-2">
-                                            <Label className="text-sm font-semibold text-slate-700">Subdivision</Label>
-                                            <Select
-                                                key={`subdiv-${avatarSambandhFilter}`}
-                                                value={avatarSubdivisionFilter || '__all__'}
-                                                onValueChange={(v) => { setAvatarSubdivisionFilter(v === '__all__' ? '' : v); setSthan(''); }}
-                                            >
-                                                <SelectTrigger className="h-12 rounded-xl border-slate-200">
-                                                    <SelectValue placeholder="— All Subdivisions —" />
-                                                </SelectTrigger>
-                                                <SelectContent className="max-h-60">
-                                                    <SelectItem value="__all__">— All Subdivisions —</SelectItem>
-                                                    {cfg.subdivisions.map(sub => (
-                                                        <SelectItem key={sub.id} value={sub.id}>
-                                                            <div className="flex items-center justify-between gap-4">
-                                                                <span className="font-semibold text-sm">{sub.label}</span>
-                                                                <span className="text-[10px] text-slate-400">{sub.count} Sthans</span>
-                                                            </div>
-                                                        </SelectItem>
-                                                    ))}
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
-                                    );
-                                })()}
+                                {showSubTypes && (
+                                    <div className="space-y-2">
+                                        <Label className="text-sm font-semibold text-slate-700">Avatar Sub Type(s)</Label>
+                                        <ReactSelect
+                                            isMulti
+                                            options={primaryAvatarConfig.subdivisions.filter(s => s.id !== 'complete').map(s => ({ value: s.id, label: s.label }))}
+                                            value={primaryAvatarConfig.subdivisions
+                                                .filter(s => primarySubtype.includes(s.id))
+                                                .map(s => ({ value: s.id, label: s.label }))}
+                                            onChange={(selected) => {
+                                                setPrimarySubtype(selected ? selected.map((s: any) => s.value) : []);
+                                            }}
+                                            placeholder="Select Sub Types..."
+                                            className="react-select-container text-sm"
+                                            classNamePrefix="react-select"
+                                            styles={{
+                                                control: (base) => ({
+                                                    ...base,
+                                                    minHeight: '48px',
+                                                    borderRadius: '0.75rem',
+                                                    borderColor: '#e2e8f0',
+                                                    boxShadow: 'none',
+                                                    '&:hover': {
+                                                        borderColor: '#cbd5e1'
+                                                    }
+                                                })
+                                            }}
+                                        />
+                                    </div>
+                                )}
 
-                                {/* Level 3: Sthan Type */}
                                 <div className="space-y-2">
                                     <Label className="text-sm font-semibold text-slate-700">Sthan Type *</Label>
-                                    <Select value={sthan} onValueChange={setSthan} required>
+                                    <Select 
+                                        value={sthan} 
+                                        onValueChange={(v) => {
+                                            setSthan(v);
+                                            // Find the type object to get its ID and pinType
+                                            const typeObj = sthanTypes.find(t => t.name === v);
+                                            if (typeObj) {
+                                                setSthanTypeId(typeObj.id);
+                                                if (typeObj.pinType) {
+                                                    setPinIcon(typeObj.pinType);
+                                                }
+                                            }
+                                        }} 
+                                        required
+                                    >
                                         <SelectTrigger className="h-12 rounded-xl border-slate-200 bg-white">
                                             <SelectValue placeholder="Select Sthan Type" />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            {sthanTypes
-                                                .filter(st => {
-                                                    if (!avatarSambandhFilter) return true;
-                                                    if (st.avatarSambandh) {
-                                                        if (st.avatarSambandh !== avatarSambandhFilter) return false;
-                                                        if (avatarSubdivisionFilter && st.avatarSubdivision !== avatarSubdivisionFilter) return false;
-                                                        return true;
-                                                    }
-                                                    // Legacy fallback: try matching avatarType string
-                                                    const cfg = AVATAR_SAMBANDH_CONFIG.find(a => a.id === avatarSambandhFilter);
-                                                    return cfg ? (st.avatarType?.includes(cfg.label) ?? false) : true;
-                                                })
-                                                .map((st) => (
-                                                    <SelectItem key={st.id} value={st.name}>
-                                                        <div className="flex items-center gap-2">
-                                                            <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: st.color }} />
-                                                            <span>{st.name}</span>
-                                                        </div>
-                                                    </SelectItem>
-                                                ))}
-                                            {sthanTypes.filter(st => {
-                                                if (!avatarSambandhFilter) return true;
-                                                if (st.avatarSambandh) {
-                                                    if (st.avatarSambandh !== avatarSambandhFilter) return false;
-                                                    if (avatarSubdivisionFilter && st.avatarSubdivision !== avatarSubdivisionFilter) return false;
-                                                    return true;
-                                                }
-                                                const cfg = AVATAR_SAMBANDH_CONFIG.find(a => a.id === avatarSambandhFilter);
-                                                return cfg ? (st.avatarType?.includes(cfg.label) ?? false) : true;
-                                            }).length === 0 && (
-                                                <div className="px-3 py-2 text-sm text-slate-400 italic font-medium">No types for this avatar / subdivision</div>
+                                            {getValidSthanTypes(primaryAvatar, sthanTypes).map((st) => (
+                                                <SelectItem key={st.id} value={st.name}>
+                                                    <div className="flex items-center gap-2">
+                                                        <div 
+                                                            className="w-2.5 h-2.5 rounded-full shrink-0" 
+                                                            style={{ backgroundColor: getAvatarColor(st.avatarSambandh) || st.color }} 
+                                                        />
+                                                        <span>{st.name}</span>
+                                                    </div>
+                                                </SelectItem>
+                                            ))}
+                                            {getValidSthanTypes(primaryAvatar, sthanTypes).length === 0 && (
+                                                <div className="px-3 py-2 text-sm text-slate-400 italic">No types available for this avatar</div>
                                             )}
                                         </SelectContent>
                                     </Select>
+                                    <p className="text-xs text-slate-400">Defines the default map pin icon.</p>
                                 </div>
+
+                                <RelatedAvatarsSelect 
+                                    value={relatedAvatars}
+                                    onChange={setRelatedAvatars}
+                                    excludeAvatarId={primaryAvatar}
+                                />
                             </div>
 
                         </div>
