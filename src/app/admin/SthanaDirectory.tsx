@@ -11,6 +11,10 @@ import {
     DropdownMenuContent,
     DropdownMenuItem,
     DropdownMenuTrigger,
+    DropdownMenuSub,
+    DropdownMenuSubTrigger,
+    DropdownMenuSubContent,
+    DropdownMenuPortal,
 } from "@/shared/components/ui/dropdown-menu";
 import {
     Search,
@@ -29,7 +33,7 @@ import {
 import { useToast } from "@/shared/hooks/use-toast";
 import { Badge } from "@/shared/components/ui/badge";
 import { SthanTypeManager } from "@/shared/components/admin/SthanTypeManager";
-import { getSthanTypes, AVATAR_TYPES } from "@/shared/utils/sthanTypes";
+import { getSthanTypes, AVATAR_SAMBANDH_CONFIG } from "@/shared/utils/sthanTypes";
 import { SthanType } from "@/shared/types/sthanType";
 
 export default function SthanaDirectory() {
@@ -41,7 +45,8 @@ export default function SthanaDirectory() {
     const [selectedDistrict, setSelectedDistrict] = useState<string>("District");
     const [selectedTaluka, setSelectedTaluka] = useState<string>("Taluka");
     const [selectedSthan, setSelectedSthan] = useState<string>("Sthan Type");
-    const [selectedAvatar, setSelectedAvatar] = useState<string>("Avatar Type");
+    const [selectedAvatarSambandh, setSelectedAvatarSambandh] = useState<string>("ALL");
+    const [selectedAvatarSubdivision, setSelectedAvatarSubdivision] = useState<string>("");
     const [selectedStatus, setSelectedStatus] = useState<string>("Status");
     const [sthanTypes, setSthanTypes] = useState<SthanType[]>([]);
 
@@ -141,9 +146,31 @@ export default function SthanaDirectory() {
         const matchesTaluka = selectedTaluka === "Taluka" || t.taluka === selectedTaluka;
         const matchesSthan = selectedSthan === "Sthan Type" || t.sthan === selectedSthan;
 
-        // Avatar type filter: look up the sthan type record to get its avatarType
-        const sthanTypeRecord = sthanTypes.find(st => st.name === t.sthan);
-        const matchesAvatar = selectedAvatar === "Avatar Type" || sthanTypeRecord?.avatarType === selectedAvatar;
+        // Avatar hierarchy filter logic
+        let matchesAvatar = true;
+        
+        if (selectedAvatarSambandh !== "ALL") {
+            const tAvatarS = t.avatarSambandh;
+            const tAvatarSub = t.avatarSubdivision;
+
+            // Legacy fallback
+            let resAvatarS = tAvatarS;
+            let resAvatarSub = tAvatarSub;
+
+            if (!resAvatarS) {
+                const typeRecord = sthanTypes.find(st => st.name === t.sthan);
+                if (typeRecord) {
+                    resAvatarS = typeRecord.avatarSambandh;
+                    resAvatarSub = typeRecord.avatarSubdivision;
+                }
+            }
+
+            if (resAvatarS !== selectedAvatarSambandh) {
+                matchesAvatar = false;
+            } else if (selectedAvatarSubdivision && resAvatarSub !== selectedAvatarSubdivision) {
+                matchesAvatar = false;
+            }
+        }
 
         // Status filter logic
         const matchesStatus = (() => {
@@ -166,6 +193,43 @@ export default function SthanaDirectory() {
 
         return matchesSearch && matchesDistrict && matchesTaluka && matchesSthan && matchesAvatar && matchesStatus;
     });
+
+    // 5. Dynamic Counts for Avatar hierarchy
+    const filterCounts = React.useMemo(() => {
+        const counts = {
+            ALL: temples.length,
+            byAvatar: {} as Record<string, number>,
+            bySubdivision: {} as Record<string, number>,
+            bySthan: {} as Record<string, number>,
+        };
+
+        temples.forEach((t: any) => {
+            let resAvatarS = t.avatarSambandh;
+            let resAvatarSub = t.avatarSubdivision;
+
+            // Apply legacy fallback for counting
+            if (!resAvatarS && t.sthan) {
+                const typeRecord = sthanTypes.find(st => st.name === t.sthan);
+                if (typeRecord) {
+                    resAvatarS = typeRecord.avatarSambandh;
+                    resAvatarSub = typeRecord.avatarSubdivision;
+                }
+            }
+
+            if (resAvatarS) {
+                counts.byAvatar[resAvatarS] = (counts.byAvatar[resAvatarS] || 0) + 1;
+            }
+            if (resAvatarSub) {
+                counts.bySubdivision[resAvatarSub] = (counts.bySubdivision[resAvatarSub] || 0) + 1;
+            }
+            if (t.sthan) {
+                counts.bySthan[t.sthan] = (counts.bySthan[t.sthan] || 0) + 1;
+            }
+        });
+
+        return counts;
+    }, [temples, sthanTypes]);
+
 
     const formatDate = (date: Date) => {
         return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
@@ -275,48 +339,120 @@ export default function SthanaDirectory() {
                             </DropdownMenu>
 
 
-                            {/* Avatar Type Filter */}
+                            {/* Hierarchical Avatar & Sthan Filter */}
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
-                                    <Button variant="outline" className="h-12 px-4 rounded-xl border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-bold min-w-[130px] justify-between">
-                                        {selectedAvatar === "Avatar Type" ? "Avatar" : selectedAvatar.split("–")[0].trim()}
-                                        <ChevronDown className="w-4 h-4 ml-2 opacity-50" />
+                                    <Button variant="outline" className="h-12 px-4 rounded-xl border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-bold min-w-[150px] justify-between">
+                                        <div className="flex items-center gap-2 truncate">
+                                            {selectedSthan !== "Sthan Type" 
+                                                ? selectedSthan 
+                                                : selectedAvatarSubdivision 
+                                                    ? AVATAR_SAMBANDH_CONFIG.find(a => a.id === selectedAvatarSambandh)?.subdivisions.find(s => s.id === selectedAvatarSubdivision)?.label 
+                                                    : selectedAvatarSambandh === "ALL" 
+                                                        ? "All Avatars" 
+                                                        : AVATAR_SAMBANDH_CONFIG.find(a => a.id === selectedAvatarSambandh)?.shortLabel || "Avatar"}
+                                            
+                                            {selectedAvatarSambandh !== "ALL" && selectedSthan === "Sthan Type" && !selectedAvatarSubdivision && (
+                                                <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: AVATAR_SAMBANDH_CONFIG.find(a => a.id === selectedAvatarSambandh)?.color }} />
+                                            )}
+                                        </div>
+                                        <ChevronDown className="w-4 h-4 ml-2 opacity-50 shrink-0" />
                                     </Button>
                                 </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end" className="w-[240px] max-h-[320px] overflow-y-auto">
-                                    <DropdownMenuItem onClick={() => setSelectedAvatar("Avatar Type")} className="font-bold cursor-pointer">All Avatars</DropdownMenuItem>
-                                    {AVATAR_TYPES.map(a => (
-                                        <DropdownMenuItem key={a.id} onClick={() => setSelectedAvatar(a.label)} className="cursor-pointer">
-                                            {a.label}
-                                        </DropdownMenuItem>
-                                    ))}
+                                <DropdownMenuContent align="end" className="w-[240px] max-h-[400px] overflow-y-auto">
+                                    <DropdownMenuItem 
+                                        onClick={() => { setSelectedAvatarSambandh("ALL"); setSelectedAvatarSubdivision(""); setSelectedSthan("Sthan Type"); }} 
+                                        className="font-bold cursor-pointer flex justify-between"
+                                    >
+                                        <span>All Avatars & Sthans</span>
+                                        <span className="text-xs text-muted-foreground">{filterCounts.ALL}</span>
+                                    </DropdownMenuItem>
+                                    
+                                    {AVATAR_SAMBANDH_CONFIG.map(avatar => {
+                                         const avatarCount = filterCounts.byAvatar[avatar.id] || 0;
+                            
+                                         return (
+                                             <DropdownMenuSub key={avatar.id}>
+                                                 <DropdownMenuSubTrigger className="cursor-pointer">
+                                                     <div className="flex items-center">
+                                                         <div className="w-2 h-2 rounded-full mr-2" style={{ backgroundColor: avatar.color }} />
+                                                         <span>{avatar.shortLabel}</span>
+                                                     </div>
+                                                 </DropdownMenuSubTrigger>
+                                                 <DropdownMenuPortal>
+                                                     <DropdownMenuSubContent className="w-[220px] max-h-[300px] overflow-y-auto">
+                                                         <DropdownMenuItem 
+                                                             onClick={() => { setSelectedAvatarSambandh(avatar.id); setSelectedAvatarSubdivision(""); setSelectedSthan("Sthan Type"); }}
+                                                             className="font-bold cursor-pointer flex justify-between"
+                                                         >
+                                                             <span>All {avatar.shortLabel}</span>
+                                                             <span className="text-xs text-muted-foreground">{avatarCount}</span>
+                                                         </DropdownMenuItem>
+                            
+                                                         {avatar.subdivisions.length === 0 ? (
+                                                             // No subdivisions, list sthan types
+                                                             sthanTypes
+                                                                 .filter(st => st.avatarSambandh === avatar.id)
+                                                                 .map(st => (
+                                                                     <DropdownMenuItem 
+                                                                         key={st.id}
+                                                                         onClick={() => { setSelectedAvatarSambandh(avatar.id); setSelectedAvatarSubdivision(""); setSelectedSthan(st.name); }}
+                                                                         className="cursor-pointer flex justify-between"
+                                                                     >
+                                                                         <div className="flex items-center truncate max-w-[140px]">
+                                                                             <div className="w-1.5 h-1.5 rounded-full mr-2 opacity-50 shrink-0" style={{ backgroundColor: st.color }} />
+                                                                             <span className="truncate pr-2">{st.name}</span>
+                                                                         </div>
+                                                                         <span className="text-xs text-muted-foreground shrink-0">{filterCounts.bySthan[st.name] || 0}</span>
+                                                                     </DropdownMenuItem>
+                                                                 ))
+                                                         ) : (
+                                                             // Has subdivisions
+                                                             avatar.subdivisions.map(sub => {
+                                                                  const subCount = filterCounts.bySubdivision[sub.id] || 0;
+                                                                  return (
+                                                                      <DropdownMenuSub key={sub.id}>
+                                                                          <DropdownMenuSubTrigger className="cursor-pointer font-medium">
+                                                                              <span>{sub.label}</span>
+                                                                          </DropdownMenuSubTrigger>
+                                                                          <DropdownMenuPortal>
+                                                                              <DropdownMenuSubContent className="w-[220px] max-h-[300px] overflow-y-auto">
+                                                                                  <DropdownMenuItem 
+                                                                                      onClick={() => { setSelectedAvatarSambandh(avatar.id); setSelectedAvatarSubdivision(sub.id); setSelectedSthan("Sthan Type"); }}
+                                                                                      className="font-bold cursor-pointer flex justify-between"
+                                                                                  >
+                                                                                      <span>All {sub.label}</span>
+                                                                                      <span className="text-xs text-muted-foreground">{subCount}</span>
+                                                                                  </DropdownMenuItem>
+                                                                                  {sthanTypes
+                                                                                      .filter(st => st.avatarSubdivision === sub.id)
+                                                                                      .map(st => (
+                                                                                          <DropdownMenuItem 
+                                                                                              key={st.id}
+                                                                                              onClick={() => { setSelectedAvatarSambandh(avatar.id); setSelectedAvatarSubdivision(sub.id); setSelectedSthan(st.name); }}
+                                                                                              className="cursor-pointer flex justify-between"
+                                                                                          >
+                                                                                              <div className="flex items-center truncate max-w-[140px]">
+                                                                                                  <div className="w-1.5 h-1.5 rounded-full mr-2 opacity-50 shrink-0" style={{ backgroundColor: st.color }} />
+                                                                                                  <span className="truncate pr-2">{st.name}</span>
+                                                                                              </div>
+                                                                                              <span className="text-xs text-muted-foreground shrink-0">{filterCounts.bySthan[st.name] || 0}</span>
+                                                                                          </DropdownMenuItem>
+                                                                                      ))}
+                                                                              </DropdownMenuSubContent>
+                                                                          </DropdownMenuPortal>
+                                                                      </DropdownMenuSub>
+                                                                  );
+                                                             })
+                                                         )}
+                                                     </DropdownMenuSubContent>
+                                                 </DropdownMenuPortal>
+                                             </DropdownMenuSub>
+                                         );
+                                    })}
                                 </DropdownMenuContent>
                             </DropdownMenu>
 
-                            {/* Sthan Type Filter */}
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <Button variant="outline" className="h-12 px-4 rounded-xl border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-bold min-w-[120px] justify-between">
-                                        {selectedSthan}
-                                        <ChevronDown className="w-4 h-4 ml-2 opacity-50" />
-                                    </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                    <DropdownMenuItem onClick={() => setSelectedSthan("Sthan Type")} className="font-bold cursor-pointer">All Types</DropdownMenuItem>
-                                    {sthanTypes
-                                        .filter(st => {
-                                            if (selectedAvatar === "Avatar Type") return true;
-                                            // Ensure we match the group or the label if needed, but usually label is what's stored
-                                            return st.avatarType === selectedAvatar;
-                                        })
-                                        .map(st => (
-                                            <DropdownMenuItem key={st.id} onClick={() => setSelectedSthan(st.name)} className="cursor-pointer">
-                                                <div className="w-2.5 h-2.5 rounded-full mr-2.5 shrink-0" style={{ backgroundColor: st.color }} />
-                                                <span className="truncate">{st.name}</span>
-                                            </DropdownMenuItem>
-                                        ))}
-                                </DropdownMenuContent>
-                            </DropdownMenu>
 
                             {/* Status Filter */}
                             <DropdownMenu>

@@ -5,11 +5,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Button } from '@/shared/components/ui/button';
 import { Input } from '@/shared/components/ui/input';
 import { Label } from '@/shared/components/ui/label';
-import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from '@/shared/components/ui/select';
-import { Plus, Trash2, Pencil, GripVertical } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/components/ui/select';
+import { Plus, Trash2, Pencil, GripVertical, ChevronRight } from 'lucide-react';
 import {
     getSthanTypes, createSthanType, updateSthanType, deleteSthanType,
-    getSthanPinInfo, updateSthanTypesOrder, PIN_SERIES, AVATAR_TYPES
+    getSthanPinInfo, updateSthanTypesOrder, PIN_SERIES, AVATAR_SAMBANDH_CONFIG, TOTAL_STHAN_COUNT, getAvatarColor,
 } from '@/shared/utils/sthanTypes';
 import { SthanType, PinType } from '@/shared/types/sthanType';
 import { useToast } from '@/shared/hooks/use-toast';
@@ -22,18 +22,18 @@ export function SthanTypeManager() {
     const [loading, setLoading] = useState(false);
     const [editingId, setEditingId] = useState<string | null>(null);
 
+    // ── Form state ──
     const [name, setName] = useState('');
-    const [avatarType, setAvatarType] = useState<string>('');
+    const [avatarSambandh, setAvatarSambandh] = useState<string>('');
+    const [avatarSubdivision, setAvatarSubdivision] = useState<string>('');
     const [selectedSeriesId, setSelectedSeriesId] = useState<string>('');
     const [pinType, setPinType] = useState<PinType>('');
-    const [color, setColor] = useState('#D4AF37');
+    const [color, setColor] = useState('#94A3B8');
 
     const { toast } = useToast();
 
     useEffect(() => {
-        if (open) {
-            loadSthanTypes();
-        }
+        if (open) loadSthanTypes();
     }, [open]);
 
     const loadSthanTypes = async () => {
@@ -41,44 +41,54 @@ export function SthanTypeManager() {
         try {
             const types = await getSthanTypes();
             setSthanTypes(types);
-        } catch (error) {
-            toast({
-                title: 'Error',
-                description: 'Failed to load sthan types',
-                variant: 'destructive',
-            });
+        } catch {
+            toast({ title: 'Error', description: 'Failed to load sthan types', variant: 'destructive' });
         } finally {
             setLoading(false);
         }
     };
 
+    // ── Avatar Sambandh selection ──
     const handleAvatarChange = (id: string) => {
         const val = id === '__none__' ? '' : id;
-        setAvatarType(val);
+        setAvatarSambandh(val);
+        setAvatarSubdivision('');
 
-        // Auto-select series based on avatar mapping
-        let seriesId = '';
-        if (val === 'shri-krishna') seriesId = '1';
-        else if (val === 'shri-dattatray') seriesId = '2';
-        else if (val === 'shri-chakrapani') seriesId = '3';
-        else if (val.startsWith('shri-govind')) seriesId = '4';
-        else if (val.startsWith('shri-chakradhar')) seriesId = '5';
-
-        if (seriesId) {
-            handleSeriesChange(seriesId);
+        // Auto-set color from avatar config
+        const cfg = AVATAR_SAMBANDH_CONFIG.find(a => a.id === val);
+        if (cfg) {
+            setColor(cfg.color);
+            // Auto-select matching PIN_SERIES by avatar
+            const seriesMap: Record<string, string> = {
+                'shri-krishna': '1',
+                'shri-dattatray': '2',
+                'shri-chakrapani': '3',
+                'shri-govind': '4',
+                'shri-chakradhar': '5',
+                'mandalik': '6',
+            };
+            const sid = seriesMap[val] || '';
+            if (sid) handleSeriesChange(sid);
+            else { setSelectedSeriesId(''); setPinType(''); }
         } else {
-            // Reset series selection if no direct mapping
+            setColor('#94A3B8');
             setSelectedSeriesId('');
             setPinType('');
         }
     };
+
+    // ── Subdivision specific options ──
+    const selectedAvatarCfg = useMemo(
+        () => AVATAR_SAMBANDH_CONFIG.find(a => a.id === avatarSambandh) ?? null,
+        [avatarSambandh],
+    );
+    const hasSubdivisions = (selectedAvatarCfg?.subdivisions.length ?? 0) > 0;
 
     const handleSeriesChange = (seriesId: string) => {
         const series = PIN_SERIES.find(s => s.id === seriesId);
         if (!series) return;
         setSelectedSeriesId(seriesId);
         setColor(series.defaultColor);
-        // Default to first pin in series
         if (series.files.length > 0) {
             setPinType(`${series.folder}/${series.files[0]}` as PinType);
         }
@@ -88,66 +98,56 @@ export function SthanTypeManager() {
         e.preventDefault();
 
         if (!name.trim()) {
-            toast({
-                title: 'Validation Error',
-                description: 'Please enter a sthan type name',
-                variant: 'destructive',
-            });
+            toast({ title: 'Validation Error', description: 'Please enter a sthan type name', variant: 'destructive' });
             return;
         }
-
-        if (!avatarType) {
-            toast({
-                title: 'Validation Error',
-                description: 'Please select an Avatar Type',
-                variant: 'destructive',
-            });
+        if (!avatarSambandh) {
+            toast({ title: 'Validation Error', description: 'Please select an Avatar Sambandh', variant: 'destructive' });
             return;
         }
-
+        if (hasSubdivisions && !avatarSubdivision) {
+            toast({ title: 'Validation Error', description: 'Please select a Subdivision', variant: 'destructive' });
+            return;
+        }
         if (!selectedSeriesId) {
-            toast({
-                title: 'Validation Error',
-                description: 'Please select a Pin Series',
-                variant: 'destructive',
-            });
+            toast({ title: 'Validation Error', description: 'Please select a Pin Series', variant: 'destructive' });
+            return;
+        }
+        if (!pinType) {
+            toast({ title: 'Validation Error', description: 'Please select a Pin Style', variant: 'destructive' });
             return;
         }
 
-        if (!pinType) {
-            toast({
-                title: 'Validation Error',
-                description: 'Please select a Pin Style',
-                variant: 'destructive',
-            });
-            return;
-        }
+        // Build a human-readable avatarType for backward compat
+        const subCfg = selectedAvatarCfg?.subdivisions.find(s => s.id === avatarSubdivision);
+        const legacyAvatarType = subCfg
+            ? `${selectedAvatarCfg?.label} – ${subCfg.label}`
+            : selectedAvatarCfg?.label || '';
 
         setLoading(true);
         try {
             if (editingId) {
-                await updateSthanType(editingId, { name, color, pinType, avatarType: avatarType || undefined });
-                toast({
-                    title: 'Success',
-                    description: 'Sthan type updated successfully',
+                await updateSthanType(editingId, {
+                    name, color, pinType,
+                    avatarSambandh,
+                    avatarSubdivision: avatarSubdivision || undefined,
+                    avatarType: legacyAvatarType,
                 });
+                toast({ title: 'Success', description: 'Sthan type updated successfully' });
             } else {
                 const order = sthanTypes.length + 1;
-                await createSthanType({ name, color, order, pinType, avatarType: avatarType || undefined });
-                toast({
-                    title: 'Success',
-                    description: 'Sthan type created successfully',
+                await createSthanType({
+                    name, color, order, pinType,
+                    avatarSambandh,
+                    avatarSubdivision: avatarSubdivision || undefined,
+                    avatarType: legacyAvatarType,
                 });
+                toast({ title: 'Success', description: 'Sthan type created successfully' });
             }
-
             resetForm();
             loadSthanTypes();
-        } catch (error) {
-            toast({
-                title: 'Error',
-                description: 'Failed to save sthan type',
-                variant: 'destructive',
-            });
+        } catch {
+            toast({ title: 'Error', description: 'Failed to save sthan type', variant: 'destructive' });
         } finally {
             setLoading(false);
         }
@@ -157,12 +157,21 @@ export function SthanTypeManager() {
         setEditingId(type.id);
         setName(type.name);
         setColor(type.color);
-        setAvatarType(type.avatarType || '');
 
-        // Find matching series for editing if it's a new style pin
+        // Prefer new fields; fall back to parsing legacy avatarType
+        if (type.avatarSambandh) {
+            setAvatarSambandh(type.avatarSambandh);
+            setAvatarSubdivision(type.avatarSubdivision || '');
+            // Re-sync series color
+            const cfg = AVATAR_SAMBANDH_CONFIG.find(a => a.id === type.avatarSambandh);
+            if (cfg) setColor(type.color || cfg.color);
+        } else {
+            setAvatarSambandh('');
+            setAvatarSubdivision('');
+        }
+
         const pinTypePath = type.pinType || '';
         setPinType(pinTypePath as PinType);
-
         if (pinTypePath.startsWith('/icons/pins/')) {
             const series = PIN_SERIES.find(s => pinTypePath.includes(s.folder));
             if (series) setSelectedSeriesId(series.id);
@@ -170,24 +179,14 @@ export function SthanTypeManager() {
     };
 
     const handleDelete = async (id: string) => {
-        if (!confirm('Are you sure you want to delete this sthan type? This cannot be undone.')) {
-            return;
-        }
-
+        if (!confirm('Are you sure you want to delete this sthan type? This cannot be undone.')) return;
         setLoading(true);
         try {
             await deleteSthanType(id);
-            toast({
-                title: 'Success',
-                description: 'Sthan type deleted successfully',
-            });
+            toast({ title: 'Success', description: 'Sthan type deleted successfully' });
             loadSthanTypes();
-        } catch (error) {
-            toast({
-                title: 'Error',
-                description: 'Failed to delete sthan type',
-                variant: 'destructive',
-            });
+        } catch {
+            toast({ title: 'Error', description: 'Failed to delete sthan type', variant: 'destructive' });
         } finally {
             setLoading(false);
         }
@@ -195,53 +194,46 @@ export function SthanTypeManager() {
 
     const handleDragEnd = async (result: DropResult) => {
         if (!result.destination) return;
+        const src = result.source.index;
+        const dst = result.destination.index;
+        if (src === dst) return;
 
-        const sourceIndex = result.source.index;
-        const destinationIndex = result.destination.index;
-
-        if (sourceIndex === destinationIndex) return;
-
-        const reorderedTypes = Array.from(sthanTypes);
-        const [removed] = reorderedTypes.splice(sourceIndex, 1);
-        reorderedTypes.splice(destinationIndex, 0, removed);
-
-        // Optimistic update
-        setSthanTypes(reorderedTypes);
+        const reordered = Array.from(sthanTypes);
+        const [removed] = reordered.splice(src, 1);
+        reordered.splice(dst, 0, removed);
+        setSthanTypes(reordered);
 
         try {
-            await updateSthanTypesOrder(reorderedTypes);
-            toast({
-                title: 'Success',
-                description: 'Order updated successfully',
-            });
-        } catch (error) {
-            toast({
-                title: 'Error',
-                description: 'Failed to update order',
-                variant: 'destructive',
-            });
-            loadSthanTypes(); // Revert on failure
+            await updateSthanTypesOrder(reordered);
+            toast({ title: 'Success', description: 'Order updated' });
+        } catch {
+            toast({ title: 'Error', description: 'Failed to update order', variant: 'destructive' });
+            loadSthanTypes();
         }
     };
 
     const resetForm = () => {
         setEditingId(null);
         setName('');
-        setAvatarType('');
+        setAvatarSambandh('');
+        setAvatarSubdivision('');
         setSelectedSeriesId('');
         setPinType('');
-        setColor('#D4AF37');
+        setColor('#94A3B8');
     };
 
-    const groupedAvatars = useMemo(() => {
-        return AVATAR_TYPES.reduce((acc, avatar) => {
-            if (!acc[avatar.group]) acc[avatar.group] = [];
-            acc[avatar.group].push(avatar);
-            return acc;
-        }, {} as Record<string, typeof AVATAR_TYPES>);
-    }, []);
-
     const selectedSeries = PIN_SERIES.find(s => s.id === selectedSeriesId);
+
+    // Group sthan types by avatarSambandh for the list display
+    const groupedList = useMemo(() => {
+        const groups: Record<string, SthanType[]> = {};
+        for (const st of sthanTypes) {
+            const key = st.avatarSambandh || '__unassigned__';
+            if (!groups[key]) groups[key] = [];
+            groups[key].push(st);
+        }
+        return groups;
+    }, [sthanTypes]);
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
@@ -253,72 +245,152 @@ export function SthanTypeManager() {
             </DialogTrigger>
             <DialogContent className="max-w-3xl max-h-[90vh] p-0 flex flex-col">
                 <DialogHeader className="p-6 pb-0">
-                    <DialogTitle>Manage Sthan Types</DialogTitle>
+                    <DialogTitle className="flex items-center justify-between flex-wrap gap-2">
+                        <span>Manage Sthan Types</span>
+                        {/* Avatar count summary chips */}
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-slate-100 text-slate-600 border border-slate-200">
+                                ALL {TOTAL_STHAN_COUNT}
+                            </span>
+                            {AVATAR_SAMBANDH_CONFIG.map(av => (
+                                <span
+                                    key={av.id}
+                                    className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold border"
+                                    style={{
+                                        backgroundColor: `${av.color}15`,
+                                        color: av.color,
+                                        borderColor: `${av.color}40`,
+                                    }}
+                                >
+                                    {av.shortLabel} {av.count}
+                                </span>
+                            ))}
+                        </div>
+                    </DialogTitle>
                 </DialogHeader>
 
                 <div className="flex-1 overflow-y-auto p-6 pt-4 min-h-0">
                     <div className="space-y-6">
-                        {/* Add/Edit Form */}
-                        <form onSubmit={handleSubmit} className="bg-slate-50 p-4 rounded-lg space-y-5">
+
+                        {/* ── Add / Edit Form ── */}
+                        <form onSubmit={handleSubmit} className="bg-slate-50 p-4 rounded-xl space-y-5 border border-slate-200">
                             <h3 className="font-semibold text-sm text-slate-700">
                                 {editingId ? 'Edit Sthan Type' : 'Add New Sthan Type'}
                             </h3>
 
-                            {/* Row 1: Name */}
+                            {/* Row 1: Sthan Name */}
                             <div className="space-y-2">
-                                <Label htmlFor="name">Name *</Label>
+                                <Label htmlFor="stname">Sthan Type Name *</Label>
                                 <Input
-                                    id="name"
+                                    id="stname"
                                     value={name}
                                     onChange={(e) => setName(e.target.value)}
-                                    placeholder="e.g., Avasthan"
+                                    placeholder="e.g. Avasthan, Mahasthan, Vasti Sthan..."
                                     required
                                 />
                             </div>
 
-                            {/* Row 2: Avatar Type Dropdown */}
-                            <div className="space-y-2">
-                                <Label htmlFor="avatarType" className="text-sm font-bold text-slate-700">Avatar Type *</Label>
-                                <Select value={avatarType || '__none__'} onValueChange={handleAvatarChange}>
-                                    <SelectTrigger 
-                                        id="avatarType" 
-                                        className="w-full bg-white h-12 rounded-xl border-slate-200 focus:ring-blue-500"
+                            {/* Row 2 + 3: Avatar Sambandh → Subdivision (cascade) */}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                {/* Level 1: Avatar Sambandh */}
+                                <div className="space-y-2">
+                                    <Label htmlFor="avatarSambandh" className="text-sm font-bold text-slate-700">
+                                        Avatar Sambandh *
+                                    </Label>
+                                    <Select value={avatarSambandh || '__none__'} onValueChange={handleAvatarChange}>
+                                        <SelectTrigger
+                                            id="avatarSambandh"
+                                            className="w-full bg-white h-12 rounded-xl border-slate-200 focus:ring-blue-500"
+                                        >
+                                            <SelectValue placeholder="— Select Avatar —">
+                                                {avatarSambandh && selectedAvatarCfg ? (
+                                                    <span className="flex items-center gap-2">
+                                                        <span
+                                                            className="w-3 h-3 rounded-full shrink-0 inline-block"
+                                                            style={{ backgroundColor: selectedAvatarCfg.color }}
+                                                        />
+                                                        {selectedAvatarCfg.label}
+                                                    </span>
+                                                ) : (
+                                                    <span className="text-slate-400">— Select Avatar —</span>
+                                                )}
+                                            </SelectValue>
+                                        </SelectTrigger>
+                                        <SelectContent className="max-h-72 z-[1100] rounded-xl border-slate-200 shadow-xl">
+                                            <SelectItem value="__none__">— None —</SelectItem>
+                                            {AVATAR_SAMBANDH_CONFIG.map(av => (
+                                                <SelectItem key={av.id} value={av.id} className="cursor-pointer focus:bg-slate-50 rounded-lg m-1">
+                                                    <div className="flex items-center gap-2.5">
+                                                        <span
+                                                            className="w-3 h-3 rounded-full shrink-0"
+                                                            style={{ backgroundColor: av.color }}
+                                                        />
+                                                        <div className="flex flex-col">
+                                                            <span className="font-semibold text-sm">{av.label}</span>
+                                                            <span className="text-[10px] text-slate-400">{av.count} Sthans</span>
+                                                        </div>
+                                                    </div>
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+
+                                {/* Level 2: Subdivision (conditional) */}
+                                <div className="space-y-2">
+                                    <Label htmlFor="avatarSubdivision" className="text-sm font-bold text-slate-700">
+                                        Subdivision {hasSubdivisions ? '*' : <span className="font-normal text-slate-400 text-xs">(N/A)</span>}
+                                    </Label>
+                                    <Select
+                                        key={`subdiv-${avatarSambandh}`}
+                                        value={avatarSubdivision || '__none__'}
+                                        onValueChange={(v) => setAvatarSubdivision(v === '__none__' ? '' : v)}
+                                        disabled={!hasSubdivisions}
                                     >
-                                        <SelectValue placeholder="— Select Avatar —" />
-                                    </SelectTrigger>
-                                    <SelectContent className="max-h-72 z-[1100] rounded-xl border-slate-200 shadow-xl">
-                                        <SelectItem value="__none__">— None —</SelectItem>
-                                        {AVATAR_TYPES.map(a => (
-                                            <SelectItem key={a.id} value={a.id} className="cursor-pointer focus:bg-slate-50 rounded-lg m-1">
-                                                <span className="font-semibold text-sm pl-2">{a.label}</span>
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
+                                        <SelectTrigger
+                                            id="avatarSubdivision"
+                                            className="w-full bg-white h-12 rounded-xl border-slate-200 focus:ring-blue-500 disabled:bg-slate-50 disabled:opacity-50"
+                                        >
+                                            <SelectValue placeholder={hasSubdivisions ? 'Select Subdivision' : '— Not Applicable —'} />
+                                        </SelectTrigger>
+                                        <SelectContent className="max-h-72 z-[1100] rounded-xl border-slate-200 shadow-xl">
+                                            {hasSubdivisions ? (
+                                                selectedAvatarCfg!.subdivisions.map(sub => (
+                                                    <SelectItem key={sub.id} value={sub.id} className="cursor-pointer focus:bg-slate-50 rounded-lg m-1">
+                                                        <div className="flex items-center justify-between gap-4 w-full">
+                                                            <span className="font-semibold text-sm">{sub.label}</span>
+                                                            <span className="text-[10px] text-slate-400">{sub.count} Sthans</span>
+                                                        </div>
+                                                    </SelectItem>
+                                                ))
+                                            ) : (
+                                                <div className="px-3 py-2 text-sm text-slate-400 italic">This avatar has no sub-periods</div>
+                                            )}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
                             </div>
 
-                            {/* Row 3: Pin Series Dropdown (Dependent) */}
+
+
+                            {/* Row 4: Pin Series Dropdown */}
                             <div className="space-y-2">
                                 <Label htmlFor="pinSeries" className="text-sm font-bold text-slate-700">Pin Series *</Label>
-                                <Select 
-                                    key={`series-${avatarType}`}
-                                    value={selectedSeriesId} 
+                                <Select
+                                    key={`series-${avatarSambandh}`}
+                                    value={selectedSeriesId}
                                     onValueChange={handleSeriesChange}
-                                    disabled={!avatarType}
+                                    disabled={!avatarSambandh}
                                 >
                                     <SelectTrigger id="pinSeries" className="w-full bg-white h-12 rounded-xl border-slate-200 focus:ring-blue-500 disabled:bg-slate-50 disabled:opacity-50">
-                                        <SelectValue placeholder="Select a pin series" />
+                                        <SelectValue placeholder={avatarSambandh ? 'Select a pin series' : 'Select Avatar first'} />
                                     </SelectTrigger>
                                     <SelectContent className="max-h-[500px] z-[1100] rounded-xl border-slate-200 shadow-xl">
-                                        {(PIN_SERIES || []).map(series => (
+                                        {PIN_SERIES.map(series => (
                                             <SelectItem key={series.id} value={series.id} className="cursor-pointer focus:bg-slate-50 rounded-lg m-1">
                                                 <div className="flex items-center gap-3">
                                                     <div className="w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center border border-slate-100 p-1 shrink-0">
-                                                        <img
-                                                            src={`${series.folder}/${series.files[0]}`}
-                                                            alt=""
-                                                            className="w-full h-full object-contain"
-                                                        />
+                                                        <img src={`${series.folder}/${series.files[0]}`} alt="" className="w-full h-full object-contain" />
                                                     </div>
                                                     <div className="flex flex-col">
                                                         <span className="font-semibold text-sm">{series.name}</span>
@@ -331,17 +403,17 @@ export function SthanTypeManager() {
                                 </Select>
                             </div>
 
-                            {/* Row 4: Pin Type Dropdown (Dependent) */}
+                            {/* Row 5: Pin Type Dropdown */}
                             <div className="space-y-2">
-                                <Label htmlFor="pinType" className="text-sm font-bold text-slate-700">Pin Type *</Label>
-                                <Select 
+                                <Label htmlFor="pinType" className="text-sm font-bold text-slate-700">Pin Style *</Label>
+                                <Select
                                     key={`pin-${selectedSeriesId}`}
-                                    value={pinType} 
+                                    value={pinType}
                                     onValueChange={(v) => setPinType(v as PinType)}
                                     disabled={!selectedSeriesId}
                                 >
                                     <SelectTrigger id="pinType" className="w-full bg-white h-12 rounded-xl border-slate-200 focus:ring-blue-500 disabled:bg-slate-50 disabled:opacity-50">
-                                        <SelectValue placeholder="Select Pin Type" />
+                                        <SelectValue placeholder="Select Pin Style" />
                                     </SelectTrigger>
                                     <SelectContent className="max-h-[500px] z-[100] rounded-xl border-slate-200 shadow-xl">
                                         {selectedSeries?.files.map(file => {
@@ -350,11 +422,7 @@ export function SthanTypeManager() {
                                                 <SelectItem key={file} value={fullPath} className="cursor-pointer focus:bg-slate-50 rounded-lg m-1">
                                                     <div className="flex items-center gap-3">
                                                         <div className="w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center border border-slate-100 p-1 shrink-0">
-                                                            <img
-                                                                src={fullPath}
-                                                                alt=""
-                                                                className="w-full h-full object-contain"
-                                                            />
+                                                            <img src={fullPath} alt="" className="w-full h-full object-contain" />
                                                         </div>
                                                         <span className="font-semibold text-sm">{file}</span>
                                                     </div>
@@ -365,7 +433,7 @@ export function SthanTypeManager() {
                                 </Select>
                             </div>
 
-                            {/* Row 5: Style Selection Grid (Visual Preview) */}
+                            {/* Visual Pin Selector Grid */}
                             {selectedSeries && (
                                 <div className="space-y-3 animate-in fade-in slide-in-from-top-2 duration-300">
                                     <div className="flex items-center justify-between px-1">
@@ -414,7 +482,7 @@ export function SthanTypeManager() {
 
                             <div className="flex gap-2 pt-1">
                                 <Button type="submit" disabled={loading}>
-                                    {loading ? 'Saving...' : editingId ? 'Update' : 'Add'}
+                                    {loading ? 'Saving...' : editingId ? 'Update' : 'Add Sthan Type'}
                                 </Button>
                                 {editingId && (
                                     <Button type="button" variant="ghost" onClick={resetForm}>
@@ -424,9 +492,10 @@ export function SthanTypeManager() {
                             </div>
                         </form>
 
-                        {/* List of Sthan Types */}
-                        <div className="space-y-2">
+                        {/* ── Existing Sthan Types ── */}
+                        <div className="space-y-3">
                             <h3 className="font-semibold text-sm text-slate-700">Existing Sthan Types</h3>
+
                             {loading && sthanTypes.length === 0 ? (
                                 <div className="text-sm text-slate-500 py-8 text-center">Loading...</div>
                             ) : sthanTypes.length === 0 ? (
@@ -437,81 +506,98 @@ export function SthanTypeManager() {
                                 <DragDropContext onDragEnd={handleDragEnd}>
                                     <Droppable droppableId="sthan-types">
                                         {(provided) => (
-                                            <div
-                                                {...provided.droppableProps}
-                                                ref={provided.innerRef}
-                                                className="space-y-2"
-                                            >
-                                                {sthanTypes.map((type, index) => (
-                                                    <Draggable key={type.id} draggableId={type.id} index={index}>
-                                                        {(provided, snapshot) => (
-                                                            <div
-                                                                ref={provided.innerRef}
-                                                                {...provided.draggableProps}
-                                                                className={`flex items-center gap-3 p-3 bg-white border border-slate-200 rounded-lg transition-all ${snapshot.isDragging ? 'shadow-lg border-blue-200 z-50' : 'hover:bg-slate-50'
-                                                                    }`}
-                                                            >
-                                                                <div {...provided.dragHandleProps} className="p-1 hover:bg-slate-100 rounded cursor-grab">
-                                                                    <GripVertical className="w-4 h-4 text-slate-400" />
-                                                                </div>
-                                                                {(() => {
-                                                                    const { src, filter } = getSthanPinInfo(type.color, type.pinType);
-                                                                    return (
-                                                                        <div className="relative w-8 h-8 flex-shrink-0">
-                                                                            <img
-                                                                                src={src}
-                                                                                style={filter ? { filter } : undefined}
-                                                                                alt={type.name}
-                                                                                className="relative w-full h-full object-contain drop-shadow-sm"
-                                                                            />
+                                            <div {...provided.droppableProps} ref={provided.innerRef} className="space-y-2">
+                                                {sthanTypes.map((type, index) => {
+                                                    const avatarCfg = AVATAR_SAMBANDH_CONFIG.find(a => a.id === type.avatarSambandh);
+                                                    const subCfg = avatarCfg?.subdivisions.find(s => s.id === type.avatarSubdivision);
+                                                    const avatarColor = avatarCfg?.color || type.color || '#94A3B8';
+
+                                                    return (
+                                                        <Draggable key={type.id} draggableId={type.id} index={index}>
+                                                            {(provided, snapshot) => (
+                                                                <div
+                                                                    ref={provided.innerRef}
+                                                                    {...provided.draggableProps}
+                                                                    className={`flex items-center gap-3 p-3 bg-white border rounded-xl transition-all ${snapshot.isDragging
+                                                                        ? 'shadow-lg border-blue-200 z-50'
+                                                                        : 'border-slate-200 hover:bg-slate-50'
+                                                                        }`}
+                                                                    style={{
+                                                                        ...provided.draggableProps.style,
+                                                                        borderLeftColor: avatarColor,
+                                                                        borderLeftWidth: '3px',
+                                                                    }}
+                                                                >
+                                                                    <div {...provided.dragHandleProps} className="p-1 hover:bg-slate-100 rounded cursor-grab">
+                                                                        <GripVertical className="w-4 h-4 text-slate-400" />
+                                                                    </div>
+
+                                                                    {/* Pin icon */}
+                                                                    {(() => {
+                                                                        const { src, filter } = getSthanPinInfo(type.color, type.pinType);
+                                                                        return (
+                                                                            <div className="relative w-8 h-8 flex-shrink-0">
+                                                                                <img
+                                                                                    src={src}
+                                                                                    style={filter ? { filter } : undefined}
+                                                                                    alt={type.name}
+                                                                                    className="relative w-full h-full object-contain drop-shadow-sm"
+                                                                                />
+                                                                            </div>
+                                                                        );
+                                                                    })()}
+
+                                                                    {/* Info */}
+                                                                    <div className="flex-1 min-w-0">
+                                                                        <div className="font-semibold text-sm text-slate-900">{type.name}</div>
+                                                                        <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
+                                                                            {/* Avatar chip */}
+                                                                            {avatarCfg && (
+                                                                                <span
+                                                                                    className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wide border"
+                                                                                    style={{
+                                                                                        backgroundColor: `${avatarColor}15`,
+                                                                                        color: avatarColor,
+                                                                                        borderColor: `${avatarColor}40`,
+                                                                                    }}
+                                                                                >
+                                                                                    <span className="w-1.5 h-1.5 rounded-full inline-block" style={{ backgroundColor: avatarColor }} />
+                                                                                    {avatarCfg.shortLabel}
+                                                                                </span>
+                                                                            )}
+                                                                            {/* Subdivision chip */}
+                                                                            {subCfg && (
+                                                                                <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wide bg-slate-100 text-slate-600 border border-slate-200">
+                                                                                    <ChevronRight className="w-2.5 h-2.5" />
+                                                                                    {subCfg.label}
+                                                                                </span>
+                                                                            )}
+                                                                            {/* Pin series info */}
+                                                                            {(() => {
+                                                                                const seriesMatch = PIN_SERIES.find(s => type.pinType?.includes(s.folder));
+                                                                                if (seriesMatch) {
+                                                                                    const fileName = type.pinType?.split('/').pop() || '';
+                                                                                    return <span className="text-[10px] text-slate-400">{seriesMatch.name.split('(')[0].trim()} · {fileName}</span>;
+                                                                                }
+                                                                                return <span className="text-[10px] text-slate-400">Legacy Pin</span>;
+                                                                            })()}
                                                                         </div>
-                                                                    );
-                                                                })()}
-                                                                <div className="flex-1 min-w-0">
-                                                                    <div className="font-medium text-sm">{type.name}</div>
-                                                                    <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
-                                                                        {type.avatarType && (
-                                                                            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wide bg-amber-50 text-amber-700 border border-amber-200">
-                                                                                {type.avatarType}
-                                                                            </span>
-                                                                        )}
-                                                                        {(() => {
-                                                                            const seriesMatch = PIN_SERIES.find(s => type.pinType?.includes(s.folder));
-                                                                            if (seriesMatch) {
-                                                                                const fileParts = type.pinType?.split('/') || [];
-                                                                                const fileName = fileParts[fileParts.length - 1];
-                                                                                return (
-                                                                                    <span className="text-[10px] text-slate-400">
-                                                                                        {seriesMatch.name} · {fileName}
-                                                                                    </span>
-                                                                                );
-                                                                            }
-                                                                            return <span className="text-[10px] text-slate-400">Legacy Pin</span>;
-                                                                        })()}
+                                                                    </div>
+
+                                                                    {/* Actions */}
+                                                                    <div className="flex gap-1">
+                                                                        <Button size="sm" variant="ghost" onClick={() => handleEdit(type)} className="h-8 w-8 p-0">
+                                                                            <Pencil className="w-3.5 h-3.5" />
+                                                                        </Button>
+                                                                        <Button size="sm" variant="ghost" onClick={() => handleDelete(type.id)} className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50">
+                                                                            <Trash2 className="w-3.5 h-3.5" />
+                                                                        </Button>
                                                                     </div>
                                                                 </div>
-                                                                <div className="flex gap-1">
-                                                                    <Button
-                                                                        size="sm"
-                                                                        variant="ghost"
-                                                                        onClick={() => handleEdit(type)}
-                                                                        className="h-8 w-8 p-0"
-                                                                    >
-                                                                        <Pencil className="w-3.5 h-3.5" />
-                                                                    </Button>
-                                                                    <Button
-                                                                        size="sm"
-                                                                        variant="ghost"
-                                                                        onClick={() => handleDelete(type.id)}
-                                                                        className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
-                                                                    >
-                                                                        <Trash2 className="w-3.5 h-3.5" />
-                                                                    </Button>
-                                                                </div>
-                                                            </div>
-                                                        )}
-                                                    </Draggable>
-                                                ))}
+                                                            )}
+                                                        </Draggable>
+                                                    );
+                                                })}
                                                 {provided.placeholder}
                                             </div>
                                         )}

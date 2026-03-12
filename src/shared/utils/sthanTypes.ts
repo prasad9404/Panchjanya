@@ -6,17 +6,102 @@ import { SthanType, CreateSthanTypeInput, UpdateSthanTypeInput } from '@/shared/
 const STHAN_TYPES_COLLECTION = 'sthan_types';
 
 /**
- * Avatar (deity) type hierarchy for classifying Sthan Types.
+ * Full Avatar Sambandh (deity group) configuration.
+ * Each entry has: id, label, color, estimated total sthan count,
+ * and optional subdivisions (sub-periods).
+ */
+export const AVATAR_SAMBANDH_CONFIG: {
+    id: string;
+    label: string;
+    shortLabel: string;
+    color: string;
+    count: number;
+    subdivisions: { id: string; label: string; count: number }[];
+}[] = [
+    {
+        id: 'shri-krishna',
+        label: 'Shri Krishna Bhagwan',
+        shortLabel: 'Krishna',
+        color: '#EC4899', // Pink
+        count: 5,
+        subdivisions: [],
+    },
+    {
+        id: 'shri-dattatray',
+        label: 'Shri Dattatray Prabhu',
+        shortLabel: 'Datta',
+        color: '#F59E0B', // Yellow/Amber
+        count: 12,
+        subdivisions: [],
+    },
+    {
+        id: 'shri-chakrapani',
+        label: 'Shri Chakrapani Prabhu',
+        shortLabel: 'Chakrapani',
+        color: '#9B1C1C', // Maroon
+        count: 18,
+        subdivisions: [],
+    },
+    {
+        id: 'shri-govind',
+        label: 'Shri Govind Prabhu (Complete)',
+        shortLabel: 'Govind',
+        color: '#16A34A', // Green
+        count: 17,
+        subdivisions: [
+            { id: 'purvardh', label: 'Purvardh', count: 5 },
+            { id: 'uttarardh', label: 'Uttarardh', count: 12 },
+        ],
+    },
+    {
+        id: 'shri-chakradhar',
+        label: 'Shri Chakradhar Swami (Complete)',
+        shortLabel: 'Chakradhar',
+        color: '#2563EB', // Blue
+        count: 150,
+        subdivisions: [
+            { id: 'ekank', label: 'Ekank', count: 60 },
+            { id: 'purvardh', label: 'Purvardh', count: 50 },
+            { id: 'uttarardh', label: 'Uttarardh', count: 40 },
+        ],
+    },
+    {
+        id: 'mandalik',
+        label: 'Mandalik Sthan',
+        shortLabel: 'Mandalik',
+        color: '#92400E', // Brown
+        count: 15,
+        subdivisions: [],
+    },
+];
+
+/** Total sthan count across all avatars */
+export const TOTAL_STHAN_COUNT = AVATAR_SAMBANDH_CONFIG.reduce((sum, a) => sum + a.count, 0);
+
+/**
+ * Returns the brand color for a given avatar sambandh id.
+ */
+export const getAvatarColor = (avatarSambandh?: string): string => {
+    if (!avatarSambandh) return '#94A3B8';
+    const cfg = AVATAR_SAMBANDH_CONFIG.find(a => a.id === avatarSambandh);
+    return cfg?.color ?? '#94A3B8';
+};
+
+/**
+ * Flattened AVATAR_TYPES list for backward compatibility.
+ * Derived from AVATAR_SAMBANDH_CONFIG.
  */
 export const AVATAR_TYPES: { id: string; label: string; group: string }[] = [
-    { id: 'shri-krishna', label: 'Shri Krishna', group: 'Shri Krishna' },
-    { id: 'shri-dattatray', label: 'Shri Dattatray Prabhu', group: 'Shri Dattatray Prabhu' },
-    { id: 'shri-chakrapani', label: 'Shri Chakrapani Prabhu', group: 'Shri Chakrapani Prabhu' },
-    { id: 'shri-govind-purvardh', label: 'Shri Govind Prabhu – Purvardh', group: 'Shri Govind Prabhu' },
-    { id: 'shri-govind-uttarardh', label: 'Shri Govind Prabhu – Uttarardh', group: 'Shri Govind Prabhu' },
-    { id: 'shri-chakradhar-ekank', label: 'Shri Chakradhar Swami – Ekank', group: 'Shri Chakradhar Swami' },
-    { id: 'shri-chakradhar-purvardh', label: 'Shri Chakradhar Swami – Purvardh', group: 'Shri Chakradhar Swami' },
-    { id: 'shri-chakradhar-uttarardh', label: 'Shri Chakradhar Swami – Uttarardh', group: 'Shri Chakradhar Swami' },
+    ...AVATAR_SAMBANDH_CONFIG.flatMap(avatar => {
+        if (avatar.subdivisions.length === 0) {
+            return [{ id: avatar.id, label: avatar.label, group: avatar.label }];
+        }
+        return avatar.subdivisions.map(sub => ({
+            id: `${avatar.id}-${sub.id}`,
+            label: `${avatar.label} – ${sub.label}`,
+            group: avatar.label,
+        }));
+    }),
 ];
 
 export const PIN_SERIES = [
@@ -108,8 +193,11 @@ export const getSthanTypes = async (): Promise<SthanType[]> => {
  */
 export const createSthanType = async (data: CreateSthanTypeInput): Promise<string> => {
     try {
+        const cleanData = Object.fromEntries(
+            Object.entries(data).filter(([_, v]) => v !== undefined)
+        );
         const docRef = await addDoc(collection(db, STHAN_TYPES_COLLECTION), {
-            ...data,
+            ...cleanData,
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
         });
@@ -125,9 +213,12 @@ export const createSthanType = async (data: CreateSthanTypeInput): Promise<strin
  */
 export const updateSthanType = async (id: string, data: UpdateSthanTypeInput): Promise<void> => {
     try {
+        const cleanData = Object.fromEntries(
+            Object.entries(data).filter(([_, v]) => v !== undefined)
+        );
         const docRef = doc(db, STHAN_TYPES_COLLECTION, id);
         await updateDoc(docRef, {
-            ...data,
+            ...cleanData,
             updatedAt: new Date().toISOString(),
         });
     } catch (error) {

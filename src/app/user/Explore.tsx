@@ -11,6 +11,12 @@ import {
     PopoverContent,
     PopoverTrigger,
 } from "@/shared/components/ui/popover";
+import {
+    Accordion,
+    AccordionItem,
+    AccordionTrigger,
+    AccordionContent,
+} from "@/shared/components/ui/accordion";
 import { MapContainer, TileLayer, Marker, Popup, Tooltip, useMap } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
@@ -18,7 +24,7 @@ import { useLanguage } from "@/shared/contexts/LanguageContext";
 import { useAuth } from "@/auth/AuthContext";
 import { cn } from "@/shared/lib/utils";
 import DataTableFilter from "@/shared/components/ui/data-table-filter";
-import { getSthanTypes, getSthanPinInfo, AVATAR_TYPES } from "@/shared/utils/sthanTypes";
+import { getSthanTypes, AVATAR_SAMBANDH_CONFIG, getSthanPinInfo, getPinImageHtml } from "@/shared/utils/sthanTypes";
 import { SthanType } from "@/shared/types/sthanType";
 
 
@@ -59,10 +65,10 @@ const templePinIcon = new L.Icon({
     popupAnchor: [0, -48], // Adjusted for new icon height
 });
 
-let sthanIconsMap: Record<string, L.Icon> = {};
+const sthanIconsMap: Record<string, L.DivIcon> = {};
 
 // Helper function to get icon by sthan type
-function getIconBySthan(sthan: string | undefined): L.Icon {
+function getIconBySthan(sthan: string | undefined): L.Icon | L.DivIcon {
     if (!sthan) return templePinIcon;
 
     const normalizedSthan = sthan.trim();
@@ -154,7 +160,7 @@ function TempleMarker({ temple, onSelect }: { temple: Temple; onSelect: (temple:
     return (
         <Marker
             position={[temple.latitude || 0, temple.longitude || 0]}
-            icon={getIconBySthan((temple as any).sthan)}
+            icon={getIconBySthan(temple.sthana || (temple as any).sthan)}
             eventHandlers={{
                 click: () => onSelect(temple),
                 popupopen: () => setIsPopupOpen(true),
@@ -268,13 +274,17 @@ const Explore = () => {
     const [pendingDistrict, setPendingDistrict] = useState<string>("");
     const [pendingTaluka, setPendingTaluka] = useState<string>("");
     const [pendingSthanaType, setPendingSthanaType] = useState<string>("");
-    const [pendingAvatarType, setPendingAvatarType] = useState<string>("");
+    const [pendingAvatarSambandh, setPendingAvatarSambandh] = useState<string>("ALL");
+    const [pendingAvatarSubdivision, setPendingAvatarSubdivision] = useState<string>("");
 
     // Applied states (for Firestore query and results)
     const [appliedDistrict, setAppliedDistrict] = useState<string>("");
     const [appliedTaluka, setAppliedTaluka] = useState<string>("");
     const [appliedSthanaType, setAppliedSthanaType] = useState<string>("");
-    const [appliedAvatarType, setAppliedAvatarType] = useState<string>("");
+
+    // Hierarchical Avatar filter
+    const [appliedAvatarSambandh, setAppliedAvatarSambandh] = useState<string>("ALL");
+    const [appliedAvatarSubdivision, setAppliedAvatarSubdivision] = useState<string>("");
 
     const navigate = useNavigate();
     const { t } = useLanguage();
@@ -285,28 +295,21 @@ const Explore = () => {
     useEffect(() => {
         const loadSthanTypes = async () => {
             const types = await getSthanTypes();
-            setSthanTypes(types);
-
+            
+            // Populate icons map using the fetched results directly, not the stale state
             types.forEach(st => {
-                const { src, filter, needsFilter } = getSthanPinInfo(st.color, st.pinType);
-                if (needsFilter) {
-                    // Icon-based PNG with color filter — use L.divIcon with inline img
-                    sthanIconsMap[st.name] = new L.DivIcon({
-                        html: `<img src="${src}" style="width:52px;height:52px;object-fit:contain;filter:${filter}" />`,
-                        className: '',
-                        iconSize: [52, 52],
-                        iconAnchor: [26, 52],
-                        popupAnchor: [0, -48],
-                    }) as unknown as L.Icon;
-                } else {
-                    sthanIconsMap[st.name] = new L.Icon({
-                        iconUrl: src,
-                        iconSize: [52, 52],
-                        iconAnchor: [26, 52],
-                        popupAnchor: [0, -48],
-                    });
-                }
+                const html = getPinImageHtml(st.color || '#0e3c6f', st.pinType, 52);
+                sthanIconsMap[st.name] = L.divIcon({
+                    html,
+                    className: 'custom-sthan-pin',
+                    iconSize: [52, 52],
+                    iconAnchor: [26, 52],
+                    popupAnchor: [0, -48]
+                });
             });
+            
+            // Trigger re-render which will now use populated map
+            setSthanTypes(types);
         };
         loadSthanTypes();
     }, []);
@@ -447,21 +450,52 @@ const Explore = () => {
             label: `${t} (${allTemplesForOptions.filter(curr => curr.taluka === t && (!pendingDistrict || curr.district === pendingDistrict)).length})`
         }));
 
-    // 4. Dynamic Sthana Category Options — filtered by applied avatar type if set
-    const sthanaOptions = sthanTypes
-        .filter(st => !appliedAvatarType || st.avatarType === appliedAvatarType)
-        .map(st => {
-            const count = allTemplesForOptions.filter(t => {
-                const templeSthan = (t as any).sthan || t.sthana || "";
-                return templeSthan.toLowerCase().includes(st.name.toLowerCase());
-            }).length;
-            return {
-                value: st.name,
-                label: `${st.name} (${count})`
-            };
+    // 4. Dynamic Sthana Category Options
+    const sthanaOptions = useMemo(() => sthanTypes.map(st => {
+        const count = allTemplesForOptions.filter(t => {
+            const templeSthan = (t as any).sthan || t.sthana || "";
+            return templeSthan.toLowerCase().includes(st.name.toLowerCase());
+        }).length;
+        return {
+            value: st.name,
+            label: `${st.name} (${count})`
+        };
+    }), [sthanTypes, allTemplesForOptions]);
+
+    // 5. Calculate dynamic counts for Avatar Sambandh hierarchy
+    const avatarCounts = useMemo(() => {
+        const counts = {
+            ALL: allTemplesForOptions.length,
+            byAvatar: {} as Record<string, number>,
+            bySubdivision: {} as Record<string, number>,
+        };
+
+        allTemplesForOptions.forEach(t => {
+            const temp = t as any;
+            if (temp.avatarSambandh) {
+                counts.byAvatar[temp.avatarSambandh] = (counts.byAvatar[temp.avatarSambandh] || 0) + 1;
+            }
+            if (temp.avatarSubdivision) {
+                counts.bySubdivision[temp.avatarSubdivision] = (counts.bySubdivision[temp.avatarSubdivision] || 0) + 1;
+            }
+
+            // Legacy fallback if fields are missing
+            if (!temp.avatarSambandh && (temp.sthan || temp.sthana)) {
+                const sName = temp.sthan || temp.sthana;
+                const sType = sthanTypes.find(st => st.name === sName);
+                if (sType?.avatarSambandh) {
+                    counts.byAvatar[sType.avatarSambandh] = (counts.byAvatar[sType.avatarSambandh] || 0) + 1;
+                    if (sType.avatarSubdivision) {
+                        counts.bySubdivision[sType.avatarSubdivision] = (counts.bySubdivision[sType.avatarSubdivision] || 0) + 1;
+                    }
+                }
+            }
         });
 
-    // Client-side filtering for Search and Sthana Category (Substring matches)
+        return counts;
+    }, [allTemplesForOptions, sthanTypes]);
+
+    // Client-side filtering for Search, Sthana Category, and Avatar hierarchy
     const filteredTemples = useMemo(() => {
         return temples.filter(temple => {
             const matchesSearch = !searchQuery ||
@@ -471,26 +505,43 @@ const Explore = () => {
 
             const matchesSthana = !appliedSthanaType || (
                 ((temple as any).sthan && (temple as any).sthan.toLowerCase().includes(appliedSthanaType.toLowerCase())) ||
-                (temple.sthana && temple.sthana.toLowerCase().includes(appliedSthanaType.toLowerCase())) ||
-                (temple.description_text && temple.description_text.toLowerCase().includes(appliedSthanaType.toLowerCase())) ||
-                (temple.description && temple.description.toLowerCase().includes(appliedSthanaType.toLowerCase()))
+                (temple.sthana && temple.sthana.toLowerCase().includes(appliedSthanaType.toLowerCase()))
             );
 
-            // Avatar type filter: look up the sthan type record for this temple
-            const sthanTypeRecord = sthanTypes.find(st => st.name === (temple as any).sthan || st.name === temple.sthana);
-            const matchesAvatar = !appliedAvatarType || sthanTypeRecord?.avatarType === appliedAvatarType;
+            // Avatar hierarchy logic
+            if (appliedAvatarSambandh === "ALL") return matchesSearch && matchesSthana;
 
-            return matchesSearch && matchesSthana && matchesAvatar;
+            const tAvatarS = (temple as any).avatarSambandh;
+            const tAvatarSub = (temple as any).avatarSubdivision;
+
+            // Try to resolve temple's avatar info if missing (legacy data)
+            let resAvatarS = tAvatarS;
+            let resAvatarSub = tAvatarSub;
+
+            if (!resAvatarS) {
+                const sName = (temple as any).sthan || temple.sthana;
+                const sType = sthanTypes.find(st => st.name === sName);
+                if (sType) {
+                    resAvatarS = sType.avatarSambandh;
+                    resAvatarSub = sType.avatarSubdivision;
+                }
+            }
+
+            if (resAvatarS !== appliedAvatarSambandh) return false;
+            if (appliedAvatarSubdivision && resAvatarSub !== appliedAvatarSubdivision) return false;
+
+            return matchesSearch && matchesSthana;
         });
-    }, [temples, searchQuery, appliedSthanaType, appliedAvatarType, sthanTypes]);
+    }, [temples, searchQuery, appliedSthanaType, appliedAvatarSambandh, appliedAvatarSubdivision, sthanTypes]);
 
-    const activeFiltersCount = (appliedDistrict ? 1 : 0) + (appliedTaluka ? 1 : 0) + (appliedSthanaType ? 1 : 0) + (appliedAvatarType ? 1 : 0);
+    const activeFiltersCount = (appliedDistrict ? 1 : 0) + (appliedTaluka ? 1 : 0) + (appliedSthanaType ? 1 : 0) + (appliedAvatarSambandh !== "ALL" ? 1 : 0);
 
     const handleApplyFilters = () => {
         setAppliedDistrict(pendingDistrict);
         setAppliedTaluka(pendingTaluka);
         setAppliedSthanaType(pendingSthanaType);
-        setAppliedAvatarType(pendingAvatarType);
+        setAppliedAvatarSambandh(pendingAvatarSambandh);
+        setAppliedAvatarSubdivision(pendingAvatarSubdivision);
         setShowFilters(false);
     };
 
@@ -498,11 +549,13 @@ const Explore = () => {
         setPendingDistrict("");
         setPendingTaluka("");
         setPendingSthanaType("");
-        setPendingAvatarType("");
+        setPendingAvatarSambandh("ALL");
+        setPendingAvatarSubdivision("");
         setAppliedDistrict("");
         setAppliedTaluka("");
         setAppliedSthanaType("");
-        setAppliedAvatarType("");
+        setAppliedAvatarSambandh("ALL");
+        setAppliedAvatarSubdivision("");
     };
 
     return (
@@ -564,33 +617,98 @@ const Explore = () => {
                             side="bottom"
                             align="end"
                             sideOffset={8}
-                            className="w-52 rounded-[1.25rem] p-3.5 bg-[#FDFBF7] border-[#E8E2D5] shadow-xl"
+                            className="w-56 rounded-[1.25rem] p-3.5 bg-[#FDFBF7] border-[#E8E2D5] shadow-xl"
                         >
                             <h3 className="text-lg font-heading font-black text-[#2D2D2D] mb-3 px-1 truncate">
                                 Sthan Types
                             </h3>
-                            <div className="space-y-2 max-h-[50vh] overflow-y-auto pr-1 custom-scrollbar">
-                                {sthanTypes.map(st => {
-                                    const { src, filter, needsFilter } = getSthanPinInfo(st.color, st.pinType);
-                                    return (
-                                        <div
-                                            key={st.id}
-                                            className="flex items-center gap-2.5 group cursor-default p-1 rounded-lg hover:bg-[#F5F1E8] transition-colors"
-                                        >
-                                            <div className="relative w-8 h-8 shrink-0 flex items-center justify-center transition-transform duration-300 group-hover:scale-110">
-                                                <img
-                                                    src={src}
-                                                    alt={st.name}
-                                                    style={needsFilter ? { filter } : undefined}
-                                                    className="relative z-10 w-7 h-7 object-contain drop-shadow-sm"
-                                                />
-                                            </div>
-                                            <span className="text-sm font-semibold text-[#6B6B6B] truncate leading-tight group-hover:text-[#2D2D2D] transition-colors">
-                                                {st.name}
-                                            </span>
-                                        </div>
-                                    );
-                                })}
+                            <div className="max-h-[50vh] overflow-y-auto pr-1 custom-scrollbar">
+                                <Accordion type="single" collapsible className="w-full space-y-1">
+                                    {AVATAR_SAMBANDH_CONFIG.map(avatar => {
+                                        // Find all sthan types belonging strictly to this avatar (for those w/o subdivisions)
+                                        const directSthans = sthanTypes.filter(st => st.avatarSambandh === avatar.id);
+                                        // Total sthans includes direct sthans + those inside subdivisions
+                                        const hasAnySthans = directSthans.length > 0 || avatar.subdivisions.some(sub => sthanTypes.some(st => st.avatarSubdivision === sub.id));
+                                        
+                                        if (!hasAnySthans) return null;
+
+                                        return (
+                                            <AccordionItem value={avatar.id} key={avatar.id} className="border-none">
+                                                <AccordionTrigger className="hover:no-underline py-2 px-2 rounded-lg hover:bg-[#F5F1E8] transition-colors data-[state=open]:bg-[#F5F1E8]">
+                                                    <div className="flex items-center">
+                                                        <div className="w-2 h-2 rounded-full mr-2 shrink-0" style={{ backgroundColor: avatar.color }} />
+                                                        <span className="font-bold text-sm text-[#2D2D2D] truncate">{avatar.shortLabel}</span>
+                                                    </div>
+                                                </AccordionTrigger>
+                                                <AccordionContent className="pb-1 pt-1 px-1">
+                                                    {avatar.subdivisions.length > 0 ? (
+                                                        <Accordion type="single" collapsible className="w-full space-y-1 pl-3 border-l-2 ml-1" style={{ borderColor: `${avatar.color}40` }}>
+                                                            {avatar.subdivisions.map(sub => {
+                                                                const subSthans = sthanTypes.filter(st => st.avatarSubdivision === sub.id);
+                                                                if (subSthans.length === 0) return null;
+
+                                                                return (
+                                                                    <AccordionItem value={sub.id} key={sub.id} className="border-none">
+                                                                        <AccordionTrigger className="hover:no-underline py-1.5 px-2 rounded-md hover:bg-slate-50 transition-colors data-[state=open]:bg-slate-50">
+                                                                            <span className="font-semibold text-xs text-slate-600 truncate">{sub.label}</span>
+                                                                        </AccordionTrigger>
+                                                                        <AccordionContent className="pb-0 pt-1 space-y-0.5">
+                                                                            {subSthans.map(st => {
+                                                                                const { src, filter, needsFilter } = getSthanPinInfo(st.color, st.pinType);
+                                                                                return (
+                                                                                    <div
+                                                                                        key={st.id}
+                                                                                        className="flex items-center gap-2 group cursor-default p-1.5 rounded-lg hover:bg-white transition-colors"
+                                                                                    >
+                                                                                        <div className="relative w-6 h-6 shrink-0 flex items-center justify-center transition-transform duration-300 group-hover:scale-110">
+                                                                                            <img
+                                                                                                src={src}
+                                                                                                alt={st.name}
+                                                                                                style={needsFilter ? { filter } : undefined}
+                                                                                                className="relative z-10 w-5 h-5 object-contain drop-shadow-sm"
+                                                                                            />
+                                                                                        </div>
+                                                                                        <span className="text-xs font-semibold text-[#6B6B6B] truncate leading-tight group-hover:text-[#2D2D2D] transition-colors">
+                                                                                            {st.name}
+                                                                                        </span>
+                                                                                    </div>
+                                                                                );
+                                                                            })}
+                                                                        </AccordionContent>
+                                                                    </AccordionItem>
+                                                                );
+                                                            })}
+                                                        </Accordion>
+                                                    ) : (
+                                                        <div className="space-y-0.5 pl-3 border-l-2 ml-1" style={{ borderColor: `${avatar.color}40` }}>
+                                                            {directSthans.map(st => {
+                                                                const { src, filter, needsFilter } = getSthanPinInfo(st.color, st.pinType);
+                                                                return (
+                                                                    <div
+                                                                        key={st.id}
+                                                                        className="flex items-center gap-2 group cursor-default p-1.5 rounded-lg hover:bg-white transition-colors"
+                                                                    >
+                                                                        <div className="relative w-6 h-6 shrink-0 flex items-center justify-center transition-transform duration-300 group-hover:scale-110">
+                                                                            <img
+                                                                                src={src}
+                                                                                alt={st.name}
+                                                                                style={needsFilter ? { filter } : undefined}
+                                                                                className="relative z-10 w-5 h-5 object-contain drop-shadow-sm"
+                                                                            />
+                                                                        </div>
+                                                                        <span className="text-xs font-semibold text-[#6B6B6B] truncate leading-tight group-hover:text-[#2D2D2D] transition-colors">
+                                                                            {st.name}
+                                                                        </span>
+                                                                    </div>
+                                                                );
+                                                            })}
+                                                        </div>
+                                                    )}
+                                                </AccordionContent>
+                                            </AccordionItem>
+                                        );
+                                    })}
+                                </Accordion>
                             </div>
                         </PopoverContent>
                     </Popover>
@@ -641,20 +759,52 @@ const Explore = () => {
                                 </div>
                             </div>
 
-                            {/* Avatar Type Filter */}
+                            {/* Avatar Sambandh Filter */}
                             <div className="pt-1">
-                                <label className="block text-[11px] font-bold text-muted-foreground mb-1.5 uppercase tracking-wider px-1">Avatar Type</label>
+                                <label className="block text-[11px] font-bold text-muted-foreground mb-1.5 uppercase tracking-wider px-1">Avatar Sambandh</label>
                                 <DataTableFilter
                                     label="All Avatars"
-                                    options={AVATAR_TYPES.map(a => ({ value: a.label, label: a.label }))}
-                                    selectedValues={pendingAvatarType ? [pendingAvatarType] : []}
+                                    options={[
+                                        { value: "ALL", label: `All Avatars (${avatarCounts.ALL})` },
+                                        ...AVATAR_SAMBANDH_CONFIG.map(a => ({
+                                            value: a.id,
+                                            label: `${a.shortLabel} (${avatarCounts.byAvatar[a.id] || 0})`
+                                        }))
+                                    ]}
+                                    selectedValues={pendingAvatarSambandh && pendingAvatarSambandh !== "ALL" ? [pendingAvatarSambandh] : []}
                                     onChange={(values) => {
-                                        setPendingAvatarType(values[0] || "");
+                                        setPendingAvatarSambandh(values[0] || "ALL");
+                                        setPendingAvatarSubdivision("");
                                         setPendingSthanaType("");
                                     }}
                                     className="w-full bg-background border-border h-9 text-xs"
                                 />
                             </div>
+
+                            {/* Conditional Subdivision Filter */}
+                            {(() => {
+                                const selectedAvatarConfig = AVATAR_SAMBANDH_CONFIG.find(a => a.id === pendingAvatarSambandh);
+                                if (!selectedAvatarConfig || selectedAvatarConfig.subdivisions.length === 0) return null;
+
+                                return (
+                                    <div className="pt-1">
+                                        <label className="block text-[11px] font-bold text-muted-foreground mb-1.5 uppercase tracking-wider px-1">Subdivision</label>
+                                        <DataTableFilter
+                                            label="All Subdivisions"
+                                            options={selectedAvatarConfig.subdivisions.map(sub => ({
+                                                value: sub.id,
+                                                label: `${sub.label} (${avatarCounts.bySubdivision[sub.id] || 0})`
+                                            }))}
+                                            selectedValues={pendingAvatarSubdivision ? [pendingAvatarSubdivision] : []}
+                                            onChange={(values) => {
+                                                setPendingAvatarSubdivision(values[0] || "");
+                                                setPendingSthanaType("");
+                                            }}
+                                            className="w-full bg-background border-border h-9 text-xs"
+                                        />
+                                    </div>
+                                );
+                            })()}
 
                             {/* Sthana Row */}
                             <div className="pt-1">

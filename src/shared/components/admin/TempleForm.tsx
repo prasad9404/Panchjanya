@@ -11,7 +11,7 @@ import { useToast } from "@/shared/hooks/use-toast";
 import { ArrowLeft, Save, ExternalLink } from "lucide-react";
 import { useAuth } from "@/auth/AuthContext";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/components/ui/select";
-import { getSthanTypes, AVATAR_TYPES } from "@/shared/utils/sthanTypes";
+import { getSthanTypes, AVATAR_SAMBANDH_CONFIG } from "@/shared/utils/sthanTypes";
 import { SthanType } from "@/shared/types/sthanType";
 import { Switch } from "@/shared/components/ui/switch";
 
@@ -36,7 +36,8 @@ export default function TempleForm({ templeId }: TempleFormProps) {
     const [taluka, setTaluka] = useState("");
     const [district, setDistrict] = useState("");
     const [sthan, setSthan] = useState("");
-    const [avatarTypeFilter, setAvatarTypeFilter] = useState("");
+    const [avatarSambandhFilter, setAvatarSambandhFilter] = useState("");
+    const [avatarSubdivisionFilter, setAvatarSubdivisionFilter] = useState("");
 
     // ── Location ──
     const [latitude, setLatitude] = useState("");
@@ -82,6 +83,8 @@ export default function TempleForm({ templeId }: TempleFormProps) {
                     setTaluka(data.taluka || "");
                     setDistrict(data.district || "");
                     setSthan(data.sthan || "");
+                    setAvatarSambandhFilter(data.avatarSambandh || "");
+                    setAvatarSubdivisionFilter(data.avatarSubdivision || "");
                     setLatitude(String(data.latitude ?? data.location?.lat ?? ""));
                     setLongitude(String(data.longitude ?? data.location?.lng ?? ""));
                     setLocationLink(data.locationLink || "");
@@ -124,6 +127,8 @@ export default function TempleForm({ templeId }: TempleFormProps) {
                 taluka,
                 district,
                 sthan,
+                avatarSambandh: avatarSambandhFilter || undefined,
+                avatarSubdivision: avatarSubdivisionFilter || undefined,
                 latitude: latNum,
                 longitude: lngNum,
                 location: { lat: latNum, lng: lngNum },
@@ -317,22 +322,83 @@ export default function TempleForm({ templeId }: TempleFormProps) {
                                 </div>
                             </div>
 
-                            {/* Avatar Type Filter + Sthan Type */}
+                            {/* Avatar Sambandh → Subdivision → Sthan Type (3-level cascade) */}
                             <div className="space-y-4">
+                                {/* Level 1: Avatar Sambandh */}
                                 <div className="space-y-2">
-                                    <Label className="text-sm font-semibold text-slate-700">Avatar Type <span className="text-slate-400 font-normal">(filter)</span></Label>
-                                    <Select value={avatarTypeFilter || '__all__'} onValueChange={(v) => { setAvatarTypeFilter(v === '__all__' ? '' : v); setSthan(""); }}>
+                                    <Label className="text-sm font-semibold text-slate-700">
+                                        Avatar Sambandh <span className="text-slate-400 font-normal">(filter)</span>
+                                    </Label>
+                                    <Select
+                                        value={avatarSambandhFilter || '__all__'}
+                                        onValueChange={(v) => {
+                                            setAvatarSambandhFilter(v === '__all__' ? '' : v);
+                                            setAvatarSubdivisionFilter('');
+                                            setSthan('');
+                                        }}
+                                    >
                                         <SelectTrigger className="h-12 rounded-xl border-slate-200">
-                                            <SelectValue placeholder="— All Avatars —" />
+                                            <SelectValue placeholder="— All Avatars —">
+                                                {avatarSambandhFilter ? (() => {
+                                                    const cfg = AVATAR_SAMBANDH_CONFIG.find(a => a.id === avatarSambandhFilter);
+                                                    return cfg ? (
+                                                        <span className="flex items-center gap-2">
+                                                            <span className="w-3 h-3 rounded-full shrink-0 inline-block" style={{ backgroundColor: cfg.color }} />
+                                                            {cfg.label}
+                                                        </span>
+                                                    ) : '— All Avatars —';
+                                                })() : '— All Avatars —'}
+                                            </SelectValue>
                                         </SelectTrigger>
                                         <SelectContent className="max-h-72">
                                             <SelectItem value="__all__">— All Avatars —</SelectItem>
-                                            {AVATAR_TYPES.map((a) => (
-                                                <SelectItem key={a.id} value={a.label}>{a.label}</SelectItem>
+                                            {AVATAR_SAMBANDH_CONFIG.map((av) => (
+                                                <SelectItem key={av.id} value={av.id}>
+                                                    <div className="flex items-center gap-2.5">
+                                                        <span className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: av.color }} />
+                                                        <div className="flex flex-col">
+                                                            <span className="font-semibold text-sm">{av.label}</span>
+                                                            <span className="text-[10px] text-slate-400">{av.count} Sthans</span>
+                                                        </div>
+                                                    </div>
+                                                </SelectItem>
                                             ))}
                                         </SelectContent>
                                     </Select>
                                 </div>
+
+                                {/* Level 2: Subdivision (conditional) */}
+                                {(() => {
+                                    const cfg = AVATAR_SAMBANDH_CONFIG.find(a => a.id === avatarSambandhFilter);
+                                    if (!cfg || cfg.subdivisions.length === 0) return null;
+                                    return (
+                                        <div className="space-y-2">
+                                            <Label className="text-sm font-semibold text-slate-700">Subdivision</Label>
+                                            <Select
+                                                key={`subdiv-${avatarSambandhFilter}`}
+                                                value={avatarSubdivisionFilter || '__all__'}
+                                                onValueChange={(v) => { setAvatarSubdivisionFilter(v === '__all__' ? '' : v); setSthan(''); }}
+                                            >
+                                                <SelectTrigger className="h-12 rounded-xl border-slate-200">
+                                                    <SelectValue placeholder="— All Subdivisions —" />
+                                                </SelectTrigger>
+                                                <SelectContent className="max-h-60">
+                                                    <SelectItem value="__all__">— All Subdivisions —</SelectItem>
+                                                    {cfg.subdivisions.map(sub => (
+                                                        <SelectItem key={sub.id} value={sub.id}>
+                                                            <div className="flex items-center justify-between gap-4">
+                                                                <span className="font-semibold text-sm">{sub.label}</span>
+                                                                <span className="text-[10px] text-slate-400">{sub.count} Sthans</span>
+                                                            </div>
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                    );
+                                })()}
+
+                                {/* Level 3: Sthan Type */}
                                 <div className="space-y-2">
                                     <Label className="text-sm font-semibold text-slate-700">Sthan Type *</Label>
                                     <Select value={sthan} onValueChange={setSthan} required>
@@ -341,7 +407,17 @@ export default function TempleForm({ templeId }: TempleFormProps) {
                                         </SelectTrigger>
                                         <SelectContent>
                                             {sthanTypes
-                                                .filter(st => !avatarTypeFilter || st.avatarType === avatarTypeFilter)
+                                                .filter(st => {
+                                                    if (!avatarSambandhFilter) return true;
+                                                    if (st.avatarSambandh) {
+                                                        if (st.avatarSambandh !== avatarSambandhFilter) return false;
+                                                        if (avatarSubdivisionFilter && st.avatarSubdivision !== avatarSubdivisionFilter) return false;
+                                                        return true;
+                                                    }
+                                                    // Legacy fallback: try matching avatarType string
+                                                    const cfg = AVATAR_SAMBANDH_CONFIG.find(a => a.id === avatarSambandhFilter);
+                                                    return cfg ? (st.avatarType?.includes(cfg.label) ?? false) : true;
+                                                })
                                                 .map((st) => (
                                                     <SelectItem key={st.id} value={st.name}>
                                                         <div className="flex items-center gap-2">
@@ -350,13 +426,23 @@ export default function TempleForm({ templeId }: TempleFormProps) {
                                                         </div>
                                                     </SelectItem>
                                                 ))}
-                                            {sthanTypes.filter(st => !avatarTypeFilter || st.avatarType === avatarTypeFilter).length === 0 && (
-                                                <div className="px-3 py-2 text-sm text-slate-400 italic font-medium">No types available for this avatar</div>
+                                            {sthanTypes.filter(st => {
+                                                if (!avatarSambandhFilter) return true;
+                                                if (st.avatarSambandh) {
+                                                    if (st.avatarSambandh !== avatarSambandhFilter) return false;
+                                                    if (avatarSubdivisionFilter && st.avatarSubdivision !== avatarSubdivisionFilter) return false;
+                                                    return true;
+                                                }
+                                                const cfg = AVATAR_SAMBANDH_CONFIG.find(a => a.id === avatarSambandhFilter);
+                                                return cfg ? (st.avatarType?.includes(cfg.label) ?? false) : true;
+                                            }).length === 0 && (
+                                                <div className="px-3 py-2 text-sm text-slate-400 italic font-medium">No types for this avatar / subdivision</div>
                                             )}
                                         </SelectContent>
                                     </Select>
                                 </div>
                             </div>
+
                         </div>
                     </div>
 
