@@ -71,45 +71,56 @@ const sthanIconsMap: Record<string, L.DivIcon> = {};
 function getIconForTemple(temple: Temple, sthanTypes: SthanType[]): L.Icon | L.DivIcon {
     if (!temple) return templePinIcon;
 
-    // 1. Get Primary Avatar Color
-    let avatarColor = "#0e3c6f"; // default blue
-    let primaryAvatarId = (temple as any).primaryAvatar || (temple as any).avatarSambandh;
     const sthanTypeId = (temple as any).sthanTypeId || "";
-    
-    // Legacy fallback for avatar resolution
-    if (!primaryAvatarId && !sthanTypeId) {
-        const sName = (temple as any).sthan || temple.sthana;
-        const sType = sthanTypes.find(st => st.name === sName);
-        if (sType) {
-            primaryAvatarId = sType.avatarSambandh;
-        }
+    const pinIconField = (temple as any).pinIcon || "";
+    const sName = (temple as any).sthan || (temple as any).sthanType || temple.sthana || "";
+
+    // 1. Resolve the matched SthanType record from DB
+    //    Priority: sthanTypeId (exact ID match) → sthan name match
+    let matchedSthanType: SthanType | undefined;
+    if (sthanTypeId) {
+        matchedSthanType = sthanTypes.find(st => st.id === sthanTypeId);
+    }
+    if (!matchedSthanType && sName) {
+        matchedSthanType = sthanTypes.find(st => st.name === sName);
     }
 
-    if (primaryAvatarId) {
-        const canonicalId = normalizeAvatarId(primaryAvatarId);
-        const avatarConfig = AVATAR_SAMBANDH_CONFIG.find(a => a.id === canonicalId);
-        if (avatarConfig) {
-            avatarColor = avatarConfig.color;
-            primaryAvatarId = canonicalId; // use canonical for further logic
-        }
+    // 2. Resolve primary avatar
+    let primaryAvatarId = (temple as any).primaryAvatar || (temple as any).avatarSambandh || "";
+    if (!primaryAvatarId && matchedSthanType) {
+        primaryAvatarId = matchedSthanType.avatarSambandh || "";
     }
-    
-    // 2. Get Sthan Pin Type (Fallback for legacy)
-    let pinType = "circle";
-    const sName = (temple as any).sthan || temple.sthana;
-    if (!sthanTypeId) {
-        const sType = sthanTypes.find(st => st.name === sName);
-        if (sType && sType.pinType) {
-            pinType = sType.pinType;
-        }
+    const canonicalAvatarId = normalizeAvatarId(primaryAvatarId);
+
+    // 3. Resolve avatar color
+    let avatarColor = "#0e3c6f"; // default blue
+    if (canonicalAvatarId) {
+        const avatarConfig = AVATAR_SAMBANDH_CONFIG.find(a => a.id === canonicalAvatarId);
+        if (avatarConfig) avatarColor = avatarConfig.color;
+    } else if (matchedSthanType?.color) {
+        avatarColor = matchedSthanType.color;
     }
-    
-    // 3. Generate icon (or fetch from cache)
-    const pinIcon = (temple as any).pinIcon || "";
-    const cacheKey = `${primaryAvatarId}_${sthanTypeId || sName}_${pinIcon}`;
+
+    // 4. Resolve pinType from matched sthan type (the DB-configured icon path)
+    //    This is the critical fix: use matchedSthanType.pinType so every configured pin is respected.
+    const pinType = matchedSthanType?.pinType || pinIconField || "";
+
+    // 5. Build cache key and check cache
+    const cacheKey = `${canonicalAvatarId}_${sthanTypeId || sName}_${pinType}`;
     if (sthanIconsMap[cacheKey]) return sthanIconsMap[cacheKey];
-    
-    const html = getPinImageHtml(avatarColor, pinType, 52, primaryAvatarId, sName, pinIcon, sthanTypeId, sthanTypes);
+
+    // 6. Render the pin HTML — pass all context for getSthanPinInfo to do final resolution
+    const html = getPinImageHtml(
+        avatarColor,
+        pinType,
+        52,
+        canonicalAvatarId,
+        sName,
+        pinIconField,
+        sthanTypeId,
+        sthanTypes
+    );
+
     const icon = L.divIcon({
         html,
         className: 'custom-sthan-pin',
@@ -117,7 +128,7 @@ function getIconForTemple(temple: Temple, sthanTypes: SthanType[]): L.Icon | L.D
         iconAnchor: [26, 52],
         popupAnchor: [0, -48]
     });
-    
+
     sthanIconsMap[cacheKey] = icon;
     return icon;
 }

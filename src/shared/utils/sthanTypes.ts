@@ -424,86 +424,71 @@ export const getSthanIndex = (name: string): string => {
  * Now "Avatar-Aware" and "Persisted pinIcon Aware".
  */
 export const getSthanPinInfo = (color: string, pinType?: string, avatarId?: string, sthanName?: string, pinIcon?: string, sthanTypeId?: string, allSthanTypes?: SthanType[]): PinRenderInfo => {
-    // 1. New Highest Priority: Linked Sthan Type ID from "Manage Sthan Types"
+    // 1. HIGHEST PRIORITY: Linked Sthan Type ID from "Manage Sthan Types" database
+    //    If the temple has a sthanTypeId that matches a record, use that record's pin unconditionally.
     if (sthanTypeId && allSthanTypes && allSthanTypes.length > 0) {
         const matchedType = allSthanTypes.find(t => t.id === sthanTypeId);
         if (matchedType?.pinType) {
-            // If the pinType in config is a full path, use it directly
-            if (matchedType.pinType.startsWith('/icons/pins/')) {
+            // Full icon path stored in DB (most common for Manage Sthan Types)
+            if (matchedType.pinType.startsWith('/icons/')) {
                 return { src: matchedType.pinType, filter: '', needsFilter: false };
             }
-            // If it's a key in the map
+            // Legacy key in PIN_ICON_MAP
             if (matchedType.pinType in PIN_ICON_MAP) {
-                const isOriginal = color === 'original' || color === '' || !color || color === '#0e3c6f' || color === '#d4af37';
-                return {
-                    src: PIN_ICON_MAP[matchedType.pinType],
-                    filter: isOriginal ? '' : hexToFilter(color),
-                    needsFilter: !isOriginal
-                };
+                return { src: PIN_ICON_MAP[matchedType.pinType], filter: '', needsFilter: false };
             }
         }
     }
 
-    // 2. Secondary Priority: Persisted pinIcon field (legacy or manual override)
+    // 2. SECOND PRIORITY: pinType argument is already a full icon path
+    //    This happens when getIconForTemple passes matchedSthanType.pinType as pinType directly.
+    if (pinType && pinType.startsWith('/icons/')) {
+        return { src: pinType, filter: '', needsFilter: false };
+    }
+    if (pinType && pinType in PIN_ICON_MAP) {
+        return { src: PIN_ICON_MAP[pinType], filter: '', needsFilter: false };
+    }
+
+    // 3. Persisted pinIcon field (legacy or manual override)
     if (pinIcon) {
-        if (pinIcon.startsWith('/icons/pins/')) {
+        if (pinIcon.startsWith('/icons/')) {
             return { src: pinIcon, filter: '', needsFilter: false };
         }
         if (pinIcon in PIN_ICON_MAP) {
-            const isOriginal = color === 'original' || color === '' || !color || color === '#0e3c6f' || color === '#d4af37';
-            return {
-                src: PIN_ICON_MAP[pinIcon],
-                filter: isOriginal ? '' : hexToFilter(color),
-                needsFilter: !isOriginal
-            };
+            return { src: PIN_ICON_MAP[pinIcon], filter: '', needsFilter: false };
         }
     }
 
     const canonicalAvatarId = normalizeAvatarId(avatarId);
-    
-    // 2. Avatar series secondary priority
-    if (canonicalAvatarId) {
-        const series = PIN_SERIES.find(s => s.id === canonicalAvatarId || s.name.toLowerCase().includes(canonicalAvatarId.split('-').pop() || ''));
-        if (series) {
-            const index = getSthanIndex(pinType || sthanName || '');
-            
-            // Map the canonical ID back to the numeric series ID for folder/file matching
-            let numericId = '';
-            if (canonicalAvatarId === 'shri-krishna') numericId = '1';
-            else if (canonicalAvatarId === 'shri-dattatray') numericId = '2';
-            else if (canonicalAvatarId === 'shri-chakrapani') numericId = '3';
-            else if (canonicalAvatarId === 'shri-govind') numericId = '4';
-            else if (canonicalAvatarId === 'shri-chakradhar') numericId = '5';
-            else if (canonicalAvatarId === 'mandalik') numericId = '6';
 
-            if (numericId && index) {
-                const specificFile = `${numericId}.${index}.svg`;
-                if (series.files.includes(specificFile)) {
-                    return {
-                        src: `${series.folder}/${specificFile}`,
-                        filter: '',
-                        needsFilter: false
-                    };
+    // 4. Avatar series fallback (for legacy data without sthanTypeId)
+    if (canonicalAvatarId) {
+        let numericId = '';
+        if (canonicalAvatarId === 'shri-krishna') numericId = '1';
+        else if (canonicalAvatarId === 'shri-dattatray') numericId = '2';
+        else if (canonicalAvatarId === 'shri-chakrapani') numericId = '3';
+        else if (canonicalAvatarId === 'shri-govind') numericId = '4';
+        else if (canonicalAvatarId === 'shri-chakradhar') numericId = '5';
+        else if (canonicalAvatarId === 'mandalik') numericId = '6';
+
+        if (numericId) {
+            const series = PIN_SERIES.find(s => s.id === numericId);
+            if (series) {
+                const index = getSthanIndex(sthanName || '');
+                if (index) {
+                    const specificFile = `${numericId}.${index}.svg`;
+                    if (series.files.includes(specificFile)) {
+                        return { src: `${series.folder}/${specificFile}`, filter: '', needsFilter: false };
+                    }
                 }
+                // Default pin for this avatar series
+                const defaultFile = series.files.find(f => !f.includes('.')) || series.files[series.files.length - 1];
+                return { src: `${series.folder}/${defaultFile}`, filter: '', needsFilter: false };
             }
         }
     }
 
-    // 3. Fallback to existing logic if no avatar-specific pin found
-    if (pinType && pinType.startsWith('/icons/pins/')) {
-        return { src: pinType, filter: '', needsFilter: false };
-    }
-
-    const isOriginal = color === 'original' || color === '' || !color || color === '#0e3c6f' || color === '#d4af37';
-
-    if (pinType && pinType in PIN_ICON_MAP) {
-        return {
-            src: PIN_ICON_MAP[pinType],
-            filter: isOriginal ? '' : hexToFilter(color),
-            needsFilter: !isOriginal
-        };
-    }
-
+    // 5. Last resort fallback
     return { src: generateSthanPinSVG(color, pinType), filter: '', needsFilter: false };
 };
 
