@@ -194,31 +194,31 @@ export const PIN_SERIES = [
 
 /**
  * Returns valid Sthan Types for a specific avatar.
- * Prioritizes records with a matching avatarSambandh.
- * For records without avatarSambandh (legacy), it matches by name-set only if 
- * the name isn't already "claimed" by a record with a different avatarSambandh.
+ * Returns both types explicitly assigned to the avatar, and universal types (no avatar assigned).
+ * Deduplicates by name, giving precedence to explicitly assigned types.
  */
 export const getValidSthanTypes = (avatarId: string, allTypes: SthanType[]): SthanType[] => {
     if (!avatarId) return allTypes;
 
-    // 1. Explicitly tagged types take precedence
-    const taggedTypes = allTypes.filter(t => t.avatarSambandh === avatarId);
+    const validCandidates = allTypes.filter(t => t.avatarSambandh === avatarId || !t.avatarSambandh || t.avatarSambandh === '');
+
+    const map = new Map<string, SthanType>();
     
-    // 2. If we have tagged types, we prefer them exclusively to avoid duplicates
-    // However, we still check for legacy types that might not be tagged yet
-    if (taggedTypes.length > 0) {
-        return taggedTypes;
+    for (const t of validCandidates) {
+        if (!map.has(t.name) || t.avatarSambandh === avatarId) {
+            map.set(t.name, t);
+        }
     }
-
-    // 3. Fallback for Mandalik
-    if (avatarId === 'mandalik') {
-        return allTypes.filter(t => t.name === 'Mandalik' && (!t.avatarSambandh || t.avatarSambandh === 'mandalik'));
+    
+    // Convert Map values to array and ensure Mandalik fallback is present if applicable
+    let results = Array.from(map.values());
+    
+    if (avatarId === 'mandalik' && !results.some(t => t.name === 'Mandalik')) {
+        const fallback = allTypes.find(t => t.name === 'Mandalik' && (!t.avatarSambandh || t.avatarSambandh === 'mandalik'));
+        if (fallback) results.push(fallback);
     }
-
-    // 4. Fallback for Standard avatars
-    return allTypes.filter(t => 
-        (!t.avatarSambandh || t.avatarSambandh === avatarId)
-    );
+    
+    return results;
 };
 
 /**

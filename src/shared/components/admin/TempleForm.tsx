@@ -442,16 +442,18 @@ export default function TempleForm({ templeId }: TempleFormProps) {
                                 <div className="space-y-2">
                                     <Label className="text-sm font-semibold text-slate-700">Sthan Type *</Label>
                                     <Select 
-                                        value={sthan} 
+                                        value={sthanTypeId || sthan} 
                                         onValueChange={(v) => {
-                                            setSthan(v);
-                                            // Find the type object to get its ID and pinType
-                                            const typeObj = sthanTypes.find(t => t.name === v);
+                                            const typeObj = sthanTypes.find(t => t.id === v || t.name === v);
                                             if (typeObj) {
+                                                setSthan(typeObj.name);
                                                 setSthanTypeId(typeObj.id);
                                                 if (typeObj.pinType) {
                                                     setPinIcon(typeObj.pinType);
                                                 }
+                                            } else {
+                                                setSthan(v);
+                                                setSthanTypeId("");
                                             }
                                         }} 
                                         required
@@ -461,7 +463,7 @@ export default function TempleForm({ templeId }: TempleFormProps) {
                                         </SelectTrigger>
                                         <SelectContent>
                                             {getValidSthanTypes(primaryAvatar, sthanTypes).map((st) => (
-                                                <SelectItem key={st.id} value={st.name}>
+                                                <SelectItem key={st.id} value={st.id}>
                                                     <div className="flex items-center gap-2">
                                                         <div 
                                                             className="w-2.5 h-2.5 rounded-full shrink-0" 
@@ -471,8 +473,12 @@ export default function TempleForm({ templeId }: TempleFormProps) {
                                                     </div>
                                                 </SelectItem>
                                             ))}
-                                            {getValidSthanTypes(primaryAvatar, sthanTypes).length === 0 && (
-                                                <div className="px-3 py-2 text-sm text-slate-400 italic">No types available for this avatar</div>
+                                            {sthan && !sthanTypeId && !getValidSthanTypes(primaryAvatar, sthanTypes).some(t => t.name === sthan) && (
+                                                <SelectItem value={sthan}>
+                                                    <div className="flex items-center gap-2">
+                                                        <span>{sthan}</span>
+                                                    </div>
+                                                </SelectItem>
                                             )}
                                         </SelectContent>
                                     </Select>
