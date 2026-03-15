@@ -216,16 +216,9 @@ export const getValidSthanTypes = (avatarId: string, allTypes: SthanType[]): Sth
     }
 
     // 4. Fallback for Standard avatars
-    const standardAvatars = ['shri-krishna', 'shri-dattatray', 'shri-chakrapani', 'shri-govind', 'shri-chakradhar'];
-    if (standardAvatars.includes(avatarId)) {
-        const validNames = ['Mahasthan', 'Avasthan', 'Vasti', 'Asan', 'Vasti Sthan', 'Asan Sthan'];
-        return allTypes.filter(t => 
-            validNames.includes(t.name) && 
-            (!t.avatarSambandh || t.avatarSambandh === avatarId)
-        );
-    }
-
-    return [];
+    return allTypes.filter(t => 
+        (!t.avatarSambandh || t.avatarSambandh === avatarId)
+    );
 };
 
 /**
