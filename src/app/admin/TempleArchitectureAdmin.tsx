@@ -4,9 +4,9 @@ import { useParams, useNavigate } from "react-router-dom";
 import AdminLayout from "@/shared/components/admin/AdminLayout";
 
 import { v4 as uuidv4 } from "uuid";
-import { Hotspot, Leela, GlanceItem, AbbreviationItem, CustomBlock } from "@/types";
+import { Hotspot, Leela, GlanceItem, AbbreviationItem, CustomBlock, SthanDetail } from "@/types";
 import * as LucideIcons from "lucide-react";
-import { X, Save, Trash2, Upload, ArrowLeft, ZoomIn, ZoomOut, ChevronLeft, ChevronRight, Plus, ChevronDown, Image as ImageIcon, Info, MousePointer2, ExternalLink, FileText, Search, ArrowUp, ArrowDown } from "lucide-react";
+import { X, Save, Trash2, Upload, ArrowLeft, ZoomIn, ZoomOut, ChevronLeft, ChevronRight, Plus, ChevronDown, Image as ImageIcon, Info, MousePointer2, ExternalLink, FileText, Search, ArrowUp, ArrowDown, Check } from "lucide-react";
 import { Button } from "@/shared/components/ui/button";
 import { Input } from "@/shared/components/ui/input";
 import { Textarea } from "@/shared/components/ui/textarea";
@@ -216,10 +216,14 @@ export default function TempleArchitectureAdmin() {
   const [primarySubtype, setPrimarySubtype] = useState<string[]>([]);
   const [relatedAvatars, setRelatedAvatars] = useState<RelatedAvatar[]>([]);
   const [pinIcon, setPinIcon] = useState("");
-  
-  const [selectedHotspot, setSelectedHotspot] = useState<Hotspot | null>(null);
+
+  const [selectedHotspot, setSelectedHotspot] = useState<any | null>(null);
   const [isVerified, setIsVerified] = useState(false);
   const [isComplete, setIsComplete] = useState(false);
+  const [hasArchitecture, setHasArchitecture] = useState(false);
+  const [globalLeelas, setGlobalLeelas] = useState<Leela[]>([]);
+  const [globalPothiDescription, setGlobalPothiDescription] = useState("");
+  const [details, setDetails] = useState<SthanDetail[]>([]);
 
   const [repositioningId, setRepositioningId] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
@@ -231,6 +235,7 @@ export default function TempleArchitectureAdmin() {
   const [pendingClickPosition, setPendingClickPosition] = useState<{ x: number, y: number } | null>(null);
   const [hotspotPage, setHotspotPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState("");
+  const [detailFilter, setDetailFilter] = useState<'all' | 'linked' | 'independent'>('all');
   const HOTSPOTS_PER_PAGE = 6;
 
   useEffect(() => {
@@ -321,13 +326,13 @@ export default function TempleArchitectureAdmin() {
           setSthanTypeId(data.sthanTypeId || "");
           setPrimaryAvatar(data.primaryAvatar || data.avatarSambandh || "");
           setPrimarySubtype(data.primarySubtype || data.avatarSubTypes || (data.avatarSubdivision ? [data.avatarSubdivision] : []));
-          
-          
+
+
           if (Array.isArray(data.relatedAvatars)) {
             if (data.relatedAvatars.length > 0 && typeof data.relatedAvatars[0] === 'string') {
-                setRelatedAvatars(data.relatedAvatars.map((id: string) => ({ avatar: id, subtype: [] })));
+              setRelatedAvatars(data.relatedAvatars.map((id: string) => ({ avatar: id, subtype: [] })));
             } else {
-                setRelatedAvatars(data.relatedAvatars);
+              setRelatedAvatars(data.relatedAvatars);
             }
           } else {
             setRelatedAvatars([]);
@@ -337,6 +342,32 @@ export default function TempleArchitectureAdmin() {
 
           setIsVerified(data.isVerified || false);
           setIsComplete(data.isComplete || false);
+          setHasArchitecture(data.hasArchitecture !== undefined
+            ? data.hasArchitecture
+            : (data.isStandalone !== undefined ? !data.isStandalone : !!data.architectureImage));
+          setGlobalLeelas(data.leelas || []);
+          setGlobalPothiDescription(data.sthanPothiDescription || "");
+
+          // ── Migration / Sync Logic ──
+          let masterDetails = data.details || [];
+
+          // If no details exist, but hotspots do, migrate hotspots to details
+          if (masterDetails.length === 0 && data.hotspots && data.hotspots.length > 0) {
+            masterDetails = data.hotspots.map((h: any) => ({
+              id: h.id,
+              title: h.title || `Sacred Point #${h.number}`,
+              description: h.description || "",
+              images: h.images || [],
+              leelas: h.leelas || [],
+              sthanPothiDescription: h.sthanPothiDescription || "",
+              sthanPothiTitle: h.sthanPothiTitle || "",
+              generalDescriptionTitle: h.generalDescriptionTitle || "",
+              hotspotId: h.id, // Link to self for existing hotspots
+              type: h.type || 'Structure'
+            }));
+          }
+
+          setDetails(masterDetails);
 
           if (presentHotspotsData.length > 0) {
             setPresentHotspots(presentHotspotsData);
@@ -513,6 +544,11 @@ export default function TempleArchitectureAdmin() {
       pinIcon,
       isVerified,
       isComplete,
+      hasArchitecture,
+      leelas: globalLeelas,
+      sthanPothiDescription: globalPothiDescription,
+      isStandalone: !hasArchitecture, // sync for backward compatibility
+      details: details, // New dynamic details array
       hotspots: archHotspots,
       // present_hotspots is handled exclusively via subcollection for isolation
       // present_hotspots: presentHotspots, 
@@ -831,6 +867,29 @@ export default function TempleArchitectureAdmin() {
     }
   };
 
+  const removeArchitecture = async () => {
+    if (!confirm("Are you sure you want to REMOVE all architecture data? This will clear the main image and ALL hotspots. Global details will be preserved.")) return;
+
+    setArchImageUrl("");
+    setArchHotspots([]);
+    setHasArchitecture(false);
+
+    const unlinkedDetails = details.map(d => ({ ...d, hotspotId: null }));
+    setDetails(unlinkedDetails);
+
+    // Auto-save the change
+    saveTempleDetailsDirectly({
+      architectureImage: "",
+      hotspots: [],
+      details: unlinkedDetails,
+      hasArchitecture: false,
+      isStandalone: true
+    });
+
+    setCurrentStep('sthana-details');
+    toast({ title: "Architecture Removed", description: "This sthan is now standalone." });
+  };
+
   const removeSupplementalImage = async (index: number) => {
     if (!id) return;
     try {
@@ -988,6 +1047,32 @@ export default function TempleArchitectureAdmin() {
     });
   };
 
+  const addDetail = () => {
+    const newDetail: SthanDetail = {
+      id: uuidv4(),
+      title: "",
+      description: "",
+      images: [],
+      leelas: [],
+      type: 'Structure',
+      hotspotId: null
+    };
+    setDetails([...details, newDetail]);
+    setSelectedHotspot(newDetail as any); // Use editor for new detail
+    setCurrentStep('sthana-details');
+  };
+
+  const updateDetail = (dId: string, updates: Partial<SthanDetail>) => {
+    setDetails(details.map(d => d.id === dId ? { ...d, ...updates } : d));
+  };
+
+  const deleteDetail = (dId: string) => {
+    if (!confirm("Are you sure you want to delete this content entry? This will NOT delete the related map hotspot if linked.")) return;
+    setDetails(details.filter(d => d.id !== dId));
+    if (selectedHotspot?.id === dId) setSelectedHotspot(null);
+    toast({ title: "Deleted", description: "Detail entry removed." });
+  };
+
   const filteredListHotspots = viewType === 'architectural'
     ? archHotspots.filter(h => (h.imageIndex || 0) === adminImageIndex)
     : archHotspots;
@@ -1084,7 +1169,7 @@ export default function TempleArchitectureAdmin() {
                   <LucideIcons.ShieldCheck className="w-5 h-5 text-blue-600" />
                   <span className="text-xs font-black uppercase tracking-widest text-slate-400">Status Control</span>
                 </div>
-                
+
                 <div className="flex items-center gap-3">
                   <div className="space-y-0.5">
                     <Label className="text-sm font-bold text-slate-900 text-nowrap">Verified Sthan</Label>
@@ -1185,117 +1270,117 @@ export default function TempleArchitectureAdmin() {
                   </div>
                   <div className="space-y-6">
                     <div className="space-y-2">
-                        <Label className="text-sm font-semibold text-slate-700">Primary Avatar *</Label>
-                        <Select
-                            value={primaryAvatar}
-                            onValueChange={(v) => {
-                                setPrimaryAvatar(v);
-                                setPrimarySubtype([]); // reset subtypes
-                            }}
-                            required
-                        >
-                            <SelectTrigger className="h-12 rounded-xl border-slate-200 bg-white">
-                                <SelectValue placeholder="Select Primary Avatar">
-                                    {primaryAvatar ? (() => {
-                                        const cfg = AVATAR_SAMBANDH_CONFIG.find(a => a.id === primaryAvatar);
-                                        return cfg ? (
-                                            <span className="flex items-center gap-2">
-                                                <span className="w-3 h-3 rounded-full shrink-0 inline-block" style={{ backgroundColor: cfg.color }} />
-                                                {cfg.label}
-                                            </span>
-                                        ) : 'Select Primary Avatar';
-                                    })() : 'Select Primary Avatar'}
-                                </SelectValue>
-                            </SelectTrigger>
-                            <SelectContent className="max-h-72">
-                                {AVATAR_SAMBANDH_CONFIG.map((av) => (
-                                    <SelectItem key={av.id} value={av.id}>
-                                        <div className="flex items-center gap-2.5">
-                                            <span className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: av.color }} />
-                                            <span>{av.label}</span>
-                                        </div>
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
+                      <Label className="text-sm font-semibold text-slate-700">Primary Avatar *</Label>
+                      <Select
+                        value={primaryAvatar}
+                        onValueChange={(v) => {
+                          setPrimaryAvatar(v);
+                          setPrimarySubtype([]); // reset subtypes
+                        }}
+                        required
+                      >
+                        <SelectTrigger className="h-12 rounded-xl border-slate-200 bg-white">
+                          <SelectValue placeholder="Select Primary Avatar">
+                            {primaryAvatar ? (() => {
+                              const cfg = AVATAR_SAMBANDH_CONFIG.find(a => a.id === primaryAvatar);
+                              return cfg ? (
+                                <span className="flex items-center gap-2">
+                                  <span className="w-3 h-3 rounded-full shrink-0 inline-block" style={{ backgroundColor: cfg.color }} />
+                                  {cfg.label}
+                                </span>
+                              ) : 'Select Primary Avatar';
+                            })() : 'Select Primary Avatar'}
+                          </SelectValue>
+                        </SelectTrigger>
+                        <SelectContent className="max-h-72">
+                          {AVATAR_SAMBANDH_CONFIG.map((av) => (
+                            <SelectItem key={av.id} value={av.id}>
+                              <div className="flex items-center gap-2.5">
+                                <span className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: av.color }} />
+                                <span>{av.label}</span>
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
 
                     {((AVATAR_SAMBANDH_CONFIG.find(a => a.id === primaryAvatar)?.subdivisions.length || 0) > 0) && (
-                        <div className="space-y-2 animate-in fade-in duration-300">
-                            <Label className="text-sm font-semibold text-slate-700">Avatar Sub Type(s)</Label>
-                            <ReactSelect
-                                isMulti
-                                options={AVATAR_SAMBANDH_CONFIG.find(a => a.id === primaryAvatar)?.subdivisions.filter(s => s.id !== 'complete').map(s => ({ value: s.id, label: s.label }))}
-                                value={AVATAR_SAMBANDH_CONFIG.find(a => a.id === primaryAvatar)?.subdivisions
-                                    .filter(s => primarySubtype.includes(s.id))
-                                    .map(s => ({ value: s.id, label: s.label }))}
-                                onChange={(selected) => setPrimarySubtype(selected ? selected.map((s: any) => s.value) : [])}
-                                placeholder="Select Sub Types..."
-                                className="react-select-container text-sm"
-                                classNamePrefix="react-select"
-                                styles={{
-                                    control: (base) => ({
-                                        ...base,
-                                        minHeight: '48px',
-                                        borderRadius: '0.75rem',
-                                        borderColor: '#e2e8f0',
-                                        boxShadow: 'none',
-                                        '&:hover': { borderColor: '#cbd5e1' }
-                                    })
-                                }}
-                            />
-                        </div>
+                      <div className="space-y-2 animate-in fade-in duration-300">
+                        <Label className="text-sm font-semibold text-slate-700">Avatar Sub Type(s)</Label>
+                        <ReactSelect
+                          isMulti
+                          options={AVATAR_SAMBANDH_CONFIG.find(a => a.id === primaryAvatar)?.subdivisions.filter(s => s.id !== 'complete').map(s => ({ value: s.id, label: s.label }))}
+                          value={AVATAR_SAMBANDH_CONFIG.find(a => a.id === primaryAvatar)?.subdivisions
+                            .filter(s => primarySubtype.includes(s.id))
+                            .map(s => ({ value: s.id, label: s.label }))}
+                          onChange={(selected) => setPrimarySubtype(selected ? selected.map((s: any) => s.value) : [])}
+                          placeholder="Select Sub Types..."
+                          className="react-select-container text-sm"
+                          classNamePrefix="react-select"
+                          styles={{
+                            control: (base) => ({
+                              ...base,
+                              minHeight: '48px',
+                              borderRadius: '0.75rem',
+                              borderColor: '#e2e8f0',
+                              boxShadow: 'none',
+                              '&:hover': { borderColor: '#cbd5e1' }
+                            })
+                          }}
+                        />
+                      </div>
                     )}
 
                     <div className="space-y-2">
                       <Label className="text-sm font-semibold text-slate-700">Sthan Type *</Label>
-                      <Select 
-                        value={sthanTypeId || sthan} 
+                      <Select
+                        value={sthanTypeId || sthan}
                         onValueChange={(v) => {
-                                        const typeObj = sthanTypes.find(t => t.id === v || t.name === v);
-                                        if (typeObj) {
-                                          setSthan(typeObj.name);
-                                          setSthanTypeId(typeObj.id);
-                                          if (typeObj.pinType) {
-                                            setPinIcon(typeObj.pinType);
-                                          }
-                                        } else {
-                                          setSthan(v);
-                                          setSthanTypeId("");
-                                        }
-                                      }}
+                          const typeObj = sthanTypes.find(t => t.id === v || t.name === v);
+                          if (typeObj) {
+                            setSthan(typeObj.name);
+                            setSthanTypeId(typeObj.id);
+                            if (typeObj.pinType) {
+                              setPinIcon(typeObj.pinType);
+                            }
+                          } else {
+                            setSthan(v);
+                            setSthanTypeId("");
+                          }
+                        }}
                       >
                         <SelectTrigger className="h-12 rounded-xl border-slate-200 bg-white">
                           <SelectValue placeholder="Select Sthan Type" />
                         </SelectTrigger>
                         <SelectContent>
-                              {getValidSthanTypes(primaryAvatar, sthanTypes).map(st => (
-                                  <SelectItem key={st.id} value={st.id}>
-                                    <div className="flex items-center gap-2">
-                                      <div 
-                                        className="w-2.5 h-2.5 rounded-full shrink-0" 
-                                        style={{ backgroundColor: getAvatarColor(st.avatarSambandh) || st.color }} 
-                                      />
-                                      <span>{st.name}</span>
-                                    </div>
-                                  </SelectItem>
-                                ))}
-                              {sthan && !sthanTypeId && !getValidSthanTypes(primaryAvatar, sthanTypes).some(t => t.name === sthan) && (
-                                  <SelectItem value={sthan}>
-                                      <div className="flex items-center gap-2">
-                                          <span>{sthan}</span>
-                                      </div>
-                                  </SelectItem>
-                              )}
+                          {getValidSthanTypes(primaryAvatar, sthanTypes).map(st => (
+                            <SelectItem key={st.id} value={st.id}>
+                              <div className="flex items-center gap-2">
+                                <div
+                                  className="w-2.5 h-2.5 rounded-full shrink-0"
+                                  style={{ backgroundColor: getAvatarColor(st.avatarSambandh) || st.color }}
+                                />
+                                <span>{st.name}</span>
+                              </div>
+                            </SelectItem>
+                          ))}
+                          {sthan && !sthanTypeId && !getValidSthanTypes(primaryAvatar, sthanTypes).some(t => t.name === sthan) && (
+                            <SelectItem value={sthan}>
+                              <div className="flex items-center gap-2">
+                                <span>{sthan}</span>
+                              </div>
+                            </SelectItem>
+                          )}
                         </SelectContent>
                       </Select>
                       <p className="text-xs text-slate-400">Defines the default map pin icon.</p>
                     </div>
 
-                    <RelatedAvatarsSelect 
-                        value={relatedAvatars} 
-                        onChange={setRelatedAvatars} 
-                        excludeAvatarId={primaryAvatar}
+                    <RelatedAvatarsSelect
+                      value={relatedAvatars}
+                      onChange={setRelatedAvatars}
+                      excludeAvatarId={primaryAvatar}
                     />
                   </div>
                 </div>
@@ -1680,22 +1765,41 @@ export default function TempleArchitectureAdmin() {
               </div>
             </div>
 
-            <div className="flex justify-end pt-20">
+            <div className="flex items-center justify-between pt-20">
+              <div className="flex items-center gap-4 bg-white px-6 py-4 rounded-3xl border border-slate-200 shadow-sm">
+                <div className="space-y-0.5">
+                  <Label className="text-sm font-bold text-slate-900 leading-none">Architecture View</Label>
+                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Toggle Mapping Step</p>
+                </div>
+                <Switch
+                  checked={hasArchitecture}
+                  onCheckedChange={setHasArchitecture}
+                  className="data-[state=checked]:bg-amber-500"
+                />
+              </div>
+
               <Button
                 onClick={() => {
                   window.scrollTo({ top: 0, behavior: 'smooth' });
-                  setCurrentStep('architecture-view');
+                  if (hasArchitecture) {
+                    setCurrentStep('architecture-view');
+                  } else {
+                    setCurrentStep('sthana-details');
+                  }
                 }}
                 className="bg-blue-900 px-10 h-16 rounded-2xl font-black shadow-2xl shadow-blue-900/30 hover:scale-105 active:scale-95 transition-all text-white gap-3"
               >
-                Next Step: Architecture Mapping <ChevronRight className="w-6 h-6" />
+                {hasArchitecture
+                  ? "Next Step: Architecture Mapping"
+                  : "Next Step: Sthan Details"}
+                <ChevronRight className="w-6 h-6" />
               </Button>
             </div>
           </div>
         )}
 
         {/* Step 2: Architecture View */}
-        {currentStep === 'architecture-view' && (
+        {currentStep === 'architecture-view' && hasArchitecture && (
           <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-8">
             {/* Quick Tips Guide */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1923,14 +2027,25 @@ export default function TempleArchitectureAdmin() {
                         </PopoverContent>
                       </Popover>
                     )}
-                    <Button
-                      onClick={() => saveMainImageOnly(adminImageIndex === 0 ? (viewType === 'architectural' ? 'arch' : 'present') : 'arch' /* fallback */)}
-                      variant="outline"
-                      size="sm"
-                      className="bg-white/10 hover:bg-white/20 text-white backdrop-blur-xl border border-white/10"
-                    >
-                      <Save className="w-4 h-4 mr-2" /> Save Image URL
-                    </Button>
+                    <div className="flex flex-col gap-2">
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        className="bg-black/40 hover:bg-red-600 text-white backdrop-blur-xl border border-white/10 shadow-2xl font-black text-[10px] tracking-tight"
+                        onClick={removeArchitecture}
+                      >
+                        <Trash2 className="w-3.5 h-3.5 mr-2" />
+                        REMOVE ARCHITECTURE
+                      </Button>
+                      <Button
+                        onClick={() => saveMainImageOnly(adminImageIndex === 0 ? (viewType === 'architectural' ? 'arch' : 'present') : 'arch' /* fallback */)}
+                        variant="outline"
+                        size="sm"
+                        className="bg-white/10 hover:bg-white/20 text-white backdrop-blur-xl border border-white/10"
+                      >
+                        <Save className="w-4 h-4 mr-2" /> Save Image URL
+                      </Button>
+                    </div>
                   </div>
                 </div>
 
@@ -2301,75 +2416,141 @@ export default function TempleArchitectureAdmin() {
                 <div className="flex items-center justify-between">
                   <div>
                     <h1 className="text-3xl font-serif font-bold text-primary tracking-tight">Sthana Details</h1>
-                    <p className="text-sm text-slate-500 font-medium">Manage content, leelas, and photos for each sacred pinpoint.</p>
+                    <p className="text-sm text-slate-500 font-medium">Manage sacred points, divine stories, and site content.</p>
                   </div>
                   <div className="flex items-center gap-4">
                     <div className="relative">
                       <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                       <Input
-                        placeholder="Search hotspots..."
+                        placeholder="Search details..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         className="pl-10 w-64 rounded-xl border-slate-200"
                       />
                     </div>
+                    <Button onClick={addDetail} className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl px-6">
+                      <Plus className="w-4 h-4 mr-2" /> Add Sthan Detail
+                    </Button>
                     <Button onClick={saveTempleDetails} className="bg-blue-900 text-white rounded-xl px-6">
                       <Save className="w-4 h-4 mr-2" /> Save All
                     </Button>
                   </div>
                 </div>
 
+                {/* Filters */}
+                <div className="flex items-center gap-2">
+                  {['all', 'linked', 'independent'].map((f) => (
+                    <button
+                      key={f}
+                      onClick={() => setDetailFilter(f as any)}
+                      className={cn(
+                        "px-4 py-2 rounded-full text-xs font-black uppercase tracking-widest transition-all",
+                        detailFilter === f
+                          ? "bg-blue-900 text-white shadow-md scale-105"
+                          : "bg-white text-slate-400 border border-slate-200 hover:bg-slate-50"
+                      )}
+                    >
+                      {f}
+                    </button>
+                  ))}
+                </div>
+
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {archHotspots
-                    .filter(h => h.title.toLowerCase().includes(searchQuery.toLowerCase()) || h.number?.toString().includes(searchQuery))
-                    .map((hotspot) => (
-                      <Card
-                        key={hotspot.id}
-                        className="group hover:shadow-xl transition-all border-2 border-transparent hover:border-blue-200 cursor-pointer overflow-hidden rounded-3xl"
-                        onClick={() => setSelectedHotspot(hotspot)}
-                      >
-                        <CardContent className="p-0">
-                          <div className="aspect-video bg-slate-100 flex items-center justify-center relative overflow-hidden">
-                            {hotspot.images?.[0] ? (
-                              <img
-                                src={hotspot.images[0]}
-                                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                                onError={(e) => (e.currentTarget.src = "/placeholder-temple.jpg")}
-                              />
-                            ) : (
-                              <div className="flex flex-col items-center gap-2">
-                                <ImageIcon className="w-12 h-12 text-slate-300" />
-                                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">No Image</span>
+                  {details
+                    .filter(d => {
+                      const matchesSearch = d.title.toLowerCase().includes(searchQuery.toLowerCase()) || d.description.toLowerCase().includes(searchQuery.toLowerCase());
+                      if (detailFilter === 'linked') return matchesSearch && !!d.hotspotId;
+                      if (detailFilter === 'independent') return matchesSearch && !d.hotspotId;
+                      return matchesSearch;
+                    })
+                    .sort((a, b) => {
+                      // Optional: sort linked items by their hotspot number if available
+                      const aH = archHotspots.find(h => h.id === a.hotspotId);
+                      const bH = archHotspots.find(h => h.id === b.hotspotId);
+                      if (aH && bH) return aH.number - bH.number;
+                      if (aH) return -1;
+                      if (bH) return 1;
+                      return 0;
+                    })
+                    .map((detail) => {
+                      const linkedHotspot = archHotspots.find(h => h.id === detail.hotspotId);
+                      return (
+                        <Card
+                          key={detail.id}
+                          className="group hover:shadow-xl transition-all border-2 border-transparent hover:border-blue-200 cursor-pointer overflow-hidden rounded-3xl"
+                          onClick={() => setSelectedHotspot(detail as any)}
+                        >
+                          <CardContent className="p-0">
+                            <div className="aspect-video bg-slate-100 flex items-center justify-center relative overflow-hidden">
+                              {detail.images?.[0] ? (
+                                <img
+                                  src={detail.images[0]}
+                                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                                  onError={(e) => (e.currentTarget.src = "/placeholder-temple.jpg")}
+                                />
+                              ) : (
+                                <div className="flex flex-col items-center gap-2">
+                                  <ImageIcon className="w-12 h-12 text-slate-300" />
+                                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">No Image</span>
+                                </div>
+                              )}
+                              {linkedHotspot && (
+                                <div className="absolute top-4 left-4 w-10 h-10 rounded-2xl bg-blue-900 text-white shadow-xl flex items-center justify-center font-black border border-blue-800">
+                                  {linkedHotspot.number}
+                                </div>
+                              )}
+                              {!linkedHotspot && (
+                                <div className="absolute top-4 left-4 w-10 h-10 rounded-2xl bg-emerald-600 text-white shadow-xl flex items-center justify-center font-black border border-emerald-500">
+                                  S
+                                </div>
+                              )}
+                            </div>
+                            <div className="p-6 space-y-3">
+                              <div className="flex items-start justify-between gap-4">
+                                <div>
+                                  <h3 className="font-bold text-slate-900 text-lg group-hover:text-blue-600 transition-colors">
+                                    {detail.title || `Untitled Detail`}
+                                  </h3>
+                                  <p className="text-xs font-black text-slate-400 uppercase tracking-widest mt-1">
+                                    {detail.type || 'Structure'}
+                                  </p>
+                                </div>
+                                <Popover>
+                                  <PopoverTrigger asChild onClick={(e) => e.stopPropagation()}>
+                                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg hover:bg-slate-100">
+                                      <LucideIcons.MoreVertical className="w-4 h-4 text-slate-400" />
+                                    </Button>
+                                  </PopoverTrigger>
+                                  <PopoverContent className="w-40 p-1 rounded-xl" onClick={(e) => e.stopPropagation()}>
+                                    <Button
+                                      variant="ghost"
+                                      className="w-full justify-start text-xs font-bold text-red-600 hover:bg-red-50 hover:text-red-700 rounded-lg"
+                                      onClick={() => deleteDetail(detail.id)}
+                                    >
+                                      <Trash2 className="w-3.5 h-3.5 mr-2" /> Delete
+                                    </Button>
+                                  </PopoverContent>
+                                </Popover>
                               </div>
-                            )}
-                            <div className="absolute top-4 left-4 w-10 h-10 rounded-2xl bg-white shadow-xl flex items-center justify-center font-black text-blue-900 border border-slate-100">
-                              {hotspot.number}
-                            </div>
-                          </div>
-                          <div className="p-6 space-y-3">
-                            <div>
-                              <h3 className="font-bold text-slate-900 text-lg group-hover:text-blue-600 transition-colors">
-                                {hotspot.title || `Sthana #${hotspot.number}`}
-                              </h3>
-                              <p className="text-xs font-black text-slate-400 uppercase tracking-widest mt-1">
-                                {hotspot.type || 'Structure'}
+                              <p className="text-sm text-slate-500 line-clamp-2 leading-relaxed">
+                                {detail.description || "No description provided yet."}
                               </p>
+                              <div className="pt-4 flex items-center justify-between border-t border-slate-50">
+                                <span className={cn(
+                                  "text-[10px] font-bold uppercase tracking-widest flex items-center gap-1",
+                                  linkedHotspot ? "text-blue-600" : "text-emerald-600"
+                                )}>
+                                  {linkedHotspot ? `Linked to Map #${linkedHotspot.number}` : "Independent Entry"}
+                                </span>
+                                <Button variant="ghost" size="sm" className="text-blue-600 font-black text-xs hover:bg-blue-50">
+                                  EDIT <ChevronRight className="w-3 h-3 ml-1" />
+                                </Button>
+                              </div>
                             </div>
-                            <p className="text-sm text-slate-500 line-clamp-2 leading-relaxed">
-                              {hotspot.description || "No description provided yet."}
-                            </p>
-                            <div className="pt-4 flex items-center justify-between border-t border-slate-50">
-                              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1">
-                                <LucideIcons.Book className="w-3 h-3 text-blue-400" /> {hotspot.leelas?.length || 0} Stories
-                              </span>
-                              <Button variant="ghost" size="sm" className="text-blue-600 font-black text-xs hover:bg-blue-50">
-                                EDIT CONTENT <ChevronRight className="w-3 h-3 ml-1" />
-                              </Button>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
                 </div>
               </div>
             ) : (
@@ -2388,11 +2569,14 @@ export default function TempleArchitectureAdmin() {
                       </Button>
                       <div className="w-px h-8 bg-slate-100" />
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-2xl bg-blue-900 text-white flex items-center justify-center font-black text-lg shadow-lg shadow-blue-900/10">
-                          {selectedHotspot.number}
+                        <div className={cn(
+                          "w-10 h-10 rounded-2xl flex items-center justify-center font-black text-lg shadow-lg",
+                          selectedHotspot.hotspotId ? "bg-blue-900 text-white" : "bg-emerald-600 text-white"
+                        )}>
+                          {selectedHotspot.hotspotId ? archHotspots.find(h => h.id === selectedHotspot.hotspotId)?.number || '?' : 'S'}
                         </div>
                         <h2 className="text-xl font-serif font-bold text-primary truncate max-w-[200px] md:max-w-sm">
-                          {selectedHotspot.title || `Edit Sthana #${selectedHotspot.number}`}
+                          {selectedHotspot.title || `Edit Sthan Detail`}
                         </h2>
                       </div>
                     </div>
@@ -2407,6 +2591,75 @@ export default function TempleArchitectureAdmin() {
                 <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
                   {/* Primary Content */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    {/* Map Integration (New Card) */}
+                    <Card className="md:col-span-2 border-blue-100 bg-blue-50/30 shadow-sm rounded-3xl overflow-hidden border-2">
+                      <CardHeader className="bg-blue-100/50 border-b border-blue-200 py-4 flex flex-row items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <LucideIcons.MapPin className="w-5 h-5 text-blue-600" />
+                          <CardTitle className="text-lg font-bold text-blue-900">Map Integration</CardTitle>
+                        </div>
+                        <Badge
+                          className={cn(
+                            "px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border-none",
+                            selectedHotspot.hotspotId ? "bg-blue-600 text-white" : "bg-emerald-600 text-white"
+                          )}
+                        >
+                          {selectedHotspot.hotspotId ? "Linked to Map" : "Independent Content"}
+                        </Badge>
+                      </CardHeader>
+                      <CardContent className="p-6 md:p-8">
+                        <div className="flex flex-col md:flex-row items-center gap-8">
+                          <div className="flex-1 space-y-4">
+                            <div className="flex items-center gap-3 bg-white p-4 rounded-2xl border border-blue-100 shadow-sm">
+                              <Switch
+                                id="map-link-toggle"
+                                checked={!!selectedHotspot.hotspotId}
+                                onCheckedChange={(checked) => {
+                                  if (!checked) {
+                                    setSelectedHotspot({ ...selectedHotspot, hotspotId: null });
+                                  } else if (archHotspots.length > 0) {
+                                    setSelectedHotspot({ ...selectedHotspot, hotspotId: archHotspots[0].id });
+                                  }
+                                }}
+                              />
+                              <Label htmlFor="map-link-toggle" className="font-bold text-slate-700 cursor-pointer">
+                                Link this detail to a map marker (Hotspot)
+                              </Label>
+                            </div>
+
+                            {selectedHotspot.hotspotId && (
+                              <div className="animate-in slide-in-from-top-2 duration-300 space-y-3">
+                                <Label className="text-xs font-black uppercase tracking-widest text-slate-400 pl-1">Target Hotspot</Label>
+                                <div className="relative group">
+                                  <LucideIcons.ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-hover:text-blue-500 transition-colors" />
+                                  <select
+                                    className="w-full h-14 bg-white border-2 border-slate-100 hover:border-blue-200 rounded-[1.25rem] px-6 appearance-none font-bold text-slate-700 focus:outline-none focus:border-blue-500 transition-all shadow-sm"
+                                    value={selectedHotspot.hotspotId || ""}
+                                    onChange={(e) => setSelectedHotspot({ ...selectedHotspot, hotspotId: e.target.value })}
+                                  >
+                                    {archHotspots.map(h => (
+                                      <option key={h.id} value={h.id}>
+                                        #{h.number} - {h.title || "Untitled Hotspot"}
+                                      </option>
+                                    ))}
+                                  </select>
+                                </div>
+                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2 pl-1">
+                                  <Info className="w-3 h-3" /> When linked, this content will open when users click the marker #{archHotspots.find(h => h.id === selectedHotspot.hotspotId)?.number} on the map.
+                                </p>
+                              </div>
+                            )}
+
+                            {!selectedHotspot.hotspotId && (
+                              <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-100 text-emerald-800 text-sm italic">
+                                This entry is independent and will appear in the general information section of the Sthan page.
+                              </div>
+                            )}
+                          </div>
+
+                        </div>
+                      </CardContent>
+                    </Card>
                     <Card className="border-slate-200 shadow-sm rounded-3xl overflow-hidden h-full">
                       <CardHeader className="bg-slate-50 border-b border-slate-100 pb-3">
                         <CardTitle className="text-lg font-bold">General Description</CardTitle>
@@ -2571,32 +2824,16 @@ export default function TempleArchitectureAdmin() {
                     <p className="text-sm font-bold text-slate-900 truncate max-w-[150px]">{selectedHotspot.title || `Pin #${selectedHotspot.number}`}</p>
                   </div>
                   <div className="flex gap-3">
-                    <Button variant="ghost" onClick={() => setSelectedHotspot(null)} className="rounded-2xl font-bold px-6 h-12">Back to List</Button>
+                    <Button variant="ghost" onClick={() => setSelectedHotspot(null)} className="rounded-2xl font-bold px-6 h-12">Cancel</Button>
                     <Button
-                      onClick={async () => {
-                        const updated = archHotspots.map(h => h.id === selectedHotspot.id ? selectedHotspot : h);
-                        setArchHotspots(updated);
-
-                        try {
-                          const token = await user?.getIdToken();
-                          await fetch(`/api/admin/data?collection=temples&id=${id}&subcollection=architecture_hotspots&subId=${selectedHotspot.id}`, {
-                            method: 'PUT',
-                            headers: {
-                              'Content-Type': 'application/json',
-                              ...(token ? { "Authorization": `Bearer ${token}` } : {})
-                            },
-                            body: JSON.stringify(sanitizeData(selectedHotspot))
-                          });
-                          toast({ title: "Updated", description: "Metadata synced across view." });
-                          setSelectedHotspot(null);
-                        } catch (e) {
-                          console.error(e);
-                          toast({ title: "Sync Failed", variant: "destructive" });
-                        }
+                      onClick={() => {
+                        updateDetail(selectedHotspot.id, selectedHotspot);
+                        setSelectedHotspot(null);
+                        toast({ title: "Updated", description: "Changes kept locally. Remember to click 'Save All' to sync with database." });
                       }}
-                      className="bg-blue-600 text-white hover:bg-blue-700 rounded-2xl px-10 h-12 shadow-xl shadow-blue-600/20 font-bold"
+                      className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-[1.25rem] px-8 h-12 font-bold shadow-xl shadow-emerald-900/20 hover:scale-105 active:scale-95 transition-all"
                     >
-                      Save & Return
+                      <Check className="w-4 h-4 mr-2" /> Done & Apply
                     </Button>
                   </div>
                 </div>

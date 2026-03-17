@@ -67,6 +67,23 @@ const templePinIcon = new L.Icon({
 
 const sthanIconsMap: Record<string, L.DivIcon> = {};
 
+// The 4 canonical sthan type categories used in the Sthana Category filter
+const CANONICAL_STHAN_TYPES: { label: string; keywords: string[] }[] = [
+    { label: "Mahasthan",   keywords: ["mahasthan"] },
+    { label: "Avasthan",    keywords: ["avasthan"] },
+    { label: "Vasti Sthan", keywords: ["vasti", "vishti"] },
+    { label: "Asan Sthan",  keywords: ["asan"] },
+];
+
+// Maps a raw sthan name from DB to one of the 4 canonical labels, or null if no match
+const toCanonicalSthan = (name: string): string | null => {
+    const n = name.toLowerCase();
+    for (const c of CANONICAL_STHAN_TYPES) {
+        if (c.keywords.some(k => n.includes(k))) return c.label;
+    }
+    return null;
+};
+
 // Helper function to get icon by sthan type and primary avatar
 function getIconForTemple(temple: Temple, sthanTypes: SthanType[]): L.Icon | L.DivIcon {
     if (!temple) return templePinIcon;
@@ -506,16 +523,102 @@ const Explore = () => {
         }));
 
     // 4. Dynamic Sthana Category Options
-    const sthanaOptions = useMemo(() => sthanTypes.map(st => {
-        const count = allTemplesForOptions.filter(t => {
-            const templeSthan = (t as any).sthan || t.sthana || "";
-            return templeSthan.toLowerCase().includes(st.name.toLowerCase());
-        }).length;
-        return {
-            value: st.name,
-            label: `${st.name} (${count})`
+    const sthanaOptions = useMemo(() => {
+        // Normalize the selected avatar once for all comparisons
+        const normalizedPendingAvatar = pendingAvatarSambandh && pendingAvatarSambandh !== "ALL"
+            ? pendingAvatarSambandh
+            : "";
+
+        // Determine which sthan types from DB are in scope based on the selected avatar
+        let scopedTypes: SthanType[];
+        if (normalizedPendingAvatar) {
+            scopedTypes = sthanTypes.filter(st => normalizeAvatarId(st.avatarSambandh) === normalizedPendingAvatar);
+        } else {
+            scopedTypes = sthanTypes;
+        }
+
+        // Build a quick ID → canonical label lookup from scopedTypes for sthanTypeId matching
+        const idToCanonical = new Map<string, string>();
+        scopedTypes.forEach(st => {
+            const c = toCanonicalSthan(st.name);
+            if (c) idToCanonical.set(st.id, c);
+        });
+
+        // Collect which canonical categories are actually present in scoped sthan types
+        const canonicalPresent = new Set<string>(idToCanonical.values());
+
+        // Helper: resolve canonical sthan label for a single temple record
+        const getTempleCanonical = (t: Temple): string | null => {
+            const temp = t as any;
+
+            // 1. Try sthan name / sthana text field
+            const sthanText = (temp.sthan || t.sthana || "").toLowerCase();
+            if (sthanText) {
+                const c = toCanonicalSthan(sthanText);
+                if (c) return c;
+            }
+
+            // 2. Fallback: resolve via sthanTypeId
+            const sthanTypeId: string = temp.sthanTypeId || "";
+            if (sthanTypeId && idToCanonical.has(sthanTypeId)) {
+                return idToCanonical.get(sthanTypeId)!;
+            }
+
+            // 3. Fallback: resolve via sthan name match against all sthanTypes
+            if (sthanText) {
+                const matched = sthanTypes.find(st => st.name.toLowerCase() === sthanText || sthanText.includes(st.name.toLowerCase()));
+                if (matched) {
+                    return toCanonicalSthan(matched.name);
+                }
+            }
+
+            return null;
         };
-    }), [sthanTypes, allTemplesForOptions]);
+
+        // Helper: check if temple matches the selected avatar (normalized)
+        const matchesAvatar = (t: Temple): boolean => {
+            if (!normalizedPendingAvatar) return true;
+            const temp = t as any;
+            const tAvatar = normalizeAvatarId(temp.primaryAvatar || temp.avatarSambandh || "");
+            if (tAvatar === normalizedPendingAvatar) return true;
+            // Also try via sthanTypeId for temples with no avatar field set
+            const sthanTypeId: string = temp.sthanTypeId || "";
+            if (sthanTypeId) {
+                const st = sthanTypes.find(s => s.id === sthanTypeId);
+                if (st && normalizeAvatarId(st.avatarSambandh) === normalizedPendingAvatar) return true;
+            }
+            return false;
+        };
+
+        // Helper: check if temple matches the selected subdivision
+        const matchesSubdivision = (t: Temple): boolean => {
+            if (!pendingAvatarSubdivision) return true;
+            const temp = t as any;
+            const subTypes: string[] = Array.isArray(temp.avatarSubTypes) ? temp.avatarSubTypes : [];
+            const sub: string = temp.avatarSubdivision || "";
+            return subTypes.includes(pendingAvatarSubdivision) || sub === pendingAvatarSubdivision;
+        };
+
+        // Build options only for present canonical types, counting correctly
+        return CANONICAL_STHAN_TYPES
+            .filter(c => canonicalPresent.has(c.label))
+            .map(c => {
+                const count = allTemplesForOptions.filter(t => {
+                    const templeCanonical = getTempleCanonical(t);
+                    if (templeCanonical !== c.label) return false;
+                    if (!matchesAvatar(t)) return false;
+                    if (!matchesSubdivision(t)) return false;
+                    return true;
+                }).length;
+
+                // Use the matching DB sthan type name as the filter value (for filteredTemples logic)
+                const matchingDbType = scopedTypes.find(st => toCanonicalSthan(st.name) === c.label);
+                return {
+                    value: matchingDbType?.name ?? c.label,
+                    label: `${c.label} (${count})`
+                };
+            });
+    }, [sthanTypes, allTemplesForOptions, pendingAvatarSambandh, pendingAvatarSubdivision]);
 
     // 5. Calculate dynamic counts for Avatar Sambandh hierarchy
     const avatarCounts = useMemo(() => {

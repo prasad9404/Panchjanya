@@ -4,6 +4,8 @@ import { db } from "@/auth/firebase";
 import AdminLayout from "@/shared/components/admin/AdminLayout";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/auth/AuthContext";
+import { cn } from "@/shared/lib/utils";
+
 import { Button } from "@/shared/components/ui/button";
 import { Input } from "@/shared/components/ui/input";
 import {
@@ -28,7 +30,8 @@ import {
     Filter,
     MoreVertical,
     Info,
-    ArrowLeft
+    ArrowLeft,
+    EyeOff
 } from "lucide-react";
 import { useToast } from "@/shared/hooks/use-toast";
 import { Badge } from "@/shared/components/ui/badge";
@@ -526,6 +529,13 @@ export default function SthanaDirectory() {
                                             </h3>
                                             {/* Status Badges */}
                                             <div className="shrink-0 flex flex-col items-end gap-1.5">
+                                                {/* Standalone Badge */}
+                                                {(temple.hasArchitecture === false || temple.isStandalone === true) && (
+                                                    <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-600 border border-emerald-100">
+                                                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                                                        <span className="text-[10px] font-black uppercase tracking-tighter">Standalone</span>
+                                                    </div>
+                                                )}
                                                 {temple.isVerified ? (
                                                     <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-[#C9A961]/10 text-[#a88b48] border border-[#C9A961]/20 uppercase tracking-wide">
                                                         Verified
@@ -604,17 +614,37 @@ export default function SthanaDirectory() {
                                         <Button
                                             variant="ghost"
                                             size="icon"
-                                            className="flex-1 sm:flex-none h-10 w-10 rounded-xl bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700"
-                                            onClick={() => window.open(`/temple/${temple.id}/architecture`, '_blank')}
-                                            title="View Public Page"
+                                            className={cn(
+                                                "flex-1 sm:flex-none h-10 w-10 rounded-xl",
+                                                (temple.hasArchitecture === false || temple.isStandalone === true)
+                                                    ? "bg-slate-50 text-slate-300 cursor-not-allowed"
+                                                    : "bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700"
+                                            )}
+                                            onClick={() => {
+                                                const isStandalone = temple.hasArchitecture === false || temple.isStandalone === true;
+                                                if (!isStandalone) {
+                                                    window.open(`/temple/${temple.id}/architecture`, '_blank');
+                                                }
+                                            }}
+                                            title={(temple.hasArchitecture === false || temple.isStandalone === true) ? "No architecture page (standalone sthan)" : "View Public Page"}
+                                            disabled={temple.hasArchitecture === false || temple.isStandalone === true}
                                         >
-                                            <Eye className="w-4 h-4" />
+                                            {(temple.hasArchitecture === false || temple.isStandalone === true)
+                                                ? <EyeOff className="w-4 h-4" />
+                                                : <Eye className="w-4 h-4" />}
                                         </Button>
                                         <Button
                                             variant="ghost"
                                             size="icon"
                                             className="flex-1 sm:flex-none h-10 w-10 rounded-xl bg-slate-50 text-slate-600 hover:bg-slate-100 hover:text-slate-900 border border-slate-100"
-                                            onClick={() => navigate(`/admin/architecture/${temple.id}`)}
+                                            onClick={() => {
+                                                const isStandalone = temple.hasArchitecture === false || temple.isStandalone === true;
+                                                if (isStandalone) {
+                                                    navigate(`/admin/temples/add?edit=${temple.id}`);
+                                                } else {
+                                                    navigate(`/admin/architecture/${temple.id}`);
+                                                }
+                                            }}
                                             title="Edit Sthana"
                                         >
                                             <Edit className="w-4 h-4" />

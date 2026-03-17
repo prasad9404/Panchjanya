@@ -5,7 +5,7 @@ import { doc, getDoc, collection, getDocs } from "firebase/firestore";
 import { Dialog, DialogContent } from "@/shared/components/ui/dialog";
 import { X, ChevronLeft, ChevronRight, Compass, History, BookOpen, Check, ChevronDown } from "lucide-react";
 import { Button } from "@/shared/components/ui/button";
-import { Temple, Hotspot } from "@/types";
+import { Temple, Hotspot, SthanDetail } from "@/types";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/components/ui/tabs";
 import { Link } from "react-router-dom";
 
@@ -49,7 +49,25 @@ export default function SthanaDetail() {
                 const finalArch = archHotspots.length > 0 ? archHotspots : (templeData.hotspots || []);
                 const finalPres = presHotspots.length > 0 ? presHotspots : (templeData.present_hotspots || templeData.presentHotspots || []);
 
-                // 2. Find target hotspot
+                // NEW: Priority for dynamic details array
+                if (templeData.details && templeData.details.length > 0) {
+                    const found = templeData.details.find(d => d.id === sthanaId);
+                    if (found) {
+                        const linkedHotspot = finalArch.find(h => h.id === found.hotspotId || h.id === found.id);
+                        setHotspot({
+                            ...found,
+                            number: linkedHotspot?.number || (templeData.details.indexOf(found) + 1)
+                        });
+                        setAllHotspots(templeData.details.map((d, i) => ({
+                            ...d,
+                            number: finalArch.find(h => h.id === d.hotspotId || h.id === d.id)?.number || (i + 1)
+                        })).sort((a,b) => (a.number || 0) - (b.number || 0)));
+                        setLoading(false);
+                        return;
+                    }
+                }
+
+                // 2. Find target hotspot (Legacy Fallback)
                 let found = [...finalArch, ...finalPres].find(h => h.id === sthanaId);
 
                 if (found) {

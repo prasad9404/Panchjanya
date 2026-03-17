@@ -5,7 +5,7 @@ import { doc, getDoc, collection, getDocs } from "firebase/firestore";
 import { X, ZoomIn, ZoomOut, RotateCcw, Info, ChevronLeft, BookOpen, ChevronDown, Eye, EyeOff, Maximize, Check, ChevronRight, ChevronUp, Expand } from "lucide-react";
 import { Button } from "@/shared/components/ui/button";
 import { Button1 } from "@/shared/components/ui/button-1";
-import { Temple, AbbreviationItem, Hotspot } from "@/types";
+import { Temple, AbbreviationItem, Hotspot, SthanDetail } from "@/types";
 
 // ... (rest of imports)
 
@@ -307,6 +307,24 @@ export default function ArchitectureViewer() {
  const combined = [...baseArch, ...mergedPresent];
  const unique = Array.from(new Map(combined.map(h => [h.id, h])).values());
  return unique.sort((a, b) => (a.number || 0) - (b.number || 0));
+ })();
+
+ // NEW: Support for dynamic details array
+ const displayDetails = (() => {
+  if (temple?.details && temple.details.length > 0) {
+  return temple.details.map((d, index) => {
+  const linkedMapMarker = unifiedHotspots.find(h => h.id === d.hotspotId || h.id === d.id);
+  return {
+  ...d,
+  number: linkedMapMarker?.number || (index + 1),
+  hasMapMarker: !!linkedMapMarker
+  };
+  });
+  }
+  return unifiedHotspots.map(h => ({
+  ...h as any,
+  hasMapMarker: true
+  }));
  })();
 
  const handleZoomIn = () => setZoom(prev => Math.min(prev + 0.2, 3));
@@ -747,33 +765,34 @@ export default function ArchitectureViewer() {
  className="w-[var(--radix-popover-trigger-width)] max-h-[75vh] md:max-h-[80vh] overflow-y-auto rounded-2xl bg-white shadow-2xl border-blue-50 z-50 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
  >
  <div className="flex flex-col">
- {unifiedHotspots.map((h) => {
- const isExpanded = expandedHotspots[h.id];
- // Selection in pothi only shows if it matches AND (pothi is open)
- // Highlight if it matches the selected hotspot
- const isSelectedInPothi = selectedHotspotId === h.id;
+ {displayDetails.map((d) => {
+ const isExpanded = expandedHotspots[d.id];
+ const isSelectedInPothi = selectedHotspotId === d.id;
  return (
  <div
- key={h.id}
- id={`pothi-item-${h.id}`}
+ key={d.id}
+ id={`pothi-item-${d.id}`}
  className="border-b border-slate-50 last:border-0 transition-all"
  >
  <div
  className={`h-12 md:h-14 flex items-center justify-between gap-3 px-0 py-1 rounded-xl group cursor-pointer transition-all duration-300 ${isSelectedInPothi ? 'bg-amber-50/50 shadow-sm' : 'hover:bg-amber-50/40'}`}
  onClick={(e) => {
  e.preventDefault();
- // Minimal selection for map sync, without triggering pop-up/scroll
- handleSelectHotspot(h.id, 'dropdown');
- // Toggle detail description
- toggleHotspot(h.id);
+ handleSelectHotspot(d.id, 'dropdown');
+ toggleHotspot(d.id);
  }}
- onMouseEnter={() => setHoveredHotspotId(h.id)}
+ onMouseEnter={() => d.id && setHoveredHotspotId(d.id)}
  onMouseLeave={() => setHoveredHotspotId(null)}
  >
  <div className="flex-1 min-w-0 px-1 py-2">
  <div className="flex items-center gap-3">
  <div className="w-1 h-6 bg-amber-600 shrink-0"></div>
- <h4 className={`font-heading font-bold text-xl tracking-wider transition-colors truncate ${isSelectedInPothi ? 'text-amber-700' : 'text-blue-900 group-hover:text-amber-700'}`}>{h.title}</h4>
+ <h4 className={`font-heading font-bold text-xl tracking-wider transition-colors truncate ${isSelectedInPothi ? 'text-amber-700' : 'text-blue-900 group-hover:text-amber-700'}`}>{d.title}</h4>
+ {d.hasMapMarker && (
+ <div className="w-5 h-5 rounded-full bg-blue-100 flex items-center justify-center text-[10px] font-black text-blue-800 shrink-0">
+ {d.number}
+ </div>
+ )}
  </div>
  </div>
  <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 transition-all bg-transparent border-none">
@@ -783,7 +802,7 @@ export default function ArchitectureViewer() {
  {isExpanded && (
  <div className="px-2 pb-3 pt-2">
  <p className="text-lg text-slate-600 font-serif leading-relaxed pl-3.5 animate-in fade-in slide-in-from-top-1 duration-200">
- {h.description || "Historical records of this sacred site are being updated."}
+ {d.sthanPothiDescription || d.description || "Historical records of this sacred site are being updated."}
  </p>
  </div>
  )}
@@ -821,23 +840,23 @@ export default function ArchitectureViewer() {
 
  {/* Sthana List */}
  <div className="flex flex-col gap-2 md:gap-4">
- {unifiedHotspots.map((hotspot) => {
- const isSelected = selectedHotspotId === hotspot.id;
+ {displayDetails.map((d) => {
+ const isSelected = selectedHotspotId === d.id;
 
  return (
  <div
- key={hotspot.id}
- ref={(el) => (cardRefs.current[hotspot.id] = el)}
- id={`sthana-card-${hotspot.id}`}
+ key={d.id}
+ ref={(el) => (cardRefs.current[d.id] = el)}
+ id={`sthana-card-${d.id}`}
  onClick={(e) => {
  e.stopPropagation();
- handleSelectHotspot(isSelected ? null : hotspot.id, isSelected ? null : 'list');
+ handleSelectHotspot(isSelected ? null : d.id, isSelected ? null : 'list');
  }}
  className={`w-full h-12 md:h-14 flex flex-row items-center justify-between px-3 md:px-6 py-1 bg-white rounded-2xl transition-all duration-300 group cursor-pointer shadow-sm border border-slate-100 ${isSelected
  ? 'bg-amber-50 border-amber-200'
  : 'hover:bg-slate-50 hover:border-amber-200'
  }`}
- onMouseEnter={() => setHoveredHotspotId(hotspot.id)}
+ onMouseEnter={() => d.id && setHoveredHotspotId(d.id)}
  onMouseLeave={() => setHoveredHotspotId(null)}
  >
  <div className="flex-1 h-full flex items-center px-1 py-2 gap-2 overflow-hidden">
@@ -845,20 +864,20 @@ export default function ArchitectureViewer() {
  ? 'bg-amber-600 text-white border-amber-600'
  : ' text-amber-600 border-amber-600 group-hover:bg-amber-600 group-hover:text-white group-hover:border-amber-600'
  }`}>
- {hotspot.number}
+ {d.number || "S"}
  </div>
  <span className={`font-heading font-bold text-xl md:text-2xl leading-tight line-clamp-1 transition-colors duration-200 truncate ${isSelected
  ? 'text-amber-700'
  : 'text-blue-900 group-hover:text-amber-700'
  }`}>
- {hotspot.title}
+ {d.title}
  </span>
  </div>
  <div
  className={`flex items-center justify-center w-12 md:w-16 h-full transition-all duration-300 rounded-r-2xl ${isSelected ? 'bg-amber-50/50' : 'hover:bg-slate-50'}`}
  onClick={(e) => {
  e.stopPropagation();
- handleNavigationToDetail(hotspot);
+ navigate(`/temple/${id}/architecture/sthana/${d.id}?view=${imageType}`);
  }}
  >
  <ChevronRight className={`w-5 h-5 transition-all duration-300 group-hover:translate-x-1 ${isSelected
@@ -888,8 +907,8 @@ export default function ArchitectureViewer() {
  </div>
  </div>
 
- {(imageType === 'architectural' ? hotspots : presentHotspots).length === 0 && (
- <p className="text-sm text-muted-foreground italic">No sthana hotspots found.</p>
+ {displayDetails.length === 0 && (
+ <p className="text-sm text-muted-foreground italic">No sthana details found.</p>
  )}
  </div>
  </div>

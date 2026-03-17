@@ -6,7 +6,6 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { useEffect, lazy, Suspense } from "react";
 import { PageLoader } from "@/shared/components/ui/PageLoader";
 import { ErrorBoundary } from "@/shared/components/layout/ErrorBoundary";
-
 import { AuthProvider } from "../auth/AuthContext";
 import { LanguageProvider } from "../shared/contexts/LanguageContext";
 import { ThemeProvider } from "../shared/contexts/ThemeContext";
@@ -105,6 +104,15 @@ const App = () => {
 
                       <Route
                         path="/admin/temples/add"
+                        element={
+                          <PrivateRoute adminRequired={true} >
+                            <AdminAddTemple />
+                          </PrivateRoute>
+                        }
+                      />
+
+                      <Route
+                        path="/admin/sthans/add"
                         element={
                           <PrivateRoute adminRequired={true} >
                             <AdminAddTemple />

@@ -56,6 +56,7 @@ export default function TempleForm({ templeId }: TempleFormProps) {
     // ── Administration ──
     const [isVerified, setIsVerified] = useState(false);
     const [isComplete, setIsComplete] = useState(false);
+    const [hasArchitecture, setHasArchitecture] = useState(false); // default: false (standalone)
 
     // Load sthan types
     useEffect(() => {
@@ -115,6 +116,12 @@ export default function TempleForm({ templeId }: TempleFormProps) {
                     setPinIcon(data.pinIcon || "");
                     setIsVerified(data.isVerified || false);
                     setIsComplete(data.isComplete || false);
+                    // Map existing data to hasArchitecture
+                    // If isStandalone was true, hasArchitecture is false.
+                    // If architectureImage exists, it's definitely true.
+                    setHasArchitecture(data.hasArchitecture !== undefined 
+                      ? data.hasArchitecture 
+                      : (data.isStandalone !== undefined ? !data.isStandalone : !!data.architectureImage));
                 } else {
                     toast({ title: "Error", description: "Temple not found", variant: "destructive" });
                     navigate("/admin/dashboard");
@@ -163,8 +170,8 @@ export default function TempleForm({ templeId }: TempleFormProps) {
                 primaryAvatar,
                 primarySubtype,
                 relatedAvatars,
-                sthanType: sthan, // Standardized field
-                sthanTypeId, // Link to Manage Sthan Types
+                sthanType: sthan,
+                sthanTypeId,
                 
                 // Legacy fields for backward compatibility
                 avatarSambandh: primaryAvatar,
@@ -179,6 +186,10 @@ export default function TempleForm({ templeId }: TempleFormProps) {
                 updatedBy: user.uid,
                 isVerified,
                 isComplete,
+                // Architecture mapping fields
+                hasArchitecture,
+                architectureId: hasArchitecture ? (templeId || null) : null,
+                isStandalone: !hasArchitecture, // legacy support
             };
 
             const method = templeId ? "PUT" : "POST";
@@ -203,22 +214,36 @@ export default function TempleForm({ templeId }: TempleFormProps) {
             if (res.ok) {
                 const responseData = await res.json();
                 const finalId = templeId || responseData.id;
-                toast({ title: "Temple Saved", description: "Redirecting to full configuration..." });
-                navigate(`/admin/architecture/${finalId}`);
+                if (!hasArchitecture) {
+                    toast({ title: "Sthan Saved", description: "Standalone sthan added to directory and map." });
+                    navigate("/admin/sthana-directory");
+                } else {
+                    toast({ title: "Sthan Saved", description: "Redirecting to architecture configuration..." });
+                    navigate(`/admin/architecture/${finalId}`);
+                }
             } else {
                 console.warn("API write failed, falling back to Client SDK.");
                 if (templeId) {
                     await updateDoc(doc(db, "temples", templeId), { ...templeData, updatedAt: Timestamp.now() });
-                    toast({ title: "Temple Updated" });
-                    navigate(`/admin/architecture/${templeId}`);
+                    toast({ title: "Sthan Updated" });
+                    if (!hasArchitecture) {
+                        navigate("/admin/sthana-directory");
+                    } else {
+                        navigate(`/admin/architecture/${templeId}`);
+                    }
                 } else {
                     const newDoc = await addDoc(collection(db, "temples"), {
                         ...templeData,
                         createdAt: Timestamp.now(),
                         createdBy: user.uid,
                     });
-                    toast({ title: "Temple Created", description: "Redirecting to full configuration..." });
-                    navigate(`/admin/architecture/${newDoc.id}`);
+                    if (!hasArchitecture) {
+                        toast({ title: "Sthan Created", description: "Standalone sthan added to directory and map." });
+                        navigate("/admin/sthana-directory");
+                    } else {
+                        toast({ title: "Sthan Created", description: "Redirecting to architecture configuration..." });
+                        navigate(`/admin/architecture/${newDoc.id}`);
+                    }
                 }
             }
         } catch (error: any) {
@@ -280,9 +305,12 @@ export default function TempleForm({ templeId }: TempleFormProps) {
                 {/* ── Page Header ── */}
                 <div className="flex items-center justify-between">
                     <div className="space-y-1">
-                        <h1 className="text-3xl font-serif font-bold text-primary tracking-tight">Add New Sthana</h1>
+                        <h1 className="text-3xl font-serif font-bold text-primary tracking-tight">Add New Sthan</h1>
                         <p className="text-sm text-slate-500 font-medium">
-                            Fill in the primary identity and location. You'll configure images, descriptions, and hotspots on the next page.
+                            Fill in the primary identity and location.
+                            {hasArchitecture
+                                ? " You'll configure images, descriptions, and hotspots on the next page."
+                                : " This standalone sthan will appear on the map immediately after saving."}
                         </p>
                     </div>
                 </div>
@@ -565,6 +593,38 @@ export default function TempleForm({ templeId }: TempleFormProps) {
                             </p>
                         </div>
                         <div className="lg:col-span-2 space-y-6">
+                            {/* Architecture Toggle */}
+                            <div className={cn(
+                                "flex items-start justify-between p-5 rounded-xl border-2 transition-all",
+                                hasArchitecture
+                                    ? "bg-amber-50 border-amber-200"
+                                    : "bg-emerald-50 border-emerald-200"
+                            )}>
+                                <div className="space-y-1 flex-1 pr-4">
+                                    <div className="flex items-center gap-2">
+                                        <span className={cn(
+                                            "text-xs font-black uppercase tracking-widest px-2 py-0.5 rounded",
+                                            hasArchitecture ? "bg-amber-200 text-amber-800" : "bg-emerald-200 text-emerald-800"
+                                        )}>
+                                            {hasArchitecture ? "WITH ARCHITECTURE" : "STANDALONE"}
+                                        </span>
+                                    </div>
+                                    <Label className="text-base font-bold text-slate-900 block mt-1">
+                                        {hasArchitecture ? "Link to Architecture Page" : "Standalone Sthan"}
+                                    </Label>
+                                    <p className="text-sm text-slate-500">
+                                        {hasArchitecture
+                                            ? "After saving, you'll be taken to configure images, hotspots & descriptions."
+                                            : "Saved directly to map without a full architecture page. Best for location-only sthans."}
+                                    </p>
+                                </div>
+                                <Switch
+                                    checked={hasArchitecture}
+                                    onCheckedChange={setHasArchitecture}
+                                    className="data-[state=checked]:bg-amber-500 mt-1"
+                                />
+                            </div>
+
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div className="flex items-center justify-between p-4 bg-white rounded-xl border border-slate-200">
                                     <div className="space-y-0.5">
@@ -603,10 +663,15 @@ export default function TempleForm({ templeId }: TempleFormProps) {
                         <Button
                             type="submit"
                             disabled={loading}
-                            className="bg-blue-900 text-white hover:bg-blue-800 rounded-xl px-8 h-12 shadow-lg shadow-blue-900/20 font-bold min-w-[180px]"
+                            className={cn(
+                                "text-white rounded-xl px-8 h-12 shadow-lg font-bold min-w-[180px]",
+                                hasArchitecture
+                                    ? "bg-blue-900 hover:bg-blue-800 shadow-blue-900/20"
+                                    : "bg-emerald-700 hover:bg-emerald-600 shadow-emerald-900/20"
+                            )}
                         >
                             <Save className="w-4 h-4 mr-2" />
-                            {loading ? "Saving..." : "Save & Configure"}
+                            {loading ? "Saving..." : hasArchitecture ? "Save & Configure" : "Save to Map"}
                         </Button>
                     </div>
                 </form>

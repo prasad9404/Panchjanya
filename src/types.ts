@@ -114,6 +114,25 @@ export interface Temple {
     is_published?: boolean;
     isVerified?: boolean;
     isComplete?: boolean;
+    hasArchitecture?: boolean;       // Replacement for isStandalone
+    architectureId?: string | null;  // null for standalone, id for linked
+    leelas?: Leela[];               // Global leelas (for standalone)
+    sthanPothiDescription?: string;  // Global pothi (for standalone)
+    sthanPothiTitle?: string;        // Global pothi title (for standalone)
+    details?: SthanDetail[]; // New: Unified dynamic details array
+}
+
+export interface SthanDetail {
+  id: string;
+  title: string;
+  description: string;
+  images: string[];
+  leelas: Leela[];
+  sthanPothiDescription?: string;
+  sthanPothiTitle?: string;
+  generalDescriptionTitle?: string;
+  hotspotId?: string | null; // Optional link to a map marker
+  type?: string; // e.g. 'Structure', 'Tree', 'Ghat'
 }
 
 export interface YatraPlace {

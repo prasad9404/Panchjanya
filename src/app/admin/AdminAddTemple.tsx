@@ -5,13 +5,15 @@ import AdminCsvUpload from "./AdminCsvUpload";
 import { Switch } from "@/shared/components/ui/switch";
 import { Label } from "@/shared/components/ui/label";
 
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/shared/components/ui/button";
 
 export default function AdminAddTemple() {
   const [isBulkUpload, setIsBulkUpload] = useState(false);
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const editId = searchParams.get("edit") || undefined; // e.g. /admin/temples/add?edit=abc123
 
   return (
     <AdminLayout>
@@ -30,21 +32,23 @@ export default function AdminAddTemple() {
               Back to Directory
             </Button>
 
-            {/* Mode Switcher */}
-            <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-full border border-slate-200 shadow-sm">
-              <Switch
-                id="bulk-mode"
-                checked={isBulkUpload}
-                onCheckedChange={setIsBulkUpload}
-                className="data-[state=checked]:bg-amber-600"
-              />
-              <Label htmlFor="bulk-mode" className="text-xs font-black uppercase tracking-widest text-slate-500 cursor-pointer">
-                Bulk Upload Mode (CSV)
-              </Label>
-            </div>
+            {/* Mode Switcher — only shown when not in edit mode */}
+            {!editId && (
+              <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-full border border-slate-200 shadow-sm">
+                <Switch
+                  id="bulk-mode"
+                  checked={isBulkUpload}
+                  onCheckedChange={setIsBulkUpload}
+                  className="data-[state=checked]:bg-amber-600"
+                />
+                <Label htmlFor="bulk-mode" className="text-xs font-black uppercase tracking-widest text-slate-500 cursor-pointer">
+                  Bulk Upload Mode (CSV)
+                </Label>
+              </div>
+            )}
           </div>
 
-          {isBulkUpload ? <AdminCsvUpload /> : <TempleForm />}
+          {isBulkUpload && !editId ? <AdminCsvUpload /> : <TempleForm templeId={editId} />}
         </div>
       </div>
     </AdminLayout>
