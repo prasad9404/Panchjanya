@@ -21,7 +21,7 @@ service firebase.storage {
     function isAdmin() {
       return isSignedIn()
         && request.auth.token != null
-        && request.auth.token.role == 'admin';
+        && (request.auth.token.admin == true || request.auth.token.role == 'admin');
     }
 
     // Validates image uploads: WebP/JPEG/PNG/GIF, max 5 MB
@@ -130,19 +130,31 @@ service firebase.storage {
     }
 
     // ═══════════════════════════════════════════════════════════════
-    //  ARCHITECTURAL & PRESENT VIEWS
-    //  Path: architecture/{templeId}/{fileName}
-    //        present/{templeId}/{fileName}
+    //  STHAN INFO VIEWS
+    //  Path: sthan/{templeId}/{fileName}
     // ═══════════════════════════════════════════════════════════════
 
-    match /architecture/{templeId}/{fileName} {
+    match /sthan/{templeId}/{allPaths=**} {
       allow read: if true;
       allow create,
             update: if isSignedIn() && isValidImage();
       allow delete: if isAdmin();
     }
 
-    match /present/{templeId}/{fileName} {
+    // ═══════════════════════════════════════════════════════════════
+    //  ARCHITECTURAL & PRESENT VIEWS
+    //  Path: architectural/{templeId}/{fileName}
+    //        present/{templeId}/{fileName}
+    // ═══════════════════════════════════════════════════════════════
+
+    match /architectural/{templeId}/{allPaths=**} {
+      allow read: if true;
+      allow create,
+            update: if isSignedIn() && isValidImage();
+      allow delete: if isAdmin();
+    }
+
+    match /present/{templeId}/{allPaths=**} {
       allow read: if true;
       allow create,
             update: if isSignedIn() && isValidImage();

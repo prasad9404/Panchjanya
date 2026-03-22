@@ -572,7 +572,7 @@ export default function SthanaDirectory() {
                                     {/* Thumbnail */}
                                     <div className="w-full sm:w-24 h-48 sm:h-24 rounded-xl overflow-hidden bg-slate-100 shrink-0 border border-slate-100">
                                         <img
-                                            src={temple.images?.[0] || "/placeholder-temple.jpg"}
+                                            src={temple.sthanImages?.[0] || temple.images?.[0] || "/placeholder-temple.jpg"}
                                             alt={temple.name}
                                             className="w-full h-full object-cover"
                                             onError={(e) => {

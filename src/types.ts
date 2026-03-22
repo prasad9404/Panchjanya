@@ -104,9 +104,13 @@ export interface Temple {
     directions_text?: string;
     leela?: string;
     history?: string;
+    /** @deprecated Use sthanImages */
     images?: string[];
+    sthanImages?: string[];
+    /** @deprecated Use architectureImages */
     architectureImage?: string;
     architectureImages?: string[];
+    /** @deprecated Use presentImages */
     presentImage?: string;
     presentImages?: string[];
     hotspots?: Hotspot[];

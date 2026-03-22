@@ -28,7 +28,9 @@ export const TempleDetails = ({ isOpen, onClose, temple }: TempleDetailsProps) =
   useEffect(() => {
     setCurrentImageIndex(0);
     // Only update images if temple exists, but the effect itself runs unconditionally
-    if (temple && Array.isArray(temple.images) && temple.images.length > 0) {
+    if (temple && Array.isArray(temple.sthanImages) && temple.sthanImages.length > 0) {
+      setCloudinaryImages(temple.sthanImages);
+    } else if (temple && Array.isArray(temple.images) && temple.images.length > 0) {
       setCloudinaryImages(temple.images);
     } else {
       setCloudinaryImages([]);
@@ -75,7 +77,7 @@ export const TempleDetails = ({ isOpen, onClose, temple }: TempleDetailsProps) =
           savedAt: new Date(),
           templeName: temple.name,
           templeCity: temple.city || temple.address || "",
-          templeImage: temple.images?.[0] || ""
+          templeImage: temple.sthanImages?.[0] || temple.images?.[0] || ""
         });
         setIsSaved(true);
       }
@@ -89,7 +91,9 @@ export const TempleDetails = ({ isOpen, onClose, temple }: TempleDetailsProps) =
   // 3. Helper functions (not hooks, but good to keep here)
   const images = cloudinaryImages.length > 0
     ? cloudinaryImages
-    : (temple && Array.isArray(temple.images) ? temple.images : []);
+    : (temple && Array.isArray(temple.sthanImages) && temple.sthanImages.length > 0 
+        ? temple.sthanImages 
+        : (temple && Array.isArray(temple.images) ? temple.images : []));
 
   const nextImage = () => {
     if (!images || images.length === 0) return;
@@ -252,7 +256,7 @@ export const TempleDetails = ({ isOpen, onClose, temple }: TempleDetailsProps) =
                   </div>
                   {(() => {
                     const isBasicComplete = Boolean(temple.name && ((temple as any).sthan || temple.sthana) && temple.district);
-                    const hasImages = Boolean(temple.images?.length > 0 || temple.architectureImage || temple.presentImage);
+                    const hasImages = Boolean((temple.sthanImages?.length ?? 0) > 0 || (temple.images?.length ?? 0) > 0 || temple.architectureImage || temple.presentImage);
                     const hasSthanDetails = Boolean(temple.sthana_info_text || temple.sthana);
                     const hasTempleInfo = Boolean(temple.description_text || temple.description || temple.address);
                     const isFullyComplete = temple.isComplete || (isBasicComplete && hasImages && hasSthanDetails && hasTempleInfo);

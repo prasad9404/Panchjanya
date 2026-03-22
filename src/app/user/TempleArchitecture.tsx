@@ -47,9 +47,9 @@ export default function TempleArchitecture() {
     const [abbreviationItems, setAbbreviationItems] = useState<AbbreviationItem[]>([]);
     const { t } = useLanguage();
 
-    const displayImages = (temple?.images && temple.images.length > 0
-        ? temple.images
-        : [temple?.architectureImage || "/placeholder-temple.jpg"]);
+    const displayImages = (temple?.sthanImages && temple.sthanImages.length > 0
+        ? temple.sthanImages
+        : (temple?.images && temple.images.length > 0 ? temple.images : [temple?.architectureImage || "/placeholder-temple.jpg"]));
 
     const nextImage = () => setSelectedImageIndex((p) => (p + 1) % displayImages.length);
     const prevImage = () => setSelectedImageIndex((p) => (p - 1 + displayImages.length) % displayImages.length);
@@ -159,7 +159,7 @@ export default function TempleArchitecture() {
                     savedAt: new Date(),
                     templeName: temple.name,
                     templeCity: temple.city || temple.address || "",
-                    templeImage: temple.images?.[0] || ""
+                    templeImage: temple.sthanImages?.[0] || temple.images?.[0] || ""
                 });
                 setIsSaved(true);
             }
@@ -362,7 +362,7 @@ export default function TempleArchitecture() {
                     <div className="relative aspect-[4/3] w-full rounded-2xl overflow-hidden border-4 border-white bg-gray-200 group">
                         <Carousel className="w-full h-full">
                             <CarouselContent>
-                                {(temple.images && temple.images.length > 0 ? temple.images : [temple.architectureImage || "/placeholder-temple.jpg"]).map((img, index) => (
+                                {displayImages.map((img, index) => (
                                     <CarouselItem key={index} className="w-full h-full">
                                         <img
                                             src={img}

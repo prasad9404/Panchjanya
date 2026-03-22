@@ -264,9 +264,13 @@ export default function ArchitectureViewer() {
  fetchAbbreviations();
  }, []);
 
- const displayImages = imageType === 'architectural'
- ? [architecturalImage, ...(temple?.architectureImages || [])].filter(Boolean)
- : [presentImage, ...(temple?.presentImages || [])].filter(Boolean);
+  const displayImages = imageType === 'architectural'
+  ? (temple?.architectureImages && temple.architectureImages.length > 0 
+      ? temple.architectureImages 
+      : [architecturalImage].filter(Boolean) as string[])
+  : (temple?.presentImages && temple.presentImages.length > 0 
+      ? temple.presentImages 
+      : [presentImage].filter(Boolean) as string[]);
 
  const imageUrl = displayImages[currentImageIndex] || architecturalImage;
 

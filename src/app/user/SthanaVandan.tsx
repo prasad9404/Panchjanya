@@ -10,7 +10,7 @@ const SthanaVandan = () => {
 
     // Filter temples with architectural data
     const architectureTemples = temples.filter(
-        (t) => t.architectureImage || (t.hotspots && t.hotspots.length > 0)
+        (t) => (t.architectureImages && t.architectureImages.length > 0) || t.architectureImage || (t.hotspots && t.hotspots.length > 0)
     ).slice(0, 4);
 
     const navigate = useNavigate();
@@ -75,7 +75,7 @@ const SthanaVandan = () => {
                             <Link to={`/temple/${temple.id}/architecture`} key={temple.id}>
                                 <Card className="overflow-hidden group cursor-pointer hover:shadow-xl transition-all h-full flex flex-col">
                                     <LazyImage
-                                        src={temple.architectureImage || temple.images?.[0] || ""}
+                                        src={temple.architectureImages?.[0] || temple.architectureImage || temple.images?.[0] || ""}
                                         alt={temple.name}
                                         containerClassName="h-40 bg-muted relative"
                                         className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"

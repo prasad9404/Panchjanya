@@ -61,7 +61,7 @@ export default function ManageSthana() {
     // Determine architecture status mapping
     const hasArchitecture = templeData.hasArchitecture !== undefined 
         ? templeData.hasArchitecture 
-        : (templeData.isStandalone !== undefined ? !templeData.isStandalone : !!templeData.architectureImage);
+        : (templeData.isStandalone !== undefined ? !templeData.isStandalone : (!!templeData.architectureImage || !!templeData.architectureImages?.length));
 
     // Because TempleForm and TempleArchitectureAdmin have their own "AdminLayout" or full page styles,
     // we use a neat CSS trick to hide their native top-navs/headers when rendered inside this tab view

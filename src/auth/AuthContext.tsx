@@ -31,7 +31,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           const idTokenResult = await currentUser.getIdTokenResult();
           const isUserAdmin = !!idTokenResult.claims.admin;
 
-          console.log(`👤 Auth State Change: ${currentUser.email} (Admin: ${isUserAdmin})`);
+          console.log(
+            `👤 %cAuth State Change: ${currentUser.email}`, 
+            "color: #3b82f6; font-weight: bold;",
+            `(Admin: ${isUserAdmin})`
+          );
+          console.log("🔑 ID Token Claims:", JSON.stringify(idTokenResult.claims, null, 2));
 
           // Fallback check if VITE_ADMIN_EMAIL is set and custom claim is missing
           const adminEmail = import.meta.env.VITE_ADMIN_EMAIL;

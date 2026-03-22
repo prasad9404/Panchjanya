@@ -119,10 +119,10 @@ export default function TempleForm({ templeId }: TempleFormProps) {
                     setManualStatus(data.status);
                     // Map existing data to hasArchitecture
                     // If isStandalone was true, hasArchitecture is false.
-                    // If architectureImage exists, it's definitely true.
+                    // If architectureImage or architectureImages exists, it's definitely true.
                     setHasArchitecture(data.hasArchitecture !== undefined 
                       ? data.hasArchitecture 
-                      : (data.isStandalone !== undefined ? !data.isStandalone : !!data.architectureImage));
+                      : (data.isStandalone !== undefined ? !data.isStandalone : (!!data.architectureImage || !!data.architectureImages?.length)));
                 } else {
                     toast({ title: "Error", description: "Temple not found", variant: "destructive" });
                     navigate("/admin/dashboard");

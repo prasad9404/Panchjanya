@@ -216,7 +216,7 @@ function TempleMarker({ temple, onSelect, sthanTypes }: { temple: Temple; onSele
                     savedAt: new Date(),
                     templeName: temple.name,
                     templeCity: temple.city || temple.address || "",
-                    templeImage: temple.images?.[0] || ""
+                    templeImage: temple.sthanImages?.[0] || temple.images?.[0] || ""
                 });
                 setIsSaved(true);
             }

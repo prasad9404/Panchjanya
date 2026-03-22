@@ -21,7 +21,7 @@ export const getSthanaStatus = (temple: Partial<Temple>): SthanaStatus => {
     const hasComplete = Boolean(
         hasBasic &&
         // Media requirements
-        ((temple.images && temple.images.length > 0) || temple.architectureImage || temple.presentImage) &&
+        ((temple.sthanImages && temple.sthanImages.length > 0) || temple.architectureImages?.length) &&
         // Content requirements
         (temple.description || temple.sthana_info_text || (temple.details && temple.details.length > 0))
     );

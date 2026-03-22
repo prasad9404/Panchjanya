@@ -180,11 +180,9 @@ export default function TempleArchitectureAdmin() {
 
   const [templeName, setTempleName] = useState("");
   const [viewType, setViewType] = useState<'architectural' | 'present'>('architectural');
-  const [archImageUrl, setArchImageUrl] = useState("");
-  const [presentImageUrl, setPresentImageUrl] = useState("");
   const [archImages, setArchImages] = useState<string[]>([]);
   const [presentImages, setPresentImages] = useState<string[]>([]);
-  const [templeImages, setTempleImages] = useState<string[]>([]);
+  const [sthanImages, setSthanImages] = useState<string[]>([]);
   const [archHotspots, setArchHotspots] = useState<Hotspot[]>([]);
   const [presentHotspots, setPresentHotspots] = useState<Hotspot[]>([]);
 
@@ -304,11 +302,9 @@ export default function TempleArchitectureAdmin() {
         // 3. Populate State
         if (data) {
           setTempleName(data.name || "Unknown Temple");
-          setArchImageUrl(data.architectureImage || "");
-          setPresentImageUrl(data.presentImage || data.images?.[0] || "");
           setArchImages(data.architectureImages || []);
           setPresentImages(data.presentImages || []);
-          setTempleImages(data.images || []);
+          setSthanImages(data.sthanImages || data.images || []);
           setArchHotspots(data.hotspots || []);
 
           setTodaysName(data.todaysName || "");
@@ -355,7 +351,7 @@ export default function TempleArchitectureAdmin() {
 
           setHasArchitecture(data.hasArchitecture !== undefined
             ? data.hasArchitecture
-            : (data.isStandalone !== undefined ? !data.isStandalone : !!data.architectureImage));
+            : (data.isStandalone !== undefined ? !data.isStandalone : (data.architectureImages && data.architectureImages.length > 0)));
           setGlobalLeelas(data.leelas || []);
           setGlobalPothiDescription(data.sthanPothiDescription || "");
 
@@ -464,8 +460,8 @@ export default function TempleArchitectureAdmin() {
   };
 
   const displayImages = viewType === 'architectural'
-    ? ([archImageUrl, ...archImages].filter(Boolean).length > 0 ? [archImageUrl, ...archImages].filter(Boolean) : templeImages)
-    : [presentImageUrl, ...presentImages].filter(Boolean);
+    ? archImages
+    : presentImages;
 
   const currentHotspots = viewType === 'architectural' ? archHotspots : presentHotspots;
   const currentImageUrl = displayImages[adminImageIndex];
@@ -540,7 +536,7 @@ export default function TempleArchitectureAdmin() {
       locationLink,
       latitude,
       longitude,
-      images: templeImages,
+      sthanImages: sthanImages,
       description_title,
       description_text,
       sthana_info_title,
@@ -637,31 +633,11 @@ export default function TempleArchitectureAdmin() {
   };
 
   const saveMainImageOnly = async (type: 'arch' | 'present') => {
-    if (!id) return;
-    try {
-      const field = type === 'arch' ? "architectureImage" : "presentImage";
-      const url = type === 'arch' ? archImageUrl : presentImageUrl;
-
-      // Use generic Admin API
-      const token = await user?.getIdToken();
-      const res = await fetch(`/api/admin/data?collection=temples&id=${id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { "Authorization": `Bearer ${token}` } : {})
-        },
-        body: JSON.stringify({ [field]: url })
-      });
-
-      if (!res.ok) {
-        throw new Error("API image save failed.");
-      }
-
-      toast({ title: "Success", description: `${type === 'arch' ? 'Architecture' : 'Present'} image saved.` });
-    } catch (e: any) {
-      console.error("API Image Save error:", e);
-      toast({ title: "Error", description: "Failed to save image.", variant: "destructive" });
-    }
+    // This is now redundant with handleImageUpload but keeping signature for safety if used elsewhere
+    const url = type === 'arch' ? archImages[0] : presentImages[0];
+    if (!url) return;
+    
+    handleImageUpload(url, type === 'arch' ? 'architectural' : 'present');
   };
 
   const addDescriptionSection = () => {
@@ -834,48 +810,11 @@ export default function TempleArchitectureAdmin() {
     }
   };
 
-  const handleImageUpload = async (url: string) => {
+  const handleImageUpload = async (url: string, section: 'sthan' | 'architectural' | 'present') => {
     if (!id) return;
     try {
-      const fieldToUpdate = viewType === 'architectural' ? "architectureImage" : "presentImage";
-
-      const token = await user?.getIdToken();
-      const res = await fetch(`/api/admin/data?collection=temples&id=${id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { "Authorization": `Bearer ${token}` } : {})
-        },
-        body: JSON.stringify({ [fieldToUpdate]: url })
-      });
-
-      if (!res.ok) throw new Error("API image update failed.");
-
-      if (viewType === 'architectural') {
-        setArchImageUrl(url);
-      } else {
-        setPresentImageUrl(url);
-      }
-
-      toast({
-        title: "Success",
-        description: `${viewType === 'architectural' ? 'Architecture' : 'Present'} main image updated`,
-      });
-    } catch (error: any) {
-      console.error("Error updating image:", error);
-      toast({
-        title: "Error",
-        description: "Failed to update image",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleSupplementalImageUpload = async (url: string) => {
-    if (!id) return;
-    try {
-      const fieldToUpdate = viewType === 'architectural' ? "architectureImages" : "presentImages";
-      const currentImages = viewType === 'architectural' ? archImages : presentImages;
+      const fieldToUpdate = section === 'sthan' ? "sthanImages" : section === 'architectural' ? "architectureImages" : "presentImages";
+      const currentImages = section === 'sthan' ? sthanImages : section === 'architectural' ? archImages : presentImages;
       const updatedImages = [...currentImages, url];
 
       const token = await user?.getIdToken();
@@ -888,32 +827,70 @@ export default function TempleArchitectureAdmin() {
         body: JSON.stringify({ [fieldToUpdate]: updatedImages })
       });
 
-      if (!res.ok) throw new Error("API supplemental image add failed.");
+      if (!res.ok) throw new Error("API image update failed.");
 
-      if (viewType === 'architectural') {
-        setArchImages(updatedImages);
-      } else {
-        setPresentImages(updatedImages);
-      }
+      if (section === 'sthan') setSthanImages(updatedImages);
+      else if (section === 'architectural') setArchImages(updatedImages);
+      else setPresentImages(updatedImages);
 
       toast({
         title: "Success",
-        description: "Supplemental image added successfully",
+        description: "Image uploaded successfully",
       });
     } catch (error: any) {
-      console.error("Error adding supplemental image:", error);
+      console.error("Error updating image:", error);
       toast({
         title: "Error",
-        description: "Failed to add supplemental image",
+        description: "Failed to update image",
         variant: "destructive",
       });
     }
   };
 
-  const removeArchitecture = async () => {
-    if (!confirm("Are you sure you want to REMOVE all architecture data? This will clear the main image and ALL hotspots. Global details will be preserved.")) return;
+  const handleDeleteImage = async (url: string, section: 'sthan' | 'architectural' | 'present') => {
+    if (!id || !confirm("Are you sure you want to delete this image?")) return;
 
-    setArchImageUrl("");
+    try {
+      // 1. Remove from Storage
+      const { deleteObject, ref } = await import("firebase/storage");
+      const { storage } = await import("@/auth/firebase");
+      try {
+        const imageRef = ref(storage, url);
+        await deleteObject(imageRef);
+      } catch (e) {
+        console.warn("Storage deletion failed (might be a direct URL):", e);
+      }
+
+      // 2. Remove from Firestore array
+      const fieldToUpdate = section === 'sthan' ? "sthanImages" : section === 'architectural' ? "architectureImages" : "presentImages";
+      const currentImages = section === 'sthan' ? sthanImages : section === 'architectural' ? archImages : presentImages;
+      const updatedImages = currentImages.filter(img => img !== url);
+
+      const token = await user?.getIdToken();
+      await fetch(`/api/admin/data?collection=temples&id=${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { "Authorization": `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({ [fieldToUpdate]: updatedImages })
+      });
+
+      if (section === 'sthan') setSthanImages(updatedImages);
+      else if (section === 'architectural') setArchImages(updatedImages);
+      else setPresentImages(updatedImages);
+
+      toast({ title: "Deleted", description: "Image removed successfully." });
+    } catch (error: any) {
+      console.error("Error deleting image:", error);
+      toast({ title: "Error", description: "Failed to delete image.", variant: "destructive" });
+    }
+  };
+
+  const removeArchitecture = async () => {
+    if (!confirm("Are you sure you want to REMOVE all architecture data? This will clear all architecture images and hotspots. Global details will be preserved.")) return;
+
+    setArchImages([]);
     setArchHotspots([]);
     setHasArchitecture(false);
 
@@ -922,7 +899,7 @@ export default function TempleArchitectureAdmin() {
 
     // Auto-save the change
     saveTempleDetailsDirectly({
-      architectureImage: "",
+      architectureImages: [],
       hotspots: [],
       details: unlinkedDetails,
       hasArchitecture: false,
@@ -933,52 +910,57 @@ export default function TempleArchitectureAdmin() {
     toast({ title: "Architecture Removed", description: "This sthan is now standalone." });
   };
 
-  const removeSupplementalImage = async (index: number) => {
+  const removeGalleryImage = async (index: number) => {
     if (!id) return;
     try {
       const fieldToUpdate = viewType === 'architectural' ? "architectureImages" : "presentImages";
-      const hotspotField = viewType === 'architectural' ? "hotspots" : "presentHotspots";
       const currentImages = viewType === 'architectural' ? archImages : presentImages;
-      const currentHotspotsList = viewType === 'architectural' ? archHotspots : presentHotspots;
+      const urlToDelete = currentImages[index];
 
-      const actualIndex = index + 1; // Since index 0 in supplemental array is index 1 in display list
+      // 1. Remove from Storage
+      const { deleteObject, ref } = await import("firebase/storage");
+      const { storage } = await import("@/auth/firebase");
+      try {
+        const imageRef = ref(storage, urlToDelete);
+        await deleteObject(imageRef);
+      } catch (e) {
+        console.warn("Storage deletion failed:", e);
+      }
+
+      const actualIndex = index; // The index in the display list (which is displayImages[index])
 
       const updatedImages = currentImages.filter((_, i) => i !== index);
 
-      // Remove hotspots on this image and decrement imageIndex for hotspots on later images
-      const updatedHotspots = currentHotspotsList
+      // Handle Hotspots updates
+      let updatedHotspotsList: Hotspot[] = [];
+      const currentHotspotsList = viewType === 'architectural' ? archHotspots : presentHotspots;
+
+      updatedHotspotsList = currentHotspotsList
         .filter(h => (h.imageIndex || 0) !== actualIndex)
         .map(h => {
           if ((h.imageIndex || 0) > actualIndex) {
-            return { ...h, imageIndex: h.imageIndex - 1 };
+            return { ...h, imageIndex: (h.imageIndex || 0) - 1 };
           }
           return h;
         });
 
-      // Update main images
-      const updatePayload: any = {
-        [fieldToUpdate]: updatedImages
-      };
-
-      // Handle Hotspots updates
       if (viewType === 'architectural') {
-        const updatedHotspots = currentHotspotsList
-          .filter(h => (h.imageIndex || 0) !== actualIndex)
-          .map(h => {
-            if ((h.imageIndex || 0) > actualIndex) {
-              return { ...h, imageIndex: (h.imageIndex || 0) - 1 };
-            }
-            return h;
-          });
-
-        updatePayload.hotspots = updatedHotspots;
-        setArchHotspots(updatedHotspots);
+        const token = await user?.getIdToken();
+        await fetch(`/api/admin/data?collection=temples&id=${id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { "Authorization": `Bearer ${token}` } : {})
+          },
+          body: JSON.stringify({
+            [fieldToUpdate]: updatedImages,
+            hotspots: updatedHotspotsList
+          })
+        });
         setArchImages(updatedImages);
+        setArchHotspots(updatedHotspotsList);
       } else {
-        // For present view, we are removing/updating subcollection items
-        // This requires multiple API calls or a batch.
-        // For strict API compliance, we will do sequential requests here manually since our generic API doesn't do batch yet.
-
+        // For present view
         const hotspotsToDelete = presentHotspots.filter(h => (h.imageIndex || 0) === actualIndex);
         const hotspotsToUpdate = presentHotspots.filter(h => (h.imageIndex || 0) > actualIndex);
 
@@ -1001,45 +983,29 @@ export default function TempleArchitectureAdmin() {
           });
         }
 
-        const updatedPresent = presentHotspots
-          .filter(h => (h.imageIndex || 0) !== actualIndex)
-          .map(h => (h.imageIndex || 0) > actualIndex ? { ...h, imageIndex: (h.imageIndex || 0) - 1 } : h);
-
-        setPresentHotspots(updatedPresent);
+        await fetch(`/api/admin/data?collection=temples&id=${id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { "Authorization": `Bearer ${token}` } : {})
+          },
+          body: JSON.stringify({ [fieldToUpdate]: updatedImages })
+        });
+        
         setPresentImages(updatedImages);
+        setPresentHotspots(updatedHotspotsList);
       }
 
-      // Update the main doc images
-      const token = await user?.getIdToken();
-      const res = await fetch(`/api/admin/data?collection=temples&id=${id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { "Authorization": `Bearer ${token}` } : {})
-        },
-        body: JSON.stringify(updatePayload)
-      });
-
-      if (!res.ok) throw new Error("API supplemental image remove failed.");
-
-      // Reset index to ensure we're not on a deleted or shifted index we don't understand
       if (adminImageIndex === actualIndex) {
         setAdminImageIndex(0);
       } else if (adminImageIndex > actualIndex) {
         setAdminImageIndex(adminImageIndex - 1);
       }
 
-      toast({
-        title: "Success",
-        description: "Supplemental image and its hotspots removed successfully",
-      });
+      toast({ title: "Success", description: "Image and associated hotspots removed." });
     } catch (error: any) {
-      console.error("Error removing supplemental image:", error);
-      toast({
-        title: "Error",
-        description: "Failed to remove supplemental image",
-        variant: "destructive",
-      });
+      console.error("Error removing image:", error);
+      toast({ title: "Error", description: "Failed to remove image.", variant: "destructive" });
     }
   };
 
@@ -1547,16 +1513,12 @@ export default function TempleArchitectureAdmin() {
                 </div>
                 <div className="lg:col-span-2">
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                    {templeImages.map((url, idx) => (
+                    {sthanImages.map((url, idx) => (
                       <div key={idx} className="relative aspect-square group rounded-2xl overflow-hidden border border-slate-100 shadow-sm bg-slate-50">
                         <img src={url} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
                         <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity" />
                         <button
-                          onClick={() => {
-                            if (confirm("Remove this image from gallery?")) {
-                              setTempleImages(templeImages.filter((_, i) => i !== idx));
-                            }
-                          }}
+                          onClick={() => handleDeleteImage(url, 'sthan')}
                           className="absolute top-2 right-2 bg-red-600 text-white p-2 rounded-xl scale-90 opacity-0 group-hover:opacity-100 group-hover:scale-100 transition-all shadow-xl hover:bg-red-700 z-10"
                         >
                           <Trash2 className="w-4 h-4" />
@@ -1565,8 +1527,8 @@ export default function TempleArchitectureAdmin() {
                     ))}
                     <div className="aspect-square rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50/50 hover:bg-white hover:border-blue-400 transition-all flex items-center justify-center p-2 group/upload overflow-hidden">
                       <ImageUpload
-                        folderPath={`temples/${id}/gallery`}
-                        onUpload={(url) => setTempleImages([...templeImages, url])}
+                        folderPath={`sthan/${id}`}
+                        onUpload={(url) => handleImageUpload(url, 'sthan')}
                         label="Upload Photo"
                       />
                     </div>
@@ -1949,21 +1911,21 @@ export default function TempleArchitectureAdmin() {
 
               <div className="relative">
                 <button
-                  disabled={!archImageUrl || archHotspots.length === 0}
+                  disabled={archImages.length === 0 || archHotspots.length === 0}
                   onClick={() => {
                     setViewType('present');
                     setAdminImageIndex(0);
                   }}
                   className={`px-6 py-2 rounded-lg font-medium transition-all ${viewType === 'present'
                     ? 'bg-white shadow-sm text-primary'
-                    : (!archImageUrl || archHotspots.length === 0)
+                    : (archImages.length === 0 || archHotspots.length === 0)
                       ? 'text-slate-300 cursor-not-allowed'
                       : 'text-muted-foreground hover:text-foreground'
                     }`}
                 >
                   Present View
                 </button>
-                {(!archImageUrl || archHotspots.length === 0) && (
+                {(archImages.length === 0 || archHotspots.length === 0) && (
                   <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1.5 bg-slate-900 text-white text-[10px] rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50">
                     Define Architecture Sthanas first
                   </div>
@@ -2058,18 +2020,22 @@ export default function TempleArchitectureAdmin() {
 
                   {/* Image Controls Overlay */}
                   <div className="absolute bottom-6 right-6 flex gap-2">
-                    {adminImageIndex > 0 && (
+                    {displayImages.length > 0 && (
                       <Button
                         variant="destructive"
                         size="sm"
                         className="bg-red-600/20 hover:bg-red-600 text-red-100 backdrop-blur-xl border border-red-600/30 shadow-2xl"
-                        onClick={() => removeSupplementalImage(adminImageIndex - 1)}
+                        onClick={() => {
+                          if (confirm(adminImageIndex === 0 ? "Remove the primary image and all its hotspots?" : "Remove this image and all its hotspots?")) {
+                            removeGalleryImage(adminImageIndex);
+                          }
+                        }}
                       >
                         <Trash2 className="w-4 h-4 mr-2" />
                         Remove Image
                       </Button>
                     )}
-                    {adminImageIndex === 0 && (
+                    {displayImages.length === 0 && (
                       <Popover>
                         <PopoverTrigger asChild>
                           <Button
@@ -2083,9 +2049,9 @@ export default function TempleArchitectureAdmin() {
                         </PopoverTrigger>
                         <PopoverContent className="w-80 p-0 overflow-hidden border-2 shadow-xl" align="end">
                           <ImageUpload
-                            folderPath={viewType === 'architectural' ? `architecture/${id}` : `present/${id}`}
-                            onUpload={handleImageUpload}
-                            label="Change Main Image"
+                            folderPath={viewType === 'architectural' ? `architectural/${id}` : `present/${id}`}
+                            onUpload={(url) => handleImageUpload(url, viewType === 'architectural' ? 'architectural' : 'present')}
+                            label="Change Image"
                           />
                         </PopoverContent>
                       </Popover>
@@ -2142,19 +2108,17 @@ export default function TempleArchitectureAdmin() {
                         <div className={`absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-3 transition-opacity ${adminImageIndex === idx ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
                           <span className="text-xs text-white font-bold">{idx === 0 ? 'PRIMARY' : `GALLERY ${idx}`}</span>
                         </div>
-                        {idx > 0 && (
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              if (confirm("Remove this supplemental image and all its hotspots?")) {
-                                removeSupplementalImage(idx - 1);
-                              }
-                            }}
-                            className="absolute top-2 right-2 p-1.5 bg-red-600/80 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600 shadow-lg z-20"
-                          >
-                            <Trash2 className="w-3 h-3" />
-                          </button>
-                        )}
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (confirm(idx === 0 ? "Remove the PRIMARY image and all its hotspots?" : "Remove this photo and all its hotspots?")) {
+                              removeGalleryImage(idx);
+                            }
+                          }}
+                          className="absolute top-2 right-2 p-1.5 bg-red-600/80 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600 shadow-lg z-20"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </button>
                       </div>
                     ))}
 
@@ -2171,8 +2135,8 @@ export default function TempleArchitectureAdmin() {
                         </PopoverTrigger>
                         <PopoverContent className="w-80 p-0 overflow-hidden border-2 shadow-xl" align="end">
                           <ImageUpload
-                            folderPath={viewType === 'architectural' ? `architecture/${id}` : `present/${id}`}
-                            onUpload={handleSupplementalImageUpload}
+                            folderPath={viewType === 'architectural' ? `architectural/${id}` : `present/${id}`}
+                            onUpload={(url) => handleImageUpload(url, viewType === 'architectural' ? 'architectural' : 'present')}
                             label="Add Photo to Gallery"
                           />
                         </PopoverContent>
