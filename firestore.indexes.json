@@ -13,6 +13,16 @@
                     "order": "ASCENDING"
                 }
             ]
+        },
+        {
+            "collectionGroup": "temples",
+            "queryScope": "COLLECTION",
+            "fields": [
+                {
+                    "fieldPath": "sthanTypeId",
+                    "order": "ASCENDING"
+                }
+            ]
         }
     ],
     "fieldOverrides": []

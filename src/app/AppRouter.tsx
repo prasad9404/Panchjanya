@@ -9,6 +9,7 @@ import { ErrorBoundary } from "@/shared/components/layout/ErrorBoundary";
 import { AuthProvider } from "../auth/AuthContext";
 import { LanguageProvider } from "../shared/contexts/LanguageContext";
 import { ThemeProvider } from "../shared/contexts/ThemeContext";
+import { SthanTypesProvider } from "../shared/contexts/SthanTypesContext";
 import PrivateRoute from "@/shared/components/auth/PrivateRoute";
 
 // Layout
@@ -42,6 +43,7 @@ const HelpCenter = lazy(() => import("@/app/public/HelpCenter"));
 const AdminLogin = lazy(() => import("@/app/admin/AdminLogin"));
 const AdminDashboard = lazy(() => import("@/app/admin/AdminDashboard"));
 const SthanaDirectory = lazy(() => import("@/app/admin/SthanaDirectory"));
+const ManageSthana = lazy(() => import("@/app/admin/ManageSthana"));
 
 const AdminAddTemple = lazy(() => import("@/app/admin/AdminAddTemple"));
 const AdminCsvImport = lazy(() => import("@/app/admin/AdminCsvImport"));
@@ -74,6 +76,7 @@ const App = () => {
               <AuthProvider>
                 <ErrorBoundary>
                   <Suspense fallback={<PageLoader />}>
+                    <SthanTypesProvider>
                     <Routes>
                       {/* ---------------------- ADMIN AUTH ---------------------- */}
                       <Route path="/admin/login" element={<AdminLogin />} />
@@ -107,6 +110,15 @@ const App = () => {
                         element={
                           <PrivateRoute adminRequired={true} >
                             <AdminAddTemple />
+                          </PrivateRoute>
+                        }
+                      />
+
+                      <Route
+                        path="/admin/temples/:id/edit"
+                        element={
+                          <PrivateRoute adminRequired={true} >
+                            <ManageSthana />
                           </PrivateRoute>
                         }
                       />
@@ -208,6 +220,7 @@ const App = () => {
                       {/* ---------------------- 404 ---------------------- */}
                       <Route path="*" element={<NotFound />} />
                     </Routes>
+                    </SthanTypesProvider>
                   </Suspense>
                 </ErrorBoundary>
               </AuthProvider>

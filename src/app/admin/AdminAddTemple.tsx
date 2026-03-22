@@ -1,6 +1,7 @@
 import { useState } from "react";
 import AdminLayout from "@/shared/components/admin/AdminLayout";
 import TempleForm from "@/shared/components/admin/TempleForm";
+import CreateSthanaWizard from "@/shared/components/admin/CreateSthanaWizard";
 import AdminCsvUpload from "./AdminCsvUpload";
 import { Switch } from "@/shared/components/ui/switch";
 import { Label } from "@/shared/components/ui/label";
@@ -13,7 +14,7 @@ export default function AdminAddTemple() {
   const [isBulkUpload, setIsBulkUpload] = useState(false);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const editId = searchParams.get("edit") || undefined; // e.g. /admin/temples/add?edit=abc123
+  const editId = searchParams.get("edit") || undefined;
 
   return (
     <AdminLayout>
@@ -32,7 +33,6 @@ export default function AdminAddTemple() {
               Back to Directory
             </Button>
 
-            {/* Mode Switcher — only shown when not in edit mode */}
             {!editId && (
               <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-full border border-slate-200 shadow-sm">
                 <Switch
@@ -48,7 +48,13 @@ export default function AdminAddTemple() {
             )}
           </div>
 
-          {isBulkUpload && !editId ? <AdminCsvUpload /> : <TempleForm templeId={editId} />}
+          {isBulkUpload && !editId ? (
+            <AdminCsvUpload />
+          ) : editId ? (
+            <TempleForm templeId={editId} />
+          ) : (
+            <CreateSthanaWizard />
+          )}
         </div>
       </div>
     </AdminLayout>

@@ -30,6 +30,7 @@ import {
 import { Switch } from "@/shared/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/components/ui/select";
 import { getSthanTypes, AVATAR_SAMBANDH_CONFIG, getValidSthanTypes, getAvatarColor, normalizeAvatarId, PIN_SERIES } from "@/shared/utils/sthanTypes";
+import { getSthanaStatus } from "@/shared/utils/sthanValidation";
 import { SthanType } from "@/shared/types/sthanType";
 import { cn } from "@/shared/lib/utils";
 import { useToast } from "@/shared/hooks/use-toast";
@@ -218,8 +219,8 @@ export default function TempleArchitectureAdmin() {
   const [pinIcon, setPinIcon] = useState("");
 
   const [selectedHotspot, setSelectedHotspot] = useState<any | null>(null);
-  const [isVerified, setIsVerified] = useState(false);
-  const [isComplete, setIsComplete] = useState(false);
+  const [manualStatus, setManualStatus] = useState<any>();
+  const [originalTempleData, setOriginalTempleData] = useState<any>(null);
   const [hasArchitecture, setHasArchitecture] = useState(false);
   const [globalLeelas, setGlobalLeelas] = useState<Leela[]>([]);
   const [globalPothiDescription, setGlobalPothiDescription] = useState("");
@@ -237,6 +238,15 @@ export default function TempleArchitectureAdmin() {
   const [searchQuery, setSearchQuery] = useState("");
   const [detailFilter, setDetailFilter] = useState<'all' | 'linked' | 'independent'>('all');
   const HOTSPOTS_PER_PAGE = 6;
+
+  const liveStatus = getSthanaStatus({
+    ...originalTempleData,
+    name: templeName,
+    sthanTypeId,
+    district,
+    primaryAvatar,
+    status: manualStatus || originalTempleData?.status
+  });
 
   useEffect(() => {
     if (!id) return;
@@ -340,8 +350,9 @@ export default function TempleArchitectureAdmin() {
 
           setPinIcon(data.pinIcon || "");
 
-          setIsVerified(data.isVerified || false);
-          setIsComplete(data.isComplete || false);
+          setOriginalTempleData(data);
+          setManualStatus(data.status);
+
           setHasArchitecture(data.hasArchitecture !== undefined
             ? data.hasArchitecture
             : (data.isStandalone !== undefined ? !data.isStandalone : !!data.architectureImage));
@@ -510,8 +521,15 @@ export default function TempleArchitectureAdmin() {
 
 
   const saveTempleDetails = async () => {
-    if (!id) return;
-    const updateData = {
+    if (!id || !user) return;
+    
+    const finalStatus = manualStatus || liveStatus;
+    
+    // Audit Trail Logic
+    const isNewlyVerified = finalStatus === 'VERIFIED' && originalTempleData?.status !== 'VERIFIED' && originalTempleData?.status !== 'PUBLISHED';
+    const isNewlyPublished = finalStatus === 'PUBLISHED' && originalTempleData?.status !== 'PUBLISHED';
+    
+    const updateData: any = {
       name: templeName,
       todaysName,
       todaysNameTitle,
@@ -542,17 +560,26 @@ export default function TempleArchitectureAdmin() {
       primarySubtype,
       relatedAvatars,
       pinIcon,
-      isVerified,
-      isComplete,
+      status: finalStatus,
       hasArchitecture,
       leelas: globalLeelas,
       sthanPothiDescription: globalPothiDescription,
       isStandalone: !hasArchitecture, // sync for backward compatibility
       details: details, // New dynamic details array
       hotspots: archHotspots,
-      // present_hotspots is handled exclusively via subcollection for isolation
-      // present_hotspots: presentHotspots, 
+      updatedAt: new Date().toISOString(),
+      updatedBy: user.uid,
     };
+
+    if (isNewlyVerified) {
+      updateData.verifiedAt = new Date().toISOString();
+      updateData.verifiedBy = user.uid;
+    }
+    
+    if (isNewlyPublished) {
+      updateData.publishedAt = new Date().toISOString();
+      updateData.publishedBy = user.uid;
+    }
 
     try {
       const token = await user?.getIdToken();
@@ -566,6 +593,7 @@ export default function TempleArchitectureAdmin() {
       });
       if (res.ok) {
         toast({ title: "Success", description: "Temple details updated." });
+        setOriginalTempleData({ ...originalTempleData, ...updateData });
       } else {
         throw new Error("API save failed.");
       }
@@ -576,8 +604,23 @@ export default function TempleArchitectureAdmin() {
   };
 
   const saveTempleDetailsDirectly = async (data: any) => {
-    if (!id) return;
+    if (!id || !user) return;
+    
     const sanitizedInput = sanitizeData(data);
+    
+    // Safety audit timestamps for direct saves too if status is passed
+    if (sanitizedInput.status === 'VERIFIED' && originalTempleData?.status !== 'VERIFIED' && originalTempleData?.status !== 'PUBLISHED') {
+      sanitizedInput.verifiedAt = new Date().toISOString();
+      sanitizedInput.verifiedBy = user.uid;
+    }
+    if (sanitizedInput.status === 'PUBLISHED' && originalTempleData?.status !== 'PUBLISHED') {
+      sanitizedInput.publishedAt = new Date().toISOString();
+      sanitizedInput.publishedBy = user.uid;
+    }
+    
+    sanitizedInput.updatedAt = new Date().toISOString();
+    sanitizedInput.updatedBy = user.uid;
+
     try {
       const token = await user?.getIdToken();
       await fetch(`/api/admin/data?collection=temples&id=${id}`, {
@@ -1093,35 +1136,29 @@ export default function TempleArchitectureAdmin() {
 
   return (
     <AdminLayout>
-      <div className="space-y-6">
-        {/* Back Button */}
-        <div className="mb-6">
-          <Button
-            variant="ghost"
-            onClick={() => navigate("/admin/sthana-directory")}
-            className="group flex items-center gap-2 text-slate-500 hover:text-slate-700 font-bold transition-all px-0 hover:bg-transparent"
-          >
-            <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center group-hover:bg-slate-200 transition-all">
-              <ArrowLeft className="w-4 h-4" />
+      <div className="min-h-screen bg-[#F9F6F0] pb-20 -m-6 p-6">
+        <div className="max-w-7xl mx-auto space-y-8 pt-2">
+          
+          {/* ── Top Navigation ── */}
+          <div className="bg-white p-2 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between z-10 transition-all duration-300">
+            <div className="flex items-center gap-4">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate("/admin/sthana-directory")}
+                className="rounded-xl hover:bg-slate-50 text-slate-500 font-bold"
+              >
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Directory
+              </Button>
+              <div className="w-px h-8 bg-slate-100" />
+              <span className="text-sm font-black uppercase tracking-widest text-slate-500">
+                Data Management
+              </span>
             </div>
-            Back to Directory
-          </Button>
-        </div>
-
-        {/* Header Block */}
-        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row items-center justify-between gap-6">
-          <div className="flex items-center gap-4">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => navigate("/admin/sthana-directory")}
-              className="rounded-xl hover:bg-slate-50 text-slate-500 font-bold"
-            >
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Directory
-            </Button>
-            <div className="w-px h-8 bg-slate-100" />
-            <div className="flex items-center gap-1">
+            
+            {/* Step Navigation Pill */}
+            <div className="hidden md:flex items-center gap-1 bg-slate-50 p-1 rounded-xl border border-slate-100">
               {[
                 { id: 'sthan-info', label: '1. Sthan Info', icon: ImageIcon },
                 { id: 'architecture-view', label: '2. Architecture View', icon: ZoomIn },
@@ -1130,9 +1167,9 @@ export default function TempleArchitectureAdmin() {
                 <button
                   key={step.id}
                   onClick={() => setCurrentStep(step.id as any)}
-                  className={`flex items-center gap-2 px-6 py-2.5 rounded-xl font-bold text-sm transition-all whitespace-nowrap ${currentStep === step.id
-                    ? 'bg-blue-900 text-white shadow-lg scale-105'
-                    : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'
+                  className={`flex items-center gap-2 px-6 py-2 rounded-lg font-bold text-sm transition-all whitespace-nowrap ${currentStep === step.id
+                    ? 'bg-white text-[#1E3A8A] shadow-sm border border-slate-200'
+                    : 'text-slate-400 hover:text-slate-600 hover:bg-slate-200/50'
                     }`}
                 >
                   <step.icon className="w-4 h-4" />
@@ -1141,13 +1178,6 @@ export default function TempleArchitectureAdmin() {
               ))}
             </div>
           </div>
-          <div className="hidden md:flex items-center gap-3 pr-2">
-            <div className="w-1.5 h-6 bg-slate-200 rounded-full" />
-            <span className="text-xs font-black uppercase tracking-widest text-slate-400">
-              {currentStep.replace('-', ' ')}
-            </span>
-          </div>
-        </div>
 
         {/* Step 1: Sthan Info */}
         {currentStep === 'sthan-info' && (
@@ -1163,40 +1193,73 @@ export default function TempleArchitectureAdmin() {
                 </Button>
               </div>
 
-              {/* Status Control Bar */}
-              <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-wrap items-center gap-6">
-                <div className="flex items-center gap-2 pr-4 border-r border-slate-100">
-                  <LucideIcons.ShieldCheck className="w-5 h-5 text-blue-600" />
-                  <span className="text-xs font-black uppercase tracking-widest text-slate-400">Status Control</span>
-                </div>
-
-                <div className="flex items-center gap-3">
-                  <div className="space-y-0.5">
-                    <Label className="text-sm font-bold text-slate-900 text-nowrap">Verified Sthan</Label>
+              {/* Status & Progress Card */}
+              <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+                  <div className="flex items-center justify-between">
+                      <div className="space-y-1">
+                          <Label className="text-base font-bold text-slate-900 block flex items-center gap-2">
+                              <LucideIcons.ShieldCheck className="w-5 h-5 text-blue-600" />
+                              Sthana Status
+                          </Label>
+                          <p className="text-sm text-slate-500">Live computed status based on data completeness.</p>
+                      </div>
+                      <div className="shrink-0 flex gap-2">
+                          {liveStatus === 'PUBLISHED' && (
+                              <span className="inline-flex items-center px-3 py-1 rounded text-xs font-bold bg-blue-50 text-blue-600 border border-blue-100 uppercase tracking-wide gap-1">
+                                  🌍 Published
+                              </span>
+                          )}
+                          {liveStatus === 'VERIFIED' && (
+                              <span className="inline-flex items-center px-3 py-1 rounded text-xs font-bold bg-[#C9A961]/10 text-[#a88b48] border border-[#C9A961]/20 uppercase tracking-wide gap-1">
+                                  🟢 Verified
+                              </span>
+                          )}
+                          {liveStatus === 'COMPLETE' && (
+                              <span className="inline-flex items-center px-3 py-1 rounded text-xs font-bold bg-emerald-50 text-emerald-600 border border-emerald-100 uppercase tracking-wide gap-1">
+                                  ✅ Complete
+                              </span>
+                          )}
+                          {liveStatus === 'IN_PROGRESS' && (
+                              <span className="inline-flex items-center px-3 py-1 rounded text-xs font-bold bg-amber-50 text-amber-600 border border-amber-100 uppercase tracking-wide gap-1">
+                                  ✏️ In Progress
+                              </span>
+                          )}
+                          {liveStatus === 'DRAFT' && (
+                              <span className="inline-flex items-center px-3 py-1 rounded text-xs font-bold bg-slate-100 text-slate-500 border border-slate-200 uppercase tracking-wide gap-1">
+                                  📝 Draft
+                              </span>
+                          )}
+                      </div>
                   </div>
-                  <Switch
-                    checked={isVerified}
-                    onCheckedChange={setIsVerified}
-                  />
-                </div>
-
-                <div className="w-px h-6 bg-slate-100 hidden md:block" />
-
-                <div className="flex items-center gap-3">
-                  <div className="space-y-0.5">
-                    <Label className="text-sm font-bold text-slate-900 text-nowrap">Data Complete</Label>
-                  </div>
-                  <Switch
-                    checked={isComplete}
-                    onCheckedChange={setIsComplete}
-                  />
-                </div>
-
-                <div className="hidden lg:flex flex-1 justify-end">
-                  <p className="text-[10px] text-slate-400 font-medium italic">
-                    ℹ️ Manual overrides for sthana verification and completion status.
-                  </p>
-                </div>
+                  
+                  {/* Professional Action Buttons */}
+                  {(liveStatus === 'COMPLETE' || liveStatus === 'VERIFIED' || liveStatus === 'PUBLISHED') && (
+                      <div className="pt-4 border-t border-slate-100 flex flex-wrap gap-3">
+                          {liveStatus === 'COMPLETE' && (
+                              <Button 
+                                  type="button" 
+                                  onClick={() => { setManualStatus('VERIFIED'); toast({ title: "Status Updated", description: "Marked as Verified. Save to apply changes." }); }}
+                                  className="bg-[#C9A961] hover:bg-[#b0924e] text-white rounded-xl shadow-lg"
+                              >
+                                  Verify Sthana
+                              </Button>
+                          )}
+                          {liveStatus === 'VERIFIED' && (
+                              <Button 
+                                  type="button" 
+                                  onClick={() => { setManualStatus('PUBLISHED'); toast({ title: "Status Updated", description: "Marked as Published. Save to apply changes." }); }}
+                                  className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-lg"
+                              >
+                                  Publish Sthana
+                              </Button>
+                          )}
+                          {liveStatus === 'PUBLISHED' && (
+                              <p className="text-xs text-slate-400 font-medium py-2">
+                                  This sthana is verified and published globally.
+                              </p>
+                          )}
+                      </div>
+                  )}
               </div>
             </div>
 
@@ -2020,7 +2083,7 @@ export default function TempleArchitectureAdmin() {
                         </PopoverTrigger>
                         <PopoverContent className="w-80 p-0 overflow-hidden border-2 shadow-xl" align="end">
                           <ImageUpload
-                            folderPath={`${viewType}/${id}`}
+                            folderPath={viewType === 'architectural' ? `architecture/${id}` : `present/${id}`}
                             onUpload={handleImageUpload}
                             label="Change Main Image"
                           />
@@ -2932,6 +2995,7 @@ export default function TempleArchitectureAdmin() {
             </div>
           )
         }
+      </div>
       </div>
     </AdminLayout>
   );

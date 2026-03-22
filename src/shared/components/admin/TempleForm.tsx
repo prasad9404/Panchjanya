@@ -12,6 +12,7 @@ import { ArrowLeft, Save, ExternalLink } from "lucide-react";
 import { useAuth } from "@/auth/AuthContext";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/components/ui/select";
 import { getSthanTypes, AVATAR_SAMBANDH_CONFIG, getValidSthanTypes, getAvatarColor, normalizeAvatarId, PIN_SERIES } from "@/shared/utils/sthanTypes";
+import { getSthanaStatus } from "@/shared/utils/sthanValidation";
 import { SthanType } from "@/shared/types/sthanType";
 import { Switch } from "@/shared/components/ui/switch";
 import ReactSelect from "react-select";
@@ -54,8 +55,8 @@ export default function TempleForm({ templeId }: TempleFormProps) {
     const [locationLink, setLocationLink] = useState("");
 
     // ── Administration ──
-    const [isVerified, setIsVerified] = useState(false);
-    const [isComplete, setIsComplete] = useState(false);
+    const [originalTempleData, setOriginalTempleData] = useState<any>(null);
+    const [manualStatus, setManualStatus] = useState<any>();
     const [hasArchitecture, setHasArchitecture] = useState(false); // default: false (standalone)
 
     // Load sthan types
@@ -114,8 +115,8 @@ export default function TempleForm({ templeId }: TempleFormProps) {
                     setLongitude(String(data.longitude ?? data.location?.lng ?? ""));
                     setLocationLink(data.locationLink || "");
                     setPinIcon(data.pinIcon || "");
-                    setIsVerified(data.isVerified || false);
-                    setIsComplete(data.isComplete || false);
+                    setOriginalTempleData(data);
+                    setManualStatus(data.status);
                     // Map existing data to hasArchitecture
                     // If isStandalone was true, hasArchitecture is false.
                     // If architectureImage exists, it's definitely true.
@@ -184,8 +185,7 @@ export default function TempleForm({ templeId }: TempleFormProps) {
                 pinIcon,
                 updatedAt: new Date().toISOString(),
                 updatedBy: user.uid,
-                isVerified,
-                isComplete,
+                status: manualStatus || liveStatus,
                 // Architecture mapping fields
                 hasArchitecture,
                 architectureId: hasArchitecture ? (templeId || null) : null,
@@ -273,6 +273,16 @@ export default function TempleForm({ templeId }: TempleFormProps) {
     const primaryAvatarConfig = AVATAR_SAMBANDH_CONFIG.find(a => a.id === primaryAvatar);
     const showSubTypes = primaryAvatarConfig && primaryAvatarConfig.subdivisions.length > 0;
     
+    // Live compute status
+    const liveStatus = getSthanaStatus({
+        ...originalTempleData,
+        name,
+        sthanTypeId,
+        district,
+        primaryAvatar,
+        status: manualStatus || originalTempleData?.status
+    });
+
     return (
         <div className="min-h-screen bg-[#F9F6F0] pb-20">
             <div className="max-w-7xl mx-auto px-6 pt-8 space-y-8">
@@ -625,27 +635,70 @@ export default function TempleForm({ templeId }: TempleFormProps) {
                                 />
                             </div>
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div className="flex items-center justify-between p-4 bg-white rounded-xl border border-slate-200">
-                                    <div className="space-y-0.5">
-                                        <Label className="text-base font-bold text-slate-900">Verified Status</Label>
-                                        <p className="text-sm text-slate-500">Mark as verified.</p>
+                            {/* Status & Progress Card */}
+                            <div className="bg-white p-6 rounded-xl border border-slate-200 space-y-4">
+                                <div className="flex items-center justify-between">
+                                    <div className="space-y-1">
+                                        <Label className="text-base font-bold text-slate-900 block">Sthana Status</Label>
+                                        <p className="text-sm text-slate-500">Live computed status based on data completeness.</p>
                                     </div>
-                                    <Switch
-                                        checked={isVerified}
-                                        onCheckedChange={setIsVerified}
-                                    />
-                                </div>
-                                <div className="flex items-center justify-between p-4 bg-white rounded-xl border border-slate-200">
-                                    <div className="space-y-0.5">
-                                        <Label className="text-base font-bold text-slate-900">Data Completion</Label>
-                                        <p className="text-sm text-slate-500">Mark as complete.</p>
+                                    <div className="shrink-0 flex gap-2">
+                                        {liveStatus === 'PUBLISHED' && (
+                                            <span className="inline-flex items-center px-3 py-1 rounded text-xs font-bold bg-blue-50 text-blue-600 border border-blue-100 uppercase tracking-wide gap-1">
+                                                🌍 Published
+                                            </span>
+                                        )}
+                                        {liveStatus === 'VERIFIED' && (
+                                            <span className="inline-flex items-center px-3 py-1 rounded text-xs font-bold bg-[#C9A961]/10 text-[#a88b48] border border-[#C9A961]/20 uppercase tracking-wide gap-1">
+                                                🟢 Verified
+                                            </span>
+                                        )}
+                                        {liveStatus === 'COMPLETE' && (
+                                            <span className="inline-flex items-center px-3 py-1 rounded text-xs font-bold bg-emerald-50 text-emerald-600 border border-emerald-100 uppercase tracking-wide gap-1">
+                                                ✅ Complete
+                                            </span>
+                                        )}
+                                        {liveStatus === 'IN_PROGRESS' && (
+                                            <span className="inline-flex items-center px-3 py-1 rounded text-xs font-bold bg-amber-50 text-amber-600 border border-amber-100 uppercase tracking-wide gap-1">
+                                                ✏️ In Progress
+                                            </span>
+                                        )}
+                                        {liveStatus === 'DRAFT' && (
+                                            <span className="inline-flex items-center px-3 py-1 rounded text-xs font-bold bg-slate-100 text-slate-500 border border-slate-200 uppercase tracking-wide gap-1">
+                                                📝 Draft
+                                            </span>
+                                        )}
                                     </div>
-                                    <Switch
-                                        checked={isComplete}
-                                        onCheckedChange={setIsComplete}
-                                    />
                                 </div>
+                                
+                                {/* Professional Action Buttons */}
+                                {(liveStatus === 'COMPLETE' || liveStatus === 'VERIFIED' || liveStatus === 'PUBLISHED') && (
+                                    <div className="pt-4 border-t border-slate-100 flex flex-wrap gap-3">
+                                        {liveStatus === 'COMPLETE' && (
+                                            <Button 
+                                                type="button" 
+                                                onClick={() => { setManualStatus('VERIFIED'); toast({ title: "Status Updated", description: "Marked as Verified. Save to apply changes." }); }}
+                                                className="bg-[#C9A961] hover:bg-[#b0924e] text-white"
+                                            >
+                                                Verify Sthana
+                                            </Button>
+                                        )}
+                                        {liveStatus === 'VERIFIED' && (
+                                            <Button 
+                                                type="button" 
+                                                onClick={() => { setManualStatus('PUBLISHED'); toast({ title: "Status Updated", description: "Marked as Published. Save to apply changes." }); }}
+                                                className="bg-blue-600 hover:bg-blue-700 text-white"
+                                            >
+                                                Publish Sthana
+                                            </Button>
+                                        )}
+                                        {liveStatus === 'PUBLISHED' && (
+                                            <p className="text-xs text-slate-400 font-medium py-2">
+                                                This sthana is verified and published globally.
+                                            </p>
+                                        )}
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </div>

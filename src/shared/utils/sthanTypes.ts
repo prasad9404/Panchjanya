@@ -1,7 +1,7 @@
 // src/utils/sthanTypes.ts
-import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, query, orderBy, Timestamp } from 'firebase/firestore';
+import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, query, orderBy, where } from 'firebase/firestore';
 import { db } from '@/auth/firebase';
-import { SthanType, CreateSthanTypeInput, UpdateSthanTypeInput } from '@/shared/types/sthanType';
+import { SthanType, CreateSthanTypeInput, UpdateSthanTypeInput, SthanTypeValidationResult, SthanTypeUsageResult } from '@/shared/types/sthanType';
 
 const STHAN_TYPES_COLLECTION = 'sthan_types';
 
@@ -244,14 +244,23 @@ export const getSthanTypes = async (): Promise<SthanType[]> => {
  */
 export const createSthanType = async (data: CreateSthanTypeInput): Promise<string> => {
     try {
-        const cleanData = Object.fromEntries(
-            Object.entries(data).filter(([_, v]) => v !== undefined)
-        );
-        const docRef = await addDoc(collection(db, STHAN_TYPES_COLLECTION), {
-            ...cleanData,
+        // Normalize: avatarSubdivision null → undefined to avoid Firestore storing null unnecessarily
+        const payload: Record<string, any> = {
+            name: data.name,
+            color: data.color,
+            order: data.order,
+            pinType: data.pinType,
+            avatarSambandh: data.avatarSambandh,
+            avatarSubdivision: data.avatarSubdivision ?? null,
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
-        });
+        };
+        if (data.avatarType) payload.avatarType = data.avatarType;
+
+        // Bust module-level cache so next getSthanTypes() re-fetches
+        _sthanTypesCache = null;
+
+        const docRef = await addDoc(collection(db, STHAN_TYPES_COLLECTION), payload);
         return docRef.id;
     } catch (error) {
         console.error('Error creating sthan type:', error);
@@ -260,18 +269,23 @@ export const createSthanType = async (data: CreateSthanTypeInput): Promise<strin
 };
 
 /**
- * Update an existing sthan type
+ * Update an existing sthan type.
+ * Only name, color, pinType, order are allowed — avatarSambandh/avatarSubdivision are locked.
  */
 export const updateSthanType = async (id: string, data: UpdateSthanTypeInput): Promise<void> => {
     try {
-        const cleanData = Object.fromEntries(
-            Object.entries(data).filter(([_, v]) => v !== undefined)
-        );
+        // Strictly pick only safe editable fields
+        const safeData: Record<string, any> = { updatedAt: new Date().toISOString() };
+        if (data.name !== undefined) safeData.name = data.name;
+        if (data.color !== undefined) safeData.color = data.color;
+        if (data.pinType !== undefined) safeData.pinType = data.pinType;
+        if (data.order !== undefined) safeData.order = data.order;
+
         const docRef = doc(db, STHAN_TYPES_COLLECTION, id);
-        await updateDoc(docRef, {
-            ...cleanData,
-            updatedAt: new Date().toISOString(),
-        });
+        await updateDoc(docRef, safeData);
+
+        // Bust cache
+        _sthanTypesCache = null;
     } catch (error) {
         console.error('Error updating sthan type:', error);
         throw error;
@@ -285,6 +299,8 @@ export const deleteSthanType = async (id: string): Promise<void> => {
     try {
         const docRef = doc(db, STHAN_TYPES_COLLECTION, id);
         await deleteDoc(docRef);
+        // Bust cache
+        _sthanTypesCache = null;
     } catch (error) {
         console.error('Error deleting sthan type:', error);
         throw error;
@@ -292,7 +308,7 @@ export const deleteSthanType = async (id: string): Promise<void> => {
 };
 
 /**
- * Update the order of all sthan types
+ * Update the order of all sthan types (deduplicates by position index).
  */
 export const updateSthanTypesOrder = async (reorderedTypes: SthanType[]): Promise<void> => {
     try {
@@ -304,9 +320,120 @@ export const updateSthanTypesOrder = async (reorderedTypes: SthanType[]): Promis
             });
         });
         await Promise.all(batch);
+        // Bust cache after reorder
+        _sthanTypesCache = null;
     } catch (error) {
         console.error('Error updating sthan types order:', error);
         throw error;
+    }
+};
+
+// ---------------------------------------------------------------------------
+// MODULE-LEVEL CACHE
+// ---------------------------------------------------------------------------
+
+let _sthanTypesCache: SthanType[] | null = null;
+
+/**
+ * Returns sthan types from an in-memory cache. Fetches from Firestore only on
+ * the first call or after any mutation (create/update/delete/reorder).
+ */
+export const getSthanTypesCached = async (): Promise<SthanType[]> => {
+    if (_sthanTypesCache !== null) return _sthanTypesCache;
+    const types = await getSthanTypes();
+    _sthanTypesCache = types;
+    return types;
+};
+
+/**
+ * Bust the module-level cache (call after any mutation outside this file).
+ */
+export const bustSthanTypesCache = (): void => {
+    _sthanTypesCache = null;
+};
+
+// ---------------------------------------------------------------------------
+// HELPER FUNCTIONS (New strict API)
+// ---------------------------------------------------------------------------
+
+/**
+ * Get a single Sthan Type by ID from a pre-loaded array.
+ * O(n) but array is small (<50 items). Use with context-provided array.
+ */
+export const getSthanTypeById = (id: string, allTypes: SthanType[]): SthanType | undefined =>
+    allTypes.find(t => t.id === id);
+
+/**
+ * Validate a Sthan Type input before saving to Firestore.
+ *
+ * Checks:
+ * 1. name is not empty
+ * 2. avatarSambandh is set
+ * 3. pinType is set and starts with '/icons/'
+ * 4. Uniqueness: no other type has the same (avatarSambandh + avatarSubdivision + name)
+ *    (ignores the item with editingId, if provided)
+ */
+export const validateSthanType = (
+    input: { name: string; avatarSambandh: string; avatarSubdivision: string | null; pinType: string },
+    allTypes: SthanType[],
+    editingId?: string | null,
+): SthanTypeValidationResult => {
+    if (!input.name.trim()) {
+        return { valid: false, field: 'name', message: 'Sthan Type name is required.' };
+    }
+    if (!input.avatarSambandh) {
+        return { valid: false, field: 'avatarSambandh', message: 'Primary Avatar (Sambandh) is required.' };
+    }
+    if (!input.pinType || !input.pinType.startsWith('/icons/')) {
+        return { valid: false, field: 'pinType', message: 'A valid Pin Style must be selected before saving.' };
+    }
+
+    // Uniqueness check: same name + avatar + subdivision (case-insensitive name)
+    const normalizedName = input.name.trim().toLowerCase();
+    const conflict = allTypes.find(t => {
+        if (editingId && t.id === editingId) return false; // skip self
+        return (
+            t.name.toLowerCase() === normalizedName &&
+            t.avatarSambandh === input.avatarSambandh &&
+            (t.avatarSubdivision ?? null) === (input.avatarSubdivision ?? null)
+        );
+    });
+
+    if (conflict) {
+        const subLabel = input.avatarSubdivision ? ` / ${input.avatarSubdivision}` : '';
+        return {
+            valid: false,
+            field: 'duplicate',
+            message: `"${input.name}" already exists under this Avatar${subLabel}. Each (Avatar → Subdivision → Name) combination must be unique.`,
+        };
+    }
+
+    return { valid: true };
+};
+
+/**
+ * Check how many Sthanas reference a given Sthan Type ID.
+ * Used to guard against deletion of types that are in use.
+ *
+ * Requires a Firestore index on: temples → sthanTypeId (ASC)
+ */
+export const checkSthanTypeUsage = async (sthanTypeId: string): Promise<SthanTypeUsageResult> => {
+    try {
+        const q = query(
+            collection(db, 'temples'),
+            where('sthanTypeId', '==', sthanTypeId),
+        );
+        const snap = await getDocs(q);
+        const sthanaNames: string[] = [];
+        const sthanaIds: string[] = [];
+        snap.forEach(d => {
+            sthanaIds.push(d.id);
+            sthanaNames.push(d.data().name || d.id);
+        });
+        return { count: snap.size, sthanaNames, sthanaIds };
+    } catch (error) {
+        console.error('Error checking sthan type usage:', error);
+        return { count: 0, sthanaNames: [], sthanaIds: [] };
     }
 };
 
@@ -526,15 +653,16 @@ export const generateSthanPinSVG = (color: string, pinType?: string): string => 
 
 
 /**
- * Initialize default sthan types (run once)
+ * Initialize default sthan types (run once).
+ * avatarSambandh / avatarSubdivision left as empty strings for legacy seed data.
  */
 export const seedSthanTypes = async (): Promise<void> => {
     const defaultTypes: CreateSthanTypeInput[] = [
-        { name: 'Mahasthan', color: '#B22222', order: 1, pinType: 'pin_mahasthan' },
-        { name: 'Avasthan', color: '#D4AF37', order: 2, pinType: 'pin_mandir' },
-        { name: 'Asan', color: '#0E3C6F', order: 3, pinType: 'pin_aasan' },
-        { name: 'Vasti', color: '#228B22', order: 4, pinType: 'pin_empty' },
-        { name: 'Mandalik', color: '#6A0DAD', order: 5, pinType: 'pin_shikhara' },
+        { name: 'Mahasthan', color: '#B22222', order: 1, pinType: '/icons/pins/5 Shri_Chakradhar_Swami_Pin/5.1.svg', avatarSambandh: '', avatarSubdivision: null },
+        { name: 'Avasthan', color: '#D4AF37', order: 2, pinType: '/icons/pins/5 Shri_Chakradhar_Swami_Pin/5.3.svg', avatarSambandh: '', avatarSubdivision: null },
+        { name: 'Asan', color: '#0E3C6F', order: 3, pinType: '/icons/pins/5 Shri_Chakradhar_Swami_Pin/5.4.svg', avatarSambandh: '', avatarSubdivision: null },
+        { name: 'Vasti', color: '#228B22', order: 4, pinType: '/icons/pins/5 Shri_Chakradhar_Swami_Pin/5.5.svg', avatarSambandh: '', avatarSubdivision: null },
+        { name: 'Mandalik', color: '#6A0DAD', order: 5, pinType: '/icons/pins/6 Mandalik_Sthan_Pin/6.5.svg', avatarSambandh: 'mandalik', avatarSubdivision: null },
     ];
 
     try {

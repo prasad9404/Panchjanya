@@ -59,6 +59,8 @@ export interface RelatedAvatar {
     subtype: string[];
 }
 
+export type SthanaStatus = "DRAFT" | "IN_PROGRESS" | "COMPLETE" | "VERIFIED" | "PUBLISHED";
+
 export interface Temple {
     id: string;
     name: string;
@@ -112,8 +114,13 @@ export interface Temple {
     present_hotspots?: Hotspot[];
     updatedAt?: any;
     is_published?: boolean;
-    isVerified?: boolean;
-    isComplete?: boolean;
+    isVerified?: boolean; // Legacy: Syncs with status === 'VERIFIED'
+    isComplete?: boolean; // Legacy: Syncs with status === 'COMPLETE' || 'VERIFIED'
+    status?: SthanaStatus; // New: Controlled status system
+    verifiedAt?: any;
+    verifiedBy?: string;
+    publishedAt?: any;
+    publishedBy?: string;
     hasArchitecture?: boolean;       // Replacement for isStandalone
     architectureId?: string | null;  // null for standalone, id for linked
     leelas?: Leela[];               // Global leelas (for standalone)
