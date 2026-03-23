@@ -8,7 +8,7 @@ import { Textarea } from "@/shared/components/ui/textarea";
 import { Label } from "@/shared/components/ui/label";
 import { Separator } from "@/shared/components/ui/separator";
 import { useToast } from "@/shared/hooks/use-toast";
-import { ArrowLeft, Save, ExternalLink } from "lucide-react";
+import { ArrowLeft, Save, ExternalLink, Check, MapPin, Home, BookOpen } from "lucide-react";
 import { useAuth } from "@/auth/AuthContext";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/components/ui/select";
 import { getSthanTypes, AVATAR_SAMBANDH_CONFIG, getValidSthanTypes, getAvatarColor, normalizeAvatarId, PIN_SERIES } from "@/shared/utils/sthanTypes";
@@ -284,451 +284,419 @@ export default function TempleForm({ templeId }: TempleFormProps) {
     });
 
     return (
-        <div className="min-h-screen bg-[#F9F6F0] pb-20">
-            <div className="max-w-7xl mx-auto px-6 pt-8 space-y-8">
-
-                {/* ── Top Navigation ── */}
-                <div className="bg-white p-2 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between z-10 transition-all duration-300">
-                    <div className="flex items-center gap-4">
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => navigate("/admin/sthana-directory")}
-                            className="rounded-xl hover:bg-slate-50 text-slate-500 font-bold"
-                        >
-                            <ArrowLeft className="w-4 h-4 mr-2" />
-                            Directory
-                        </Button>
-                        <div className="w-px h-8 bg-slate-100" />
-                        <span className="text-sm font-black uppercase tracking-widest text-slate-500">
-                            Add New Sthana
-                        </span>
-                    </div>
-                    <div className="hidden md:flex items-center gap-3 pr-2">
-                        <div className="w-1.5 h-6 bg-slate-200 rounded-full" />
-                        <span className="text-xs font-black uppercase tracking-widest text-slate-400">
-                            Basic Info &amp; Location
-                        </span>
-                    </div>
-                </div>
-
-                {/* ── Page Header ── */}
-                <div className="flex items-center justify-between">
-                    <div className="space-y-1">
-                        <h1 className="text-3xl font-serif font-bold text-primary tracking-tight">Add New Sthan</h1>
-                        <p className="text-sm text-slate-500 font-medium">
-                            Fill in the primary identity and location.
-                            {hasArchitecture
-                                ? " You'll configure images, descriptions, and hotspots on the next page."
-                                : " This standalone sthan will appear on the map immediately after saving."}
-                        </p>
-                    </div>
-                </div>
-
-                <form onSubmit={handleSubmit} className="space-y-12">
+        <div className="w-full">
+            <form onSubmit={handleSubmit} className="space-y-12">
 
                     {/* ── 1. Primary Identity ── */}
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
-                        <div>
-                            <h2 className="text-xl font-bold text-slate-900">Primary Identity</h2>
-                            <p className="mt-2 text-sm leading-relaxed text-slate-500 font-medium">
-                                This information appears in the main header and site-wide navigation.
-                            </p>
-                        </div>
-                        <div className="lg:col-span-2 space-y-6">
-                            {/* Sthan Name + Today's Name */}
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div className="space-y-2">
-                                    <Label className="text-sm font-semibold text-slate-700">Sthan Name *</Label>
-                                    <Input
-                                        id="name"
-                                        value={name}
-                                        onChange={(e) => setName(e.target.value)}
-                                        required
-                                        placeholder="e.g. Shri Panchasara Parshvanath"
-                                        className="h-12 rounded-xl border-slate-200 focus:border-blue-500 focus:ring-blue-500"
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <div className="flex items-center gap-2">
+                    <div className="pb-24">
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 lg:gap-20">
+                            <div className="space-y-3">
+                                <h2 className="text-xl font-black text-slate-900 tracking-tight">Primary Identity</h2>
+                                <p className="text-[11px] leading-relaxed text-slate-400 font-bold uppercase tracking-widest">
+                                    CORE STHANA DATA
+                                </p>
+                                <p className="mt-4 text-xs leading-relaxed text-slate-500 font-medium max-w-[200px]">
+                                    This information appears in the main header and site-wide navigation.
+                                </p>
+                            </div>
+                            <div className="lg:col-span-2 space-y-10">
+                                {/* Sthan Name + Today's Name */}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                    <div className="space-y-3">
+                                        <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Sthan Name *</Label>
+                                        <div className="relative group">
+                                            <Input
+                                                id="name"
+                                                value={name}
+                                                onChange={(e) => setName(e.target.value)}
+                                                required
+                                                placeholder="संस्थानचे नाव प्रविष्ट करा"
+                                                className="h-14 pl-12 rounded-2xl border-slate-100 bg-slate-50/30 focus:bg-white transition-all text-sm font-medium"
+                                            />
+                                            <Home className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 group-focus-within:text-blue-600 transition-colors" />
+                                        </div>
+                                    </div>
+                                    <div className="space-y-3">
+                                        <div className="flex items-center gap-2">
+                                            <Input
+                                                value={todaysNameTitle}
+                                                onChange={(e) => setTodaysNameTitle(e.target.value)}
+                                                className="h-8 p-0 px-2 w-fit min-w-[120px] text-[10px] font-black uppercase tracking-widest text-slate-400 border-transparent hover:border-slate-100 focus:border-blue-400/50 rounded-md transition-all bg-transparent"
+                                                placeholder="Label Name"
+                                            />
+                                            <span className="text-slate-300 font-normal text-[10px]">(Optional)</span>
+                                        </div>
                                         <Input
-                                            value={todaysNameTitle}
-                                            onChange={(e) => setTodaysNameTitle(e.target.value)}
-                                            className="h-8 p-0 px-2 w-fit min-w-[120px] text-sm font-semibold text-slate-700 border-transparent hover:border-slate-200 focus:border-blue-500 rounded-md transition-all"
-                                            placeholder="Label Name"
+                                            id="todaysName"
+                                            value={todaysName}
+                                            onChange={(e) => setTodaysName(e.target.value)}
+                                            placeholder="e.g. Patan, Gujarat"
+                                            className="h-14 rounded-2xl border-slate-100 bg-slate-50/30 focus:bg-white focus:border-blue-500/50 transition-all text-sm font-medium"
                                         />
-                                        <span className="text-slate-400 font-normal text-sm">(Optional)</span>
                                     </div>
-                                    <Input
-                                        id="todaysName"
-                                        value={todaysName}
-                                        onChange={(e) => setTodaysName(e.target.value)}
-                                        placeholder="e.g. Patan, Gujarat"
-                                        className="h-12 rounded-xl border-slate-200 focus:border-blue-500 focus:ring-blue-500"
+                                </div>
+
+                                {/* Address */}
+                                <div className="space-y-3">
+                                    <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Address</Label>
+                                    <Textarea
+                                        id="address"
+                                        value={address}
+                                        onChange={(e) => setAddress(e.target.value)}
+                                        placeholder="Enter the complete address..."
+                                        rows={3}
+                                        className="rounded-2xl border-slate-100 bg-slate-50/30 focus:bg-white focus:border-blue-500/50 transition-all text-sm font-medium resize-none min-h-[120px]"
                                     />
                                 </div>
-                            </div>
 
-                            {/* Address */}
-                            <div className="space-y-2">
-                                <Label className="text-sm font-semibold text-slate-700">Address</Label>
-                                <Textarea
-                                    id="address"
-                                    value={address}
-                                    onChange={(e) => setAddress(e.target.value)}
-                                    placeholder="Enter the complete address..."
-                                    rows={3}
-                                    className="rounded-xl border-slate-200 focus:border-blue-500 focus:ring-blue-500"
-                                />
-                            </div>
-
-                            {/* Taluka + District */}
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div className="space-y-2">
-                                    <Label className="text-sm font-semibold text-slate-700">Taluka</Label>
-                                    <Input
-                                        id="taluka"
-                                        value={taluka}
-                                        onChange={(e) => setTaluka(e.target.value)}
-                                        placeholder="e.g. Sidhpur"
-                                        className="h-12 rounded-xl border-slate-200 focus:border-blue-500 focus:ring-blue-500"
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label className="text-sm font-semibold text-slate-700">District</Label>
-                                    <Input
-                                        id="district"
-                                        value={district}
-                                        onChange={(e) => setDistrict(e.target.value)}
-                                        placeholder="e.g. Patan"
-                                        className="h-12 rounded-xl border-slate-200 focus:border-blue-500 focus:ring-blue-500"
-                                    />
-                                </div>
-                            </div>
-
-                            <Separator className="bg-slate-200/60 my-6" />
-
-                            <div className="space-y-6">
-                                <div className="space-y-2">
-                                    <Label className="text-sm font-semibold text-slate-700">Primary Avatar *</Label>
-                                    <Select
-                                        value={primaryAvatar}
-                                        onValueChange={(v) => {
-                                            setPrimaryAvatar(v);
-                                            setPrimarySubtype([]); // reset when primary changes
-                                        }}
-                                        required
-                                    >
-                                        <SelectTrigger className="h-12 rounded-xl border-slate-200 bg-white">
-                                            <SelectValue placeholder="Select Primary Avatar">
-                                                {primaryAvatar ? (() => {
-                                                    const cfg = AVATAR_SAMBANDH_CONFIG.find(a => a.id === primaryAvatar);
-                                                    return cfg ? (
-                                                        <span className="flex items-center gap-2">
-                                                            <span className="w-3 h-3 rounded-full shrink-0 inline-block" style={{ backgroundColor: cfg.color }} />
-                                                            {cfg.label}
-                                                        </span>
-                                                    ) : 'Select Primary Avatar';
-                                                })() : 'Select Primary Avatar'}
-                                            </SelectValue>
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {AVATAR_SAMBANDH_CONFIG.map((av) => (
-                                                <SelectItem key={av.id} value={av.id}>
-                                                    <div className="flex items-center gap-2.5">
-                                                        <span className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: av.color }} />
-                                                        <span>{av.label}</span>
-                                                    </div>
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                    <p className="text-xs text-slate-400">Controls the color of the map pin and primary categorization.</p>
+                                {/* Taluka + District */}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                    <div className="space-y-3">
+                                        <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Taluka</Label>
+                                        <Input
+                                            id="taluka"
+                                            value={taluka}
+                                            onChange={(e) => setTaluka(e.target.value)}
+                                            placeholder="e.g. Sidhpur"
+                                            className="h-14 rounded-2xl border-slate-100 bg-slate-50/30 focus:bg-white focus:border-blue-500/50 transition-all text-sm font-medium"
+                                        />
+                                    </div>
+                                    <div className="space-y-3">
+                                        <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">District</Label>
+                                        <Input
+                                            id="district"
+                                            value={district}
+                                            onChange={(e) => setDistrict(e.target.value)}
+                                            placeholder="e.g. Patan"
+                                            className="h-14 rounded-2xl border-slate-100 bg-slate-50/30 focus:bg-white focus:border-blue-500/50 transition-all text-sm font-medium"
+                                        />
+                                    </div>
                                 </div>
 
-                                {showSubTypes && (
-                                    <div className="space-y-2">
-                                        <Label className="text-sm font-semibold text-slate-700">Avatar Sub Type(s)</Label>
-                                        <ReactSelect
-                                            isMulti
-                                            options={primaryAvatarConfig.subdivisions.filter(s => s.id !== 'complete').map(s => ({ value: s.id, label: s.label }))}
-                                            value={primaryAvatarConfig.subdivisions
-                                                .filter(s => primarySubtype.includes(s.id))
-                                                .map(s => ({ value: s.id, label: s.label }))}
-                                            onChange={(selected) => {
-                                                setPrimarySubtype(selected ? selected.map((s: any) => s.value) : []);
+                                <div className="h-px bg-slate-100/60" />
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                                    <div className="space-y-3">
+                                        <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Primary Avatar *</Label>
+                                        <Select
+                                            value={primaryAvatar}
+                                            onValueChange={(v) => {
+                                                setPrimaryAvatar(v);
+                                                setPrimarySubtype([]); // reset when primary changes
                                             }}
-                                            placeholder="Select Sub Types..."
-                                            className="react-select-container text-sm"
-                                            classNamePrefix="react-select"
-                                            styles={{
-                                                control: (base) => ({
-                                                    ...base,
-                                                    minHeight: '48px',
-                                                    borderRadius: '0.75rem',
-                                                    borderColor: '#e2e8f0',
-                                                    boxShadow: 'none',
-                                                    '&:hover': {
-                                                        borderColor: '#cbd5e1'
+                                            required
+                                        >
+                                            <SelectTrigger className="h-14 rounded-2xl border-slate-100 bg-slate-50/30 focus:bg-white transition-all text-sm">
+                                                <SelectValue placeholder="Select Primary Avatar">
+                                                    {primaryAvatar ? (() => {
+                                                        const cfg = AVATAR_SAMBANDH_CONFIG.find(a => a.id === primaryAvatar);
+                                                        return cfg ? (
+                                                            <span className="flex items-center gap-2">
+                                                                <span className="w-2.5 h-2.5 rounded-full shrink-0 inline-block" style={{ backgroundColor: cfg.color }} />
+                                                                <span className="font-bold">{cfg.label}</span>
+                                                            </span>
+                                                        ) : 'Select Primary Avatar';
+                                                    })() : 'Select Primary Avatar'}
+                                                </SelectValue>
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {AVATAR_SAMBANDH_CONFIG.map((av) => (
+                                                    <SelectItem key={av.id} value={av.id}>
+                                                        <div className="flex items-center gap-2.5">
+                                                            <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: av.color }} />
+                                                            <span className="text-sm font-medium">{av.label}</span>
+                                                        </div>
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+
+                                    {showSubTypes && (
+                                        <div className="space-y-3">
+                                            <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Avatar Sub Type(s)</Label>
+                                            <ReactSelect
+                                                isMulti
+                                                options={primaryAvatarConfig.subdivisions.filter(s => s.id !== 'complete').map(s => ({ value: s.id, label: s.label }))}
+                                                value={primaryAvatarConfig.subdivisions
+                                                    .filter(s => primarySubtype.includes(s.id))
+                                                    .map(s => ({ value: s.id, label: s.label }))}
+                                                onChange={(selected) => {
+                                                    setPrimarySubtype(selected ? selected.map((s: any) => s.value) : []);
+                                                }}
+                                                placeholder="Select..."
+                                                className="react-select-container text-sm"
+                                                classNamePrefix="react-select"
+                                                styles={{
+                                                    control: (base) => ({
+                                                        ...base,
+                                                        minHeight: '56px',
+                                                        borderRadius: '1rem',
+                                                        borderColor: '#f1f5f9',
+                                                        backgroundColor: '#f8fafc4d',
+                                                        boxShadow: 'none',
+                                                        '&:hover': {
+                                                            borderColor: '#e2e8f0'
+                                                        }
+                                                    })
+                                                }}
+                                            />
+                                        </div>
+                                    )}
+
+                                    <div className="space-y-3">
+                                        <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Sthan Type *</Label>
+                                        <Select 
+                                            value={sthanTypeId || sthan} 
+                                            onValueChange={(v) => {
+                                                const typeObj = sthanTypes.find(t => t.id === v || t.name === v);
+                                                if (typeObj) {
+                                                    setSthan(typeObj.name);
+                                                    setSthanTypeId(typeObj.id);
+                                                    if (typeObj.pinType) {
+                                                        setPinIcon(typeObj.pinType);
                                                     }
-                                                })
-                                            }}
-                                        />
-                                    </div>
-                                )}
-
-                                <div className="space-y-2">
-                                    <Label className="text-sm font-semibold text-slate-700">Sthan Type *</Label>
-                                    <Select 
-                                        value={sthanTypeId || sthan} 
-                                        onValueChange={(v) => {
-                                            const typeObj = sthanTypes.find(t => t.id === v || t.name === v);
-                                            if (typeObj) {
-                                                setSthan(typeObj.name);
-                                                setSthanTypeId(typeObj.id);
-                                                if (typeObj.pinType) {
-                                                    setPinIcon(typeObj.pinType);
+                                                } else {
+                                                    setSthan(v);
+                                                    setSthanTypeId("");
                                                 }
-                                            } else {
-                                                setSthan(v);
-                                                setSthanTypeId("");
-                                            }
-                                        }} 
-                                        required
-                                    >
-                                        <SelectTrigger className="h-12 rounded-xl border-slate-200 bg-white">
-                                            <SelectValue placeholder="Select Sthan Type" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {getValidSthanTypes(primaryAvatar, sthanTypes).map((st) => (
-                                                <SelectItem key={st.id} value={st.id}>
-                                                    <div className="flex items-center gap-2">
-                                                        <div 
-                                                            className="w-2.5 h-2.5 rounded-full shrink-0" 
-                                                            style={{ backgroundColor: getAvatarColor(st.avatarSambandh) || st.color }} 
-                                                        />
-                                                        <span>{st.name}</span>
-                                                    </div>
-                                                </SelectItem>
-                                            ))}
-                                            {sthan && !sthanTypeId && !getValidSthanTypes(primaryAvatar, sthanTypes).some(t => t.name === sthan) && (
-                                                <SelectItem value={sthan}>
-                                                    <div className="flex items-center gap-2">
-                                                        <span>{sthan}</span>
-                                                    </div>
-                                                </SelectItem>
-                                            )}
-                                        </SelectContent>
-                                    </Select>
-                                    <p className="text-xs text-slate-400">Defines the default map pin icon.</p>
+                                            }} 
+                                            required
+                                        >
+                                            <SelectTrigger className="h-14 rounded-2xl border-slate-100 bg-slate-50/30 focus:bg-white transition-all text-sm">
+                                                <SelectValue placeholder="Select Sthan Type" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {getValidSthanTypes(primaryAvatar, sthanTypes).map((st) => (
+                                                    <SelectItem key={st.id} value={st.id}>
+                                                        <div className="flex items-center gap-2">
+                                                            <div 
+                                                                className="w-2 h-2 rounded-full shrink-0" 
+                                                                style={{ backgroundColor: getAvatarColor(st.avatarSambandh) || st.color }} 
+                                                            />
+                                                            <span className="text-sm font-medium">{st.name}</span>
+                                                        </div>
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+
+                                    <RelatedAvatarsSelect 
+                                        value={relatedAvatars}
+                                        onChange={setRelatedAvatars}
+                                        excludeAvatarId={primaryAvatar}
+                                    />
                                 </div>
-
-                                <RelatedAvatarsSelect 
-                                    value={relatedAvatars}
-                                    onChange={setRelatedAvatars}
-                                    excludeAvatarId={primaryAvatar}
-                                />
                             </div>
-
                         </div>
                     </div>
 
                     <Separator className="bg-slate-200/60" />
 
                     {/* ── 2. Navigation & Access ── */}
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
-                        <div>
-                            <h2 className="text-xl font-bold text-slate-900">Navigation &amp; Access</h2>
-                            <p className="mt-2 text-sm leading-relaxed text-slate-500 font-medium">
-                                Help pilgrims find their way to this sacred site.
-                            </p>
-                        </div>
-                        <div className="lg:col-span-2 space-y-6">
-                            {/* Lat/Lng */}
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div className="space-y-2">
-                                    <Label className="text-sm font-semibold text-slate-700">Latitude *</Label>
-                                    <Input
-                                        id="latitude"
-                                        value={latitude}
-                                        onChange={(e) => setLatitude(e.target.value)}
-                                        required
-                                        placeholder="e.g. 23.8506"
-                                        type="number"
-                                        step="any"
-                                        className="h-12 rounded-xl border-slate-200 focus:border-blue-500 focus:ring-blue-500"
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label className="text-sm font-semibold text-slate-700">Longitude *</Label>
-                                    <Input
-                                        id="longitude"
-                                        value={longitude}
-                                        onChange={(e) => setLongitude(e.target.value)}
-                                        required
-                                        placeholder="e.g. 72.1154"
-                                        type="number"
-                                        step="any"
-                                        className="h-12 rounded-xl border-slate-200 focus:border-blue-500 focus:ring-blue-500"
-                                    />
-                                </div>
+                    <div className="pb-24">
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 lg:gap-20">
+                            <div className="space-y-3">
+                                <h2 className="text-xl font-black text-slate-900 tracking-tight">Navigation</h2>
+                                <p className="text-[11px] leading-relaxed text-slate-400 font-bold uppercase tracking-widest">
+                                    LOCATION & ACCESS
+                                </p>
+                                <p className="mt-4 text-xs leading-relaxed text-slate-500 font-medium max-w-[200px]">
+                                    Help pilgrims find their way to this sacred site with precise coordinates.
+                                </p>
                             </div>
-                            <p className="text-xs text-slate-400 font-medium -mt-2">
-                                Right-click on Google Maps → first option to copy coordinates.
-                            </p>
+                            <div className="lg:col-span-2 space-y-10">
+                                {/* Lat/Lng */}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                    <div className="space-y-3">
+                                        <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Latitude *</Label>
+                                        <div className="relative group">
+                                            <Input
+                                                id="latitude"
+                                                value={latitude}
+                                                onChange={(e) => setLatitude(e.target.value)}
+                                                required
+                                                placeholder="e.g. 23.8506"
+                                                type="number"
+                                                step="any"
+                                                className="h-14 pl-12 rounded-2xl border-slate-100 bg-slate-50/30 focus:bg-white transition-all text-sm font-medium"
+                                            />
+                                            <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 group-focus-within:text-blue-600 transition-colors" />
+                                        </div>
+                                    </div>
+                                    <div className="space-y-3">
+                                        <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Longitude *</Label>
+                                        <div className="relative group">
+                                            <Input
+                                                id="longitude"
+                                                value={longitude}
+                                                onChange={(e) => setLongitude(e.target.value)}
+                                                required
+                                                placeholder="e.g. 72.1154"
+                                                type="number"
+                                                step="any"
+                                                className="h-14 pl-12 rounded-2xl border-slate-100 bg-slate-50/30 focus:bg-white transition-all text-sm font-medium"
+                                            />
+                                            <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 group-focus-within:text-blue-600 transition-colors" />
+                                        </div>
+                                    </div>
+                                </div>
+                                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wide -mt-6">
+                                    Right-click on Google Maps → first option to copy coordinates.
+                                </p>
 
-                            {/* Google Maps URL */}
-                            <div className="space-y-2">
-                                <Label className="text-sm font-semibold text-slate-700">Google Maps Integration (URL)</Label>
-                                <div className="relative group">
-                                    <Input
-                                        id="locationLink"
-                                        value={locationLink}
-                                        onChange={(e) => setLocationLink(e.target.value)}
-                                        placeholder="https://goo.gl/maps/..."
-                                        className="h-12 pl-10 rounded-xl border-slate-200 focus:border-blue-500 focus:ring-blue-500"
-                                    />
-                                    <ExternalLink className="absolute left-3.5 top-3.5 w-4 h-4 text-slate-400 group-focus-within:text-blue-500 transition-colors" />
+                                {/* Google Maps URL */}
+                                <div className="space-y-3">
+                                    <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">External Integration (URL)</Label>
+                                    <div className="relative group">
+                                        <Input
+                                            id="locationLink"
+                                            value={locationLink}
+                                            onChange={(e) => setLocationLink(e.target.value)}
+                                            placeholder="https://goo.gl/maps/..."
+                                            className="h-14 pl-12 rounded-2xl border-slate-100 bg-slate-50/30 focus:bg-white transition-all text-sm font-medium"
+                                        />
+                                        <ExternalLink className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 group-focus-within:text-blue-600 transition-colors" />
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
 
                     {/* ── 3. Administration ── */}
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
-                        <div>
-                            <h2 className="text-xl font-bold text-slate-900">Administration</h2>
-                            <p className="mt-2 text-sm leading-relaxed text-slate-500 font-medium">
-                                Manually manage the verification and completion status of this sthana.
-                            </p>
-                        </div>
-                        <div className="lg:col-span-2 space-y-6">
-                            {/* Architecture Toggle */}
-                            <div className={cn(
-                                "flex items-start justify-between p-5 rounded-xl border-2 transition-all",
-                                hasArchitecture
-                                    ? "bg-amber-50 border-amber-200"
-                                    : "bg-emerald-50 border-emerald-200"
-                            )}>
-                                <div className="space-y-1 flex-1 pr-4">
-                                    <div className="flex items-center gap-2">
-                                        <span className={cn(
-                                            "text-xs font-black uppercase tracking-widest px-2 py-0.5 rounded",
-                                            hasArchitecture ? "bg-amber-200 text-amber-800" : "bg-emerald-200 text-emerald-800"
-                                        )}>
-                                            {hasArchitecture ? "WITH ARCHITECTURE" : "STANDALONE"}
-                                        </span>
-                                    </div>
-                                    <Label className="text-base font-bold text-slate-900 block mt-1">
-                                        {hasArchitecture ? "Link to Architecture Page" : "Standalone Sthan"}
-                                    </Label>
-                                    <p className="text-sm text-slate-500">
-                                        {hasArchitecture
-                                            ? "After saving, you'll be taken to configure images, hotspots & descriptions."
-                                            : "Saved directly to map without a full architecture page. Best for location-only sthans."}
-                                    </p>
-                                </div>
-                                <Switch
-                                    checked={hasArchitecture}
-                                    onCheckedChange={setHasArchitecture}
-                                    className="data-[state=checked]:bg-amber-500 mt-1"
-                                />
+                    <div className="pb-24">
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 lg:gap-20">
+                            <div className="space-y-3">
+                                <h2 className="text-xl font-black text-slate-900 tracking-tight">Management</h2>
+                                <p className="text-[11px] leading-relaxed text-slate-400 font-bold uppercase tracking-widest">
+                                    ADMIN & VISIBILITY
+                                </p>
+                                <p className="mt-4 text-xs leading-relaxed text-slate-500 font-medium max-w-[200px]">
+                                    Manually manage the verification and completion status of this sacred site.
+                                </p>
                             </div>
-
-                            {/* Status & Progress Card */}
-                            <div className="bg-white p-6 rounded-xl border border-slate-200 space-y-4">
-                                <div className="flex items-center justify-between">
-                                    <div className="space-y-1">
-                                        <Label className="text-base font-bold text-slate-900 block">Sthana Status</Label>
-                                        <p className="text-sm text-slate-500">Live computed status based on data completeness.</p>
+                            <div className="lg:col-span-2 space-y-10">
+                                {/* Architecture Toggle */}
+                                <div className={cn(
+                                    "flex items-center justify-between p-7 rounded-[2rem] border transition-all duration-500",
+                                    hasArchitecture
+                                        ? "bg-blue-50/30 border-blue-100"
+                                        : "bg-emerald-50/30 border-emerald-100"
+                                )}>
+                                    <div className="space-y-1.5 flex-1 pr-8">
+                                        <div className="flex items-center gap-3">
+                                            <span className={cn(
+                                                "text-[9px] font-black uppercase tracking-[0.2em] px-3 py-1 rounded-full",
+                                                hasArchitecture ? "bg-blue-100 text-blue-700" : "bg-emerald-100 text-emerald-700"
+                                            )}>
+                                                {hasArchitecture ? "LINKED SYSTEM" : "STANDALONE"}
+                                            </span>
+                                        </div>
+                                        <Label className="text-lg font-black text-slate-900 block mt-2">
+                                            {hasArchitecture ? "Architecture Integration" : "Standard Entry"}
+                                        </Label>
+                                        <p className="text-xs text-slate-500 font-medium leading-relaxed">
+                                            {hasArchitecture
+                                                ? "Enables advanced configuration for images, hotspots, and historical viewports."
+                                                : "Simple directory entry. Best for standalone sthans without detailed imagery."}
+                                        </p>
                                     </div>
-                                    <div className="shrink-0 flex gap-2">
-                                        {liveStatus === 'PUBLISHED' && (
-                                            <span className="inline-flex items-center px-3 py-1 rounded text-xs font-bold bg-blue-50 text-blue-600 border border-blue-100 uppercase tracking-wide gap-1">
-                                                🌍 Published
-                                            </span>
-                                        )}
-                                        {liveStatus === 'VERIFIED' && (
-                                            <span className="inline-flex items-center px-3 py-1 rounded text-xs font-bold bg-[#C9A961]/10 text-[#a88b48] border border-[#C9A961]/20 uppercase tracking-wide gap-1">
-                                                🟢 Verified
-                                            </span>
-                                        )}
-                                        {liveStatus === 'COMPLETE' && (
-                                            <span className="inline-flex items-center px-3 py-1 rounded text-xs font-bold bg-emerald-50 text-emerald-600 border border-emerald-100 uppercase tracking-wide gap-1">
-                                                ✅ Complete
-                                            </span>
-                                        )}
-                                        {liveStatus === 'IN_PROGRESS' && (
-                                            <span className="inline-flex items-center px-3 py-1 rounded text-xs font-bold bg-amber-50 text-amber-600 border border-amber-100 uppercase tracking-wide gap-1">
-                                                ✏️ In Progress
-                                            </span>
-                                        )}
-                                        {liveStatus === 'DRAFT' && (
-                                            <span className="inline-flex items-center px-3 py-1 rounded text-xs font-bold bg-slate-100 text-slate-500 border border-slate-200 uppercase tracking-wide gap-1">
-                                                📝 Draft
-                                            </span>
-                                        )}
+                                    <Switch
+                                        checked={hasArchitecture}
+                                        onCheckedChange={setHasArchitecture}
+                                        className="data-[state=checked]:bg-blue-600 scale-125 mr-4"
+                                    />
+                                </div>
+
+                                {/* Status & Progress Card */}
+                                <div className="bg-slate-50/30 p-8 rounded-[2rem] border border-slate-100 space-y-8">
+                                    <div className="flex items-center justify-between">
+                                        <div className="space-y-1.5">
+                                            <Label className="text-sm font-black text-slate-800 uppercase tracking-widest">Sthana Status</Label>
+                                            <p className="text-xs text-slate-400 font-medium">Auto-computed based on dataset completeness.</p>
+                                        </div>
+                                        <div className="shrink-0">
+                                            {liveStatus === 'PUBLISHED' && (
+                                                <span className="inline-flex items-center px-4 py-2 rounded-xl text-[10px] font-black bg-blue-50 text-blue-600 border border-blue-100 uppercase tracking-widest gap-2">
+                                                    <span className="w-1.5 h-1.5 rounded-full bg-blue-500" /> Published
+                                                </span>
+                                            )}
+                                            {liveStatus === 'VERIFIED' && (
+                                                <span className="inline-flex items-center px-4 py-2 rounded-xl text-[10px] font-black bg-amber-50 text-amber-600 border border-amber-100 uppercase tracking-widest gap-2">
+                                                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500" /> Verified
+                                                </span>
+                                            )}
+                                            {liveStatus === 'COMPLETE' && (
+                                                <span className="inline-flex items-center px-4 py-2 rounded-xl text-[10px] font-black bg-emerald-50 text-emerald-600 border border-emerald-100 uppercase tracking-widest gap-2">
+                                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> Complete
+                                                </span>
+                                            )}
+                                            {liveStatus === 'IN_PROGRESS' && (
+                                                <span className="inline-flex items-center px-4 py-2 rounded-xl text-[10px] font-black bg-amber-50/50 text-amber-600 border border-amber-100/50 uppercase tracking-widest gap-2">
+                                                    ✏️ In Progress
+                                                </span>
+                                            )}
+                                            {liveStatus === 'DRAFT' && (
+                                                <span className="inline-flex items-center px-4 py-2 rounded-xl text-[10px] font-black bg-slate-100 text-slate-500 border border-slate-200 uppercase tracking-widest gap-2">
+                                                    📝 Draft
+                                                </span>
+                                            )}
+                                        </div>
+                                    </div>
+                                    
+                                    {/* Verification & Publishing is now handled in the dedicated Verification Module */}
+                                    <div className="pt-6 border-t border-slate-200/50">
+                                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest leading-relaxed">
+                                            Status is managed centrally by administrators to ensure data integrity.
+                                        </p>
                                     </div>
                                 </div>
-                                
-                                {/* Professional Action Buttons */}
-                                {(liveStatus === 'COMPLETE' || liveStatus === 'VERIFIED' || liveStatus === 'PUBLISHED') && (
-                                    <div className="pt-4 border-t border-slate-100 flex flex-wrap gap-3">
-                                        {liveStatus === 'COMPLETE' && (
-                                            <Button 
-                                                type="button" 
-                                                onClick={() => { setManualStatus('VERIFIED'); toast({ title: "Status Updated", description: "Marked as Verified. Save to apply changes." }); }}
-                                                className="bg-[#C9A961] hover:bg-[#b0924e] text-white"
-                                            >
-                                                Verify Sthana
-                                            </Button>
-                                        )}
-                                        {liveStatus === 'VERIFIED' && (
-                                            <Button 
-                                                type="button" 
-                                                onClick={() => { setManualStatus('PUBLISHED'); toast({ title: "Status Updated", description: "Marked as Published. Save to apply changes." }); }}
-                                                className="bg-blue-600 hover:bg-blue-700 text-white"
-                                            >
-                                                Publish Sthana
-                                            </Button>
-                                        )}
-                                        {liveStatus === 'PUBLISHED' && (
-                                            <p className="text-xs text-slate-400 font-medium py-2">
-                                                This sthana is verified and published globally.
-                                            </p>
-                                        )}
-                                    </div>
-                                )}
                             </div>
                         </div>
                     </div>
 
                     {/* ── Bottom Action Row ── */}
-                    <div className="flex justify-end gap-4 pt-6 border-t border-slate-200/60">
-                        <Button
-                            type="button"
-                            variant="outline"
-                            onClick={() => navigate("/admin/sthana-directory")}
-                            className="rounded-xl h-12 px-8 font-bold border-slate-200"
-                        >
-                            Cancel
-                        </Button>
-                        <Button
-                            type="submit"
-                            disabled={loading}
-                            className={cn(
-                                "text-white rounded-xl px-8 h-12 shadow-lg font-bold min-w-[180px]",
-                                hasArchitecture
-                                    ? "bg-blue-900 hover:bg-blue-800 shadow-blue-900/20"
-                                    : "bg-emerald-700 hover:bg-emerald-600 shadow-emerald-900/20"
-                            )}
-                        >
-                            <Save className="w-4 h-4 mr-2" />
-                            {loading ? "Saving..." : hasArchitecture ? "Save & Configure" : "Save to Map"}
-                        </Button>
+                    <div className="flex items-center justify-between gap-6 pt-12 border-t border-slate-200/40">
+                        <div className="flex-1 max-w-lg">
+                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest leading-relaxed">
+                                Ensure all required fields marked with * are completed before submitting for verification.
+                            </p>
+                        </div>
+                        <div className="flex gap-4 items-center shrink-0">
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                onClick={() => navigate("/admin/sthana-directory")}
+                                className="rounded-2xl h-14 px-10 font-black text-xs uppercase tracking-[0.2em] text-slate-400 hover:text-slate-900 transition-all"
+                            >
+                                Cancel Changes
+                            </Button>
+                            <Button
+                                type="submit"
+                                disabled={loading}
+                                className={cn(
+                                    "text-white rounded-2xl px-12 h-14 shadow-2xl font-black text-[11px] uppercase tracking-[0.25em] transition-all duration-500",
+                                    hasArchitecture
+                                        ? "bg-blue-900 hover:bg-black shadow-blue-900/20"
+                                        : "bg-emerald-800 hover:bg-black shadow-emerald-900/20"
+                                )}
+                            >
+                                {loading ? (
+                                    <span className="flex items-center gap-3">
+                                        <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                        Processing...
+                                    </span>
+                                ) : (
+                                    <span className="flex items-center gap-3">
+                                        <Save className="w-4 h-4" />
+                                        {hasArchitecture ? "Execute & Configure" : "Save Entry"}
+                                    </span>
+                                )}
+                            </Button>
+                        </div>
                     </div>
                 </form>
             </div>
-        </div>
     );
 }

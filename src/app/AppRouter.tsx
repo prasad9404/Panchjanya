@@ -43,6 +43,7 @@ const HelpCenter = lazy(() => import("@/app/public/HelpCenter"));
 const AdminLogin = lazy(() => import("@/app/admin/AdminLogin"));
 const AdminDashboard = lazy(() => import("@/app/admin/AdminDashboard"));
 const SthanaDirectory = lazy(() => import("@/app/admin/SthanaDirectory"));
+const SthanaVerification = lazy(() => import("@/app/admin/SthanaVerification"));
 const ManageSthana = lazy(() => import("@/app/admin/ManageSthana"));
 
 const AdminAddTemple = lazy(() => import("@/app/admin/AdminAddTemple"));
@@ -52,6 +53,9 @@ const TempleArchitectureAdmin = lazy(() => import("@/app/admin/TempleArchitectur
 const ManageYatra = lazy(() => import("@/app/admin/ManageYatra"));
 const RajViharanAdmin = lazy(() => import("@/app/admin/RajViharanAdmin"));
 const AbbreviationsManager = lazy(() => import("@/app/admin/AbbreviationsManager"));
+const MultiStepFormDemo = lazy(() => import("@/app/demo/MultiStepFormDemo"));
+const DashboardDemo = lazy(() => import("@/app/demo/DashboardDemo"));
+const FormLayoutDemo = lazy(() => import("@/app/demo/FormLayoutDemo"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -101,6 +105,13 @@ const App = () => {
                       <Route path="/admin/sthana-directory" element={
                         <PrivateRoute adminRequired={true} >
                           <SthanaDirectory />
+                        </PrivateRoute>
+                      }
+                      />
+
+                      <Route path="/admin/sthana-verification" element={
+                        <PrivateRoute adminRequired={true} >
+                          <SthanaVerification />
                         </PrivateRoute>
                       }
                       />
@@ -217,6 +228,19 @@ const App = () => {
                         }
                       />
 
+                      <Route
+                        path="/admin/demo/multistep"
+                        element={<MultiStepFormDemo />}
+                      />
+                      <Route
+                        path="/admin/demo/dashboard"
+                        element={<DashboardDemo />}
+                      />
+
+                      <Route
+                        path="/admin/demo/form-layout"
+                        element={<FormLayoutDemo />}
+                      />
                       {/* ---------------------- 404 ---------------------- */}
                       <Route path="*" element={<NotFound />} />
                     </Routes>

@@ -2,177 +2,327 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import AdminLayout from "@/shared/components/admin/AdminLayout";
 import { Button } from "@/shared/components/ui/button";
-import { doc, getDoc } from "firebase/firestore";
+import { doc, getDoc, updateDoc, Timestamp } from "firebase/firestore";
 import { db } from "@/auth/firebase";
-import { ArrowLeft, Edit3, Image as ImageIcon, FileText } from "lucide-react";
+import { ArrowLeft, Check, ExternalLink, AlertTriangle, MessageSquare, CheckCircle2, Send, Clock } from "lucide-react";
 import { cn } from "@/shared/lib/utils";
+import { useToast } from "@/shared/hooks/use-toast";
+import { useAuth } from "@/auth/AuthContext";
 
+import { SthanaIdentifier } from "@/shared/components/admin/SthanaIdentifier";
 import TempleForm from "@/shared/components/admin/TempleForm";
 import TempleArchitectureAdmin from "./TempleArchitectureAdmin";
+import { getAvatarColor } from "@/shared/utils/sthanTypes";
 
 export default function ManageSthana() {
-    const { id } = useParams<{ id: string }>();
-    const navigate = useNavigate();
-    
-    const [loading, setLoading] = useState(true);
-    const [templeData, setTempleData] = useState<any>(null);
-    const [activeTab, setActiveTab] = useState<'info' | 'architecture'>('info');
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const { user } = useAuth();
 
-    useEffect(() => {
-        if (!id) return;
-        const fetchTemple = async () => {
-            try {
-                const snap = await getDoc(doc(db, "temples", id));
-                if (snap.exists()) {
-                    setTempleData(snap.data());
-                }
-            } catch (e) {
-                console.error("Failed to load sthana for manager:", e);
-            } finally {
-                setLoading(false);
-            }
-        };
-        fetchTemple();
-    }, [id]);
+  const [loading, setLoading] = useState(true);
+  const [templeData, setTempleData] = useState<any>(null);
+  const [activeStep, setActiveStep] = useState<'sthan-info' | 'architecture-view' | 'sthana-details'>('sthan-info');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-    if (loading) {
-        return (
-            <AdminLayout>
-                <div className="flex h-screen items-center justify-center">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
-                </div>
-            </AdminLayout>
-        );
+  const fetchTemple = async () => {
+    if (!id) return;
+    try {
+      const snap = await getDoc(doc(db, "temples", id));
+      if (snap.exists()) {
+        setTempleData(snap.data());
+      }
+    } catch (e) {
+      console.error("Failed to load sthana for manager:", e);
+    } finally {
+      setLoading(false);
     }
+  };
 
-    if (!templeData) {
-        return (
-            <AdminLayout>
-                <div className="p-10 text-center">
-                    <h2 className="text-xl font-bold">Sthana Not Found</h2>
-                    <Button className="mt-4" onClick={() => navigate("/admin/sthana-directory")}>
-                        Return to Directory
-                    </Button>
-                </div>
-            </AdminLayout>
-        );
+  useEffect(() => {
+    fetchTemple();
+  }, [id]);
+
+  const handleMarkAsReady = async () => {
+    if (!id) return;
+    try {
+      setIsSubmitting(true);
+      const ref = doc(db, "temples", id);
+      await updateDoc(ref, {
+        status: "COMPLETE",
+        reviewStatus: "PENDING",
+        updatedAt: Timestamp.now()
+      });
+      toast({ title: "Submitted for Review", description: "The admin has been notified." });
+      fetchTemple();
+    } catch (error) {
+       console.error("Error submitting:", error);
+    } finally {
+      setIsSubmitting(false);
     }
+  };
 
-    // Determine architecture status mapping
-    const hasArchitecture = templeData.hasArchitecture !== undefined 
-        ? templeData.hasArchitecture 
-        : (templeData.isStandalone !== undefined ? !templeData.isStandalone : (!!templeData.architectureImage || !!templeData.architectureImages?.length));
+  const handleResolveComment = async (commentIndex: number) => {
+    if (!id || !templeData.reviewComments) return;
+    try {
+      const updatedComments = [...templeData.reviewComments];
+      updatedComments[commentIndex] = {
+        ...updatedComments[commentIndex],
+        status: "RESOLVED"
+      };
+      
+      const ref = doc(db, "temples", id);
+      await updateDoc(ref, {
+        reviewComments: updatedComments,
+        updatedAt: Timestamp.now()
+      });
+      
+      fetchTemple();
+      toast({ title: "Comment Resolved", description: "Feedback marked as addressed." });
+    } catch (error) {
+      console.error("Error resolving comment:", error);
+    }
+  };
 
-    // Because TempleForm and TempleArchitectureAdmin have their own "AdminLayout" or full page styles,
-    // we use a neat CSS trick to hide their native top-navs/headers when rendered inside this tab view
+  if (loading) {
     return (
-        <AdminLayout>
-            <div className="min-h-screen bg-[#F9F6F0] -m-6 p-0 flex flex-col hide-child-headers">
-                
-                {/* Unified Tab Header */}
-                <div className="bg-white border-b border-slate-200 px-6 py-4 sticky top-0 z-50 shadow-sm flex items-center justify-between">
-                    <div className="flex items-center gap-6">
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => navigate("/admin/sthana-directory")}
-                            className="p-0 hover:bg-transparent text-slate-500 hover:text-slate-800"
-                        >
-                            <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center mr-3">
-                                <ArrowLeft className="w-4 h-4" />
-                            </div>
-                            <span className="font-bold hidden sm:inline">Directory</span>
-                        </Button>
-                        
-                        <div className="h-6 w-px bg-slate-200" />
-                        
-                        <div>
-                            <h1 className="text-xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
-                                {templeData.name}
-                                {hasArchitecture ? (
-                                    <span className="text-[10px] font-black uppercase tracking-widest bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">
-                                        Architecture
-                                    </span>
-                                ) : (
-                                    <span className="text-[10px] font-black uppercase tracking-widest bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full">
-                                        Standalone
-                                    </span>
-                                )}
-                            </h1>
-                        </div>
-                    </div>
-
-                    {/* Tab Navigation Controls */}
-                    <div className="flex p-1 bg-slate-100 rounded-xl border border-slate-200">
-                        <button
-                            onClick={() => setActiveTab('info')}
-                            className={cn(
-                                "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all",
-                                activeTab === 'info' 
-                                    ? "bg-white text-blue-700 shadow-sm" 
-                                    : "text-slate-500 hover:text-slate-700"
-                            )}
-                        >
-                            <Edit3 className="w-4 h-4" />
-                            Sthan Info
-                        </button>
-                        
-                        {hasArchitecture ? (
-                            <button
-                                onClick={() => setActiveTab('architecture')}
-                                className={cn(
-                                    "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all",
-                                    activeTab === 'architecture' 
-                                        ? "bg-white text-amber-700 shadow-sm" 
-                                        : "text-slate-500 hover:text-slate-700"
-                                )}
-                            >
-                                <ImageIcon className="w-4 h-4" />
-                                Architecture & Details
-                            </button>
-                        ) : (
-                            <button
-                                onClick={() => setActiveTab('architecture')}
-                                className={cn(
-                                    "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all",
-                                    activeTab === 'architecture' 
-                                        ? "bg-white text-emerald-700 shadow-sm" 
-                                        : "text-slate-500 hover:text-slate-700"
-                                )}
-                            >
-                                <FileText className="w-4 h-4" />
-                                Details & Media
-                            </button>
-                        )}
-                    </div>
-                </div>
-
-                {/* Content Area */}
-                <div className="flex-1 relative overflow-auto">
-                    {/* Add global CSS to hide redundant headers from child components */}
-                    <style>{`
-                        .hide-child-headers .bg-white.p-2.rounded-2xl.shadow-sm, /* TempleForm top header */
-                        .hide-child-headers .admin-layout-wrapper > header, /* AdminLayout header if nested */
-                        .hide-child-headers .temple-arch-header /* Any custom header in TempleArchitectureAdmin */
-                        { display: none !important; }
-                    `}</style>
-
-                    <div className={cn(
-                        "transition-opacity duration-300",
-                        activeTab === 'info' ? "opacity-100 relative z-10" : "opacity-0 absolute inset-0 pointer-events-none"
-                    )}>
-                        <TempleForm templeId={id} />
-                    </div>
-
-                    <div className={cn(
-                        "transition-opacity duration-300",
-                        activeTab === 'architecture' ? "opacity-100 relative z-10" : "opacity-0 absolute inset-0 pointer-events-none"
-                    )}>
-                        <TempleArchitectureAdmin />
-                    </div>
-                </div>
-
-            </div>
-        </AdminLayout>
+      <AdminLayout>
+        <div className="flex h-screen items-center justify-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+        </div>
+      </AdminLayout>
     );
+  }
+
+  if (!templeData) {
+    return (
+      <AdminLayout>
+        <div className="p-10 text-center">
+          <h2 className="text-xl font-bold">Sthana Not Found</h2>
+          <Button className="mt-4" onClick={() => navigate("/admin/sthana-directory")}>
+            Return to Directory
+          </Button>
+        </div>
+      </AdminLayout>
+    );
+  }
+
+  // Determine architecture status mapping
+  const hasArchitecture = templeData.hasArchitecture !== undefined
+    ? templeData.hasArchitecture
+    : (templeData.isStandalone !== undefined ? !templeData.isStandalone : (!!templeData.architectureImage || !!templeData.architectureImages?.length));
+
+  const stepIds = ['sthan-info', 'architecture-view', 'sthana-details'];
+
+  return (
+    <AdminLayout>
+      <div className="min-h-screen bg-white -m-11 p-1 flex flex-col hide-child-headers font-[Inter]">
+
+        {/* Unified Process Header - Sticky and Integrated */}
+        <div className="bg-white border-b border-slate-100 sticky top-0 z-50 transition-all duration-300">
+            <div className="px-6 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-6">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate("/admin/sthana-directory")}
+              className="p-0 hover:bg-transparent text-slate-400 hover:text-slate-800"
+            >
+              <div className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center mr-3">
+                <ArrowLeft className="w-4 h-4" />
+              </div>
+              <span className="font-bold hidden sm:inline text-[10px] uppercase tracking-widest">Directory</span>
+            </Button>
+
+            <div className="h-6 w-px bg-slate-100" />
+
+            <div>
+              <h1 className="text-xl font-bold text-slate-900 tracking-tight flex items-center gap-3">
+                {templeData.name}
+                {hasArchitecture ? (
+                  <span className="text-[10px] font-black uppercase tracking-widest bg-blue-50 text-blue-600 px-3 py-1 rounded-full border border-blue-100">
+                    Architecture
+                  </span>
+                ) : (
+                  <span className="text-[10px] font-black uppercase tracking-widest bg-emerald-50 text-emerald-600 px-3 py-1 rounded-full border border-emerald-100">
+                    Standalone
+                  </span>
+                )}
+              </h1>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-4">
+             {/* Review Action */}
+             {templeData.status === "IN_PROGRESS" && (
+               <Button 
+                onClick={handleMarkAsReady} 
+                className="bg-emerald-600 hover:bg-emerald-700 text-white font-black text-[10px] uppercase tracking-widest rounded-xl h-10 px-6 gap-2"
+                disabled={isSubmitting}
+               >
+                 <Send className="w-3.5 h-3.5" /> Mark as Ready for Review
+               </Button>
+             )}
+
+             {/* Step Navigation */}
+            <div className="hidden md:flex items-center gap-10 px-4 py-1">
+              {[
+                { id: 'sthan-info', label: 'Info' },
+                { id: 'architecture-view', label: 'View' },
+                { id: 'sthana-details', label: 'Details' },
+              ].map((step, index, array) => {
+                const currentIndex = stepIds.indexOf(activeStep);
+                const isActive = activeStep === step.id;
+                const isCompleted = stepIds.indexOf(step.id) < currentIndex;
+
+                return (
+                  <div key={step.id} className="flex items-center gap-3">
+                    <button
+                      onClick={() => setActiveStep(step.id as any)}
+                      className={cn(
+                        "group relative flex h-7 w-7 items-center justify-center rounded-full transition-all duration-700 ease-out",
+                        isCompleted && "bg-blue-50 text-blue-600",
+                        isActive && "bg-blue-900 text-white shadow-[0_0_15px_-5px_rgba(30,58,138,0.4)]",
+                        !isActive && !isCompleted && "bg-slate-50 text-slate-300"
+                      )}
+                    >
+                      {isCompleted ? (
+                        <Check className="h-3 w-3" strokeWidth={4} />
+                      ) : (
+                        <span className="text-[10px] font-black tabular-nums">{index + 1}</span>
+                      )}
+                    </button>
+                    <span className={cn(
+                      "text-[10px] font-black uppercase tracking-[0.25em] transition-colors",
+                      isActive ? "text-blue-900" : "text-slate-300"
+                    )}>
+                      {step.label}
+                    </span>
+                    {index < array.length - 1 && (
+                      <div className="h-[1px] w-8 bg-slate-100 mx-2" />
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+            </div>
+
+            {/* Integrated Progress Line */}
+            <div className="bg-slate-50 h-[1.5px] w-full relative">
+                <div
+                  className="h-full bg-blue-600 transition-all duration-1000 ease-out shadow-[0_0_8px_rgba(37,99,235,0.3)]"
+                  style={{
+                    width: `${((stepIds.indexOf(activeStep) + 1) / stepIds.length) * 100}%`
+                  }}
+                />
+            </div>
+        </div>
+
+        {/* Content Area - Seamless Workspace */}
+        <div className="flex-1 overflow-visible scroll-smooth bg-white">
+          <div className="w-full">
+            {/* Review Changes Banner */}
+            {templeData.reviewStatus === "CHANGES_REQUIRED" && (
+              <div className="bg-amber-50 border-b border-amber-100 px-12 py-6 flex items-start gap-6 animate-in slide-in-from-top duration-700">
+                <div className="p-3 bg-white rounded-2xl shadow-sm border border-amber-100">
+                  <AlertTriangle className="w-6 h-6 text-amber-500" />
+                </div>
+                <div className="flex-1">
+                   <h3 className="text-sm font-black text-amber-900 uppercase tracking-widest mb-1 flex items-center gap-2">
+                     <Clock className="w-4 h-4" /> Changes Requested by Admin
+                   </h3>
+                   <p className="text-xs text-amber-700 font-medium leading-relaxed">
+                     Please review the comments below and update the sthana data. Once resolved, mark them as fixed and re-submit for review.
+                   </p>
+                </div>
+              </div>
+            )}
+
+            <div className="grid grid-cols-1 lg:grid-cols-12">
+
+              {/* Left Column: Form Content (8/12) - Totally Naked Page Surface */}
+              <div className="lg:col-span-8 space-y-20 no-scrollbar p-12 lg:p-16 border-r border-slate-50">
+                <style>{`
+                                    .no-scrollbar::-webkit-scrollbar { display: none; }
+                                    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+                                `}</style>
+
+                <div className={cn(
+                  "transition-all duration-700 delay-100",
+                  activeStep === 'sthan-info' ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8 absolute inset-0 pointer-events-none"
+                )}>
+                  <TempleForm templeId={id} />
+                </div>
+
+                <div className={cn(
+                  "transition-all duration-700 delay-100",
+                  activeStep !== 'sthan-info' ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8 absolute inset-0 pointer-events-none"
+                )}>
+                  <TempleArchitectureAdmin
+                    initialStep={activeStep === 'sthan-info' ? undefined : activeStep}
+                    isEmbedded={true}
+                  />
+                </div>
+              </div>
+
+              {/* Right Column: Unified Identifier & Sidebar Tools */}
+              <div className="lg:col-span-4 hidden lg:block bg-slate-50/[0.02]">
+                <div className="sticky top-20 transition-all p-12 lg:p-16 space-y-12">
+                   {/* Comments Section */}
+                   {templeData.reviewComments && templeData.reviewComments.length > 0 && (
+                     <div className="space-y-6">
+                        <div className="flex items-center justify-between">
+                          <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
+                            <MessageSquare className="w-3.5 h-3.5" /> Review Feedback
+                          </h3>
+                        </div>
+                        <div className="space-y-4">
+                          {templeData.reviewComments.map((comment: any, idx: number) => (
+                            <div key={idx} className={cn(
+                              "p-5 rounded-2xl border transition-all duration-500 relative overflow-hidden",
+                              comment.status === "OPEN" ? "bg-white border-slate-100 shadow-sm" : "bg-emerald-50/30 border-emerald-100/50 opacity-60"
+                            )}>
+                              <div className="flex items-start justify-between gap-4">
+                                <p className="text-[13px] text-slate-600 font-medium leading-relaxed">
+                                  {comment.comment}
+                                </p>
+                                {comment.status === "OPEN" && (
+                                  <Button 
+                                    variant="ghost" 
+                                    size="icon" 
+                                    onClick={() => handleResolveComment(idx)}
+                                    className="h-8 w-8 rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100 shrink-0"
+                                    title="Mark as Resolved"
+                                  >
+                                    <CheckCircle2 className="w-4 h-4" />
+                                  </Button>
+                                )}
+                                {comment.status === "RESOLVED" && (
+                                  <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+                                )}
+                              </div>
+                              <div className="mt-3 flex items-center gap-2">
+                                <span className="text-[9px] font-black text-slate-300 uppercase tracking-widest">Admin Note • {comment.status}</span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                     </div>
+                   )}
+
+                   <SthanaIdentifier 
+                     id={id || ""} 
+                     templeData={templeData} 
+                     hasArchitecture={hasArchitecture} 
+                     activeStep={activeStep} 
+                   />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </AdminLayout>
+  );
 }

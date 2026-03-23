@@ -20,9 +20,11 @@ export default function AdminLayout({ children }: Props) {
     }
   }, [isAdmin, loading, navigate]);
 
+  const [isCollapsed, setIsCollapsed] = React.useState(false);
+
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen bg-slate-50">
+      <div className="flex items-center justify-center h-screen bg-slate-50 dark:bg-gray-950">
         <Loader2 className="w-10 h-10 animate-spin text-blue-600" />
       </div>
     );
@@ -33,11 +35,13 @@ export default function AdminLayout({ children }: Props) {
   }
 
   return (
-    <div className="flex h-screen overflow-hidden bg-white font-[Manrope]">
-      <AdminSidebar />
+    <div className="flex h-screen overflow-hidden bg-white dark:bg-gray-950 font-[Manrope]">
+      <AdminSidebar isCollapsed={isCollapsed} setIsCollapsed={setIsCollapsed} />
       <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        <div className="flex-1 overflow-y-auto p-8 space-y-8 no-scrollbar">
-          {children}
+        <div className="flex-1 overflow-y-auto p-8 no-scrollbar bg-gray-50 dark:bg-gray-950 transition-colors duration-300">
+          <div className="max-w-7xl mx-auto">
+            {children}
+          </div>
         </div>
       </main>
     </div>
