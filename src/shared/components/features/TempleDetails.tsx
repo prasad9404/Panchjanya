@@ -30,8 +30,6 @@ export const TempleDetails = ({ isOpen, onClose, temple }: TempleDetailsProps) =
     // Only update images if temple exists, but the effect itself runs unconditionally
     if (temple && Array.isArray(temple.sthanImages) && temple.sthanImages.length > 0) {
       setCloudinaryImages(temple.sthanImages);
-    } else if (temple && Array.isArray(temple.images) && temple.images.length > 0) {
-      setCloudinaryImages(temple.images);
     } else {
       setCloudinaryImages([]);
     }
@@ -77,7 +75,7 @@ export const TempleDetails = ({ isOpen, onClose, temple }: TempleDetailsProps) =
           savedAt: new Date(),
           templeName: temple.name,
           templeCity: temple.city || temple.address || "",
-          templeImage: temple.sthanImages?.[0] || temple.images?.[0] || ""
+          templeImage: temple.sthanImages?.[0] || ""
         });
         setIsSaved(true);
       }
@@ -89,11 +87,9 @@ export const TempleDetails = ({ isOpen, onClose, temple }: TempleDetailsProps) =
   };
 
   // 3. Helper functions (not hooks, but good to keep here)
-  const images = cloudinaryImages.length > 0
+  const images = (cloudinaryImages.length > 0)
     ? cloudinaryImages
-    : (temple && Array.isArray(temple.sthanImages) && temple.sthanImages.length > 0 
-        ? temple.sthanImages 
-        : (temple && Array.isArray(temple.images) ? temple.images : []));
+    : (temple && Array.isArray(temple.sthanImages) ? temple.sthanImages : []);
 
   const nextImage = () => {
     if (!images || images.length === 0) return;
@@ -242,7 +238,7 @@ export const TempleDetails = ({ isOpen, onClose, temple }: TempleDetailsProps) =
                 ) : (
                   <div className="flex flex-col items-center justify-center w-full h-full text-muted-foreground gap-3">
                     <BookOpen className="w-12 h-12 opacity-20" />
-                    <p className="text-sm font-medium">No archive images</p>
+                    <p className="text-sm font-medium">No Sthana images uploaded</p>
                   </div>
                 )}
               </div>

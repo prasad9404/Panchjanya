@@ -2,7 +2,8 @@ import { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { db } from "@/auth/firebase";
 import { doc, getDoc, collection, getDocs } from "firebase/firestore";
-import { X, ZoomIn, ZoomOut, RotateCcw, Info, ChevronLeft, BookOpen, ChevronDown, Eye, EyeOff, Maximize, Check, ChevronRight, ChevronUp, Expand } from "lucide-react";
+import { X, ZoomIn, ZoomOut, RotateCcw, Info, ChevronLeft, BookOpen, ChevronDown, Eye, EyeOff, Maximize, Check, ChevronRight, ChevronUp, Expand, Image as ImageIcon } from "lucide-react";
+import { cn } from "@/shared/lib/utils";
 import { Button } from "@/shared/components/ui/button";
 import { Button1 } from "@/shared/components/ui/button-1";
 import { Temple, AbbreviationItem, Hotspot, SthanDetail } from "@/types";
@@ -172,10 +173,10 @@ export default function ArchitectureViewer() {
 
  // Get architectural and present images
  // Get architectural and present images
- const archImg = data.architectureImage || data.images?.[0] || "";
- const presImg = data.presentImage || data.images?.[0] || "";
- const archImgs = data.architectureImages || [];
- const presImgs = data.presentImages || [];
+  const archImg = data.architectureImage || "";
+  const presImg = data.presentImage || "";
+  const archImgs = data.architectureImages || [];
+  const presImgs = data.presentImages || [];
 
  setArchitecturalImage(archImg);
  setPresentImage(presImg);
@@ -264,15 +265,15 @@ export default function ArchitectureViewer() {
  fetchAbbreviations();
  }, []);
 
-  const displayImages = imageType === 'architectural'
-  ? (temple?.architectureImages && temple.architectureImages.length > 0 
-      ? temple.architectureImages 
-      : [architecturalImage].filter(Boolean) as string[])
-  : (temple?.presentImages && temple.presentImages.length > 0 
-      ? temple.presentImages 
-      : [presentImage].filter(Boolean) as string[]);
+   const displayImages = imageType === 'architectural'
+   ? (temple?.architectureImages && temple.architectureImages.length > 0
+       ? temple.architectureImages
+       : (architecturalImage ? [architecturalImage] : []))
+   : (temple?.presentImages && temple.presentImages.length > 0
+       ? temple.presentImages
+       : (presentImage ? [presentImage] : []));
 
- const imageUrl = displayImages[currentImageIndex] || architecturalImage;
+  const imageUrl = displayImages[currentImageIndex] || "";
 
  const nextImage = (e?: React.MouseEvent) => {
  e?.stopPropagation();
@@ -417,16 +418,16 @@ export default function ArchitectureViewer() {
  );
  }
 
- if (!temple || !imageUrl) {
- return (
- <div className="min-h-full flex-1 flex items-center justify-center ">
- <div className="text-center">
- <p className="text-lg text-muted-foreground mb-4">Architecture image not available</p>
- <Button onClick={() => navigate(-1)}>Go Back</Button>
- </div>
- </div>
- );
- }
+  if (!temple) {
+  return (
+  <div className="min-h-full flex-1 flex items-center justify-center ">
+  <div className="text-center">
+  <p className="text-lg text-muted-foreground mb-4">Temple data not available</p>
+  <Button onClick={() => navigate(-1)}>Go Back</Button>
+  </div>
+  </div>
+  );
+  }
 
  return (
  <div
@@ -517,15 +518,15 @@ export default function ArchitectureViewer() {
  className="relative aspect-square md:aspect-[4/3] w-full max-w-7xl mx-auto rounded-2xl overflow-hidden border-4 border-white bg-slate-50 group touch-none transition-all duration-500 ease-in-out"
  >
  <div
- className="w-full h-full cursor-move"
- onMouseDown={handleMouseDown}
- onMouseMove={handleMouseMove}
- onMouseUp={handleMouseUp}
- onMouseLeave={handleMouseUp}
- onTouchStart={handleTouchStart}
- onTouchMove={handleTouchMove}
- onTouchEnd={handleTouchEnd}
- onClick={(e) => {
+  className={cn("w-full h-full", imageUrl ? "cursor-move" : "cursor-default")}
+  onMouseDown={imageUrl ? handleMouseDown : undefined}
+  onMouseMove={imageUrl ? handleMouseMove : undefined}
+  onMouseUp={imageUrl ? handleMouseUp : undefined}
+  onMouseLeave={imageUrl ? handleMouseUp : undefined}
+  onTouchStart={imageUrl ? handleTouchStart : undefined}
+  onTouchMove={imageUrl ? handleTouchMove : undefined}
+  onTouchEnd={imageUrl ? handleTouchEnd : undefined}
+  onClick={(e) => {
  // Coordinate capture for backend support
  const rect = e.currentTarget.getBoundingClientRect();
  const x = ((e.clientX - rect.left) / rect.width) * 100;
@@ -551,13 +552,32 @@ export default function ArchitectureViewer() {
  height: imageRatio && imageRatio <= (imageContainerRef.current?.clientWidth || 1) / (imageContainerRef.current?.clientHeight || 1) ? '100%' : 'auto'
  }}
  >
- <img
- src={imageUrl}
- alt={`${temple.name} Architecture`}
- className="w-full h-full block select-none"
- draggable={false}
- onLoad={(e) => setImageRatio(e.currentTarget.naturalWidth / e.currentTarget.naturalHeight)}
- />
+  {imageUrl ? (
+  <img
+  src={imageUrl}
+  alt={`${temple.name} Architecture`}
+  className="w-full h-full block select-none"
+  draggable={false}
+  onLoad={(e) => setImageRatio(e.currentTarget.naturalWidth / e.currentTarget.naturalHeight)}
+  />
+  ) : (
+  <div className="w-full h-full flex flex-col items-center justify-center bg-slate-900/90 text-slate-300 p-4 md:p-8 text-center transition-all duration-500">
+  <div className="w-12 h-12 md:w-20 md:h-20 mb-4 md:mb-6 rounded-full bg-slate-800 flex items-center justify-center border border-slate-700 shadow-2xl animate-pulse">
+  <ImageIcon className="w-6 h-6 md:w-10 md:h-10 opacity-40" />
+  </div>
+  <h3 className="text-xl md:text-2xl font-bold font-serif mb-2 tracking-wide">
+  {imageType === 'architectural' ? 'Architecture Section' : 'Present View Section'}
+  </h3>
+  <p className="text-base md:text-lg opacity-60 font-medium">
+  {imageType === 'architectural'
+  ? 'No architecture visuals uploaded'
+  : 'No present-day photos uploaded'}
+  </p>
+  <p className="text-[10px] md:text-sm mt-4 opacity-40 italic">
+  Digital heritage record update in progress
+  </p>
+  </div>
+  )}
 
  {displayImages.length > 1 && (
  <>

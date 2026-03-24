@@ -361,7 +361,7 @@ export default function SthanaVerification() {
 
                   {/* Main Content Area: Independent Scrolling */}
                   <div className="flex-1 overflow-y-auto custom-scrollbar px-6 lg:px-10 py-10 space-y-16 min-h-0 bg-white">
-                    <div className="max-w-6xl mx-auto space-y-16 pb-24">
+                    <div className="max-w-full mx-auto space-y-16 pb-24">
                       <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
                         <div className="space-y-10">
                           <DataSection title="Primary Identity" icon={<FileText className="w-4 h-4" />}>

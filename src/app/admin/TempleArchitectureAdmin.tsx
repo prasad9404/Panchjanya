@@ -7,7 +7,7 @@ import { SthanaIdentifier } from "@/shared/components/admin/SthanaIdentifier";
 import { v4 as uuidv4 } from "uuid";
 import { Hotspot, Leela, GlanceItem, AbbreviationItem, CustomBlock, SthanDetail } from "@/types";
 import * as LucideIcons from "lucide-react";
-import { X, Save, Trash2, Upload, ArrowLeft, ZoomIn, ZoomOut, ChevronLeft, ChevronRight, Plus, ChevronDown, Image as ImageIcon, Info, MousePointer2, ExternalLink, FileText, Search, ArrowUp, ArrowDown, Check } from "lucide-react";
+import { X, Save, Trash2, Upload, ArrowLeft, ZoomIn, ZoomOut, ChevronLeft, ChevronRight, Plus, ChevronDown, Image as ImageIcon, Info, MousePointer2, ExternalLink, FileText, Search, ArrowUp, ArrowDown, Check, Database, MapPin } from "lucide-react";
 import { Button } from "@/shared/components/ui/button";
 import { Input } from "@/shared/components/ui/input";
 import { Textarea } from "@/shared/components/ui/textarea";
@@ -175,9 +175,14 @@ const HotspotMarker = ({
 export interface TempleArchitectureAdminProps {
   initialStep?: 'sthan-info' | 'architecture-view' | 'sthana-details';
   isEmbedded?: boolean;
+  onStepChange?: (step: 'sthan-info' | 'architecture-view' | 'sthana-details') => void;
 }
 
-export default function TempleArchitectureAdmin({ initialStep, isEmbedded = false }: TempleArchitectureAdminProps = {}) {
+export default function TempleArchitectureAdmin({
+  initialStep,
+  isEmbedded = false,
+  onStepChange
+}: TempleArchitectureAdminProps) {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -243,6 +248,7 @@ export default function TempleArchitectureAdmin({ initialStep, isEmbedded = fals
 
   const setCurrentStep = (step: 'sthan-info' | 'architecture-view' | 'sthana-details') => {
     setCurrentStepInternal(step);
+    if (onStepChange) onStepChange(step);
   };
   const [hoveredHotspotId, setHoveredHotspotId] = useState<string | null>(null);
   const [pendingClickPosition, setPendingClickPosition] = useState<{ x: number, y: number } | null>(null);
@@ -318,7 +324,7 @@ export default function TempleArchitectureAdmin({ initialStep, isEmbedded = fals
           setTempleName(data.name || "Unknown Temple");
           setArchImages(data.architectureImages || []);
           setPresentImages(data.presentImages || []);
-          setSthanImages(data.sthanImages || data.images || []);
+          setSthanImages(data.sthanImages || []);
           setArchHotspots(data.hotspots || []);
 
           setTodaysName(data.todaysName || "");
@@ -1123,10 +1129,10 @@ export default function TempleArchitectureAdmin({ initialStep, isEmbedded = fals
   };
 
   const content = (
-      <div className={cn("min-h-screen flex flex-col", !isEmbedded && "bg-white")}>
+      <div className="min-h-screen flex flex-col">
         {!isEmbedded && (
-          <div className="sticky top-0 z-[100] bg-white transition-all duration-300">
-            <div className="max-w-7xl mx-auto px-8 lg:px-12 py-5 flex items-center justify-between">
+          <div className="bg-white border-b border-slate-100 transition-all duration-300 mb-8 rounded-[32px] shadow-sm">
+            <div className="max-w-full mx-auto px-8 py-5 flex items-center justify-between">
               <div className="flex items-center gap-6">
                 <Button
                   variant="ghost"
@@ -1196,74 +1202,105 @@ export default function TempleArchitectureAdmin({ initialStep, isEmbedded = fals
                 </Button>
               </div>
 
-              {/* Status & Progress Card */}
-              <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
-                  <div className="flex items-center justify-between">
-                      <div className="space-y-1">
-                          <Label className="text-base font-bold text-slate-900 block flex items-center gap-2">
-                              <LucideIcons.ShieldCheck className="w-5 h-5 text-blue-600" />
-                              Sthana Status
-                          </Label>
-                          <p className="text-sm text-slate-500">Live computed status based on data completeness.</p>
-                      </div>
-                      <div className="shrink-0 flex gap-2">
-                          {liveStatus === 'PUBLISHED' && (
-                              <span className="inline-flex items-center px-3 py-1 rounded text-xs font-bold bg-blue-50 text-blue-600 border border-blue-100 uppercase tracking-wide gap-1">
-                                  🌍 Published
-                              </span>
-                          )}
-                          {liveStatus === 'VERIFIED' && (
-                              <span className="inline-flex items-center px-3 py-1 rounded text-xs font-bold bg-[#C9A961]/10 text-[#a88b48] border border-[#C9A961]/20 uppercase tracking-wide gap-1">
-                                  🟢 Verified
-                              </span>
-                          )}
-                          {liveStatus === 'COMPLETE' && (
-                              <span className="inline-flex items-center px-3 py-1 rounded text-xs font-bold bg-emerald-50 text-emerald-600 border border-emerald-100 uppercase tracking-wide gap-1">
-                                  ✅ Complete
-                              </span>
-                          )}
-                          {liveStatus === 'IN_PROGRESS' && (
-                              <span className="inline-flex items-center px-3 py-1 rounded text-xs font-bold bg-amber-50 text-amber-600 border border-amber-100 uppercase tracking-wide gap-1">
-                                  ✏️ In Progress
-                              </span>
-                          )}
-                          {liveStatus === 'DRAFT' && (
-                              <span className="inline-flex items-center px-3 py-1 rounded text-xs font-bold bg-slate-100 text-slate-500 border border-slate-200 uppercase tracking-wide gap-1">
-                                  📝 Draft
-                              </span>
-                          )}
-                      </div>
+              {/* ── Basic Information (Step 1 Entry) ── */}
+              <Card className="border-slate-200 shadow-sm rounded-3xl overflow-hidden mb-8">
+                <CardHeader className="bg-slate-50 border-b border-slate-100 pb-3">
+                  <div className="flex items-center gap-2">
+                    <Database className="w-5 h-5 text-blue-600" />
+                    <CardTitle className="text-lg font-bold text-slate-900">Basic Information</CardTitle>
                   </div>
-                  
-                  {/* Professional Action Buttons */}
-                  {(liveStatus === 'COMPLETE' || liveStatus === 'VERIFIED' || liveStatus === 'PUBLISHED') && (
-                      <div className="pt-4 border-t border-slate-100 flex flex-wrap gap-3">
-                          {liveStatus === 'COMPLETE' && (
-                              <Button 
-                                  type="button" 
-                                  onClick={() => { setManualStatus('VERIFIED'); toast({ title: "Status Updated", description: "Marked as Verified. Save to apply changes." }); }}
-                                  className="bg-[#C9A961] hover:bg-[#b0924e] text-white rounded-xl shadow-lg"
-                              >
-                                  Verify Sthana
-                              </Button>
-                          )}
-                          {liveStatus === 'VERIFIED' && (
-                              <Button 
-                                  type="button" 
-                                  onClick={() => { setManualStatus('PUBLISHED'); toast({ title: "Status Updated", description: "Marked as Published. Save to apply changes." }); }}
-                                  className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-lg"
-                              >
-                                  Publish Sthana
-                              </Button>
-                          )}
-                          {liveStatus === 'PUBLISHED' && (
-                              <p className="text-xs text-slate-400 font-medium py-2">
-                                  This sthana is verified and published globally.
-                              </p>
-                          )}
+                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest leading-relaxed mt-2">
+                    Core identification and geographic metadata for this Sthana.
+                  </p>
+                </CardHeader>
+                <CardContent className="p-8 space-y-8">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div className="space-y-2">
+                      <Label className="text-xs font-black uppercase tracking-widest text-slate-400 pl-1">Sthan Name</Label>
+                      <Input 
+                        value={templeName} 
+                        onChange={e => setTempleName(e.target.value)} 
+                        placeholder="Principal historical name..."
+                        className="h-14 bg-white border-2 border-slate-100 hover:border-slate-200 rounded-[1.25rem] px-6 font-bold text-slate-700 transition-all shadow-sm"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-xs font-black uppercase tracking-widest text-slate-400 pl-1">Modern Name (Vartman)</Label>
+                      <div className="flex gap-2">
+                        <Input 
+                          value={todaysNameTitle} 
+                          onChange={e => setTodaysNameTitle(e.target.value)} 
+                          placeholder="e.g. Aaj" 
+                          className="h-14 w-24 bg-white border-2 border-slate-100 hover:border-slate-200 rounded-[1.25rem] px-4 font-bold text-slate-700 transition-all shadow-sm"
+                        />
+                        <Input 
+                          value={todaysName} 
+                          onChange={e => setTodaysName(e.target.value)} 
+                          placeholder="Current name..." 
+                          className="h-14 flex-1 bg-white border-2 border-slate-100 hover:border-slate-200 rounded-[1.25rem] px-6 font-bold text-slate-700 transition-all shadow-sm"
+                        />
                       </div>
-                  )}
-              </div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div className="space-y-2">
+                      <Label className="text-xs font-black uppercase tracking-widest text-slate-400 pl-1">District</Label>
+                      <Input 
+                        value={district} 
+                        onChange={e => setDistrict(e.target.value)} 
+                        className="h-14 bg-white border-2 border-slate-100 hover:border-slate-200 rounded-[1.25rem] px-6 font-bold text-slate-700 transition-all shadow-sm"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-xs font-black uppercase tracking-widest text-slate-400 pl-1">Taluka / Village</Label>
+                      <Input 
+                        value={taluka} 
+                        onChange={e => setTaluka(e.target.value)} 
+                        className="h-14 bg-white border-2 border-slate-100 hover:border-slate-200 rounded-[1.25rem] px-6 font-bold text-slate-700 transition-all shadow-sm"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-8 pt-4">
+                    <div className="space-y-2">
+                      <Label className="text-xs font-black uppercase tracking-widest text-slate-400 pl-1 flex items-center gap-2">
+                        <MapPin className="w-3 h-3" /> Latitude
+                      </Label>
+                      <Input 
+                        value={latitude} 
+                        onChange={e => setLatitude(e.target.value)} 
+                        type="number"
+                        step="any"
+                        className="h-14 bg-slate-50 border-2 border-slate-100 hover:border-blue-100 rounded-[1.25rem] px-6 font-bold text-slate-700 transition-all"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-xs font-black uppercase tracking-widest text-slate-400 pl-1 flex items-center gap-2">
+                        <MapPin className="w-3 h-3" /> Longitude
+                      </Label>
+                      <Input 
+                        value={longitude} 
+                        onChange={e => setLongitude(e.target.value)} 
+                        type="number"
+                        step="any"
+                        className="h-14 bg-slate-50 border-2 border-slate-100 hover:border-blue-100 rounded-[1.25rem] px-6 font-bold text-slate-700 transition-all"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-xs font-black uppercase tracking-widest text-slate-400 pl-1">External Maps Link</Label>
+                      <Input 
+                        value={locationLink} 
+                        onChange={e => setLocationLink(e.target.value)} 
+                        placeholder="https://goo.gl/maps/..."
+                        className="h-14 bg-white border-2 border-slate-100 hover:border-slate-200 rounded-[1.25rem] px-6 font-bold text-slate-700 transition-all shadow-sm"
+                      />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+
             </div>
 
             <div className="space-y-12">
@@ -1870,11 +1907,13 @@ export default function TempleArchitectureAdmin({ initialStep, isEmbedded = fals
                   <MousePointer2 className="w-5 h-5 text-blue-600" />
                 </div>
                 <div className="space-y-1">
-                  <h4 className="text-sm font-bold text-blue-900">How to add hotspots</h4>
+                  <h4 className="text-sm font-bold text-blue-900">
+                    {viewType === 'architectural' ? "Architecture Mapping" : "Present View Mapping"}
+                  </h4>
                   <p className="text-xs text-blue-700/70 leading-relaxed font-medium">
                     {viewType === 'architectural'
-                      ? "Click anywhere on the large image below to place a new architectural pinpoint."
-                      : "Click on the photo then select an existing hotspot from the master list to map it."}
+                      ? "In this section, upload architecture diagrams and click to define sacred points (hotspots)."
+                      : "Here you can upload present-day photos. To add interactive pins, select a sacred point from the list below after clicking on the photo."}
                   </p>
                 </div>
               </div>
@@ -1931,53 +1970,53 @@ export default function TempleArchitectureAdmin({ initialStep, isEmbedded = fals
               </div>
             </div>
 
-            {/* View Switcher Tabs */}
-            <div className="flex justify-center bg-muted p-1 rounded-xl w-fit mx-auto relative group">
-              <button
-                onClick={() => {
-                  setViewType('architectural');
-                  setAdminImageIndex(0);
-                }}
-                className={`px-6 py-2 rounded-lg font-medium transition-all ${viewType === 'architectural'
-                  ? 'bg-white shadow-sm text-primary'
-                  : 'text-muted-foreground hover:text-foreground'
-                  }`}
-              >
-                Architecture View
-              </button>
-
-              <div className="relative group">
+            {/* Section Switcher */}
+            <div className="flex flex-col items-center gap-4">
+              <div className="flex justify-center bg-slate-100 p-1.5 rounded-2xl w-fit mx-auto border border-slate-200 shadow-inner group">
                 <button
-                  disabled={archImages.length === 0 || archHotspots.length === 0}
+                  onClick={() => {
+                    setViewType('architectural');
+                    setAdminImageIndex(0);
+                  }}
+                  className={`px-10 py-3 rounded-xl font-black text-xs uppercase tracking-widest transition-all duration-500 flex items-center gap-2 ${viewType === 'architectural'
+                    ? 'bg-white shadow-xl text-blue-600 scale-105'
+                    : 'text-slate-400 hover:text-slate-600 hover:bg-white/50'
+                    }`}
+                >
+                  <LucideIcons.Layout className="w-4 h-4" />
+                  Architecture View
+                </button>
+
+                <button
                   onClick={() => {
                     setViewType('present');
                     setAdminImageIndex(0);
                   }}
-                  className={`px-6 py-2 rounded-lg font-medium transition-all ${viewType === 'present'
-                    ? 'bg-white shadow-sm text-primary'
-                    : (archImages.length === 0 || archHotspots.length === 0)
-                      ? 'text-slate-300 cursor-not-allowed'
-                      : 'text-muted-foreground hover:text-foreground'
+                  className={`px-10 py-3 rounded-xl font-black text-xs uppercase tracking-widest transition-all duration-500 flex items-center gap-2 ${viewType === 'present'
+                    ? 'bg-white shadow-xl text-blue-600 scale-105'
+                    : 'text-slate-400 hover:text-slate-600 hover:bg-white/50'
                     }`}
                 >
+                  <LucideIcons.Camera className="w-4 h-4" />
                   Present View
                 </button>
-                {(archImages.length === 0 || archHotspots.length === 0) && (
-                  <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 px-4 py-2 bg-slate-900 text-white text-[11px] font-bold rounded-xl shadow-2xl z-50 opacity-0 group-hover:opacity-100 transition-all pointer-events-none whitespace-nowrap">
-                    Define Architecture Sthanas first
-                    <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-1.5 border-8 border-transparent border-t-slate-900" />
-                  </div>
-                )}
               </div>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] animate-pulse">
+                {viewType === 'architectural' ? 'Managing Architecture Visuals & Hotspots' : 'Managing Present Day Photos & Mapping'}
+              </p>
             </div>
 
             {/* Unified Multi-Image Management Slider */}
             <Card className="overflow-hidden border-none shadow-none bg-transparent">
               <CardHeader className="px-0 pt-0 pb-6 flex flex-row items-center justify-between gap-6">
                 <div className="space-y-1">
-                  <CardTitle className="text-xl">Interactive Image Editor</CardTitle>
-                  <p className="text-sm text-muted-foreground">
-                    Click anywhere on the image to place or edit hotspots. Use the gallery below to switch between images.
+                  <CardTitle className="text-2xl font-serif">
+                    {viewType === 'architectural' ? 'Architecture Editor' : 'Present Photo Manager'}
+                  </CardTitle>
+                  <p className="text-sm text-muted-foreground font-medium">
+                    {viewType === 'architectural'
+                      ? 'Upload architecture diagrams and place hotspots to define sacred points.'
+                      : 'Upload present-day photos and map them to existing architectural hotspots.'}
                   </p>
                 </div>
                 {viewType === 'architectural' && (
@@ -2209,8 +2248,8 @@ export default function TempleArchitectureAdmin({ initialStep, isEmbedded = fals
                       </h3>
                       <p className="text-xs text-slate-500 font-medium italic">
                         {viewType === 'architectural'
-                          ? "ℹ️ Click anywhere on the image above to add a new hotspot, or use the sticky button."
-                          : "ℹ️ Click on the photo above then select a hotspot to map it."}
+                          ? "ℹ️ Create master hotspots here by clicking on the architecture diagram."
+                          : "ℹ️ Upload photos here. To link them to sacred points, define hotspots in Architecture View first."}
                       </p>
                     </div>
 
@@ -2366,7 +2405,7 @@ export default function TempleArchitectureAdmin({ initialStep, isEmbedded = fals
                         <p className="text-slate-500 text-sm max-w-sm mx-auto">
                           {viewType === 'architectural'
                             ? "Click here to immediately create a new hotspot."
-                            : "Add hotspots in the Architectural View first, then map them here."}
+                            : "You can upload and manage photos here even without architecture diagrams. To add interactive pins, define sacred points in Architecture View first."}
                         </p>
                       </div>
                     )}
@@ -2374,6 +2413,8 @@ export default function TempleArchitectureAdmin({ initialStep, isEmbedded = fals
                 </div>
               </CardContent>
             </Card>
+
+
 
             {/* Sthan's Description Block */}
             <Card className="border-slate-200">
@@ -2484,7 +2525,6 @@ export default function TempleArchitectureAdmin({ initialStep, isEmbedded = fals
               </CardContent>
             </Card>
 
-            {/* Navigation Footer */}
             <div className="flex items-center justify-between pt-20 pb-10">
               <Button
                 variant="ghost"
@@ -2497,6 +2537,7 @@ export default function TempleArchitectureAdmin({ initialStep, isEmbedded = fals
                 <ChevronLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
                 Previous Step: Info
               </Button>
+
 
               <Button
                 onClick={() => {
@@ -2659,22 +2700,25 @@ export default function TempleArchitectureAdmin({ initialStep, isEmbedded = fals
                     })}
                 </div>
 
-                {/* Navigation Footer */}
-                <div className="flex items-center justify-start pt-20 pb-10">
+                <div className="flex items-center justify-between pt-20 pb-10">
                   <Button
                     variant="ghost"
                     onClick={() => {
                       window.scrollTo({ top: 0, behavior: 'smooth' });
-                      if (hasArchitecture) {
-                        setCurrentStep('architecture-view');
-                      } else {
-                        setCurrentStep('sthan-info');
-                      }
+                      setCurrentStep('architecture-view');
                     }}
                     className="px-8 h-12 rounded-xl font-bold border border-slate-200 hover:bg-slate-50 transition-all text-slate-600 gap-2 group"
                   >
                     <ChevronLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
-                    Previous Step: {hasArchitecture ? "Architecture" : "Info"}
+                    Previous Step: Architecture
+                  </Button>
+
+                  <Button
+                    onClick={() => navigate("/admin/sthana-directory")}
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-[1.25rem] px-8 h-12 font-bold shadow-xl shadow-emerald-900/20 hover:scale-105 active:scale-95 transition-all flex items-center gap-2"
+                  >
+                    <Check className="w-4 h-4" />
+                    Finish & View Directory
                   </Button>
                 </div>
               </div>
@@ -3035,9 +3079,7 @@ export default function TempleArchitectureAdmin({ initialStep, isEmbedded = fals
   return (
     <div className="hide-child-headers scroll-smooth">
       <AdminLayout>
-        <div className="-m-8">
-          {content}
-        </div>
+        {content}
       </AdminLayout>
     </div>
   );

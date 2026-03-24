@@ -223,7 +223,15 @@ const App = () => {
                         path="/admin/architecture/:id"
                         element={
                           <PrivateRoute adminRequired={true}>
-                            <TempleArchitectureAdmin />
+                            <ManageSthana />
+                          </PrivateRoute>
+                        }
+                      />
+                      <Route
+                        path="/admin/temples/:id/edit"
+                        element={
+                          <PrivateRoute adminRequired={true}>
+                            <ManageSthana />
                           </PrivateRoute>
                         }
                       />

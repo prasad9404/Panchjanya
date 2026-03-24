@@ -197,7 +197,6 @@ export default function AdminDashboard() {
               activity="5 temple profile updates pending verification."
               buttonLabel="Manage Directory"
               onClick={() => navigate("/admin/sthana-directory")}
-              badge="VERIFY"
             />
             <ModuleCard 
               title="Literature Hub"

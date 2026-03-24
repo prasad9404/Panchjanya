@@ -25,6 +25,8 @@ export default function ManageSthana() {
   const [activeStep, setActiveStep] = useState<'sthan-info' | 'architecture-view' | 'sthana-details'>('sthan-info');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const stepIds = ['sthan-info', 'architecture-view', 'sthana-details'];
+
   const fetchTemple = async () => {
     if (!id) return;
     try {
@@ -112,14 +114,16 @@ export default function ManageSthana() {
     ? templeData.hasArchitecture
     : (templeData.isStandalone !== undefined ? !templeData.isStandalone : (!!templeData.architectureImage || !!templeData.architectureImages?.length));
 
-  const stepIds = ['sthan-info', 'architecture-view', 'sthana-details'];
+  const hasComments = templeData.reviewComments && templeData.reviewComments.filter((c: any) => c.status === 'OPEN').length > 0;
+
+
 
   return (
     <AdminLayout>
-      <div className="min-h-screen bg-white -m-11 p-1 flex flex-col hide-child-headers font-[Inter]">
+      <div className="min-h-screen flex flex-col hide-child-headers font-[Inter]">
 
-        {/* Unified Process Header - Sticky and Integrated */}
-        <div className="bg-white border-b border-slate-100 sticky top-0 z-50 transition-all duration-300">
+        {/* Unified Process Header - Integrated and Scrollable */}
+        <div className="bg-white border-b border-slate-100 transition-all duration-300 mb-8 rounded-[32px] shadow-sm">
             <div className="px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-6">
             <Button
@@ -153,22 +157,13 @@ export default function ManageSthana() {
           </div>
 
           <div className="flex items-center gap-4">
-             {/* Review Action */}
-             {templeData.status === "IN_PROGRESS" && (
-               <Button 
-                onClick={handleMarkAsReady} 
-                className="bg-emerald-600 hover:bg-emerald-700 text-white font-black text-[10px] uppercase tracking-widest rounded-xl h-10 px-6 gap-2"
-                disabled={isSubmitting}
-               >
-                 <Send className="w-3.5 h-3.5" /> Mark as Ready for Review
-               </Button>
-             )}
+
 
              {/* Step Navigation */}
             <div className="hidden md:flex items-center gap-10 px-4 py-1">
               {[
                 { id: 'sthan-info', label: 'Info' },
-                { id: 'architecture-view', label: 'View' },
+                { id: 'architecture-view', label: 'Architecture' },
                 { id: 'sthana-details', label: 'Details' },
               ].map((step, index, array) => {
                 const currentIndex = stepIds.indexOf(activeStep);
@@ -239,38 +234,26 @@ export default function ManageSthana() {
               </div>
             )}
 
-            <div className="grid grid-cols-1 lg:grid-cols-12">
-
-              {/* Left Column: Form Content (8/12) - Totally Naked Page Surface */}
-              <div className="lg:col-span-8 space-y-20 no-scrollbar p-12 lg:p-16 border-r border-slate-50">
-                <style>{`
-                                    .no-scrollbar::-webkit-scrollbar { display: none; }
-                                    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-                                `}</style>
-
-                <div className={cn(
-                  "transition-all duration-700 delay-100",
-                  activeStep === 'sthan-info' ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8 absolute inset-0 pointer-events-none"
-                )}>
-                  <TempleForm templeId={id} />
-                </div>
-
-                <div className={cn(
-                  "transition-all duration-700 delay-100",
-                  activeStep !== 'sthan-info' ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8 absolute inset-0 pointer-events-none"
-                )}>
+            <div className="grid grid-cols-1 lg:grid-cols-12 min-h-screen">
+              {/* Left Column: Form Content (8/12 or 12/12) */}
+              <div className={cn(
+                "space-y-20 p-12 lg:p-16",
+                hasComments ? "lg:col-span-8 border-r border-slate-50" : "lg:col-span-12"
+              )}>
+                <div className="transition-all duration-700 delay-100 opacity-100 translate-y-0">
                   <TempleArchitectureAdmin
-                    initialStep={activeStep === 'sthan-info' ? undefined : activeStep}
+                    initialStep={activeStep}
                     isEmbedded={true}
+                    onStepChange={(step) => setActiveStep(step as any)}
                   />
                 </div>
               </div>
 
-              {/* Right Column: Unified Identifier & Sidebar Tools */}
-              <div className="lg:col-span-4 hidden lg:block bg-slate-50/[0.02]">
-                <div className="sticky top-20 transition-all p-12 lg:p-16 space-y-12">
-                   {/* Comments Section */}
-                   {templeData.reviewComments && templeData.reviewComments.length > 0 && (
+              {/* Right Column: Sidebar Tools (Only if comments exist) */}
+              {hasComments && (
+                <div className="lg:col-span-4 hidden lg:block bg-slate-50/[0.02]">
+                  <div className="sticky top-20 transition-all p-12 lg:p-16 space-y-12">
+                     {/* Comments Section */}
                      <div className="space-y-6">
                         <div className="flex items-center justify-between">
                           <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
@@ -278,29 +261,21 @@ export default function ManageSthana() {
                           </h3>
                         </div>
                         <div className="space-y-4">
-                          {templeData.reviewComments.map((comment: any, idx: number) => (
-                            <div key={idx} className={cn(
-                              "p-5 rounded-2xl border transition-all duration-500 relative overflow-hidden",
-                              comment.status === "OPEN" ? "bg-white border-slate-100 shadow-sm" : "bg-emerald-50/30 border-emerald-100/50 opacity-60"
-                            )}>
+                          {templeData.reviewComments.filter((c: any) => c.status === 'OPEN').map((comment: any, idx: number) => (
+                            <div key={idx} className="p-5 rounded-2xl border bg-white border-slate-100 shadow-sm transition-all duration-500 relative overflow-hidden">
                               <div className="flex items-start justify-between gap-4">
                                 <p className="text-[13px] text-slate-600 font-medium leading-relaxed">
                                   {comment.comment}
                                 </p>
-                                {comment.status === "OPEN" && (
-                                  <Button 
-                                    variant="ghost" 
-                                    size="icon" 
-                                    onClick={() => handleResolveComment(idx)}
-                                    className="h-8 w-8 rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100 shrink-0"
-                                    title="Mark as Resolved"
-                                  >
-                                    <CheckCircle2 className="w-4 h-4" />
-                                  </Button>
-                                )}
-                                {comment.status === "RESOLVED" && (
-                                  <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
-                                )}
+                                <Button 
+                                  variant="ghost" 
+                                  size="icon" 
+                                  onClick={() => handleResolveComment(idx)}
+                                  className="h-8 w-8 rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100 shrink-0"
+                                  title="Mark as Resolved"
+                                >
+                                  <CheckCircle2 className="w-4 h-4" />
+                                </Button>
                               </div>
                               <div className="mt-3 flex items-center gap-2">
                                 <span className="text-[9px] font-black text-slate-300 uppercase tracking-widest">Admin Note • {comment.status}</span>
@@ -309,16 +284,9 @@ export default function ManageSthana() {
                           ))}
                         </div>
                      </div>
-                   )}
-
-                   <SthanaIdentifier 
-                     id={id || ""} 
-                     templeData={templeData} 
-                     hasArchitecture={hasArchitecture} 
-                     activeStep={activeStep} 
-                   />
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
           </div>
         </div>

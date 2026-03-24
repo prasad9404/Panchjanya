@@ -104,7 +104,6 @@ export const SthanaIdentifier: React.FC<SthanaIdentifierProps> = ({
                     <div className="flex items-center gap-3 bg-blue-50/40 p-4 rounded-2xl border border-blue-100/30 group/inner">
                         <Check className="w-4 h-4 text-blue-400 group-hover/inner:scale-110 transition-transform" />
                         <p className="text-[10px] text-slate-500 font-medium leading-relaxed italic">
-                            {activeStep === 'sthan-info' && "Ensure the coordinates are precise for pilgrims."}
                             {activeStep === 'architecture-view' && "Wait for images to upload before mapping."}
                             {activeStep === 'sthana-details' && "Review final metadata before publishing."}
                         </p>

@@ -638,7 +638,7 @@ export default function RajViharanAdmin() {
                                 <Loader2 className="w-10 h-10 animate-spin text-blue-600" />
                             </div>
                         ) : (
-                            <div className="max-w-5xl mx-auto space-y-6">
+                            <div className="max-w-full mx-auto space-y-6">
                                 {/* Route List & Timeline */}
                                 <div className="space-y-6">
                                     <div className="flex items-center justify-between mb-4">

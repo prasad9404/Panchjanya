@@ -608,50 +608,6 @@ export default function TempleForm({ templeId }: TempleFormProps) {
                                         className="data-[state=checked]:bg-blue-600 scale-125 mr-4"
                                     />
                                 </div>
-
-                                {/* Status & Progress Card */}
-                                <div className="bg-slate-50/30 p-8 rounded-[2rem] border border-slate-100 space-y-8">
-                                    <div className="flex items-center justify-between">
-                                        <div className="space-y-1.5">
-                                            <Label className="text-sm font-black text-slate-800 uppercase tracking-widest">Sthana Status</Label>
-                                            <p className="text-xs text-slate-400 font-medium">Auto-computed based on dataset completeness.</p>
-                                        </div>
-                                        <div className="shrink-0">
-                                            {liveStatus === 'PUBLISHED' && (
-                                                <span className="inline-flex items-center px-4 py-2 rounded-xl text-[10px] font-black bg-blue-50 text-blue-600 border border-blue-100 uppercase tracking-widest gap-2">
-                                                    <span className="w-1.5 h-1.5 rounded-full bg-blue-500" /> Published
-                                                </span>
-                                            )}
-                                            {liveStatus === 'VERIFIED' && (
-                                                <span className="inline-flex items-center px-4 py-2 rounded-xl text-[10px] font-black bg-amber-50 text-amber-600 border border-amber-100 uppercase tracking-widest gap-2">
-                                                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500" /> Verified
-                                                </span>
-                                            )}
-                                            {liveStatus === 'COMPLETE' && (
-                                                <span className="inline-flex items-center px-4 py-2 rounded-xl text-[10px] font-black bg-emerald-50 text-emerald-600 border border-emerald-100 uppercase tracking-widest gap-2">
-                                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> Complete
-                                                </span>
-                                            )}
-                                            {liveStatus === 'IN_PROGRESS' && (
-                                                <span className="inline-flex items-center px-4 py-2 rounded-xl text-[10px] font-black bg-amber-50/50 text-amber-600 border border-amber-100/50 uppercase tracking-widest gap-2">
-                                                    ✏️ In Progress
-                                                </span>
-                                            )}
-                                            {liveStatus === 'DRAFT' && (
-                                                <span className="inline-flex items-center px-4 py-2 rounded-xl text-[10px] font-black bg-slate-100 text-slate-500 border border-slate-200 uppercase tracking-widest gap-2">
-                                                    📝 Draft
-                                                </span>
-                                            )}
-                                        </div>
-                                    </div>
-                                    
-                                    {/* Verification & Publishing is now handled in the dedicated Verification Module */}
-                                    <div className="pt-6 border-t border-slate-200/50">
-                                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest leading-relaxed">
-                                            Status is managed centrally by administrators to ensure data integrity.
-                                        </p>
-                                    </div>
-                                </div>
                             </div>
                         </div>
                     </div>

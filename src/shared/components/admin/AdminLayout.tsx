@@ -38,8 +38,8 @@ export default function AdminLayout({ children }: Props) {
     <div className="flex h-screen overflow-hidden bg-white dark:bg-gray-950 font-[Manrope]">
       <AdminSidebar isCollapsed={isCollapsed} setIsCollapsed={setIsCollapsed} />
       <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        <div className="flex-1 overflow-y-auto p-8 no-scrollbar bg-gray-50 dark:bg-gray-950 transition-colors duration-300">
-          <div className="max-w-7xl mx-auto">
+        <div className="flex-1 overflow-y-auto p-8 no-scrollbar bg-[#FDFCFB] dark:bg-gray-950 transition-colors duration-300">
+          <div className="max-w-[1700px] mx-auto">
             {children}
           </div>
         </div>
