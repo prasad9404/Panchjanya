@@ -61,7 +61,7 @@ export default function SthanaDetail() {
                         setAllHotspots(templeData.details.map((d, i) => ({
                             ...d,
                             number: finalArch.find(h => h.id === d.hotspotId || h.id === d.id)?.number || (i + 1)
-                        })).sort((a,b) => (a.number || 0) - (b.number || 0)));
+                        })).sort((a, b) => (a.number || 0) - (b.number || 0)));
                         setLoading(false);
                         return;
                     }
@@ -133,10 +133,10 @@ export default function SthanaDetail() {
                     <Button variant="ghost" size="icon" onClick={() => navigate(`/temple/${id}/architecture-view?view=${viewParam}`, { replace: true })} className="-ml-2 hover:bg-accent/10 shrink-0 bg-accent/5 h-9 w-9 rounded-full">
                         <ChevronLeft className="w-7 h-7 text-landing-primary dark:text-foreground" />
                     </Button>
-                    <div className="flex w-7 h-7 rounded-full bg-accent/10 text-accent-gold border border-accent/20 font-bold items-center justify-center text-sm shrink-0">
+                    <div className="flex w-7 h-7 rounded-full bg-amber-500/10 text-amber-600 border border-amber-200 font-bold items-center justify-center text-sm shrink-0">
                         {hotspot.number}
                     </div>
-                    <h1 className="text-2xl md:text-3xl font-heading font-bold text-landing-primary dark:text-foreground font-serif leading-tight truncate flex-1">
+                    <h1 className="text-2xl md:text-3xl font-heading font-bold text-amber-600 dark:text-foreground font-serif leading-tight truncate flex-1 tracking-wide">
                         {hotspot.title}
                     </h1>
                 </div>
@@ -148,12 +148,12 @@ export default function SthanaDetail() {
                         <Button variant="ghost" size="icon" onClick={() => navigate(`/temple/${id}/architecture-view?view=${viewParam}`, { replace: true })} className="-ml-2 hover:bg-accent/10 shrink-0 bg-accent/5 h-10 w-10 rounded-full">
                             <ChevronLeft className="w-7 h-7 text-landing-primary dark:text-foreground" />
                         </Button>
-                        <div className="w-10 h-10 rounded-full bg-accent/10 text-accent-gold border border-accent/20 font-bold flex items-center justify-center text-lg">
+                        <div className="w-10 h-10 rounded-full bg-amber-500/10 text-amber-600 border border-amber-200 font-bold flex items-center justify-center text-lg">
                             {hotspot.number}
                         </div>
                     </div>
 
-                    <h1 className="text-2xl md:text-3xl font-heading font-bold text-landing-primary dark:text-primary text-center px-16 leading-tight max-w-2xl truncate font-serif">
+                    <h1 className="text-2xl md:text-3xl font-heading font-bold text-amber-600 dark:text-primary text-center px-16 leading-tight max-w-2xl truncate font-serif tracking-wide">
                         {hotspot.title}
                     </h1>
                 </div>
@@ -263,8 +263,8 @@ export default function SthanaDetail() {
                                 {/* Significance */}
                                 <div className="pl-2">
                                     <div className="flex items-center gap-2 mb-2">
-                                        <div className="w-1 h-6 bg-accent-gold rounded-full"></div>
-                                        <h3 className="text-landing-primary dark:text-primary font-bold tracking-widest text-xl">{hotspot.generalDescriptionTitle || "Description"}</h3>
+                                        <div className="w-1 h-6 bg-amber-600"></div>
+                                        <h3 className="text-blue-900 dark:text-primary font-bold tracking-widest text-xl">{hotspot.generalDescriptionTitle || "Description"}</h3>
                                     </div>
                                     <div className="bg-card border border-border rounded-xl p-4 shadow-sm relative z-10 space-y-4">
                                         <div>
@@ -319,10 +319,10 @@ export default function SthanaDetail() {
                                                     className={`w-full flex items-center justify-between p-4 text-left gap-4 transition-colors bg-transparent`}
                                                 >
                                                     <div className="flex items-center gap-3">
-                                                        <span className="w-8 h-8 rounded-full bg-accent/10 text-accent-gold flex items-center justify-center font-bold text-xs shrink-0">
+                                                        <span className="w-8 h-8 rounded-full bg-amber-500/10 text-amber-600 flex items-center justify-center font-bold text-xs shrink-0">
                                                             {index + 1}
                                                         </span>
-                                                        <span className={`font-serif text-lg leading-snug transition-colors duration-200 text-landing-primary dark:text-foreground font-bold`}>
+                                                        <span className={`font-serif text-lg leading-snug transition-colors duration-200 text-amber-600 dark:text-foreground font-bold`}>
                                                             {((typeof leela === 'object' && leela.title) ? leela.title : `Leela ${index + 1}`)}
                                                         </span>
                                                     </div>

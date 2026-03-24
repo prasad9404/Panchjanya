@@ -82,9 +82,14 @@ interface HotspotMarkerProps {
   hotspot: Hotspot;
   viewType: 'architectural' | 'present';
   zoom: number;
+  isSelected?: boolean;
+  isHovered?: boolean;
   onEdit: (h: Hotspot, e: React.MouseEvent) => void;
   onDelete: (h: Hotspot) => void;
   onUnmap: (id: string) => void;
+  onClick: (h: Hotspot) => void;
+  onMouseEnter: (h: Hotspot) => void;
+  onMouseLeave: () => void;
   isClustered?: boolean;
   clusterCount?: number;
 }
@@ -93,25 +98,38 @@ const HotspotMarker = ({
   hotspot,
   viewType,
   zoom,
+  isSelected,
+  isHovered,
   onEdit, // Now interpreted as 'start repositioning'
   onDelete,
   onUnmap,
+  onClick,
+  onMouseEnter,
+  onMouseLeave,
   isClustered,
   clusterCount
 }: HotspotMarkerProps) => {
-  const [isHovered, setIsHovered] = useState(false);
+
+  const showActions = isSelected || isHovered;
 
   return (
     <div
-      className="absolute z-30 transition-all duration-300 ease-in-out"
+      className={cn(
+        "absolute transition-all duration-300 ease-in-out",
+        showActions ? "z-50" : "z-30"
+      )}
       style={{
         top: `${hotspot.y}%`,
         left: `${hotspot.x}%`,
-        transform: `translate(-50%, -100%) scale(${isHovered ? 1.2 : 1})`,
-        opacity: isHovered ? 1 : 0.9
+        transform: `translate(-50%, -100%) scale(${showActions ? 1.2 : 1})`,
+        opacity: showActions ? 1 : 0.95
       }}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
+      onMouseEnter={() => onMouseEnter(hotspot)}
+      onMouseLeave={onMouseLeave}
+      onClick={(e) => {
+        e.stopPropagation();
+        onClick(hotspot);
+      }}
     >
       <div className="relative flex flex-col items-center cursor-pointer group">
         {/* Drop Pin UI */}
@@ -123,37 +141,53 @@ const HotspotMarker = ({
             viewBox="0 0 32 40"
             fill="none"
             xmlns="http://www.w3.org/2000/svg"
-            className={`drop-shadow-md transition-all duration-300 ${viewType === 'architectural' ? 'text-slate-700' : 'text-blue-600'} ${isHovered ? 'filter drop-shadow-xl scale-110' : ''}`}
+            className={cn(
+              "drop-shadow-md transition-all duration-300",
+              viewType === 'architectural' ? 'text-slate-700' : 'text-blue-600',
+              showActions ? 'filter drop-shadow-xl scale-110 drop-shadow-[0_0_8px_rgba(59,130,246,0.3)]' : '',
+              isSelected ? 'brightness-125' : ''
+            )}
           >
             <path
               d="M16 0C7.16344 0 0 7.16344 0 16C0 24.8366 16 40 16 40C16 40 32 24.8366 32 16C32 7.16344 24.8366 0 16 0Z"
               fill="currentColor"
             />
-            <circle cx="16" cy="16" r="11" fill="white" />
+            <circle 
+              cx="16" 
+              cy="16" 
+              r="11" 
+              fill={isSelected ? "#eff6ff" : "white"} 
+              stroke={isSelected ? "#3b82f6" : "transparent"}
+              strokeWidth={2}
+            />
           </svg>
 
           {/* Number inside the pin circle */}
-          <span className={`absolute top-[7px] left-1/2 -translate-x-1/2 font-black text-[10px] transition-colors duration-300 ${viewType === 'architectural' ? 'text-slate-800' : 'text-blue-700'}`}>
+          <span className={cn(
+            "absolute top-[7px] left-1/2 -translate-x-1/2 font-black text-[10px] transition-colors duration-300",
+            viewType === 'architectural' ? 'text-slate-800' : 'text-blue-700',
+            isSelected ? 'text-blue-600 scale-110' : ''
+          )}>
             {hotspot.number}
           </span>
         </div>
 
-        {/* Edit/Delete Icons on Hover */}
-        {isHovered && (
-          <div className="absolute -top-12 left-1/2 -translate-x-1/2 flex items-center gap-1.5 p-1 bg-white rounded-xl shadow-2xl border border-slate-200 animate-in fade-in zoom-in slide-in-from-bottom-2">
+        {/* Edit/Delete Icons - Visible on Hover OR Selection */}
+        {showActions && (
+          <div className="absolute -top-12 left-1/2 -translate-x-1/2 flex items-center gap-1.5 p-1 bg-white rounded-xl shadow-2xl border border-blue-200 animate-in fade-in zoom-in slide-in-from-bottom-2 ring-4 ring-blue-500/5">
             <Button
               size="icon"
               variant="ghost"
-              className="w-7 h-7 rounded-lg hover:bg-blue-50 text-blue-600"
+              className="w-8 h-8 rounded-lg hover:bg-blue-50 text-blue-600"
               title="Move Hotspot"
               onClick={(e) => { e.stopPropagation(); onEdit(hotspot, e); }}
             >
-              <LucideIcons.Pencil className="w-3.5 h-3.5" />
+              <LucideIcons.Pencil className="w-4 h-4" />
             </Button>
             <Button
               size="icon"
               variant="ghost"
-              className="w-7 h-7 rounded-lg hover:bg-red-50 text-red-600"
+              className="w-8 h-8 rounded-lg hover:bg-red-50 text-red-600"
               title="Delete Hotspot"
               onClick={(e) => {
                 e.stopPropagation();
@@ -163,7 +197,7 @@ const HotspotMarker = ({
                 }
               }}
             >
-              <LucideIcons.Trash2 className="w-3.5 h-3.5" />
+              <LucideIcons.Trash2 className="w-4 h-4" />
             </Button>
           </div>
         )}
@@ -428,8 +462,12 @@ export default function TempleArchitectureAdmin({
   }, [id, toast]);
 
   const handleImageClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    // If we clicked on an existing hotspot, ignore (it has its own handler, but just in case of bubbling)
+    // If we clicked on an existing hotspot, ignore (it has its own handler)
     if ((e.target as HTMLElement).closest('.group.absolute')) return;
+
+    // Deselect if clicking on background
+    setSelectedHotspot(null);
+    setHoveredHotspotId(null);
 
     if (!imageRef.current) return;
     const rect = imageRef.current.getBoundingClientRect();
@@ -2085,9 +2123,22 @@ export default function TempleArchitectureAdmin({
                               hotspot={hotspot}
                               viewType={viewType}
                               zoom={zoom}
+                              isSelected={selectedHotspot?.id === hotspot.id}
+                              isHovered={hoveredHotspotId === hotspot.id}
                               onEdit={handleHotspotEdit}
                               onDelete={deleteHotspot}
                               onUnmap={unmapHotspot}
+                              onClick={(h) => {
+                                setSelectedHotspot(h);
+                                // Scroll the corresponding card in the list into view
+                                const cardId = `hotspot-card-${h.id}`;
+                                const cardElement = document.getElementById(cardId);
+                                if (cardElement) {
+                                  cardElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                }
+                              }}
+                              onMouseEnter={(h) => setHoveredHotspotId(h.id)}
+                              onMouseLeave={() => setHoveredHotspotId(null)}
                             />
                           ))
                         }
@@ -2289,10 +2340,14 @@ export default function TempleArchitectureAdmin({
                       return (
                         <Card
                           key={hotspot.id}
-                          className={`group transition-all cursor-pointer overflow-hidden border-2 ${hoveredHotspotId === hotspot.id
-                            ? 'border-primary shadow-lg bg-primary/5 ring-4 ring-primary/10'
-                            : isPlaced ? 'border-blue-100 bg-blue-50/30' : 'hover:border-primary/50 hover:shadow-lg'
-                            }`}
+                          id={`hotspot-card-${hotspot.id}`}
+                          className={cn(
+                            "group transition-all cursor-pointer overflow-hidden border-2",
+                            hoveredHotspotId === hotspot.id || selectedHotspot?.id === hotspot.id
+                              ? 'border-primary shadow-lg bg-primary/5 ring-2 ring-primary/10'
+                              : isPlaced ? 'border-blue-100 bg-blue-50/30' : 'hover:border-primary/50 hover:shadow-md',
+                            selectedHotspot?.id === hotspot.id && "ring-4 ring-primary/20 scale-[1.02]"
+                          )}
                           onClick={(e) => {
                             if (viewType === 'present' && !isPlaced && pendingClickPosition) {
                               const newPresentHotspot = {
