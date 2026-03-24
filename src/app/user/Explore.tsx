@@ -805,9 +805,11 @@ const Explore = () => {
                                 <Accordion type="single" collapsible className="w-full space-y-1">
                                     {AVATAR_SAMBANDH_CONFIG.map(avatar => {
                                         // Find all sthan types belonging strictly to this avatar (for those w/o subdivisions)
-                                        const directSthans = sthanTypes.filter(st => st.avatarSambandh === avatar.id);
+                                        const directSthans = sthanTypes.filter(st => st.avatarSambandh === avatar.id && (!st.avatarSubdivision || st.avatarSubdivision === ''));
                                         // Total sthans includes direct sthans + those inside subdivisions
-                                        const hasAnySthans = directSthans.length > 0 || avatar.subdivisions.some(sub => sthanTypes.some(st => st.avatarSubdivision === sub.id));
+                                        const hasAnySthans = directSthans.length > 0 || avatar.subdivisions.some(sub => 
+                                            sthanTypes.some(st => st.avatarSambandh === avatar.id && st.avatarSubdivision === sub.id)
+                                        );
                                         
                                         if (!hasAnySthans) return null;
 
@@ -823,7 +825,9 @@ const Explore = () => {
                                                     {avatar.subdivisions.length > 0 ? (
                                                         <Accordion type="single" collapsible className="w-full space-y-1 pl-3 border-l-2 ml-1" style={{ borderColor: `${avatar.color}40` }}>
                                                             {avatar.subdivisions.map(sub => {
-                                                                const subSthans = sthanTypes.filter(st => st.avatarSubdivision === sub.id);
+                                                                const subSthans = sthanTypes.filter(st => 
+                                                                    st.avatarSambandh === avatar.id && st.avatarSubdivision === sub.id
+                                                                );
                                                                 if (subSthans.length === 0) return null;
 
                                                                 return (
