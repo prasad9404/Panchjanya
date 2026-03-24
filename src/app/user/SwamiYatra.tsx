@@ -28,7 +28,7 @@ const ROUTES = [
     { id: "dattatray", name: "Shri Dattatray Prabhu Viharan" },
     { id: "govind", name: "Shri Govind Prabhu Viharan" },
     { id: "chakrapani", name: "Shri Chakrapani Prabhu Viharan" },
-    { id: "krishna", name: "Shri Krishna Prabhu Viharan" }
+    { id: "krishna", name: "Shri Krishan Bhagwan Viharan" }
 ];
 
 const SwamiYatra = () => {
@@ -178,7 +178,7 @@ const SwamiYatra = () => {
                                     <SelectItem value="govind" className="font-bold py-2 text-sm">Shri Govind Prabhu Viharan</SelectItem>
                                     <SelectItem value="chakrapani" className="font-bold py-2 text-sm">Shri Chakrapani Prabhu Viharan</SelectItem>
                                     <SelectItem value="dattatray" className="font-bold py-2 text-sm">Shri Dattatray Prabhu Viharan</SelectItem>
-                                    <SelectItem value="krishna" className="font-bold py-2 text-sm">Shri Krishna Prabhu Viharan</SelectItem>
+                                    <SelectItem value="krishna" className="font-bold py-2 text-sm">Shri Krishan Bhagwan Viharan</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>

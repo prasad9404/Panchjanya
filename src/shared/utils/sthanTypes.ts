@@ -20,8 +20,8 @@ export const AVATAR_SAMBANDH_CONFIG: {
 }[] = [
     {
         id: 'shri-krishna',
-        label: 'Shri Krishna Bhagwan',
-        shortLabel: 'Krishna',
+        label: 'Shri Krishan Bhagwan',
+        shortLabel: 'Krishan',
         color: '#EC4899', // Pink
         count: 5,
         subdivisions: [],
@@ -129,10 +129,10 @@ export const AVATAR_TYPES: { id: string; label: string; group: string }[] = [
 export const PIN_SERIES = [
     {
         id: '1',
-        name: 'Series 1 (Shri Krishna)',
-        folder: '/icons/pins/1 Shri_Krishna_Pin',
+        name: 'Series 1 (Shri Krishan Bhagwan)',
+        folder: '/icons/pins/1 Shri_Krishan_Pin',
         defaultColor: '#EC4899', // Pink
-        files: ['1.1.svg', '1.2.svg', '1.3.svg', '1.4.svg', '1.5.svg', 'Shri_Krishna_Pin.svg']
+        files: ['1.1.svg', '1.2.svg', '1.3.svg', '1.4.svg', '1.5.svg', 'Shri_Krishan_Pin.svg']
     },
     {
         id: '2',

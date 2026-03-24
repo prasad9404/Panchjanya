@@ -38,7 +38,7 @@ const Dashboard = () => {
                         </h1>
                     )}
                     <p className="text-[#D97706] italic font-medium font-serif text-lg tracking-wide">
-                        Jai Shri Chakradhar
+                        Jai Shri Chakradhar Swami
                     </p>
                 </div>
 

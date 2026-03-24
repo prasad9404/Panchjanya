@@ -66,7 +66,7 @@ const ROUTES = [
     { id: "dattatray", name: "Shri Dattatray Prabhu Viharan" },
     { id: "govind", name: "Shri Govind Prabhu Viharan" },
     { id: "chakrapani", name: "Shri Chakrapani Prabhu Viharan" },
-    { id: "krishna", name: "Shri Krishna Prabhu Viharan" }
+    { id: "krishna", name: "Shri Krishan Bhagwan Viharan" }
 ];
 
 function LocationPicker({ lat, lng, onSelect }: { lat?: number, lng?: number, onSelect: (lat: number, lng: number) => void }) {
