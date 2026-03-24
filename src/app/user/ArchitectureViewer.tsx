@@ -654,7 +654,7 @@ export default function ArchitectureViewer() {
                                 <circle
                                   cx="16"
                                   cy="16"
-                                  r="10"
+                                  r="11"
                                   fill="currentColor"
                                   opacity="1"
                                 />
