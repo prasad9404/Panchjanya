@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { db } from "@/auth/firebase";
-import { doc, getDoc, collection, getDocs } from "firebase/firestore";
+import { doc, getDoc } from "firebase/firestore";
 import { X, ZoomIn, ZoomOut, RotateCcw, Info, ChevronLeft, BookOpen, ChevronDown, Eye, EyeOff, Maximize, Check, ChevronRight, ChevronUp, Expand, Image as ImageIcon } from "lucide-react";
 import { cn } from "@/shared/lib/utils";
 import { Button } from "@/shared/components/ui/button";
@@ -11,1004 +11,1008 @@ import { Temple, AbbreviationItem, Hotspot, SthanDetail } from "@/types";
 // ... (rest of imports)
 
 import {
- DropdownMenu,
- DropdownMenuContent,
- DropdownMenuItem,
- DropdownMenuTrigger,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
 } from "@/shared/components/ui/dropdown-menu";
 import {
- Popover,
- PopoverContent,
- PopoverTrigger,
- PopoverAnchor,
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+  PopoverAnchor,
 } from "@/shared/components/ui/popover";
 import {
- Dialog,
- DialogContent,
- DialogHeader,
- DialogTitle,
- DialogTrigger,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
 } from "@/shared/components/ui/dialog";
 
 
 
 
 export default function ArchitectureViewer() {
- const { id } = useParams<{ id: string }>();
- const navigate = useNavigate();
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
 
- const [temple, setTemple] = useState<Temple | null>(null);
- const [hotspots, setHotspots] = useState<Hotspot[]>([]);
- const [presentHotspots, setPresentHotspots] = useState<Hotspot[]>([]); // New state for present hotspots
- const [zoom, setZoom] = useState(1);
- const [pan, setPan] = useState({ x: 0, y: 0 });
- const [loading, setLoading] = useState(true);
- const [isFullScreen, setIsFullScreen] = useState(false);
- const [showHotspots, setShowHotspots] = useState(true);
- const [searchParams] = useSearchParams();
- const initialView = searchParams.get('view') as 'architectural' | 'present' | null;
- const [imageType, setImageType] = useState<'architectural' | 'present'>(initialView || 'architectural');
- const [architecturalImage, setArchitecturalImage] = useState<string>("");
- const [presentImage, setPresentImage] = useState<string>("");
- const [imageRatio, setImageRatio] = useState<number | null>(null);
- const [selectedHotspotId, setSelectedHotspotId] = useState<string | null>(null);
- const [selectionSource, setSelectionSource] = useState<'image' | 'list' | 'dropdown' | null>(null);
- const [hoveredHotspotId, setHoveredHotspotId] = useState<string | null>(null);
+  const [temple, setTemple] = useState<Temple | null>(null);
+  const [hotspots, setHotspots] = useState<Hotspot[]>([]);
+  const [presentHotspots, setPresentHotspots] = useState<Hotspot[]>([]); // New state for present hotspots
+  const [zoom, setZoom] = useState(1);
+  const [pan, setPan] = useState({ x: 0, y: 0 });
+  const [loading, setLoading] = useState(true);
+  const [isFullScreen, setIsFullScreen] = useState(false);
+  const [showHotspots, setShowHotspots] = useState(true);
+  const [searchParams] = useSearchParams();
+  const initialView = searchParams.get('view') as 'architectural' | 'present' | null;
+  const [imageType, setImageType] = useState<'architectural' | 'present'>(initialView || 'architectural');
+  const [architecturalImage, setArchitecturalImage] = useState<string>("");
+  const [presentImage, setPresentImage] = useState<string>("");
+  const [imageRatio, setImageRatio] = useState<number | null>(null);
+  const [selectedHotspotId, setSelectedHotspotId] = useState<string | null>(null);
+  const [selectionSource, setSelectionSource] = useState<'image' | 'list' | 'dropdown' | null>(null);
+  const [hoveredHotspotId, setHoveredHotspotId] = useState<string | null>(null);
 
- const [expandedHotspots, setExpandedHotspots] = useState<Record<string, boolean>>({});
- const [isPothiOpen, setIsPothiOpen] = useState(false);
- const [currentImageIndex, setCurrentImageIndex] = useState(0);
- const [isImageModalOpen, setIsImageModalOpen] = useState(false);
- const [abbreviationItems, setAbbreviationItems] = useState<AbbreviationItem[]>([]);
+  const [expandedHotspots, setExpandedHotspots] = useState<Record<string, boolean>>({});
+  const [isPothiOpen, setIsPothiOpen] = useState(false);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [isImageModalOpen, setIsImageModalOpen] = useState(false);
+  const [abbreviationItems, setAbbreviationItems] = useState<AbbreviationItem[]>([]);
 
- const handleSelectHotspot = (id: string | null, source: 'image' | 'list' | 'dropdown' | null) => {
- setSelectedHotspotId(id);
- setSelectionSource(source);
+  const handleSelectHotspot = (id: string | null, source: 'image' | 'list' | 'dropdown' | null) => {
+    setSelectedHotspotId(id);
+    setSelectionSource(source);
 
- if (id && source && source !== 'image') {
- // Search in unified list to ensure cross-view selection works
- const h = unifiedHotspots.find(hotspot => hotspot.id === id);
- if (h && (h.imageIndex || 0) !== currentImageIndex) {
- setCurrentImageIndex(h.imageIndex || 0);
- handleResetOrientation();
- }
- }
- };
+    if (id && source && source !== 'image') {
+      // Search in unified list to ensure cross-view selection works
+      const h = unifiedHotspots.find(hotspot => hotspot.id === id);
+      if (h && (h.imageIndex || 0) !== currentImageIndex) {
+        setCurrentImageIndex(h.imageIndex || 0);
+        handleResetOrientation();
+      }
+    }
+  };
 
- const toggleHotspot = (id: string) => {
- setExpandedHotspots(prev => ({ ...prev, [id]: !prev[id] }));
- };
+  const toggleHotspot = (id: string) => {
+    setExpandedHotspots(prev => ({ ...prev, [id]: !prev[id] }));
+  };
 
- const sthanaListRef = useRef<HTMLDivElement>(null);
- const cardRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
-
-
-
- // Drag state
- const [isDragging, setIsDragging] = useState(false);
- const dragStart = useRef({ x: 0, y: 0 });
-
- useEffect(() => {
- if (selectedHotspotId) {
- const timeoutId = setTimeout(() => {
- if (selectionSource === 'image') {
- // 1. Scroll main page down to list section
- const buttonsSection = document.getElementById('segmented-buttons-section');
- if (buttonsSection) {
- buttonsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
- }
-
- // 2. Scroll internal list to target card
- const targetCard = cardRefs.current[selectedHotspotId];
- const container = sthanaListRef.current;
- if (targetCard && container) {
- const containerRect = container.getBoundingClientRect();
- const cardRect = targetCard.getBoundingClientRect();
- const scrollOffset = cardRect.top - containerRect.top + container.scrollTop;
-
- container.scrollTo({
- top: scrollOffset,
- behavior: 'smooth'
- });
- }
- } else if (selectionSource === 'list' || selectionSource === 'dropdown') {
- // Scroll main page up to image container
- if (imageContainerRef.current) {
- // Offset by header height (around 80px)
- const headerOffset = 80;
- const elementPosition = imageContainerRef.current.getBoundingClientRect().top;
- const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
-
- window.scrollTo({
- top: offsetPosition,
- behavior: 'smooth'
- });
- }
- }
- }, 100);
-
- return () => clearTimeout(timeoutId);
- }
- }, [selectedHotspotId, selectionSource]);
-
- // Touch state for pinch zoom
- const [initialPinchDistance, setInitialPinchDistance] = useState<number | null>(null);
- const [initialZoom, setInitialZoom] = useState(1);
- const imageContainerRef = useRef<HTMLDivElement>(null);
+  const sthanaListRef = useRef<HTMLDivElement>(null);
+  const cardRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
 
 
 
- // Sync expanded states in pothi when open
- useEffect(() => {
- if (isPothiOpen && selectedHotspotId && (selectionSource === 'image' || selectionSource === 'list')) {
- setExpandedHotspots(prev => ({ ...prev, [selectedHotspotId]: true }));
- }
- }, [selectedHotspotId, selectionSource, isPothiOpen]);
+  // Drag state
+  const [isDragging, setIsDragging] = useState(false);
+  const dragStart = useRef({ x: 0, y: 0 });
 
- useEffect(() => {
- const handleFullScreenChange = () => {
- setIsFullScreen(!!document.fullscreenElement);
- };
+  useEffect(() => {
+    if (selectedHotspotId) {
+      const timeoutId = setTimeout(() => {
+        if (selectionSource === 'image') {
+          // 1. Scroll main page so that the image slider is visible (offset for header)
+          const buttonsSection = document.getElementById('segmented-buttons-section');
+          if (buttonsSection) {
+            const headerOffset = 80;
+            const elementPosition = buttonsSection.getBoundingClientRect().top;
+            const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
 
- document.addEventListener('fullscreenchange', handleFullScreenChange);
- return () => document.removeEventListener('fullscreenchange', handleFullScreenChange);
- }, []);
+            window.scrollTo({
+              top: offsetPosition,
+              behavior: 'smooth'
+            });
+          }
 
- useEffect(() => {
- if (!id) return;
+          // 2. Scroll internal list to target card (which organically "hides" the description block by scrolling past it)
+          const targetCard = cardRefs.current[selectedHotspotId];
+          const container = sthanaListRef.current;
+          if (targetCard && container) {
+            const containerRect = container.getBoundingClientRect();
+            const cardRect = targetCard.getBoundingClientRect();
+            const scrollOffset = cardRect.top - containerRect.top + container.scrollTop;
 
- const fetchTempleData = async () => {
- try {
- setLoading(true);
- const snap = await getDoc(doc(db, "temples", id));
+            container.scrollTo({
+              top: scrollOffset,
+              behavior: 'smooth'
+            });
+          }
+        } else if (selectionSource === 'list' || selectionSource === 'dropdown') {
+          // Scroll main page up to image container
+          if (imageContainerRef.current) {
+            // Offset by header height
+            const headerOffset = 80;
+            const elementPosition = imageContainerRef.current.getBoundingClientRect().top;
+            const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
 
- if (!snap.exists()) {
- console.error("Temple not found");
- navigate(-1);
- return;
- }
+            window.scrollTo({
+              top: offsetPosition,
+              behavior: 'smooth'
+            });
+          }
+        }
+      }, 100);
 
- const data = snap.data() as Temple;
- setTemple(data);
+      return () => clearTimeout(timeoutId);
+    }
+  }, [selectedHotspotId, selectionSource]);
 
- // Get architectural and present images
- // Get architectural and present images
-  const archImg = data.architectureImage || "";
-  const presImg = data.presentImage || "";
-  const archImgs = data.architectureImages || [];
-  const presImgs = data.presentImages || [];
+  // Touch state for pinch zoom
+  const [initialPinchDistance, setInitialPinchDistance] = useState<number | null>(null);
+  const [initialZoom, setInitialZoom] = useState(1);
+  const imageContainerRef = useRef<HTMLDivElement>(null);
 
- setArchitecturalImage(archImg);
- setPresentImage(presImg);
- // We'll store supplemental images in the temple object or local state if needed
- // But for now, temple state already has them through data.
- setTemple({
- ...data,
- architectureImages: archImgs,
- presentImages: presImgs
- });
 
- // Architecture Hotspots Fetch: Prioritize subcollection for strict isolation
- let finalArchHotspots: any[] = [];
- try {
- const archHotspotsRef = collection(db, "temples", id, "architecture_hotspots");
- const archHotspotsSnap = await getDocs(archHotspotsRef);
- const subcollectionArch = archHotspotsSnap.docs.map(doc => doc.data() as Hotspot);
 
- if (subcollectionArch.length > 0) {
- finalArchHotspots = subcollectionArch;
- } else if (data.hotspots && Array.isArray(data.hotspots)) {
- finalArchHotspots = data.hotspots;
- }
- } catch (subErr) {
- console.warn("Architecture subcollection fetch failed:", subErr);
- if (data.hotspots && Array.isArray(data.hotspots)) {
- finalArchHotspots = data.hotspots;
- }
- }
+  // Sync expanded states in pothi when open
+  useEffect(() => {
+    if (isPothiOpen && selectedHotspotId && (selectionSource === 'image' || selectionSource === 'list')) {
+      setExpandedHotspots(prev => ({ ...prev, [selectedHotspotId]: true }));
+    }
+  }, [selectedHotspotId, selectionSource, isPothiOpen]);
 
- const archHotspotsWithNumbers = finalArchHotspots.map((h, index) => ({
- ...h,
- number: h.number || index + 1
- }));
- setHotspots(archHotspotsWithNumbers as Hotspot[]);
+  useEffect(() => {
+    const handleFullScreenChange = () => {
+      setIsFullScreen(!!document.fullscreenElement);
+    };
 
- // Unified Fetch: Prioritize present_hotspots from subcollection for strict isolation
- let finalPresentHotspots: any[] = [];
+    document.addEventListener('fullscreenchange', handleFullScreenChange);
+    return () => document.removeEventListener('fullscreenchange', handleFullScreenChange);
+  }, []);
 
- try {
- const presentHotspotsRef = collection(db, "temples", id, "present_hotspots");
- const presentHotspotsSnap = await getDocs(presentHotspotsRef);
- const subcollectionHotspots = presentHotspotsSnap.docs.map(doc => doc.data() as Hotspot);
+  useEffect(() => {
+    if (!id) return;
 
- if (subcollectionHotspots.length > 0) {
- finalPresentHotspots = subcollectionHotspots;
- } else if ((data.present_hotspots && Array.isArray(data.present_hotspots)) || (data.presentHotspots && Array.isArray(data.presentHotspots))) {
- // Fallback to main document array (Legacy/Initial)
- finalPresentHotspots = data.present_hotspots || data.presentHotspots || [];
- }
- } catch (subErr) {
- console.warn("Subcollection fetch failed, falling back to main doc data:", subErr);
- if (data.present_hotspots && Array.isArray(data.present_hotspots)) {
- finalPresentHotspots = data.present_hotspots;
- }
- }
+    const fetchTempleData = async () => {
+      try {
+        setLoading(true);
+        const snap = await getDoc(doc(db, "temples", id));
 
- const presentHotspotsWithNumbers = finalPresentHotspots.map((h, index) => ({
- ...h,
- number: h.number || index + 1
- }));
- setPresentHotspots(presentHotspotsWithNumbers as Hotspot[]);
- } catch (error) {
- console.error("Error fetching temple:", error);
- } finally {
- setLoading(false);
- }
- };
+        if (!snap.exists()) {
+          console.error("Temple not found");
+          navigate(-1);
+          return;
+        }
 
- fetchTempleData();
- }, [id, navigate]);
+        const data = snap.data() as Temple;
+        setTemple(data);
 
- // Fetch global abbreviations
- useEffect(() => {
- const fetchAbbreviations = async () => {
- try {
- const abbrevSnap = await getDoc(doc(db, "settings", "abbreviations"));
- if (abbrevSnap.exists()) {
- setAbbreviationItems(abbrevSnap.data().items || []);
- }
- } catch (error) {
- console.error("Error fetching abbreviations:", error);
- }
- };
+        // Get architectural and present images
+        // Get architectural and present images
+        const archImg = data.architectureImage || "";
+        const presImg = data.presentImage || "";
+        const archImgs = data.architectureImages || [];
+        const presImgs = data.presentImages || [];
 
- fetchAbbreviations();
- }, []);
+        setArchitecturalImage(archImg);
+        setPresentImage(presImg);
+        // We'll store supplemental images in the temple object or local state if needed
+        // But for now, temple state already has them through data.
+        setTemple({
+          ...data,
+          architectureImages: archImgs,
+          presentImages: presImgs
+        });
 
-   const displayImages = imageType === 'architectural'
-   ? (temple?.architectureImages && temple.architectureImages.length > 0
-       ? temple.architectureImages
-       : (architecturalImage ? [architecturalImage] : []))
-   : (temple?.presentImages && temple.presentImages.length > 0
-       ? temple.presentImages
-       : (presentImage ? [presentImage] : []));
+        // Architecture Hotspots: Read directly from the main document's `hotspots` array.
+        // This is the canonical source — the admin always writes here on every save.
+        // The `architecture_hotspots` subcollection is a legacy/partial write path (only
+        // updated during repositioning) and must NOT be used as primary source.
+        const rawArchHotspots: any[] = data.hotspots || [];
+
+        // Deduplicate by id as a safeguard
+        const uniqueArchHotspots = Array.from(new Map(rawArchHotspots.map(h => [h.id, h])).values());
+        const archHotspotsWithNumbers = uniqueArchHotspots.map((h, index) => ({
+          ...h,
+          number: h.number ?? index + 1
+        }));
+        setHotspots(archHotspotsWithNumbers as Hotspot[]);
+
+        // Present Hotspots: Read directly from the main document's `present_hotspots` array.
+        const rawPresentHotspots: any[] = data.present_hotspots || data.presentHotspots || [];
+        const presentHotspotsWithNumbers = rawPresentHotspots.map((h, index) => ({
+          ...h,
+          number: h.number ?? index + 1
+        }));
+        setPresentHotspots(presentHotspotsWithNumbers as Hotspot[]);
+      } catch (error) {
+        console.error("Error fetching temple:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTempleData();
+  }, [id, navigate]);
+
+  // Fetch global abbreviations
+  useEffect(() => {
+    const fetchAbbreviations = async () => {
+      try {
+        const abbrevSnap = await getDoc(doc(db, "settings", "abbreviations"));
+        if (abbrevSnap.exists()) {
+          setAbbreviationItems(abbrevSnap.data().items || []);
+        }
+      } catch (error) {
+        console.error("Error fetching abbreviations:", error);
+      }
+    };
+
+    fetchAbbreviations();
+  }, []);
+
+  const displayImages = imageType === 'architectural'
+    ? (temple?.architectureImages && temple.architectureImages.length > 0
+      ? temple.architectureImages
+      : (architecturalImage ? [architecturalImage] : []))
+    : (temple?.presentImages && temple.presentImages.length > 0
+      ? temple.presentImages
+      : (presentImage ? [presentImage] : []));
 
   const imageUrl = displayImages[currentImageIndex] || "";
 
- const nextImage = (e?: React.MouseEvent) => {
- e?.stopPropagation();
- setCurrentImageIndex((p) => (p + 1) % displayImages.length);
- handleResetOrientation();
- };
-
- const prevImage = (e?: React.MouseEvent) => {
- e?.stopPropagation();
- setCurrentImageIndex((p) => (p - 1 + displayImages.length) % displayImages.length);
- handleResetOrientation();
- };
-
- // Update image when type changes
- useEffect(() => {
- setCurrentImageIndex(0);
- handleResetOrientation();
- setImageRatio(null);
- }, [imageType]);
-
- // Create unified hotspots list for Pothi and List
- const unifiedHotspots = (() => {
- // Architecture hotspots are the primary definitions
- const baseArch = hotspots.map(h => ({ ...h, isPresent: false }));
-
- // Present hotspots are mappings that inherit from Architecture
- const mergedPresent = presentHotspots.map(ph => {
- const source = hotspots.find(ah => ah.id === ph.sthanaId || ah.id === ph.id);
- return {
- ...source,
- ...ph, // Overrides x, y, order, imageIndex, and any Present-specific data
- isPresent: true
- };
- });
-
- const combined = [...baseArch, ...mergedPresent];
- const unique = Array.from(new Map(combined.map(h => [h.id, h])).values());
- return unique.sort((a, b) => (a.number || 0) - (b.number || 0));
- })();
-
- // NEW: Support for dynamic details array
- const displayDetails = (() => {
-  if (temple?.details && temple.details.length > 0) {
-  return temple.details.map((d, index) => {
-  const linkedMapMarker = unifiedHotspots.find(h => h.id === d.hotspotId || h.id === d.id);
-  return {
-  ...d,
-  number: linkedMapMarker?.number || (index + 1),
-  hasMapMarker: !!linkedMapMarker
+  const nextImage = (e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    setCurrentImageIndex((p) => (p + 1) % displayImages.length);
+    handleResetOrientation();
   };
-  });
+
+  const prevImage = (e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    setCurrentImageIndex((p) => (p - 1 + displayImages.length) % displayImages.length);
+    handleResetOrientation();
+  };
+
+  // Update image when type changes
+  useEffect(() => {
+    setCurrentImageIndex(0);
+    handleResetOrientation();
+    setImageRatio(null);
+  }, [imageType]);
+
+  // Create unified hotspots list for Pothi and List
+  const unifiedHotspots = (() => {
+    // Architecture hotspots are the primary definitions
+    const baseArch = hotspots.map(h => ({ ...h, isPresent: false }));
+
+    // Present hotspots are mappings that inherit from Architecture
+    const mergedPresent = presentHotspots.map(ph => {
+      const source = hotspots.find(ah => ah.id === ph.sthanaId || ah.id === ph.id);
+      return {
+        ...source,
+        ...ph, // Overrides x, y, order, imageIndex, and any Present-specific data
+        isPresent: true
+      };
+    });
+
+    const combined = [...baseArch, ...mergedPresent];
+    const unique = Array.from(new Map(combined.map(h => [h.id, h])).values());
+    return unique.sort((a, b) => (a.number || 0) - (b.number || 0));
+  })();
+
+  // NEW: Support for dynamic details array
+  const displayDetails = (() => {
+    if (temple?.details && temple.details.length > 0) {
+      return temple.details.map((d, index) => {
+        const linkedMapMarker = unifiedHotspots.find(h => h.id === d.hotspotId || h.id === d.id);
+        return {
+          ...d,
+          targetId: d.hotspotId || d.id, // standardized ID for selection matching
+          number: linkedMapMarker?.number || (index + 1),
+          hasMapMarker: !!linkedMapMarker
+        };
+      });
+    }
+    // Legacy fallback: for old temples that haven't been migrated to Sthan details yet
+    return unifiedHotspots.map(h => ({
+      ...h as any,
+      targetId: h.id,
+      hasMapMarker: true
+    }));
+  })();
+
+  const handleZoomIn = () => setZoom(prev => Math.min(prev + 0.2, 3));
+  const handleZoomOut = () => setZoom(prev => Math.max(prev - 0.2, 0.5));
+  const handleResetOrientation = () => {
+    setZoom(1);
+    setPan({ x: 0, y: 0 });
+  };
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    setIsDragging(true);
+    dragStart.current = { x: e.clientX - pan.x, y: e.clientY - pan.y };
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isDragging) return;
+    setPan({
+      x: e.clientX - dragStart.current.x,
+      y: e.clientY - dragStart.current.y
+    });
+  };
+
+  const handleMouseUp = () => setIsDragging(false);
+
+  // Touch handlers for mobile pinch zoom
+  const getTouchDistance = (touches: React.TouchList) => {
+    const dx = touches[0].clientX - touches[1].clientX;
+    const dy = touches[0].clientY - touches[1].clientY;
+    return Math.sqrt(dx * dx + dy * dy);
+  };
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (e.touches.length === 2) {
+      e.preventDefault();
+      const distance = getTouchDistance(e.touches);
+      setInitialPinchDistance(distance);
+      setInitialZoom(zoom);
+    } else if (e.touches.length === 1) {
+      setIsDragging(true);
+      dragStart.current = { x: e.touches[0].clientX - pan.x, y: e.touches[0].clientY - pan.y };
+    }
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (e.touches.length === 2 && initialPinchDistance) {
+      e.preventDefault();
+      const distance = getTouchDistance(e.touches);
+      const scale = distance / initialPinchDistance;
+      setZoom(Math.min(Math.max(initialZoom * scale, 0.5), 3));
+    } else if (e.touches.length === 1 && isDragging) {
+      setPan({
+        x: e.touches[0].clientX - dragStart.current.x,
+        y: e.touches[0].clientY - dragStart.current.y
+      });
+    }
+  };
+
+  const handleTouchEnd = () => {
+    setIsDragging(false);
+    setInitialPinchDistance(null);
+  };
+
+  const toggleFullScreen = () => {
+    handleResetOrientation(); // Reset zoom/pan for correctness
+    if (!isFullScreen && imageContainerRef.current) {
+      if (imageContainerRef.current.requestFullscreen) {
+        imageContainerRef.current.requestFullscreen();
+      }
+      setIsFullScreen(true);
+    } else if (document.fullscreenElement) {
+      document.exitFullscreen();
+      setIsFullScreen(false);
+    }
+  };
+
+  // Navigate to Detail Page
+  const handleNavigationToDetail = (hotspot: Hotspot) => {
+    navigate(`/temple/${id}/architecture/sthana/${hotspot.id}?view=${imageType}`);
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-full flex-1 flex items-center justify-center ">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-900"></div>
+      </div>
+    );
   }
-  return unifiedHotspots.map(h => ({
-  ...h as any,
-  hasMapMarker: true
-  }));
- })();
-
- const handleZoomIn = () => setZoom(prev => Math.min(prev + 0.2, 3));
- const handleZoomOut = () => setZoom(prev => Math.max(prev - 0.2, 0.5));
- const handleResetOrientation = () => {
- setZoom(1);
- setPan({ x: 0, y: 0 });
- };
-
- const handleMouseDown = (e: React.MouseEvent) => {
- setIsDragging(true);
- dragStart.current = { x: e.clientX - pan.x, y: e.clientY - pan.y };
- };
-
- const handleMouseMove = (e: React.MouseEvent) => {
- if (!isDragging) return;
- setPan({
- x: e.clientX - dragStart.current.x,
- y: e.clientY - dragStart.current.y
- });
- };
-
- const handleMouseUp = () => setIsDragging(false);
-
- // Touch handlers for mobile pinch zoom
- const getTouchDistance = (touches: React.TouchList) => {
- const dx = touches[0].clientX - touches[1].clientX;
- const dy = touches[0].clientY - touches[1].clientY;
- return Math.sqrt(dx * dx + dy * dy);
- };
-
- const handleTouchStart = (e: React.TouchEvent) => {
- if (e.touches.length === 2) {
- e.preventDefault();
- const distance = getTouchDistance(e.touches);
- setInitialPinchDistance(distance);
- setInitialZoom(zoom);
- } else if (e.touches.length === 1) {
- setIsDragging(true);
- dragStart.current = { x: e.touches[0].clientX - pan.x, y: e.touches[0].clientY - pan.y };
- }
- };
-
- const handleTouchMove = (e: React.TouchEvent) => {
- if (e.touches.length === 2 && initialPinchDistance) {
- e.preventDefault();
- const distance = getTouchDistance(e.touches);
- const scale = distance / initialPinchDistance;
- setZoom(Math.min(Math.max(initialZoom * scale, 0.5), 3));
- } else if (e.touches.length === 1 && isDragging) {
- setPan({
- x: e.touches[0].clientX - dragStart.current.x,
- y: e.touches[0].clientY - dragStart.current.y
- });
- }
- };
-
- const handleTouchEnd = () => {
- setIsDragging(false);
- setInitialPinchDistance(null);
- };
-
- const toggleFullScreen = () => {
- handleResetOrientation(); // Reset zoom/pan for correctness
- if (!isFullScreen && imageContainerRef.current) {
- if (imageContainerRef.current.requestFullscreen) {
- imageContainerRef.current.requestFullscreen();
- }
- setIsFullScreen(true);
- } else if (document.fullscreenElement) {
- document.exitFullscreen();
- setIsFullScreen(false);
- }
- };
-
- // Navigate to Detail Page
- const handleNavigationToDetail = (hotspot: Hotspot) => {
- navigate(`/temple/${id}/architecture/sthana/${hotspot.id}?view=${imageType}`);
- };
-
- if (loading) {
- return (
- <div className="min-h-full flex-1 flex items-center justify-center ">
- <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-900"></div>
- </div>
- );
- }
 
   if (!temple) {
-  return (
-  <div className="min-h-full flex-1 flex items-center justify-center ">
-  <div className="text-center">
-  <p className="text-lg text-muted-foreground mb-4">Temple data not available</p>
-  <Button onClick={() => navigate(-1)}>Go Back</Button>
-  </div>
-  </div>
-  );
+    return (
+      <div className="min-h-full flex-1 flex items-center justify-center ">
+        <div className="text-center">
+          <p className="text-lg text-muted-foreground mb-4">Temple data not available</p>
+          <Button onClick={() => navigate(-1)}>Go Back</Button>
+        </div>
+      </div>
+    );
   }
 
- return (
- <div
- className="min-h-full flex-1 pb-8 overflow-x-hidden animate-in fade-in duration-300"
- onClick={() => handleSelectHotspot(null, null)}
- >
+  return (
+    <div
+      className="min-h-full flex-1 pb-8 overflow-x-hidden animate-in fade-in duration-300"
+      onClick={() => handleSelectHotspot(null, null)}
+    >
 
- {/* Header: Back, Heading, 'i' */}
- <div
- className="sticky top-0 z-[1000] px-2 bg-white shadow-sm border-b border-[#c7c6c6] py-3"
- >
- <div className="flex items-center gap-3 max-w-6xl mx-auto">
- <Button
- variant="ghost"
- size="icon"
- className="-ml-2 hover:bg-black/5 shrink-0 bg-white/80"
- onClick={() => {
- setZoom(1);
- setPan({ x: 0, y: 0 });
- setSelectedHotspotId(null);
- navigate(`/temple/${id}/architecture`);
- }}
- >
- <ChevronLeft className="w-7 h-7 text-[#0f3c6e]" />
- </Button>
- <h1 className="flex-1 font-heading font-bold text-xl md:text-2xl text-[#0f3c6e] font-serif truncate leading-tight">
- {temple.name}
- </h1>
+      {/* Header: Back, Heading, 'i' */}
+      <div
+        className="sticky top-0 z-[1000] px-2 bg-white shadow-sm border-b border-[#c7c6c6] py-3"
+      >
+        <div className="flex items-center gap-3 max-w-6xl mx-auto">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="-ml-2 hover:bg-black/5 shrink-0 bg-white/80"
+            onClick={() => {
+              setZoom(1);
+              setPan({ x: 0, y: 0 });
+              setSelectedHotspotId(null);
+              navigate(`/temple/${id}/architecture`);
+            }}
+          >
+            <ChevronLeft className="w-7 h-7 text-[#0f3c6e]" />
+          </Button>
+          <h1 className="flex-1 font-heading font-bold text-xl md:text-2xl text-[#0f3c6e] font-serif truncate leading-tight">
+            {temple.name}
+          </h1>
 
- {abbreviationItems && abbreviationItems.length > 0 && (
- <Dialog>
- <DialogTrigger asChild>
- <Button size="icon" variant="ghost" className="h-8 w-8 rounded-full bg-white/90 transition-all duration-300 hover:bg-slate-50 text-blue-900 shadow-md border border-slate-200 shrink-0">
- <Info className="w-5 h-5" />
- </Button>
- </DialogTrigger>
- <DialogContent className="max-w-[90%] rounded-2xl z-[10000]">
- <DialogHeader>
- <DialogTitle className="text-blue-900 font-serif">Abbreviations</DialogTitle>
- </DialogHeader>
- <div className="space-y-3 pt-4">
- {abbreviationItems.map((item, index) => (
- <div key={item.id || index} className="flex items-start gap-3 text-sm text-slate-700 pb-2 border-b border-gray-100 last:border-0">
- {item.icon && (
- <img src={item.icon} className="w-5 h-5 object-contain shrink-0 mt-0.5" alt="icon" />
- )}
- <span className="flex-1">{item.description}</span>
- </div>
- ))}
- </div>
- </DialogContent>
- </Dialog>
- )}
- </div>
- </div>
+          {abbreviationItems && abbreviationItems.length > 0 && (
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button size="icon" variant="ghost" className="h-8 w-8 rounded-full bg-white/90 transition-all duration-300 hover:bg-slate-50 text-blue-900 shadow-md border border-slate-200 shrink-0">
+                  <Info className="w-5 h-5" />
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-[90%] rounded-2xl z-[10000]">
+                <DialogHeader>
+                  <DialogTitle className="text-blue-900 font-serif">Abbreviations</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-3 pt-4">
+                  {abbreviationItems.map((item, index) => (
+                    <div key={item.id || index} className="flex items-start gap-3 text-sm text-slate-700 pb-2 border-b border-gray-100 last:border-0">
+                      {item.icon && (
+                        <img src={item.icon} className="w-5 h-5 object-contain shrink-0 mt-0.5" alt="icon" />
+                      )}
+                      <span className="flex-1">{item.description}</span>
+                    </div>
+                  ))}
+                </div>
+              </DialogContent>
+            </Dialog>
+          )}
+        </div>
+      </div>
 
- <div
- className="px-4 lg:px-6 space-y-4 md:space-y-4 mt-2 md:mt-4 max-w-6xl mx-auto pb-12"
- >
- {/* Image Type Segmented Buttons */}
- <div id="segmented-buttons-section" className="flex justify-center w-full">
- <div className="flex w-full max-w-sm rounded-full border border-slate-300 bg-white shadow-md overflow-hidden text-sm md:text-base">
- <button
- onClick={() => setImageType('architectural')}
- className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 font-bold transition-all border-r border-slate-200 last:border-r-0 ${imageType === 'architectural'
- ? 'bg-blue-900 text-white'
- : 'bg-white text-slate-500 hover:bg-slate-50'
- }`}
- >
- Architectural View
- </button>
- <button
- onClick={() => setImageType('present')}
- className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 font-bold transition-all border-r border-slate-200 last:border-r-0 ${imageType === 'present'
- ? 'bg-blue-900 text-white'
- : 'bg-white text-slate-500 hover:bg-slate-50'
- }`}
- >
- Present View
- </button>
- </div>
- </div>
+      <div
+        className="px-4 lg:px-6 space-y-4 md:space-y-4 mt-2 md:mt-4 max-w-6xl mx-auto pb-12"
+      >
+        {/* Image Type Segmented Buttons */}
+        <div id="segmented-buttons-section" className="flex justify-center w-full">
+          <div className="flex w-full max-w-sm rounded-full border border-slate-300 bg-white shadow-md overflow-hidden text-sm md:text-base">
+            <button
+              onClick={() => setImageType('architectural')}
+              className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 font-bold transition-all border-r border-slate-200 last:border-r-0 ${imageType === 'architectural'
+                ? 'bg-blue-900 text-white'
+                : 'bg-white text-slate-500 hover:bg-slate-50'
+                }`}
+            >
+              Architectural View
+            </button>
+            <button
+              onClick={() => setImageType('present')}
+              className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 font-bold transition-all border-r border-slate-200 last:border-r-0 ${imageType === 'present'
+                ? 'bg-blue-900 text-white'
+                : 'bg-white text-slate-500 hover:bg-slate-50'
+                }`}
+            >
+              Present View
+            </button>
+          </div>
+        </div>
 
- {/* Image Viewer */}
- <div className="flex justify-center">
- <div
- ref={imageContainerRef}
- className="relative aspect-square md:aspect-[4/3] w-full max-w-7xl mx-auto rounded-2xl overflow-hidden border-4 border-white bg-slate-50 group touch-none transition-all duration-500 ease-in-out"
- >
- <div
-  className={cn("w-full h-full", imageUrl ? "cursor-move" : "cursor-default")}
-  onMouseDown={imageUrl ? handleMouseDown : undefined}
-  onMouseMove={imageUrl ? handleMouseMove : undefined}
-  onMouseUp={imageUrl ? handleMouseUp : undefined}
-  onMouseLeave={imageUrl ? handleMouseUp : undefined}
-  onTouchStart={imageUrl ? handleTouchStart : undefined}
-  onTouchMove={imageUrl ? handleTouchMove : undefined}
-  onTouchEnd={imageUrl ? handleTouchEnd : undefined}
-  onClick={(e) => {
- // Coordinate capture for backend support
- const rect = e.currentTarget.getBoundingClientRect();
- const x = ((e.clientX - rect.left) / rect.width) * 100;
- const y = ((e.clientY - rect.top) / rect.height) * 100;
- console.log(`Clicked coordinates: x: ${x.toFixed(2)}%, y: ${y.toFixed(2)}%`);
- handleSelectHotspot(null, null);
- }}
- >
- <div
- style={{
- transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
- transition: isDragging ? 'none' : 'transform 0.2s ease-out'
- }}
- className="relative w-full h-full flex items-center justify-center"
- >
- <div
- className="relative"
- style={{
- aspectRatio: imageRatio || 'auto',
- maxWidth: '100%',
- maxHeight: '100%',
- width: imageRatio && imageRatio > (imageContainerRef.current?.clientWidth || 1) / (imageContainerRef.current?.clientHeight || 1) ? '100%' : 'auto',
- height: imageRatio && imageRatio <= (imageContainerRef.current?.clientWidth || 1) / (imageContainerRef.current?.clientHeight || 1) ? '100%' : 'auto'
- }}
- >
-  {imageUrl ? (
-  <img
-  src={imageUrl}
-  alt={`${temple.name} Architecture`}
-  className="w-full h-full block select-none"
-  draggable={false}
-  onLoad={(e) => setImageRatio(e.currentTarget.naturalWidth / e.currentTarget.naturalHeight)}
-  />
-  ) : (
-  <div className="w-full h-full flex flex-col items-center justify-center bg-slate-900/90 text-slate-300 p-4 md:p-8 text-center transition-all duration-500">
-  <div className="w-12 h-12 md:w-20 md:h-20 mb-4 md:mb-6 rounded-full bg-slate-800 flex items-center justify-center border border-slate-700 shadow-2xl animate-pulse">
-  <ImageIcon className="w-6 h-6 md:w-10 md:h-10 opacity-40" />
-  </div>
-  <h3 className="text-xl md:text-2xl font-bold font-serif mb-2 tracking-wide">
-  {imageType === 'architectural' ? 'Architecture Section' : 'Present View Section'}
-  </h3>
-  <p className="text-base md:text-lg opacity-60 font-medium">
-  {imageType === 'architectural'
-  ? 'No architecture visuals uploaded'
-  : 'No present-day photos uploaded'}
-  </p>
-  <p className="text-[10px] md:text-sm mt-4 opacity-40 italic">
-  Digital heritage record update in progress
-  </p>
-  </div>
-  )}
+        {/* Image Viewer */}
+        <div className="flex justify-center">
+          <div
+            ref={imageContainerRef}
+            className="relative aspect-square md:aspect-[4/3] w-full max-w-7xl mx-auto rounded-2xl overflow-hidden border-4 border-white bg-slate-50 group touch-none transition-all duration-500 ease-in-out"
+          >
+            <div
+              className={cn("w-full h-full", imageUrl ? "cursor-move" : "cursor-default")}
+              onMouseDown={imageUrl ? handleMouseDown : undefined}
+              onMouseMove={imageUrl ? handleMouseMove : undefined}
+              onMouseUp={imageUrl ? handleMouseUp : undefined}
+              onMouseLeave={imageUrl ? handleMouseUp : undefined}
+              onTouchStart={imageUrl ? handleTouchStart : undefined}
+              onTouchMove={imageUrl ? handleTouchMove : undefined}
+              onTouchEnd={imageUrl ? handleTouchEnd : undefined}
+              onClick={(e) => {
+                // Coordinate capture for backend support
+                const rect = e.currentTarget.getBoundingClientRect();
+                const x = ((e.clientX - rect.left) / rect.width) * 100;
+                const y = ((e.clientY - rect.top) / rect.height) * 100;
+                console.log(`Clicked coordinates: x: ${x.toFixed(2)}%, y: ${y.toFixed(2)}%`);
+                handleSelectHotspot(null, null);
+              }}
+            >
+              <div
+                style={{
+                  transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
+                  transition: isDragging ? 'none' : 'transform 0.2s ease-out'
+                }}
+                className="relative w-full h-full flex items-center justify-center"
+              >
+                <div
+                  className="relative"
+                  style={{
+                    aspectRatio: imageRatio || 'auto',
+                    maxWidth: '100%',
+                    maxHeight: '100%',
+                    width: imageRatio && imageRatio > (imageContainerRef.current?.clientWidth || 1) / (imageContainerRef.current?.clientHeight || 1) ? '100%' : 'auto',
+                    height: imageRatio && imageRatio <= (imageContainerRef.current?.clientWidth || 1) / (imageContainerRef.current?.clientHeight || 1) ? '100%' : 'auto'
+                  }}
+                >
+                  {imageUrl ? (
+                    <img
+                      src={imageUrl}
+                      alt={`${temple.name} Architecture`}
+                      className="w-full h-full block select-none"
+                      draggable={false}
+                      onLoad={(e) => setImageRatio(e.currentTarget.naturalWidth / e.currentTarget.naturalHeight)}
+                    />
+                  ) : (
+                    <div className="w-full h-full flex flex-col items-center justify-center bg-slate-900/90 text-slate-300 p-4 md:p-8 text-center transition-all duration-500">
+                      <div className="w-12 h-12 md:w-20 md:h-20 mb-4 md:mb-6 rounded-full bg-slate-800 flex items-center justify-center border border-slate-700 shadow-2xl animate-pulse">
+                        <ImageIcon className="w-6 h-6 md:w-10 md:h-10 opacity-40" />
+                      </div>
+                      <h3 className="text-xl md:text-2xl font-bold font-serif mb-2 tracking-wide">
+                        {imageType === 'architectural' ? 'Architecture Section' : 'Present View Section'}
+                      </h3>
+                      <p className="text-base md:text-lg opacity-60 font-medium">
+                        {imageType === 'architectural'
+                          ? 'No architecture visuals uploaded'
+                          : 'No present-day photos uploaded'}
+                      </p>
+                      <p className="text-[10px] md:text-sm mt-4 opacity-40 italic">
+                        Digital heritage record update in progress
+                      </p>
+                    </div>
+                  )}
 
- {displayImages.length > 1 && (
- <>
- <button
- onClick={prevImage}
- className="absolute left-2 md:left-4 top-1/2 -translate-y-1/2 w-10 h-10 md:w-12 md:h-12 flex items-center justify-center text-white/90 hover:text-white transition-all hover:scale-110 drop-shadow-md z-[60] pointer-events-auto"
- >
- <ChevronLeft className="w-8 h-8 md:w-10 md:h-10" strokeWidth={3} />
- </button>
- <button
- onClick={nextImage}
- className="absolute right-2 md:right-4 top-1/2 -translate-y-1/2 w-10 h-10 md:w-12 md:h-12 flex items-center justify-center text-white/90 hover:text-white transition-all hover:scale-110 drop-shadow-md z-[60] pointer-events-auto"
- >
- <ChevronRight className="w-8 h-8 md:w-10 md:h-10" strokeWidth={3} />
- </button>
- {/* Indicator Dots */}
- <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-[60]">
- {displayImages.map((_, idx) => (
- <div
- key={idx}
- className={`w-2 h-2 rounded-full transition-all ${idx === currentImageIndex ? 'bg-amber-500 w-4' : 'bg-white/50'}`}
- />
- ))}
- </div>
- </>
- )}
+                  {displayImages.length > 1 && (
+                    <>
+                      <button
+                        onClick={prevImage}
+                        className="absolute left-2 md:left-4 top-1/2 -translate-y-1/2 w-10 h-10 md:w-12 md:h-12 flex items-center justify-center text-white/90 hover:text-white transition-all hover:scale-110 drop-shadow-md z-[60] pointer-events-auto"
+                      >
+                        <ChevronLeft className="w-8 h-8 md:w-10 md:h-10" strokeWidth={3} />
+                      </button>
+                      <button
+                        onClick={nextImage}
+                        className="absolute right-2 md:right-4 top-1/2 -translate-y-1/2 w-10 h-10 md:w-12 md:h-12 flex items-center justify-center text-white/90 hover:text-white transition-all hover:scale-110 drop-shadow-md z-[60] pointer-events-auto"
+                      >
+                        <ChevronRight className="w-8 h-8 md:w-10 md:h-10" strokeWidth={3} />
+                      </button>
+                      {/* Indicator Dots */}
+                      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-[60]">
+                        {displayImages.map((_, idx) => (
+                          <div
+                            key={idx}
+                            className={`w-2 h-2 rounded-full transition-all ${idx === currentImageIndex ? 'bg-amber-500 w-4' : 'bg-white/50'}`}
+                          />
+                        ))}
+                      </div>
+                    </>
+                  )}
 
- {/* Hotspot Rendering */}
- {(() => {
- const activeHotspots = imageType === 'architectural'
- ? hotspots
- : unifiedHotspots.filter(h => h.isPresent && (h.imageIndex || 0) === currentImageIndex);
+                  {/* Hotspot Rendering */}
+                  {(() => {
+                    const activeHotspots = imageType === 'architectural'
+                      ? hotspots.filter(h => (h.imageIndex || 0) === currentImageIndex)
+                      : presentHotspots
+                        .filter(ph => (ph.imageIndex || 0) === currentImageIndex)
+                        .map(ph => {
+                          const source = hotspots.find(ah => ah.id === ph.sthanaId || ah.id === ph.id);
+                          return { ...source, ...ph, isPresent: true };
+                        });
 
- return (showHotspots || selectedHotspotId) && activeHotspots
- .map((hotspot) => {
- const isSelected = selectedHotspotId === hotspot.id;
- const isHovered = hoveredHotspotId === hotspot.id;
+                    return (showHotspots || selectedHotspotId) && activeHotspots
+                      .map((hotspot) => {
+                        const isSelected = selectedHotspotId === hotspot.id;
+                        const isHovered = hoveredHotspotId === hotspot.id;
 
- // Hotspot is active (highlighted) if:
- // 1. Hovered
- // 2. Selected from image/list
- // 3. Selected from dropdown AND dropdown is open
- const isActive = isHovered || (isSelected && (
- selectionSource !== 'dropdown' || isPothiOpen
- ));
+                        // Hotspot is active (highlighted) if:
+                        // 1. Hovered
+                        // 2. Selected from image/list
+                        // 3. Selected from dropdown AND dropdown is open
+                        const isActive = isHovered || (isSelected && (
+                          selectionSource !== 'dropdown' || isPothiOpen
+                        ));
 
- // Hotspot is visible if showHotspots is on, OR if it's the active one
- const isVisible = showHotspots || isActive;
- if (!isVisible) return null;
+                        // Hotspot is visible if showHotspots is on, OR if it's the active one
+                        const isVisible = showHotspots || isActive;
+                        if (!isVisible) return null;
 
- return (
- <div
- key={hotspot.id}
- className={`absolute pointer-events-none ${isActive ? 'z-50' : 'z-10'}`}
- style={{
- left: `${hotspot.x}%`,
- top: `${hotspot.y}%`,
- transform: 'translate(-50%, -50%)',
- transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
- }}
- >
- <div
- className="absolute w-8 h-8 md:w-10 md:h-10 rounded-full z-[70] cursor-pointer pointer-events-auto"
- style={{ transform: 'translate(-50%, -50%)', left: '50%', top: '50%' }}
- onMouseEnter={() => setHoveredHotspotId(hotspot.id)}
- onMouseLeave={() => setHoveredHotspotId(null)}
- onClick={(e) => {
- e.stopPropagation();
- handleSelectHotspot(isSelected ? null : hotspot.id, isSelected ? null : 'image');
- }}
- />
+                        return (
+                          <div
+                            key={hotspot.id}
+                            className={`absolute pointer-events-none ${isActive ? 'z-50' : 'z-10'}`}
+                            style={{
+                              left: `${hotspot.x}%`,
+                              top: `${hotspot.y}%`,
+                              transform: 'translate(-50%, -50%)',
+                              transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+                            }}
+                          >
+                            <div
+                              className="absolute w-8 h-8 md:w-10 md:h-10 rounded-full z-[70] cursor-pointer pointer-events-auto"
+                              style={{ transform: 'translate(-50%, -50%)', left: '50%', top: '50%' }}
+                              onMouseEnter={() => setHoveredHotspotId(hotspot.id)}
+                              onMouseLeave={() => setHoveredHotspotId(null)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleSelectHotspot(isSelected ? null : hotspot.id, isSelected ? null : 'image');
+                              }}
+                            />
 
- <div className="relative flex items-center justify-center">
- {isActive ? (
- <div className="w-6 h-6 md:w-7 md:h-7 rounded-full bg-amber-600 border border-white/20 flex items-center justify-center shadow-lg transition-all duration-300 transform scale-110">
- <span className="text-[9px] md:text-xs font-bold text-white">
- {hotspot.number}
- </span>
- </div>
- ) : (
- <div className="w-4 h-4 md:w-5 md:h-5 rounded-full bg-[#0f3c6e] border border-white/20 flex items-center justify-center transition-all shadow-sm">
- <span className="text-[8px] md:text-[10px] font-bold text-white">
- {hotspot.number}
- </span>
- </div>
- )}
- </div>
- </div>
- );
- })
- })()}
- </div>
- </div>
- </div>
+                            <div className="relative flex items-center justify-center">
+                              <svg
+                                width={isActive ? "32" : "24"}
+                                height={isActive ? "40" : "30"}
+                                viewBox="0 0 32 40"
+                                fill="none"
+                                xmlns="http://www.w3.org/2000/svg"
+                                className={cn(
+                                  "drop-shadow-md transition-all duration-300",
+                                  isActive ? 'text-amber-600 scale-110' : 'text-[#0f3c6e]'
+                                )}
+                              >
+                                <path
+                                  d="M16 0C7.16344 0 0 7.16344 0 16C0 24.8366 16 40 16 40C16 40 32 24.8366 32 16C32 7.16344 24.8366 0 16 0Z"
+                                  fill="currentColor"
+                                />
+                                <circle
+                                  cx="16"
+                                  cy="16"
+                                  r="10"
+                                  fill="currentColor"
+                                  opacity="1"
+                                />
+                              </svg>
 
- <>
- {isFullScreen ? (
- <>
- <div className="absolute right-4 top-4 z-10 flex gap-2">
- <Button
- size="icon"
- variant="ghost"
- className="h-9 w-9 rounded-full shadow-lg bg-red-600/80 hover:bg-red-600 text-white backdrop-blur-md border border-white/20"
- onClick={() => setShowHotspots(!showHotspots)}
- title={showHotspots ? "Hide Hotspots" : "Show Hotspots"}
- >
- {showHotspots ? <Eye className="w-5 h-5 text-white" /> : <EyeOff className="w-5 h-5 text-white" />}
- </Button>
- <Button
- size="icon"
- variant="ghost"
- className="h-9 w-9 rounded-full shadow-lg bg-slate-600/50 hover:bg-slate-600/50 text-white backdrop-blur-md border border-white/20"
- onClick={toggleFullScreen}
- title="Exit Full Screen"
- >
- <X className="w-5 h-5" />
- </Button>
- </div>
- <div className="absolute right-4 bottom-4 z-10 flex flex-col gap-3">
- <Button size="icon" variant="ghost" className="h-10 w-10 rounded-full shadow-lg bg-slate-600/50 hover:bg-slate-600/50 text-white backdrop-blur-md border border-white/20" onClick={handleZoomIn}>
- <ZoomIn className="w-5 h-5" />
- </Button>
- <Button size="icon" variant="ghost" className="h-10 w-10 rounded-full shadow-lg bg-slate-600/50 hover:bg-slate-600/50 text-white backdrop-blur-md border border-white/20" onClick={handleZoomOut}>
- <ZoomOut className="w-5 h-5" />
- </Button>
- <Button size="icon" variant="ghost" className="h-10 w-10 rounded-full shadow-lg bg-slate-600/50 hover:bg-slate-600/50 text-white backdrop-blur-md border border-white/20" onClick={handleResetOrientation}>
- <RotateCcw className="w-5 h-5" />
- </Button>
- </div>
- </>
- ) : (
- <>
- <div className="absolute right-4 top-4 z-10">
- <Button
- size="icon"
- variant="ghost"
- className="h-8 w-8 rounded-full shadow-lg bg-red-600/80 hover:bg-red-600 text-white backdrop-blur-md border border-white/20"
- onClick={() => setShowHotspots(!showHotspots)}
- title={showHotspots ? "Hide Hotspots" : "Show Hotspots"}
- >
- {showHotspots ? <Eye className="w-4 h-4 text-white" /> : <EyeOff className="w-4 h-4 text-white" />}
- </Button>
- </div>
- <div className="absolute right-4 bottom-4 z-10 flex items-center gap-2">
- <Button size="icon" variant="ghost" className="h-8 w-8 rounded-full shadow-lg bg-slate-600/50 hover:bg-slate-600/50 text-white backdrop-blur-md border border-white/20" onClick={handleResetOrientation} title="Reset">
- <RotateCcw className="w-4 h-4" />
- </Button>
- <Button size="icon" variant="ghost" className="h-8 w-8 rounded-full shadow-lg bg-slate-600/50 hover:bg-slate-600/50 text-white backdrop-blur-md border border-white/20" onClick={toggleFullScreen} title="Interactive Full Screen">
- <Maximize className="w-4 h-4" />
- </Button>
- </div>
- </>
- )}
- </>
- </div>
- </div>
+                              <span className={cn(
+                                "absolute font-bold transition-all duration-300 text-white",
+                                isActive
+                                  ? "text-xs top-[7px]"
+                                  : "text-[10px] top-[4px]"
+                              )} style={{ left: '50%', transform: 'translateX(-50%)' }}>
+                                {hotspot.number}
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      })
+                  })()}
+                </div>
+              </div>
+            </div>
 
- {/* Content Section */}
- <div className="space-y-4">
- {/* Sthan Pothi Dropdown - Using Popover for Anchor support */}
- <Popover onOpenChange={(open) => {
- setIsPothiOpen(open);
- if (!open) {
- setExpandedHotspots({});
- }
- if (open) {
- setTimeout(() => {
- if (selectedHotspotId) {
- const selectedEl = document.getElementById(`pothi-item-${selectedHotspotId}`);
- if (selectedEl) {
- selectedEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
- }
- } else {
- const section = document.getElementById('segmented-buttons-section');
- if (section) {
- section.scrollIntoView({ behavior: 'smooth', block: 'start' });
- }
- }
- }, 100);
- }
- }}>
- <PopoverAnchor asChild>
- <div
- id="sthan-pothi-trigger"
- className="w-full h-12 md:h-14 bg-blue-900 text-white rounded-2xl shadow-md flex items-center justify-between p-0 border border-blue-800 group transition-all focus:outline-none overflow-hidden"
- >
- <div
- className="flex-1 flex items-center gap-3 h-full pl-6 cursor-default"
- onClick={(e) => {
- e.preventDefault();
- e.stopPropagation();
- }}
- >
- <BookOpen className="w-6 h-6 text-white" />
- <span className="font-heading font-bold tracking-wider text-base md:text-lg">Sthan Pothi</span>
- </div>
- <PopoverTrigger asChild>
- <div className="h-full flex items-center justify-center px-6 border-l border-blue-800 hover:bg-blue-800 transition-colors cursor-pointer">
- <ChevronDown className={`w-6 h-6 text-white opacity-80 group-hover:opacity-100 transition-all duration-300 ${isPothiOpen ? 'rotate-180' : ''}`} />
- </div>
- </PopoverTrigger>
- </div>
- </PopoverAnchor>
- <PopoverContent
- side="bottom"
- align="center"
- avoidCollisions={false}
- sideOffset={8}
- className="w-[var(--radix-popover-trigger-width)] max-h-[75vh] md:max-h-[80vh] overflow-y-auto rounded-2xl bg-white shadow-2xl border-blue-50 z-50 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
- >
- <div className="flex flex-col">
- {displayDetails.map((d) => {
- const isExpanded = expandedHotspots[d.id];
- const isSelectedInPothi = selectedHotspotId === d.id;
- return (
- <div
- key={d.id}
- id={`pothi-item-${d.id}`}
- className="border-b border-slate-50 last:border-0 transition-all"
- >
- <div
- className={`h-12 md:h-14 flex items-center justify-between gap-3 px-0 py-1 rounded-xl group cursor-pointer transition-all duration-300 ${isSelectedInPothi ? 'bg-amber-50/50 shadow-sm' : 'hover:bg-amber-50/40'}`}
- onClick={(e) => {
- e.preventDefault();
- handleSelectHotspot(d.id, 'dropdown');
- toggleHotspot(d.id);
- }}
- onMouseEnter={() => d.id && setHoveredHotspotId(d.id)}
- onMouseLeave={() => setHoveredHotspotId(null)}
- >
- <div className="flex-1 min-w-0 px-1 py-2">
- <div className="flex items-center gap-3">
- <div className="w-1 h-6 bg-amber-600 shrink-0"></div>
- <h4 className={`font-heading font-bold text-xl tracking-wider transition-colors truncate ${isSelectedInPothi ? 'text-amber-700' : 'text-blue-900 group-hover:text-amber-700'}`}>{d.title}</h4>
- {d.hasMapMarker && (
- <div className="w-5 h-5 rounded-full bg-blue-100 flex items-center justify-center text-[10px] font-black text-blue-800 shrink-0">
- {d.number}
- </div>
- )}
- </div>
- </div>
- <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 transition-all bg-transparent border-none">
- <ChevronDown className={`w-4 h-4 text-amber-600 transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`} />
- </div>
- </div>
- {isExpanded && (
- <div className="px-2 pb-3 pt-2">
- <p className="text-lg text-slate-600 font-serif leading-relaxed pl-3.5 animate-in fade-in slide-in-from-top-1 duration-200">
- {d.sthanPothiDescription || d.description || "Historical records of this sacred site are being updated."}
- </p>
- </div>
- )}
- </div>
- );
- })}
- {unifiedHotspots.length === 0 && (
- <div className="p-8 text-center">
- <div className="w-12 h-12 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-3">
- <BookOpen className="w-6 h-6 text-slate-300" />
- </div>
- <p className="text-lg text-slate-400 italic font-serif">Historical data not yet cataloged.</p>
- </div>
- )}
- </div>
- </PopoverContent>
- </Popover>
+            <>
+              {isFullScreen ? (
+                <>
+                  <div className="absolute right-4 top-4 z-10 flex gap-2">
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-9 w-9 rounded-full shadow-lg bg-red-600/80 hover:bg-red-600 text-white backdrop-blur-md border border-white/20"
+                      onClick={() => setShowHotspots(!showHotspots)}
+                      title={showHotspots ? "Hide Hotspots" : "Show Hotspots"}
+                    >
+                      {showHotspots ? <Eye className="w-5 h-5 text-white" /> : <EyeOff className="w-5 h-5 text-white" />}
+                    </Button>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-9 w-9 rounded-full shadow-lg bg-slate-600/50 hover:bg-slate-600/50 text-white backdrop-blur-md border border-white/20"
+                      onClick={toggleFullScreen}
+                      title="Exit Full Screen"
+                    >
+                      <X className="w-5 h-5" />
+                    </Button>
+                  </div>
+                  <div className="absolute right-4 bottom-4 z-10 flex flex-col gap-3">
+                    <Button size="icon" variant="ghost" className="h-10 w-10 rounded-full shadow-lg bg-slate-600/50 hover:bg-slate-600/50 text-white backdrop-blur-md border border-white/20" onClick={handleZoomIn}>
+                      <ZoomIn className="w-5 h-5" />
+                    </Button>
+                    <Button size="icon" variant="ghost" className="h-10 w-10 rounded-full shadow-lg bg-slate-600/50 hover:bg-slate-600/50 text-white backdrop-blur-md border border-white/20" onClick={handleZoomOut}>
+                      <ZoomOut className="w-5 h-5" />
+                    </Button>
+                    <Button size="icon" variant="ghost" className="h-10 w-10 rounded-full shadow-lg bg-slate-600/50 hover:bg-slate-600/50 text-white backdrop-blur-md border border-white/20" onClick={handleResetOrientation}>
+                      <RotateCcw className="w-5 h-5" />
+                    </Button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="absolute right-4 top-4 z-10">
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-8 w-8 rounded-full shadow-lg bg-red-600/80 hover:bg-red-600 text-white backdrop-blur-md border border-white/20"
+                      onClick={() => setShowHotspots(!showHotspots)}
+                      title={showHotspots ? "Hide Hotspots" : "Show Hotspots"}
+                    >
+                      {showHotspots ? <Eye className="w-4 h-4 text-white" /> : <EyeOff className="w-4 h-4 text-white" />}
+                    </Button>
+                  </div>
+                  <div className="absolute right-4 bottom-4 z-10 flex items-center gap-2">
+                    <Button size="icon" variant="ghost" className="h-8 w-8 rounded-full shadow-lg bg-slate-600/50 hover:bg-slate-600/50 text-white backdrop-blur-md border border-white/20" onClick={handleResetOrientation} title="Reset">
+                      <RotateCcw className="w-4 h-4" />
+                    </Button>
+                    <Button size="icon" variant="ghost" className="h-8 w-8 rounded-full shadow-lg bg-slate-600/50 hover:bg-slate-600/50 text-white backdrop-blur-md border border-white/20" onClick={toggleFullScreen} title="Interactive Full Screen">
+                      <Maximize className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </>
+              )}
+            </>
+          </div>
+        </div>
 
- {/* Sthans Overview & List - Combined Scrollable Area */}
- <div className="space-y-4">
- <div className="flex items-center gap-3">
- <div className="w-1 h-6 bg-amber-600"></div>
- <h3 className="font-heading text-xl font-bold text-blue-900">Sthan's Description</h3>
- </div>
+        {/* Content Section */}
+        <div className="space-y-4">
+          {/* Sthan Pothi Dropdown - Using Popover for Anchor support */}
+          <Popover onOpenChange={(open) => {
+            setIsPothiOpen(open);
+            if (!open) {
+              setExpandedHotspots({});
+            }
+            if (open) {
+              setTimeout(() => {
+                if (selectedHotspotId) {
+                  const selectedEl = document.getElementById(`pothi-item-${selectedHotspotId}`);
+                  if (selectedEl) {
+                    selectedEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                  }
+                } else {
+                  const section = document.getElementById('segmented-buttons-section');
+                  if (section) {
+                    section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                  }
+                }
+              }, 100);
+            }
+          }}>
+            <PopoverAnchor asChild>
+              <div
+                id="sthan-pothi-trigger"
+                className="w-full h-12 md:h-14 bg-blue-900 text-white rounded-2xl shadow-md flex items-center justify-between p-0 border border-blue-800 group transition-all focus:outline-none overflow-hidden"
+              >
+                <div
+                  className="flex-1 flex items-center gap-3 h-full pl-6 cursor-default"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                  }}
+                >
+                  <BookOpen className="w-6 h-6 text-white" />
+                  <span className="font-heading font-bold tracking-wider text-base md:text-lg">Sthan Pothi</span>
+                </div>
+                <PopoverTrigger asChild>
+                  <div className="h-full flex items-center justify-center px-6 border-l border-blue-800 hover:bg-blue-800 transition-colors cursor-pointer">
+                    <ChevronDown className={`w-6 h-6 text-white opacity-80 group-hover:opacity-100 transition-all duration-300 ${isPothiOpen ? 'rotate-180' : ''}`} />
+                  </div>
+                </PopoverTrigger>
+              </div>
+            </PopoverAnchor>
+            <PopoverContent
+              side="bottom"
+              align="center"
+              avoidCollisions={false}
+              sideOffset={8}
+              className="w-[var(--radix-popover-trigger-width)] max-h-[75vh] md:max-h-[80vh] overflow-y-auto rounded-2xl bg-white shadow-2xl border-blue-50 z-50 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+            >
+              <div className="flex flex-col">
+                {displayDetails.map((d) => {
+                  const isExpanded = expandedHotspots[d.id];
+                  const isSelectedInPothi = selectedHotspotId === d.targetId || selectedHotspotId === d.id;
+                  return (
+                    <div
+                      key={d.id}
+                      id={`pothi-item-${d.targetId}`}
+                      className="border-b border-slate-50 last:border-0 transition-all"
+                    >
+                      <div
+                        className={`h-12 md:h-14 flex items-center justify-between gap-3 px-0 py-1 rounded-xl group cursor-pointer transition-all duration-300 ${isSelectedInPothi ? 'bg-amber-50/50 shadow-sm' : 'hover:bg-amber-50/40'}`}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          handleSelectHotspot(d.targetId, 'dropdown');
+                          toggleHotspot(d.id);
+                        }}
+                        onMouseEnter={() => d.id && setHoveredHotspotId(d.id)}
+                        onMouseLeave={() => setHoveredHotspotId(null)}
+                      >
+                        <div className="flex-1 min-w-0 px-1 py-2">
+                          <div className="flex items-center gap-3">
+                            <div className="w-1 h-6 bg-amber-600 shrink-0"></div>
+                            <h4 className={`font-heading font-bold text-xl tracking-wider transition-colors truncate ${isSelectedInPothi ? 'text-amber-700' : 'text-blue-900 group-hover:text-amber-700'}`}>{d.title}</h4>
+                            {d.hasMapMarker && (
+                              <div className="w-5 h-5 rounded-full bg-blue-100 flex items-center justify-center text-[10px] font-black text-blue-800 shrink-0">
+                                {d.number}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                        <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 transition-all bg-transparent border-none">
+                          <ChevronDown className={`w-4 h-4 text-amber-600 transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`} />
+                        </div>
+                      </div>
+                      {isExpanded && (
+                        <div className="px-2 pb-3 pt-2">
+                          <p className="text-lg text-slate-600 font-serif leading-relaxed pl-3.5 animate-in fade-in slide-in-from-top-1 duration-200">
+                            {d.sthanPothiDescription || d.description || "Historical records of this sacred site are being updated."}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+                {unifiedHotspots.length === 0 && (
+                  <div className="p-8 text-center">
+                    <div className="w-12 h-12 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-3">
+                      <BookOpen className="w-6 h-6 text-slate-300" />
+                    </div>
+                    <p className="text-lg text-slate-400 italic font-serif">Historical data not yet cataloged.</p>
+                  </div>
+                )}
+              </div>
+            </PopoverContent>
+          </Popover>
 
- <div
- ref={sthanaListRef}
- className="h-[500px] overflow-y-auto scroll-smooth pr-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
- >
- <div className="space-y-4 pb-[450px]">
- {/* Description Card */}
- <div className="bg-white p-3 md:p-4 rounded-2xl shadow-sm border border-slate-100/50 text-base text-slate-600 leading-relaxed font-serif">
- {temple.architectureDescription || "No architecture description available."}
- </div>
+          {/* Sthans Overview & List - Combined Scrollable Area */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="w-1 h-6 bg-amber-600"></div>
+              <h3 className="font-heading text-xl font-bold text-blue-900">Sthan's Description</h3>
+            </div>
 
- {/* Sthana List */}
- <div className="flex flex-col gap-2 md:gap-4">
- {displayDetails.map((d) => {
- const isSelected = selectedHotspotId === d.id;
+            <div
+              ref={sthanaListRef}
+              className="h-[500px] overflow-y-auto scroll-smooth pr-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+            >
+              <div className="space-y-4 pb-[450px]">
+                {/* Description Card */}
+                <div className="bg-white p-3 md:p-4 rounded-2xl shadow-sm border border-slate-100/50 text-base text-slate-600 leading-relaxed font-serif">
+                  {temple.architectureDescription || "No architecture description available."}
+                </div>
 
- return (
- <div
- key={d.id}
- ref={(el) => (cardRefs.current[d.id] = el)}
- id={`sthana-card-${d.id}`}
- onClick={(e) => {
- e.stopPropagation();
- handleSelectHotspot(isSelected ? null : d.id, isSelected ? null : 'list');
- }}
- className={`w-full h-12 md:h-14 flex flex-row items-center justify-between px-3 md:px-6 py-1 bg-white rounded-2xl transition-all duration-300 group cursor-pointer shadow-sm border border-slate-100 ${isSelected
- ? 'bg-amber-50 border-amber-200'
- : 'hover:bg-slate-50 hover:border-amber-200'
- }`}
- onMouseEnter={() => d.id && setHoveredHotspotId(d.id)}
- onMouseLeave={() => setHoveredHotspotId(null)}
- >
- <div className="flex-1 h-full flex items-center px-1 py-2 gap-2 overflow-hidden">
- <div className={`w-8 h-8 rounded-full font-bold flex items-center justify-center border shrink-0 text-sm md:text-base transition-all duration-200 ${isSelected
- ? 'bg-amber-600 text-white border-amber-600'
- : ' text-amber-600 border-amber-600 group-hover:bg-amber-600 group-hover:text-white group-hover:border-amber-600'
- }`}>
- {d.number || "S"}
- </div>
- <span className={`font-heading font-bold text-xl md:text-2xl leading-tight line-clamp-1 transition-colors duration-200 truncate ${isSelected
- ? 'text-amber-700'
- : 'text-blue-900 group-hover:text-amber-700'
- }`}>
- {d.title}
- </span>
- </div>
- <div
- className={`flex items-center justify-center w-12 md:w-16 h-full transition-all duration-300 rounded-r-2xl ${isSelected ? 'bg-amber-50/50' : 'hover:bg-slate-50'}`}
- onClick={(e) => {
- e.stopPropagation();
- navigate(`/temple/${id}/architecture/sthana/${d.id}?view=${imageType}`);
- }}
- >
- <ChevronRight className={`w-5 h-5 transition-all duration-300 group-hover:translate-x-1 ${isSelected
- ? 'text-amber-600'
- : 'text-amber-700 lg:text-slate-300 lg:group-hover:text-amber-500'
- }`} />
- </div>
- </div>
- );
- })}
- </div>
+                {/* Sthana List */}
+                <div className="flex flex-col gap-2 md:gap-4">
+                  {displayDetails.map((d) => {
+                    const isSelected = selectedHotspotId === d.targetId || selectedHotspotId === d.id;
 
- {/* Back to Top Button */}
- <div className="flex flex-col items-center gap-2 pt-8">
- <Button
- variant="ghost"
- size="icon"
- className="w-10 h-10 rounded-full border border-amber-600/40 bg-amber-50 text-amber-700 hover:bg-amber-100 hover:text-amber-800 transition-all shadow-sm"
- onClick={(e) => {
- e.stopPropagation();
- sthanaListRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
- }}
- >
- <ChevronUp className="w-5 h-5" />
- </Button>
- <span className="text-xs text-slate-400 font-serif italic">Back to Top</span>
- </div>
- </div>
+                    return (
+                      <div
+                        key={d.id}
+                        ref={(el) => (cardRefs.current[d.targetId] = el)}
+                        id={`sthana-card-${d.targetId}`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleSelectHotspot(isSelected ? null : d.targetId, isSelected ? null : 'list');
+                        }}
+                        className={`w-full h-12 md:h-14 flex flex-row items-center justify-between px-3 md:px-6 py-1 bg-white rounded-2xl transition-all duration-300 group cursor-pointer shadow-sm border border-slate-100 ${isSelected
+                          ? 'bg-amber-50 border-amber-200'
+                          : 'hover:bg-slate-50 hover:border-amber-200'
+                          }`}
+                        onMouseEnter={() => d.id && setHoveredHotspotId(d.id)}
+                        onMouseLeave={() => setHoveredHotspotId(null)}
+                      >
+                        <div className="flex-1 h-full flex items-center px-1 py-2 gap-2 overflow-hidden">
+                          <div className={`w-8 h-8 rounded-full font-bold flex items-center justify-center border shrink-0 text-sm md:text-base transition-all duration-200 ${isSelected
+                            ? 'bg-amber-600 text-white border-amber-600'
+                            : ' text-amber-600 border-amber-600 group-hover:bg-amber-600 group-hover:text-white group-hover:border-amber-600'
+                            }`}>
+                            {d.number || "S"}
+                          </div>
+                          <span className={`font-heading font-bold text-xl md:text-2xl leading-tight line-clamp-1 transition-colors duration-200 truncate ${isSelected
+                            ? 'text-amber-700'
+                            : 'text-blue-900 group-hover:text-amber-700'
+                            }`}>
+                            {d.title}
+                          </span>
+                        </div>
+                        <div
+                          className={`flex items-center justify-center w-12 md:w-16 h-full transition-all duration-300 rounded-r-2xl ${isSelected ? 'bg-amber-50/50' : 'hover:bg-slate-50'}`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/temple/${id}/architecture/sthana/${d.id}?view=${imageType}`);
+                          }}
+                        >
+                          <ChevronRight className={`w-5 h-5 transition-all duration-300 group-hover:translate-x-1 ${isSelected
+                            ? 'text-amber-600'
+                            : 'text-amber-700 lg:text-slate-300 lg:group-hover:text-amber-500'
+                            }`} />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
 
- {displayDetails.length === 0 && (
- <p className="text-sm text-muted-foreground italic">No sthana details found.</p>
- )}
- </div>
- </div>
- </div>
+                {/* Back to Top Button */}
+                <div className="flex flex-col items-center gap-2 pt-8">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="w-10 h-10 rounded-full border border-amber-600/40 bg-amber-50 text-amber-700 hover:bg-amber-100 hover:text-amber-800 transition-all shadow-sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      sthanaListRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+                    }}
+                  >
+                    <ChevronUp className="w-5 h-5" />
+                  </Button>
+                  <span className="text-xs text-slate-400 font-serif italic">Back to Top</span>
+                </div>
+              </div>
 
- {/* Custom Blocks */}
- {temple.customBlocks && temple.customBlocks.length > 0 && (
- <div className="space-y-4 mt-6">
- {temple.customBlocks.map((block) => (
- <div key={block.id} className="space-y-3 md:space-y-4 group pb-2">
- <div className="flex items-center gap-3">
- <div className="w-1 h-6 bg-amber-600"></div>
- <h3 className="font-heading text-xl font-bold text-blue-900">
- {block.title}
- </h3>
- </div>
- <div className="bg-white p-3 md:p-4 rounded-2xl shadow-sm border border-slate-100/50 text-base text-slate-600 leading-relaxed font-serif whitespace-pre-wrap">
- {block.content}
- </div>
- </div>
- ))}
- </div>
- )}
+              {displayDetails.length === 0 && (
+                <p className="text-sm text-muted-foreground italic">No sthana details found.</p>
+              )}
+            </div>
+          </div>
+        </div>
 
- {/* Full-Screen Image Modal */}
- <Dialog open={isImageModalOpen} onOpenChange={setIsImageModalOpen}>
- <DialogContent className="max-w-[100vw] max-h-[100vh] w-full h-full p-0 bg-black/95 border-none flex items-center justify-center">
- <div className="relative w-full h-full flex items-center justify-center">
- <img
- src={imageUrl}
- alt={`${temple?.name} - Full view`}
- className="max-w-full max-h-[100vh] object-contain"
- onError={(e) => {
- (e.target as HTMLImageElement).src = '/placeholder-temple.jpg';
- }}
- />
+        {/* Custom Blocks */}
+        {temple.customBlocks && temple.customBlocks.length > 0 && (
+          <div className="space-y-4 mt-6">
+            {temple.customBlocks.map((block) => (
+              <div key={block.id} className="space-y-3 md:space-y-4 group pb-2">
+                <div className="flex items-center gap-3">
+                  <div className="w-1 h-6 bg-amber-600"></div>
+                  <h3 className="font-heading text-xl font-bold text-blue-900">
+                    {block.title}
+                  </h3>
+                </div>
+                <div className="bg-white p-3 md:p-4 rounded-2xl shadow-sm border border-slate-100/50 text-base text-slate-600 leading-relaxed font-serif whitespace-pre-wrap">
+                  {block.content}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
 
- {/* Close Button - High Z-index and responsive */}
- <button
- onClick={() => setIsImageModalOpen(false)}
- className="absolute top-4 right-4 z-[1002] w-10 h-10 rounded-full bg-slate-600/50 hover:bg-slate-600/70 text-white flex items-center justify-center backdrop-blur-sm transition-all shadow-lg border border-white/10"
- >
- <X className="w-6 h-6" />
- </button>
+        {/* Full-Screen Image Modal */}
+        <Dialog open={isImageModalOpen} onOpenChange={setIsImageModalOpen}>
+          <DialogContent className="max-w-[100vw] max-h-[100vh] w-full h-full p-0 bg-black/95 border-none flex items-center justify-center">
+            <div className="relative w-full h-full flex items-center justify-center">
+              <img
+                src={imageUrl}
+                alt={`${temple?.name} - Full view`}
+                className="max-w-full max-h-[100vh] object-contain"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = '/placeholder-temple.jpg';
+                }}
+              />
 
- {/* Navigation Arrows inside Modal */}
- {displayImages.length > 1 && (
- <>
- <button
- onClick={prevImage}
- className="absolute left-4 top-1/2 -translate-y-1/2 z-[1002] w-12 h-12 flex items-center justify-center text-white/90 hover:text-white transition-all hover:scale-110 drop-shadow-md bg-slate-600/50 hover:bg-slate-600/70 rounded-full backdrop-blur-sm"
- >
- <ChevronLeft className="w-10 h-10" strokeWidth={3} />
- </button>
- <button
- onClick={nextImage}
- className="absolute right-4 top-1/2 -translate-y-1/2 z-[1002] w-12 h-12 flex items-center justify-center text-white/90 hover:text-white transition-all hover:scale-110 drop-shadow-md bg-slate-600/50 hover:bg-slate-600/70 rounded-full backdrop-blur-sm"
- >
- <ChevronRight className="w-10 h-10" strokeWidth={3} />
- </button>
+              {/* Close Button - High Z-index and responsive */}
+              <button
+                onClick={() => setIsImageModalOpen(false)}
+                className="absolute top-4 right-4 z-[1002] w-10 h-10 rounded-full bg-slate-600/50 hover:bg-slate-600/70 text-white flex items-center justify-center backdrop-blur-sm transition-all shadow-lg border border-white/10"
+              >
+                <X className="w-6 h-6" />
+              </button>
 
- {/* Indicator Dots inside Modal */}
- <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-2 z-[1002]">
- {displayImages.map((_, idx) => (
- <div
- key={idx}
- className={`w-2.5 h-2.5 rounded-full transition-all ${idx === currentImageIndex ? 'bg-slate-500 w-5' : 'bg-white/40'}`}
- />
- ))}
- </div>
- </>
- )}
- </div>
- </DialogContent>
- </Dialog>
- </div>
- </div>
- );
+              {/* Navigation Arrows inside Modal */}
+              {displayImages.length > 1 && (
+                <>
+                  <button
+                    onClick={prevImage}
+                    className="absolute left-4 top-1/2 -translate-y-1/2 z-[1002] w-12 h-12 flex items-center justify-center text-white/90 hover:text-white transition-all hover:scale-110 drop-shadow-md bg-slate-600/50 hover:bg-slate-600/70 rounded-full backdrop-blur-sm"
+                  >
+                    <ChevronLeft className="w-10 h-10" strokeWidth={3} />
+                  </button>
+                  <button
+                    onClick={nextImage}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 z-[1002] w-12 h-12 flex items-center justify-center text-white/90 hover:text-white transition-all hover:scale-110 drop-shadow-md bg-slate-600/50 hover:bg-slate-600/70 rounded-full backdrop-blur-sm"
+                  >
+                    <ChevronRight className="w-10 h-10" strokeWidth={3} />
+                  </button>
+
+                  {/* Indicator Dots inside Modal */}
+                  <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-2 z-[1002]">
+                    {displayImages.map((_, idx) => (
+                      <div
+                        key={idx}
+                        className={`w-2.5 h-2.5 rounded-full transition-all ${idx === currentImageIndex ? 'bg-slate-500 w-5' : 'bg-white/40'}`}
+                      />
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
+      </div>
+    </div>
+  );
 }
