@@ -12,6 +12,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/shared/components/ui/select";
+import { Progress } from "@/shared/components/ui/progress";
 
 import { useYatraPlaces } from "@/shared/hooks/useYatraPlaces";
 import { LazyImage } from "@/shared/components/ui/LazyImage";
@@ -146,30 +147,25 @@ const SwamiYatra = () => {
     }
 
     return (
-        <div className="min-h-full flex-1 bg-background lg:bg-card font-sans flex flex-col pb-24 lg:pb-0 overflow-hidden">
+        <div className="min-h-full flex-1 bg-background font-sans flex flex-col pb-24 lg:pb-0 overflow-hidden">
             {!isFullScreen && (
-                <div className="sticky top-0 z-40 bg-card/80 backdrop-blur-md border-b border-border/50 shadow-sm">
-                    <div className="px-5 py-5 flex items-center justify-between">
+                <div className="sticky top-0 z-40 bg-background/80 backdrop-blur-md border-b border-border/50">
+                    <div className="px-5 py-4 flex items-center justify-between">
                         <Button 
                             variant="ghost" 
                             size="icon" 
                             className="rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors" 
                             onClick={() => navigate(-1)}
                         >
-                            <ChevronLeft className="w-6 h-6 text-landing-primary dark:text-primary" />
+                            <ChevronLeft className="w-7 h-7 text-landing-primary dark:text-primary" />
                         </Button>
                         <div className="flex-1 text-center">
-                            <h1 className="text-2xl md:text-3xl font-heading font-black tracking-tight text-landing-primary dark:text-primary">
+                            <h1 className="text-2xl md:text-3xl font-heading font-bold text-landing-primary dark:text-primary font-serif">
                                 Raj Viharan
                             </h1>
-                            <div className="flex items-center justify-center gap-2 mt-0.5">
-                                <div className="h-[1px] w-4 bg-accent-gold/40" />
-                                <p className="text-[9px] uppercase tracking-[0.3em] font-black text-accent-gold/80">Spiritual Journey</p>
-                                <div className="h-[1px] w-4 bg-accent-gold/40" />
-                            </div>
                         </div>
-                        <Button variant="ghost" size="icon" className="rounded-full group hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all">
-                            <Share2 className="w-5 h-5 text-landing-primary group-hover:scale-110 transition-transform" />
+                        <Button variant="ghost" size="icon" className="rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
+                            <Share2 className="w-5 h-5 text-landing-primary dark:text-primary" />
                         </Button>
                     </div>
 
@@ -239,49 +235,52 @@ const SwamiYatra = () => {
                     </Button>
                 )}
 
-                <div className="absolute bottom-6 right-6 z-[400] flex flex-col gap-3">
-                    <Button
-                        variant="secondary"
-                        size="icon"
-                        title="Focus Current Location"
-                        className="rounded-full bg-card/90 backdrop-blur-md hover:bg-card text-landing-primary h-12 w-12 shadow-xl border border-border/50 group transition-all active:scale-95"
-                        onClick={() => setForceFocus(Date.now())}
-                    >
-                        <Navigation2 className="w-5 h-5 group-hover:text-blue-600 transition-colors" />
-                    </Button>
+                <div className="absolute top-6 right-6 z-[400] overflow-hidden">
+                    <div className="flex flex-col bg-card/90 backdrop-blur-md rounded-2xl shadow-xl border border-border/50 divide-y divide-border/30">
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            title="Focus Current Location"
+                            className="h-12 w-12 rounded-none hover:bg-primary/5 text-landing-primary transition-all active:scale-95"
+                            onClick={() => setForceFocus(Date.now())}
+                        >
+                            <Navigation2 className="w-5 h-5" />
+                        </Button>
 
-                    <Button
-                        variant="secondary"
-                        size="icon"
-                        title="View Full Route"
-                        className="rounded-full bg-card/90 backdrop-blur-md hover:bg-card text-landing-primary h-12 w-12 shadow-xl border border-border/50 group transition-all active:scale-95"
-                        onClick={() => setCenterOnFullRoute(Date.now())}
-                    >
-                        <Compass className="w-5 h-5 group-hover:text-accent-gold transition-colors" />
-                    </Button>
-                    
-                    <Button
-                        variant="secondary"
-                        size="icon"
-                        className="rounded-full bg-card/90 backdrop-blur-md hover:bg-card text-landing-primary h-12 w-12 shadow-xl border border-border/50 group transition-all active:scale-95"
-                        onClick={toggleFullScreen}
-                    >
-                        {isFullScreen ? (
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="group-hover:rotate-12 transition-transform">
-                                <path d="M4 14h6v6" />
-                                <path d="M20 10h-6V4" />
-                                <path d="M14 10l7-7" />
-                                <path d="M3 21l7-7" />
-                            </svg>
-                        ) : (
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="group-hover:scale-110 transition-transform">
-                                <path d="M15 3h6v6" />
-                                <path d="M9 21H3v-6" />
-                                <path d="M21 3l-7 7" />
-                                <path d="M3 21l7-7" />
-                            </svg>
-                        )}
-                    </Button>
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            title="View Full Route"
+                            className="h-12 w-12 rounded-none hover:bg-primary/5 text-muted-foreground transition-all active:scale-95"
+                            onClick={() => setCenterOnFullRoute(Date.now())}
+                        >
+                            <Compass className="w-5 h-5" />
+                        </Button>
+                        
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            title={isFullScreen ? "Exit Fullscreen" : "Enter Fullscreen"}
+                            className="h-12 w-12 rounded-none hover:bg-primary/5 text-muted-foreground transition-all active:scale-95"
+                            onClick={toggleFullScreen}
+                        >
+                            {isFullScreen ? (
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M4 14h6v6" />
+                                    <path d="M20 10h-6V4" />
+                                    <path d="M14 10l7-7" />
+                                    <path d="M3 21l7-7" />
+                                </svg>
+                            ) : (
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M15 3h6v6" />
+                                    <path d="M9 21H3v-6" />
+                                    <path d="M21 3l-7 7" />
+                                    <path d="M3 21l7-7" />
+                                </svg>
+                            )}
+                        </Button>
+                    </div>
                 </div>
             </div>
 
@@ -306,33 +305,29 @@ const SwamiYatra = () => {
                 className="flex-1 bg-background relative z-10 space-y-0 overflow-y-auto"
                 style={!isFullScreen ? { minHeight: `${panelHeight}vh`, height: `${panelHeight}vh` } : {}}
             >
-                <div className="px-6 pt-6 pb-20 space-y-8">
-                    <div className="flex items-center justify-between mb-2">
-                        <div className="space-y-1">
-                            <h2 className="font-heading font-bold text-xl text-landing-primary tracking-tight">Yatra Itinerary</h2>
-                            <div className="h-1 w-12 bg-accent-gold rounded-full opacity-60" />
-                        </div>
-
-                        <div className="flex items-center gap-3">
-                            <div className="flex items-center bg-muted/30 border border-border/50 rounded-2xl px-2 py-1.5 shadow-sm gap-2 backdrop-blur-sm">
+                <div className="px-6 pt-8 pb-24 space-y-8">
+                    <div className="space-y-6">
+                        <div className="flex items-center justify-between border-l-4 border-primary pl-3">
+                            <h2 className="font-heading font-bold text-xl text-landing-primary dark:text-primary">Yatra Itinerary</h2>
+                            <div className="flex items-center bg-muted/50 border border-border/50 rounded-xl px-2 py-1 gap-2">
                                 <Button
                                     variant="ghost"
                                     size="icon"
-                                    className="h-8 w-8 rounded-xl hover:bg-background/80 disabled:opacity-30 transition-all"
+                                    className="h-7 w-7 hover:bg-background disabled:opacity-30"
                                     disabled={currentIndex === 0}
                                     onClick={() => setCurrentIndex(Math.max(0, currentIndex - 1))}
                                 >
                                     <ChevronLeft className="w-4 h-4 text-landing-primary" />
                                 </Button>
 
-                                <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider tabular-nums px-1">
+                                <span className="text-[11px] font-bold text-muted-foreground tabular-nums">
                                     {filteredPlaces.length > 0 ? `${currentIndex + 1} / ${filteredPlaces.length}` : "0 / 0"}
                                 </span>
 
                                 <Button
                                     variant="ghost"
                                     size="icon"
-                                    className="h-8 w-8 rounded-xl hover:bg-background/80 disabled:opacity-30 transition-all"
+                                    className="h-7 w-7 hover:bg-background disabled:opacity-30"
                                     disabled={currentIndex >= filteredPlaces.length - 1}
                                     onClick={() => setCurrentIndex(Math.min(filteredPlaces.length - 1, currentIndex + 1))}
                                 >
@@ -340,109 +335,85 @@ const SwamiYatra = () => {
                                 </Button>
                             </div>
                         </div>
-                    </div>
 
-                    <div className="relative pt-2">
-                        <AnimatePresence mode="wait">
-                            {filteredPlaces.length === 0 ? (
-                                <motion.div 
-                                    initial={{ opacity: 0, y: 10 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    exit={{ opacity: 0, y: -10 }}
-                                    className="text-center py-16 bg-muted/20 rounded-[2rem] border-2 border-dashed border-border/50"
-                                >
-                                    <div className="w-16 h-16 bg-muted/30 rounded-full flex items-center justify-center mx-auto mb-4">
-                                        <MapPin className="w-8 h-8 text-muted/60" />
+                        <div className="relative">
+                            <AnimatePresence mode="wait">
+                                {filteredPlaces.length === 0 ? (
+                                    <div className="text-center py-16 bg-muted/20 rounded-2xl border-2 border-dashed border-border/50">
+                                        <MapPin className="w-10 h-10 text-muted/40 mx-auto mb-3" />
+                                        <p className="text-muted-foreground font-medium">No places discovered yet.</p>
                                     </div>
-                                    <h3 className="text-muted-foreground font-bold text-lg">No places discovered yet</h3>
-                                    <p className="text-muted-foreground/60 text-sm mt-2 max-w-[240px] mx-auto italic">Our sages are mapping this sacred trail. It will appear here soon.</p>
-                                </motion.div>
-                            ) : (
-                                <motion.div
-                                    key={filteredPlaces[currentIndex].id}
-                                    initial={{ opacity: 0, x: 20 }}
-                                    animate={{ opacity: 1, x: 0 }}
-                                    exit={{ opacity: 0, x: -20 }}
-                                    transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
-                                    className="space-y-6"
-                                >
-                                    <div className="flex items-center gap-3 px-1">
-                                        <div 
-                                            className={`w-10 h-10 rounded-2xl flex items-center justify-center text-white shadow-lg relative ${filteredPlaces[currentIndex].status === 'completed' ? 'bg-emerald-500 shadow-emerald-500/20' : 'bg-blue-500 shadow-blue-500/20 animate-pulse'}`}
-                                            style={{ backgroundColor: filteredPlaces[currentIndex].status === 'completed' ? '#10B981' : (filteredPlaces[currentIndex].pinColor || '#2A6DF4') }}
-                                        >
-                                            <MapPin className="w-5 h-5" />
-                                            {filteredPlaces[currentIndex].status !== 'completed' && (
-                                                <div className="absolute -inset-1 rounded-2xl border-2 border-primary/20 animate-ping opacity-20"></div>
-                                            )}
-                                        </div>
-                                        <div>
-                                            <div className="flex items-center gap-2">
-                                                <span className={`text-[10px] font-black tracking-[0.2em] uppercase px-2 py-0.5 rounded-md ${filteredPlaces[currentIndex].status === 'completed' ? 'bg-emerald-100 text-emerald-700' : 'bg-blue-100 text-blue-700'}`}>
-                                                    {filteredPlaces[currentIndex].status === 'completed' ? 'Visited' : (filteredPlaces[currentIndex].status === 'current' ? 'Next Stop' : 'Upcoming')}
-                                                </span>
-                                            </div>
-                                            <p className="text-xs text-muted-foreground mt-1 font-medium">Point {currentIndex + 1} of the Journey</p>
-                                        </div>
-                                    </div>
+                                ) : (
+                                    <motion.div
+                                        key={filteredPlaces[currentIndex].id}
+                                        initial={{ opacity: 0, scale: 0.98 }}
+                                        animate={{ opacity: 1, scale: 1 }}
+                                        exit={{ opacity: 0, scale: 0.98 }}
+                                        transition={{ duration: 0.3 }}
+                                        className="space-y-6"
+                                    >
+                                        <Card className={`overflow-hidden rounded-2xl border-none shadow-sm bg-card relative ${filteredPlaces[currentIndex].status === 'current' ? 'ring-2 ring-primary ring-offset-2 ring-offset-background' : ''}`}>
+                                            <div className="flex flex-col">
+                                                <div className="h-52 relative overflow-hidden">
+                                                    <LazyImage
+                                                        src={filteredPlaces[currentIndex].image || "/placeholder-temple.jpg"}
+                                                        alt={filteredPlaces[currentIndex].title || ""}
+                                                        containerClassName="w-full h-full bg-muted"
+                                                        className="w-full h-full object-cover transition-transform duration-700 hover:scale-105"
+                                                    />
+                                                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+                                                    
+                                                    <div className="absolute top-4 left-4">
+                                                        <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                                                            filteredPlaces[currentIndex].status === 'completed' 
+                                                                ? 'bg-emerald-500 text-white' 
+                                                                : (filteredPlaces[currentIndex].status === 'current' ? 'bg-primary text-white' : 'bg-muted/80 text-foreground backdrop-blur-sm')
+                                                        }`}>
+                                                            {filteredPlaces[currentIndex].status === 'completed' ? 'Visited' : (filteredPlaces[currentIndex].status === 'current' ? 'Active' : 'Upcoming')}
+                                                        </span>
+                                                    </div>
 
-                                    <Card className="overflow-hidden rounded-[2rem] border-none shadow-2xl shadow-blue-900/5 bg-card relative">
-                                        <div className="absolute top-0 right-0 p-4 z-10">
-                                            <div className="bg-white/90 backdrop-blur-sm rounded-full w-8 h-8 flex items-center justify-center shadow-sm text-landing-primary font-bold text-xs border border-border/20">
-                                                {currentIndex + 1}
-                                            </div>
-                                        </div>
-                                        
-                                        <div className="flex flex-col">
-                                            <div className="h-48 relative overflow-hidden group">
-                                                <LazyImage
-                                                    src={filteredPlaces[currentIndex].image || "/placeholder-temple.jpg"}
-                                                    alt={filteredPlaces[currentIndex].title || ""}
-                                                    containerClassName="w-full h-full bg-muted transition-transform duration-700 group-hover:scale-110"
-                                                    className="w-full h-full object-cover"
-                                                />
-                                                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
-                                                <div className="absolute bottom-4 left-6 right-6">
-                                                    <h3 className="font-heading font-black text-2xl text-white leading-tight drop-shadow-md">
-                                                        {filteredPlaces[currentIndex].title}
-                                                    </h3>
+                                                    <div className="absolute bottom-4 left-6 right-6">
+                                                        <h3 className="font-heading font-bold text-xl text-white leading-tight">
+                                                            {filteredPlaces[currentIndex].title}
+                                                        </h3>
+                                                    </div>
+                                                </div>
+                                                
+                                                <div className="p-6 space-y-6">
+                                                    <p className="text-sm text-muted-foreground leading-relaxed">
+                                                        {filteredPlaces[currentIndex].description}
+                                                    </p>
+
+                                                    {filteredPlaces[currentIndex].locationLink && (
+                                                        <Button
+                                                            onClick={() => window.open(filteredPlaces[currentIndex].locationLink, '_blank')}
+                                                            className="w-full bg-landing-primary hover:bg-landing-primary/90 text-white font-bold rounded-xl h-12 transition-all shadow-md active:scale-[0.98]"
+                                                        >
+                                                            <Navigation2 className="w-4 h-4 mr-2" /> OPEN IN NAVIGATION
+                                                        </Button>
+                                                    )}
                                                 </div>
                                             </div>
-                                            
-                                            <div className="p-6 pt-5 space-y-4">
-                                                <p className="text-sm text-balance text-muted-foreground/80 leading-relaxed min-h-[4.5rem]">
-                                                    {filteredPlaces[currentIndex].description}
-                                                </p>
+                                        </Card>
 
-                                                {filteredPlaces[currentIndex].locationLink && (
-                                                    <Button
-                                                        onClick={() => window.open(filteredPlaces[currentIndex].locationLink, '_blank')}
-                                                        className="w-full bg-[#0038A8] hover:bg-[#002B82] text-white font-bold rounded-2xl h-12 shadow-lg shadow-blue-900/10 transition-all hover:-translate-y-0.5 active:translate-y-0"
-                                                    >
-                                                        <ExternalLink className="w-4 h-4 mr-2" /> OPEN IN GOOGLE MAPS
-                                                    </Button>
-                                                )}
-                                            </div>
-                                        </div>
-                                    </Card>
-
-                                    <div className="flex items-center justify-center py-4">
-                                        <div className="flex gap-1.5">
+                                        {/* Pagination Dots */}
+                                        <div className="flex justify-center gap-1.5 pt-2">
                                             {Array.from({ length: Math.min(filteredPlaces.length, 5) }).map((_, i) => {
                                                 const dotIndex = Math.floor(currentIndex / 5) * 5 + i;
                                                 if (dotIndex >= filteredPlaces.length) return null;
                                                 return (
                                                     <div 
                                                         key={dotIndex}
-                                                        className={`h-1.5 transition-all duration-300 rounded-full ${dotIndex === currentIndex ? 'w-6 bg-accent-gold' : 'w-1.5 bg-border'}`}
+                                                        className={`h-1.5 transition-all duration-300 rounded-full ${dotIndex === currentIndex ? 'w-6 bg-primary' : 'w-1.5 bg-muted-foreground/30'}`}
                                                     />
                                                 );
                                             })}
                                         </div>
-                                    </div>
-                                </motion.div>
-                            )}
-                        </AnimatePresence>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
+                        </div>
                     </div>
                 </div>
             </div>

@@ -31,6 +31,7 @@ const getArrowIcon = (angle: number) => {
 };
 
 const markerIcons = new Map<string, L.DivIcon>();
+
 const getNumberedMarker = (
     sequence: number, 
     status: string, 
@@ -42,45 +43,45 @@ const getNumberedMarker = (
     const key = `${sequence}-${status}-${isHighlighted}-${customColor || ''}-${isStart}-${isEnd}`;
     if (markerIcons.has(key)) return markerIcons.get(key)!;
 
+    // Use platform colors: landing-primary for base, primary/accent for specials
+    const landingPrimary = '#0f3c6e'; 
+    const goldAccent = '#D4AF37';
+    
+    const baseColor = isEnd ? goldAccent : landingPrimary;
+
     const icon = L.divIcon({
         className: 'custom-yatra-marker',
         html: `
-            <div style="position: relative; display: flex; flex-direction: column; align-items: center; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));">
+            <div style="position: relative; display: flex; flex-direction: column; align-items: center;">
                 <div style="
-                    background: ${isHighlighted ? '#EF4444' : '#2A6DF4'}; 
-                    width: ${isStart || isEnd ? '32px' : '28px'}; 
-                    height: ${isStart || isEnd ? '32px' : '28px'}; 
-                    border-radius: 4px; 
-                    border: 2px solid white; 
+                    background: ${isHighlighted ? 'white' : baseColor}; 
+                    width: ${isStart || isEnd ? '36px' : '32px'}; 
+                    height: ${isStart || isEnd ? '36px' : '32px'}; 
+                    border-radius: 50%; 
+                    border: 3px solid ${isHighlighted ? baseColor : 'white'}; 
                     display: flex; 
                     align-items: center; 
                     justify-content: center; 
-                    color: white; 
-                    font-weight: 900; 
-                    font-size: ${isStart || isEnd ? '14px' : '12px'};
-                    box-shadow: inset 0 0 10px rgba(0,0,0,0.2);
+                    color: ${isHighlighted ? baseColor : 'white'}; 
+                    font-weight: 800; 
+                    font-size: ${isStart || isEnd ? '14px' : '13px'};
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
                     z-index: 10;
+                    transition: all 0.3s ease;
                 ">
                     ${sequence}
                 </div>
-                <!-- Stem/Tail -->
-                <div style="
-                    width: 2px; 
-                    height: 6px; 
-                    background: white; 
-                    margin-top: -1px;
-                "></div>
                 
                 ${isStart ? `
-                    <div style="position: absolute; bottom: -18px; font-weight: 900; color: white; font-size: 9px; background: #2A6DF4; padding: 1px 6px; border-radius: 2px; box-shadow: 0 2px 5px rgba(0,0,0,0.3); z-index: 5; border: 1px solid white; white-space: nowrap;">START</div>
+                    <div style="position: absolute; bottom: -22px; font-weight: 800; color: white; font-size: 10px; background: #0f3c6e; padding: 2px 8px; border-radius: 20px; box-shadow: 0 2px 8px rgba(15,60,110,0.3); z-index: 5; white-space: nowrap; letter-spacing: 0.5px;">START</div>
                 ` : ''}
                 ${isEnd ? `
-                    <div style="position: absolute; bottom: -18px; font-weight: 900; color: white; font-size: 9px; background: #EF4444; padding: 1px 6px; border-radius: 2px; box-shadow: 0 2px 5px rgba(0,0,0,0.3); z-index: 5; border: 1px solid white; white-space: nowrap;">END</div>
+                    <div style="position: absolute; bottom: -22px; font-weight: 800; color: white; font-size: 10px; background: #D4AF37; padding: 2px 8px; border-radius: 20px; box-shadow: 0 2px 8px rgba(212,175,55,0.3); z-index: 5; white-space: nowrap; letter-spacing: 0.5px;">END</div>
                 ` : ''}
             </div>
         `,
-        iconSize: [32, 45],
-        iconAnchor: [16, 45],
+        iconSize: [40, 40],
+        iconAnchor: [20, 20],
     });
     markerIcons.set(key, icon);
     return icon;
@@ -211,12 +212,12 @@ function RouteVisualization({ locations, highlightedId }: { locations: YatraLoca
 
     if (fullPath.length < 2) return null;
 
-    const routeRed = "#EF4444";
+    const routeBlue = "#0f3c6e"; // landing-primary
     const completedColor = "#10B981"; // Emerald for completed path
 
     // Direction arrows along the road path
     const arrows: JSX.Element[] = [];
-    const desiredPixelGap = zoom > 14 ? 120 : zoom > 12 ? 200 : zoom > 10 ? 400 : 800;
+    const desiredPixelGap = zoom > 14 ? 150 : zoom > 12 ? 250 : zoom > 10 ? 500 : 1000;
 
     let lastArrowPixelDist = 0;
     for (let i = 0; i < fullPath.length - 1; i++) {
@@ -231,13 +232,13 @@ function RouteVisualization({ locations, highlightedId }: { locations: YatraLoca
             const angle = Math.atan2(dy, dx) * (180 / Math.PI);
             const arrowIcon = L.divIcon({
                 className: 'nav-direction-arrow',
-                html: `<div style="transform: rotate(${angle}deg); display: flex; align-items: center; justify-content: center; filter: drop-shadow(0 0 2px rgba(255,255,255,0.8));">
-                         <svg width="12" height="12" viewBox="0 0 24 24" fill="#2A6DF4">
-                           <path d="M5 3l14 9-14 9V3z"/>
+                html: `<div style="transform: rotate(${angle}deg); display: flex; align-items: center; justify-content: center; opacity: 0.9;">
+                         <svg width="14" height="14" viewBox="0 0 24 24" fill="white">
+                           <path d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z"/>
                          </svg>
                        </div>`,
-                iconSize: [12, 12],
-                iconAnchor: [6, 6],
+                iconSize: [14, 14],
+                iconAnchor: [7, 7],
             });
 
             arrows.push(
@@ -259,33 +260,35 @@ function RouteVisualization({ locations, highlightedId }: { locations: YatraLoca
         <>
             <style>
                 {`
-                @keyframes path-flow {
-                    from { stroke-dashoffset: 40; }
-                    to { stroke-dashoffset: 0; }
+                @keyframes path-glow-pulse {
+                    0% { opacity: 0.4; stroke-width: 12; }
+                    50% { opacity: 0.6; stroke-width: 14; }
+                    100% { opacity: 0.4; stroke-width: 12; }
                 }
-                .nav-path-animated {
-                    animation: path-flow 1.5s linear infinite;
+                .nav-path-glow {
+                    animation: path-glow-pulse 3s ease-in-out infinite;
                 }
                 `}
             </style>
             
-            {/* 1. Base Outline Layer */}
+            {/* 1. Soft Glow Layer */}
             <Polyline
                 positions={fullPath}
+                className="nav-path-glow"
                 pathOptions={{
-                    color: "white",
-                    weight: 10,
-                    opacity: 0.3,
+                    color: routeBlue,
+                    weight: 12,
+                    opacity: 0.4,
                     lineJoin: "round",
                     lineCap: "round",
                 }}
             />
 
-            {/* 2. Main Navigation Red Path (Mimic Image) */}
+            {/* 2. Main Navigation Blue Path */}
             <Polyline
                 positions={fullPath}
                 pathOptions={{
-                    color: routeRed,
+                    color: routeBlue,
                     weight: 6,
                     opacity: 1,
                     lineJoin: "round",
@@ -306,20 +309,6 @@ function RouteVisualization({ locations, highlightedId }: { locations: YatraLoca
                     }}
                 />
             )}
-
-            {/* 4. Animated Flow Layer (White Dashes) */}
-            <Polyline
-                positions={fullPath}
-                className="nav-path-animated"
-                pathOptions={{
-                    color: "white",
-                    weight: 2,
-                    opacity: 0.4,
-                    lineJoin: "round",
-                    lineCap: "round",
-                    dashArray: "10, 30",
-                }}
-            />
 
             {arrows}
         </>
