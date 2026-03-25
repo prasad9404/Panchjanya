@@ -67,9 +67,13 @@ export default function ArchitectureViewer() {
 
     if (id && source && source !== 'image') {
       // Search in unified list to ensure cross-view selection works
-      const h = unifiedHotspots.find(hotspot => hotspot.id === id);
-      if (h && (h.imageIndex || 0) !== currentImageIndex) {
-        setCurrentImageIndex(h.imageIndex || 0);
+      // For Present View, prioritize finding a matching presentHotspot to get correct imageIndex
+      const h = imageType === 'present' 
+        ? (presentHotspots.find(ph => ph.sthanaId === id || ph.id === id) || unifiedHotspots.find(hotspot => hotspot.id === id))
+        : unifiedHotspots.find(hotspot => hotspot.id === id);
+
+      if (h && (h.imageIndex !== undefined) && h.imageIndex !== currentImageIndex) {
+        setCurrentImageIndex(h.imageIndex);
         handleResetOrientation();
       }
     }
@@ -106,7 +110,11 @@ export default function ArchitectureViewer() {
           }
 
           // 2. Scroll internal list to target card (which organically "hides" the description block by scrolling past it)
-          const targetCard = cardRefs.current[selectedHotspotId];
+          // Translate present hotspot ID to base sthana ID if needed
+          const ph = presentHotspots.find(h => h.id === selectedHotspotId);
+          const scrollTargetId = (ph && ph.sthanaId) ? ph.sthanaId : selectedHotspotId;
+          
+          const targetCard = cardRefs.current[scrollTargetId];
           const container = sthanaListRef.current;
           if (targetCard && container) {
             const containerRect = container.getBoundingClientRect();
@@ -607,7 +615,9 @@ export default function ArchitectureViewer() {
                         // 3. Selected from dropdown AND dropdown is open
                         const isActive = isHovered || (isSelected && (
                           selectionSource !== 'dropdown' || isPothiOpen
-                        ));
+                        )) || (
+                          selectionSource === 'list' && hotspot.sthanaId === selectedHotspotId
+                        );
 
                         // Hotspot is visible if showHotspots is on, OR if it's the active one
                         const isVisible = showHotspots || isActive;
@@ -795,7 +805,9 @@ export default function ArchitectureViewer() {
               <div className="flex flex-col">
                 {displayDetails.map((d) => {
                   const isExpanded = expandedHotspots[d.id];
-                  const isSelectedInPothi = selectedHotspotId === d.targetId || selectedHotspotId === d.id;
+                  const isSelectedInPothi = selectedHotspotId === d.targetId || 
+                                          selectedHotspotId === d.id || 
+                                          presentHotspots.some(ph => ph.id === selectedHotspotId && ph.sthanaId === d.targetId);
                   return (
                     <div
                       key={d.id}
@@ -869,7 +881,9 @@ export default function ArchitectureViewer() {
                 {/* Sthana List */}
                 <div className="flex flex-col gap-2 md:gap-4">
                   {displayDetails.map((d) => {
-                    const isSelected = selectedHotspotId === d.targetId || selectedHotspotId === d.id;
+                    const isSelected = selectedHotspotId === d.targetId || 
+                                     selectedHotspotId === d.id || 
+                                     presentHotspots.some(ph => ph.id === selectedHotspotId && ph.sthanaId === d.targetId);
 
                     return (
                       <div
