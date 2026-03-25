@@ -215,8 +215,8 @@ export default function TempleArchitecture() {
         return (
             <div className="min-h-full flex-1 flex items-center justify-center ">
                 <div className="text-center">
-                    <p className="text-lg text-muted-foreground mb-4">Temple not found</p>
-                    <Button onClick={() => navigate(-1)}>Go Back</Button>
+                    <p className="text-lg text-muted-foreground mb-4">{t('temple.noSthanFound')}</p>
+                    <Button onClick={() => navigate(-1)}>{t('common.goBack')}</Button>
                 </div>
             </div>
         );
@@ -290,7 +290,7 @@ export default function TempleArchitecture() {
                                     alt="Directions"
                                     className="w-6 h-6 md:w-6 md:h-6 object-contain"
                                 />
-                                <span className="text-sm md:text-base">{temple.directions_title || "Way to reach"}</span>
+                                <span className="text-sm md:text-base">{temple.directions_title || t('temple.wayToReach')}</span>
                             </Button>
                         </DialogTrigger>
                         <DialogContent className="max-w-md rounded-[2rem]">
@@ -301,19 +301,19 @@ export default function TempleArchitecture() {
                                         alt="Directions"
                                         className="w-5 h-5 object-contain"
                                     />
-                                    {temple.directions_title || "Way to Reach"}
+                                    {temple.directions_title || t('temple.wayToReach')}
                                 </DialogTitle>
                             </DialogHeader>
                             <div className="py-4 space-y-6">
                                 <div className="text-sm text-slate-700 font-serif leading-relaxed px-1">
-                                    {temple.directions_text || "Directions not available."}
+                                    {temple.directions_text || t('temple.noInfo')}
                                 </div>
 
                                 {(temple.contactName || temple.contactNumber || temple.contactDetails) && (
                                     <div className="mt-2 p-2 rounded-2xl border border-blue-100/50 space-y-4">
                                         <div className="flex items-center gap-2">
                                             <div className="w-1.5 h-1.5 rounded-full bg-blue-600" />
-                                            <span className="text-[10px] font-black text-blue-900 uppercase tracking-widest">Contact Details</span>
+                                            <span className="text-[10px] font-black text-blue-900 uppercase tracking-widest">{t('common.contactDetails')}</span>
                                         </div>
                                         <div className="space-y-2">
                                             {(temple.contactName || temple.contactNumber) && (
@@ -325,7 +325,7 @@ export default function TempleArchitecture() {
                                             )}
                                             {temple.contactDetails && (
                                                 <div className="flex gap-2 text-sm text-slate-700 leading-relaxed font-serif pt-1 border-t border-blue-100/50">
-                                                    <span className="font-bold text-slate-400 not-italic shrink-0">Note:</span>
+                                                    <span className="font-bold text-slate-400 not-italic shrink-0">{t('common.note')}</span>
                                                     <p className="italic">{temple.contactDetails}</p>
                                                 </div>
                                             )}
@@ -410,7 +410,7 @@ export default function TempleArchitecture() {
                             alt="Explore"
                             className="w-5 h-5 md:w-6 md:h-6 shrink-0 object-contain brightness-0 invert"
                         />
-                        <span>Explore Sthan</span>
+                        <span>{t('temple.exploreSthan')}</span>
                     </Button1>
                 </div>
 
@@ -421,7 +421,7 @@ export default function TempleArchitecture() {
                         <div className="flex items-center gap-3">
                             <div className="w-1 h-6 bg-amber-600"></div>
                             <h3 className="font-heading text-xl font-bold text-blue-900">
-                                {temple.description_title || "Sthan At Glance"}
+                                {temple.description_title || t('temple.sthanAtGlance')}
                             </h3>
                         </div>
 
@@ -435,7 +435,7 @@ export default function TempleArchitecture() {
                                 </DialogTrigger>
                                 <DialogContent className="max-w-[90%] rounded-2xl z-[10000]">
                                     <DialogHeader>
-                                        <DialogTitle className="text-blue-900 font-serif">Abbreviations</DialogTitle>
+                                        <DialogTitle className="text-blue-900 font-serif">{t('common.abbreviations')}</DialogTitle>
                                     </DialogHeader>
                                     <div className="space-y-3 pt-4">
                                         {abbreviationItems.map((item, index) => (
@@ -480,7 +480,7 @@ export default function TempleArchitecture() {
                     <div className="flex items-center gap-3">
                         <div className="w-1 h-6 bg-amber-600"></div>
                         <h3 className="font-heading text-xl font-bold text-blue-900">
-                            {temple.sthana_info_title || "Sthan Overview"}
+                            {temple.sthana_info_title || t('temple.sthanOverview')}
                         </h3>
                     </div>
 
@@ -489,7 +489,7 @@ export default function TempleArchitecture() {
                         <p className="font-serif text-slate-700 leading-relaxed text-md whitespace-pre-wrap pl-2">
                             {temple.sthana_info_text ||
                                 temple.sthana ||
-                                "Information not available."}
+                                t('common.noInfo')}
                         </p>
                     </div>
                 </div>

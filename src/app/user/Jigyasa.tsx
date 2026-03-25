@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { ChevronLeft, HelpCircle, Sparkles } from "lucide-react";
 import { Button } from "@/shared/components/ui/button";
+import { useTranslation } from "react-i18next";
 import { db } from "@/auth/firebase";
 import { collection, onSnapshot, query, limit, doc, getDoc } from "firebase/firestore";
 import { useAuth } from "@/auth/AuthContext";
@@ -33,6 +34,7 @@ interface UserStreak {
 
 export default function Jigyasa() {
  const navigate = useNavigate();
+ const { t } = useTranslation();
  const { user } = useAuth();
  const [dailyWisdom, setDailyWisdom] = useState<DailyWisdom | null>(null);
  const [knowledgeSpheres, setKnowledgeSpheres] = useState<KnowledgeSphere[]>([]);
@@ -127,7 +129,7 @@ export default function Jigyasa() {
  <Button variant="ghost" size="icon" className="-ml-2 hover:bg-black/5" onClick={() => navigate(-1)}>
  <ChevronLeft className="w-7 h-7 text-blue-900" />
  </Button>
- <h1 className="text-2xl md:text-3xl font-heading font-bold text-[#0f3c6e] font-serif">Jigyasa</h1>
+ <h1 className="text-2xl md:text-3xl font-heading font-bold text-[#0f3c6e] font-serif">{t('jigyasa.title')}</h1>
  <Button variant="ghost" size="icon" className="-mr-2 hover:bg-black/5">
  <HelpCircle className="w-6 h-6 text-blue-900" />
  </Button>
@@ -135,7 +137,7 @@ export default function Jigyasa() {
 
  {/* Content */}
  <div className="px-6 py-6 space-y-6">
- {/* Daily Wisdom Card */}
+ {/* {t('jigyasa.dailyWisdom')} Card */}
  <div className="relative bg-gradient-to-br from-blue-900 to-blue-800 rounded-3xl p-6 overflow-hidden">
  {/* Decorative Pattern */}
  <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-2xl" />
@@ -143,7 +145,7 @@ export default function Jigyasa() {
 
  <div className="relative z-10">
  <p className="text-amber-400 text-xs font-bold uppercase tracking-widest mb-3">
- Daily Wisdom
+ {t('jigyasa.dailyWisdom')}
  </p>
 
  {dailyWisdom ? (
@@ -159,7 +161,7 @@ export default function Jigyasa() {
  </div>
 
  <Button className="bg-amber-500 hover:bg-amber-600 text-blue-900 font-bold rounded-full px-6 h-11">
- Answer Now
+ {t('jigyasa.answerNow')}
  <Sparkles className="w-4 h-4 ml-2" />
  </Button>
  </div>
@@ -177,7 +179,7 @@ export default function Jigyasa() {
  </div>
 
  <Button className="bg-amber-500 hover:bg-amber-600 text-blue-900 font-bold rounded-full px-6 h-11">
- Answer Now
+ {t('jigyasa.answerNow')}
  <Sparkles className="w-4 h-4 ml-2" />
  </Button>
  </div>
@@ -186,14 +188,14 @@ export default function Jigyasa() {
  </div>
  </div>
 
- {/* Knowledge Spheres */}
+ {/* {t('jigyasa.knowledgeSpheres')} */}
  <div>
  <div className="flex items-center justify-between mb-4">
  <h2 className="font-heading font-bold text-xl text-blue-900">
- Knowledge Spheres
+ {t('jigyasa.knowledgeSpheres')}
  </h2>
  <button className="text-sm font-bold text-blue-600 uppercase tracking-wider">
- Explore All
+ {t('jigyasa.exploreAll')}
  </button>
  </div>
 
@@ -227,7 +229,7 @@ export default function Jigyasa() {
  </div>
  </div>
 
- {/* Knowledge Streak */}
+ {/* {t('jigyasa.knowledgeStreak')} */}
  <div className="bg-white rounded-3xl p-6 border border-gray-100">
  <div className="flex items-start gap-3 mb-4">
  <div className="w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center flex-shrink-0">
@@ -235,10 +237,10 @@ export default function Jigyasa() {
  </div>
  <div className="flex-1">
  <h3 className="font-bold text-blue-900 text-lg mb-1">
- Knowledge Streak
+ {t('jigyasa.knowledgeStreak')}
  </h3>
  <p className="text-sm text-gray-600">
- {userStreak.currentStreak} Day Path of Wisdom
+ {userStreak.currentStreak} {t('jigyasa.dayPath')}
  </p>
  </div>
  <div className="text-right">

@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { ChevronLeft, Bookmark, Trash2 } from "lucide-react";
 import { Button } from "@/shared/components/ui/button";
+import { useTranslation } from "react-i18next";
 import { Card } from "@/shared/components/ui/card";
 import { useAuth } from "@/auth/AuthContext";
 import { collection, query, onSnapshot, deleteDoc, doc, getDocs } from "firebase/firestore";
@@ -18,6 +19,7 @@ interface SavedTemple {
 
 const Saved = () => {
  const navigate = useNavigate();
+ const { t } = useTranslation();
  const { user } = useAuth();
  const [savedTemples, setSavedTemples] = useState<SavedTemple[]>([]);
  const [loading, setLoading] = useState(true);
@@ -71,8 +73,8 @@ const Saved = () => {
  <div className="min-h-full flex-1 font-sans flex items-center justify-center">
  <div className="text-center">
  <Bookmark className="w-16 h-16 text-gray-300 mx-auto mb-4" />
- <h2 className="text-xl font-bold text-gray-700 mb-2">Please Log In</h2>
- <p className="text-gray-500">Sign in to view your saved temples</p>
+ <h2 className="text-xl font-bold text-gray-700 mb-2">{t('common.loginMsg')}</h2>
+ <p className="text-gray-500">{t('common.signInToView', { item: t('nav.saved').toLowerCase() })}</p>
  </div>
  </div>
  );
@@ -86,7 +88,7 @@ const Saved = () => {
  <Button variant="ghost" size="icon" className="-ml-2 hover:bg-black/5" onClick={() => navigate(-1)}>
  <ChevronLeft className="w-7 h-7 text-[#0f3c6e]" />
  </Button>
- <h1 className="text-2xl md:text-3xl font-heading font-bold text-[#0f3c6e] font-serif">My Saved Sthanas</h1>
+ <h1 className="text-2xl md:text-3xl font-heading font-bold text-[#0f3c6e] font-serif">{t('saved.title')}</h1>
  <div className="w-10" />
  </div>
 

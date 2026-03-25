@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { ChevronLeft, Bell, Plus } from "lucide-react";
 import { Button } from "@/shared/components/ui/button";
+import { useTranslation } from "react-i18next";
 import { db } from "@/auth/firebase";
 import { collection, onSnapshot, query, orderBy, limit } from "firebase/firestore";
 
@@ -26,6 +27,7 @@ interface Notification {
 
 export default function WhatsNew() {
  const navigate = useNavigate();
+ const { t } = useTranslation();
  const [featuredItems, setFeaturedItems] = useState<FeaturedItem[]>([]);
  const [notifications, setNotifications] = useState<Notification[]>([]);
 
@@ -112,7 +114,7 @@ export default function WhatsNew() {
  <Button variant="ghost" size="icon" className="-ml-2 hover:bg-black/5" onClick={() => navigate(-1)}>
  <ChevronLeft className="w-7 h-7 text-blue-900" />
  </Button>
- <h1 className="text-xl font-heading font-bold text-blue-900 font-serif">Panchajanya</h1>
+ <h1 className="text-xl font-heading font-bold text-blue-900 font-serif">{t('notifications.title')}</h1>
  <Button variant="ghost" size="icon" className="-mr-2 hover:bg-black/5 relative">
  <Bell className="w-6 h-6 text-blue-900" />
  <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full" />
@@ -125,10 +127,10 @@ export default function WhatsNew() {
  <div className="mb-6">
  <div className="flex items-center justify-between mb-4">
  <h2 className="font-heading font-bold text-xl text-blue-900">
- Featured
+ {t('notifications.featured')}
  </h2>
  <button className="text-sm font-bold text-amber-600 uppercase tracking-wider">
- See All
+ {t('common.seeAll')}
  </button>
  </div>
 

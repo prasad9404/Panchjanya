@@ -7,6 +7,7 @@ import { cn } from "@/shared/lib/utils";
 import { Button } from "@/shared/components/ui/button";
 import { Button1 } from "@/shared/components/ui/button-1";
 import { Temple, AbbreviationItem, Hotspot, SthanDetail } from "@/types";
+import { useTranslation } from "react-i18next";
 
 // ... (rest of imports)
 
@@ -36,6 +37,7 @@ import {
 export default function ArchitectureViewer() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   const [temple, setTemple] = useState<Temple | null>(null);
   const [hotspots, setHotspots] = useState<Hotspot[]>([]);
@@ -410,8 +412,8 @@ export default function ArchitectureViewer() {
     return (
       <div className="min-h-full flex-1 flex items-center justify-center ">
         <div className="text-center">
-          <p className="text-lg text-muted-foreground mb-4">Temple data not available</p>
-          <Button onClick={() => navigate(-1)}>Go Back</Button>
+          <p className="text-lg text-muted-foreground mb-4">{t('temple.noSthanFound')}</p>
+          <Button onClick={() => navigate(-1)}>{t('common.goBack')}</Button>
         </div>
       </div>
     );
@@ -454,7 +456,7 @@ export default function ArchitectureViewer() {
               </DialogTrigger>
               <DialogContent className="max-w-[90%] rounded-2xl z-[10000]">
                 <DialogHeader>
-                  <DialogTitle className="text-blue-900 font-serif">Abbreviations</DialogTitle>
+                  <DialogTitle className="text-blue-900 font-serif">{t('common.abbreviations')}</DialogTitle>
                 </DialogHeader>
                 <div className="space-y-3 pt-4">
                   {abbreviationItems.map((item, index) => (
@@ -485,7 +487,7 @@ export default function ArchitectureViewer() {
                 : 'bg-white text-slate-500 hover:bg-slate-50'
                 }`}
             >
-              Architectural View
+              {t('temple.architecturalView')}
             </button>
             <button
               onClick={() => setImageType('present')}
@@ -494,7 +496,7 @@ export default function ArchitectureViewer() {
                 : 'bg-white text-slate-500 hover:bg-slate-50'
                 }`}
             >
-              Present View
+              {t('temple.presentView')}
             </button>
           </div>
         </div>
@@ -554,15 +556,15 @@ export default function ArchitectureViewer() {
                         <ImageIcon className="w-6 h-6 md:w-10 md:h-10 opacity-40" />
                       </div>
                       <h3 className="text-xl md:text-2xl font-bold font-serif mb-2 tracking-wide">
-                        {imageType === 'architectural' ? 'Architecture Section' : 'Present View Section'}
+                        {imageType === 'architectural' ? t('temple.archSection') : t('temple.presSection')}
                       </h3>
                       <p className="text-base md:text-lg opacity-60 font-medium">
                         {imageType === 'architectural'
-                          ? 'No architecture visuals uploaded'
-                          : 'No present-day photos uploaded'}
+                          ? t('temple.noArchVisuals')
+                          : t('temple.noPresPhotos')}
                       </p>
                       <p className="text-[10px] md:text-sm mt-4 opacity-40 italic">
-                        Digital heritage record update in progress
+                        {t('temple.updateInProgress')}
                       </p>
                     </div>
                   )}
@@ -589,6 +591,9 @@ export default function ArchitectureViewer() {
                             className={`w-2 h-2 rounded-full transition-all ${idx === currentImageIndex ? 'bg-amber-500 w-4' : 'bg-white/50'}`}
                           />
                         ))}
+                      </div>
+                      <div className="absolute top-4 left-4 bg-black/40 text-white text-[10px] px-2 py-0.5 rounded-full z-[60] backdrop-blur-sm">
+                        {t('common.pageOf', { current: currentImageIndex + 1, total: displayImages.length })}
                       </div>
                     </>
                   )}
@@ -698,7 +703,7 @@ export default function ArchitectureViewer() {
                       variant="ghost"
                       className="h-9 w-9 rounded-full shadow-lg bg-red-600/80 hover:bg-red-600 text-white backdrop-blur-md border border-white/20"
                       onClick={() => setShowHotspots(!showHotspots)}
-                      title={showHotspots ? "Hide Hotspots" : "Show Hotspots"}
+                      title={showHotspots ? t('temple.hideHotspots') : t('temple.showHotspots')}
                     >
                       {showHotspots ? <Eye className="w-5 h-5 text-white" /> : <EyeOff className="w-5 h-5 text-white" />}
                     </Button>
@@ -732,7 +737,7 @@ export default function ArchitectureViewer() {
                       variant="ghost"
                       className="h-8 w-8 rounded-full shadow-lg bg-red-600/80 hover:bg-red-600 text-white backdrop-blur-md border border-white/20"
                       onClick={() => setShowHotspots(!showHotspots)}
-                      title={showHotspots ? "Hide Hotspots" : "Show Hotspots"}
+                      title={showHotspots ? t('temple.hideHotspots') : t('temple.showHotspots')}
                     >
                       {showHotspots ? <Eye className="w-4 h-4 text-white" /> : <EyeOff className="w-4 h-4 text-white" />}
                     </Button>
@@ -788,7 +793,7 @@ export default function ArchitectureViewer() {
                   }}
                 >
                   <BookOpen className="w-6 h-6 text-white" />
-                  <span className="font-heading font-bold tracking-wider text-base md:text-lg">Sthan Pothi</span>
+                  <span className="font-heading font-bold tracking-wider text-base md:text-lg">{t('temple.sthanPothi')}</span>
                 </div>
                 <PopoverTrigger asChild>
                   <div className="h-full flex items-center justify-center px-6 border-l border-blue-800 hover:bg-blue-800 transition-colors cursor-pointer">
@@ -844,7 +849,7 @@ export default function ArchitectureViewer() {
                       {isExpanded && (
                         <div className="px-2 pb-3 pt-2">
                           <p className="text-lg text-slate-600 font-serif leading-relaxed pl-3.5 animate-in fade-in slide-in-from-top-1 duration-200">
-                            {d.sthanPothiDescription || d.description || "Historical records of this sacred site are being updated."}
+                            {d.sthanPothiDescription || d.description || t('temple.pothiUpdateInfo')}
                           </p>
                         </div>
                       )}
@@ -856,7 +861,7 @@ export default function ArchitectureViewer() {
                     <div className="w-12 h-12 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-3">
                       <BookOpen className="w-6 h-6 text-slate-300" />
                     </div>
-                    <p className="text-lg text-slate-400 italic font-serif">Historical data not yet cataloged.</p>
+                    <p className="text-lg text-slate-400 italic font-serif">{t('temple.pothiEmptyInfo')}</p>
                   </div>
                 )}
               </div>
@@ -867,7 +872,7 @@ export default function ArchitectureViewer() {
           <div className="space-y-4">
             <div className="flex items-center gap-3">
               <div className="w-1 h-6 bg-amber-600"></div>
-              <h3 className="font-heading text-xl font-bold text-blue-900">Sthan's Description</h3>
+              <h3 className="font-heading text-xl font-bold text-blue-900">{t('temple.sthanDescription')}</h3>
             </div>
 
             <div
@@ -877,7 +882,7 @@ export default function ArchitectureViewer() {
               <div className="space-y-4 pb-[450px]">
                 {/* Description Card */}
                 <div className="bg-white p-3 md:p-4 rounded-2xl shadow-sm border border-slate-100/50 text-base text-slate-600 leading-relaxed font-serif">
-                  {temple.architectureDescription || "No architecture description available."}
+                  {temple.architectureDescription || t('temple.noArchDescription')}
                 </div>
 
                 {/* Sthana List */}
@@ -947,7 +952,7 @@ export default function ArchitectureViewer() {
                   >
                     <ChevronUp className="w-5 h-5" />
                   </Button>
-                  <span className="text-xs text-slate-400 font-serif italic">Back to Top</span>
+                  <span className="text-xs text-slate-400 font-serif italic">{t('common.backToTop')}</span>
                 </div>
               </div>
 

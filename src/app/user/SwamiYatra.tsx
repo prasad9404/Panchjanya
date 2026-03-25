@@ -13,6 +13,7 @@ import {
     SelectValue,
 } from "@/shared/components/ui/select";
 import { Progress } from "@/shared/components/ui/progress";
+import { useTranslation } from "react-i18next";
 
 import { useYatraPlaces } from "@/shared/hooks/useYatraPlaces";
 import { LazyImage } from "@/shared/components/ui/LazyImage";
@@ -35,6 +36,7 @@ const ROUTES = [
 
 const SwamiYatra = () => {
     const navigate = useNavigate();
+    const { t } = useTranslation();
     const { data: rawPlaces = [], isLoading } = useYatraPlaces();
 
     const [selectedRoute, setSelectedRoute] = useState(ROUTES[0].id);
@@ -70,7 +72,7 @@ const SwamiYatra = () => {
             status: (data.status === "visited" ? "completed" :
                 ["stayed", "current", "revisited"].includes(data.status) ? "current" : "upcoming") as YatraLocation["status"],
             title: data.name,
-            description: data.description || "Sacred pilgrimage destination",
+            description: data.description || t('yatra.description'),
             image: data.image || "/placeholder-temple.jpg",
             attendees: data.attendees || "",
             route: data.route,
@@ -140,7 +142,7 @@ const SwamiYatra = () => {
             <div className="flex h-screen items-center justify-center bg-background">
                 <div className="flex flex-col items-center gap-4">
                     <Loader2 className="w-10 h-10 animate-spin text-[#0f3c6e]" />
-                    <p className="text-sm font-medium text-slate-500 animate-pulse">Navigating the sacred trails...</p>
+                    <p className="text-sm font-medium text-slate-500 animate-pulse">{t('yatra.navigatingSacredTrails')}</p>
                 </div>
             </div>
         );
@@ -161,7 +163,7 @@ const SwamiYatra = () => {
                         </Button>
                         <div className="flex-1 text-center">
                             <h1 className="text-2xl md:text-3xl font-heading font-bold text-landing-primary dark:text-primary font-serif">
-                                Raj Viharan
+                                {t('yatra.title')}
                             </h1>
                         </div>
                         <Button variant="ghost" size="icon" className="rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
@@ -182,19 +184,19 @@ const SwamiYatra = () => {
                                 <SelectTrigger className="w-full h-11 bg-muted/50 border-none shadow-none focus:ring-1 focus:ring-accent-gold/20 text-sm font-semibold text-landing-primary dark:text-primary rounded-2xl pl-4 hover:bg-muted transition-colors">
                                     <div className="flex items-center gap-2 truncate">
                                         <Compass className="w-4 h-4 text-accent-gold" />
-                                        <SelectValue placeholder="Select Route" />
+                                        <SelectValue placeholder={t('yatra.selectRoute')} />
                                     </div>
                                 </SelectTrigger>
                                 <SelectContent className="rounded-3xl border border-border/50 shadow-2xl backdrop-blur-xl">
-                                    <SelectItem value="swami-complete" className="font-bold py-3 text-sm focus:bg-accent/5">Shri Chakradhar Swami's complete Viharan</SelectItem>
-                                    <SelectItem value="swami-complete:ekant" className="pl-6 py-2 text-xs font-medium focus:bg-accent/5">Ekant</SelectItem>
-                                    <SelectItem value="swami-complete:purvardh" className="pl-6 py-2 text-xs font-medium focus:bg-accent/5">Purvardh</SelectItem>
-                                    <SelectItem value="swami-complete:uttarardh" className="pl-6 py-2 text-xs font-medium focus:bg-accent/5">Uttarardh</SelectItem>
+                                    <SelectItem value="swami-complete" className="font-bold py-3 text-sm focus:bg-accent/5">{t('yatra.routes.swamiCompleteViharan')}</SelectItem>
+                                    <SelectItem value="swami-complete:ekant" className="pl-6 py-2 text-xs font-medium focus:bg-accent/5">{t('yatra.routes.ekant')}</SelectItem>
+                                    <SelectItem value="swami-complete:purvardh" className="pl-6 py-2 text-xs font-medium focus:bg-accent/5">{t('yatra.routes.purvardh')}</SelectItem>
+                                    <SelectItem value="swami-complete:uttarardh" className="pl-6 py-2 text-xs font-medium focus:bg-accent/5">{t('yatra.routes.uttarardh')}</SelectItem>
                                     <div className="h-px bg-border/50 my-1 mx-2" />
-                                    <SelectItem value="govind" className="font-bold py-2 text-sm focus:bg-accent/5">Shri Govind Prabhu Viharan</SelectItem>
-                                    <SelectItem value="chakrapani" className="font-bold py-2 text-sm focus:bg-accent/5">Shri Chakrapani Prabhu Viharan</SelectItem>
-                                    <SelectItem value="dattatray" className="font-bold py-2 text-sm focus:bg-accent/5">Shri Dattatray Prabhu Viharan</SelectItem>
-                                    <SelectItem value="krishna" className="font-bold py-2 text-sm focus:bg-accent/5">Shri Krishan Bhagwan Viharan</SelectItem>
+                                    <SelectItem value="govind" className="font-bold py-2 text-sm focus:bg-accent/5">{t('yatra.routes.govind')}</SelectItem>
+                                    <SelectItem value="chakrapani" className="font-bold py-2 text-sm focus:bg-accent/5">{t('yatra.routes.chakrapani')}</SelectItem>
+                                    <SelectItem value="dattatray" className="font-bold py-2 text-sm focus:bg-accent/5">{t('yatra.routes.dattatray')}</SelectItem>
+                                    <SelectItem value="krishna" className="font-bold py-2 text-sm focus:bg-accent/5">{t('yatra.routes.krishna')}</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
@@ -308,7 +310,7 @@ const SwamiYatra = () => {
                 <div className="px-6 pt-8 pb-24 space-y-8">
                     <div className="space-y-6">
                         <div className="flex items-center justify-between border-l-4 border-primary pl-3">
-                            <h2 className="font-heading font-bold text-xl text-landing-primary dark:text-primary">Yatra Itinerary</h2>
+                            <h2 className="font-heading font-bold text-xl text-landing-primary dark:text-primary">{t('yatra.itinerary')}</h2>
                             <div className="flex items-center bg-muted/50 border border-border/50 rounded-xl px-2 py-1 gap-2">
                                 <Button
                                     variant="ghost"
@@ -341,7 +343,7 @@ const SwamiYatra = () => {
                                 {filteredPlaces.length === 0 ? (
                                     <div className="text-center py-16 bg-muted/20 rounded-2xl border-2 border-dashed border-border/50">
                                         <MapPin className="w-10 h-10 text-muted/40 mx-auto mb-3" />
-                                        <p className="text-muted-foreground font-medium">No places discovered yet.</p>
+                                        <p className="text-muted-foreground font-medium">{t('yatra.noPlacesDiscovered')}</p>
                                     </div>
                                 ) : (
                                     <motion.div
@@ -369,7 +371,7 @@ const SwamiYatra = () => {
                                                                 ? 'bg-emerald-500 text-white' 
                                                                 : (filteredPlaces[currentIndex].status === 'current' ? 'bg-primary text-white' : 'bg-muted/80 text-foreground backdrop-blur-sm')
                                                         }`}>
-                                                            {filteredPlaces[currentIndex].status === 'completed' ? 'Visited' : (filteredPlaces[currentIndex].status === 'current' ? 'Active' : 'Upcoming')}
+                                                            {filteredPlaces[currentIndex].status === 'completed' ? t('yatra.visited') : (filteredPlaces[currentIndex].status === 'current' ? t('yatra.active') : t('yatra.upcoming'))}
                                                         </span>
                                                     </div>
 
@@ -390,7 +392,7 @@ const SwamiYatra = () => {
                                                             onClick={() => window.open(filteredPlaces[currentIndex].locationLink, '_blank')}
                                                             className="w-full bg-landing-primary hover:bg-landing-primary/90 text-white font-bold rounded-xl h-12 transition-all shadow-md active:scale-[0.98]"
                                                         >
-                                                            <Navigation2 className="w-4 h-4 mr-2" /> OPEN IN NAVIGATION
+                                                            <Navigation2 className="w-4 h-4 mr-2" /> {t('yatra.openInNavigation')}
                                                         </Button>
                                                     )}
                                                 </div>

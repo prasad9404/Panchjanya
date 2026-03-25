@@ -1,32 +1,65 @@
 import { useState, useEffect, useMemo } from "react";
-import { collection, onSnapshot, doc, setDoc, deleteDoc, getDoc, query, where } from "firebase/firestore";
+import {
+  collection,
+  onSnapshot,
+  doc,
+  setDoc,
+  deleteDoc,
+  getDoc,
+  query,
+  where,
+} from "firebase/firestore";
 import { db } from "@/auth/firebase";
 import { Temple } from "@/types";
 import { useNavigate } from "react-router-dom";
-import { Search, Compass, MapPin, ChevronRight, Filter, X, Bookmark, CornerDownRight, Info, Navigation } from "lucide-react";
+import {
+  Search,
+  Compass,
+  MapPin,
+  ChevronRight,
+  Filter,
+  X,
+  Bookmark,
+  CornerDownRight,
+  Info,
+  Navigation,
+} from "lucide-react";
 import { Input } from "@/shared/components/ui/input";
 import { Button } from "@/shared/components/ui/button";
 import {
-    Popover,
-    PopoverContent,
-    PopoverTrigger,
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
 } from "@/shared/components/ui/popover";
 import {
-    Accordion,
-    AccordionItem,
-    AccordionTrigger,
-    AccordionContent,
+  Accordion,
+  AccordionItem,
+  AccordionTrigger,
+  AccordionContent,
 } from "@/shared/components/ui/accordion";
-import { MapContainer, TileLayer, Marker, Popup, Tooltip, useMap } from "react-leaflet";
+import {
+  MapContainer,
+  TileLayer,
+  Marker,
+  Popup,
+  Tooltip,
+  useMap,
+} from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { useLanguage } from "@/shared/contexts/LanguageContext";
 import { useAuth } from "@/auth/AuthContext";
 import { cn } from "@/shared/lib/utils";
 import DataTableFilter from "@/shared/components/ui/data-table-filter";
-import { getSthanTypes, AVATAR_SAMBANDH_CONFIG, getSthanPinInfo, getPinImageHtml, normalizeAvatarId, getAvatarColor } from "@/shared/utils/sthanTypes";
+import {
+  getSthanTypes,
+  AVATAR_SAMBANDH_CONFIG,
+  getSthanPinInfo,
+  getPinImageHtml,
+  normalizeAvatarId,
+  getAvatarColor,
+} from "@/shared/utils/sthanTypes";
 import { SthanType } from "@/shared/types/sthanType";
-
 
 // Custom styles for Leaflet popup close button
 const popupStyles = `
@@ -51,1026 +84,1267 @@ const popupStyles = `
 
 // Custom Icon for 'Explore' Map (Golden Circle with Symbol)
 const exploreIcon = new L.Icon({
-    iconUrl: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzAzLm9yZy9yZ2IvMjAwMC9zdmciPgogIDxjaXJjbGUgY3g9IjIwIiBjeT0iMjAiIHI9IjE4IiBmaWxsPSIjRkNCOTAwIiBzdHJva2U9IndoaXRlIiBzdHJva2Utd2lkdGg9IjIiLz4KICA8cGF0aCBkPSJNMjAgMTJ2MTZNMTIgMjBoMTYiIHN0cm9rZT0id2hpdGUiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+Cjwvc3ZnPg==', // Placeholder SVG base64
-    iconSize: [52, 52],
-    iconAnchor: [26, 52],
-    popupAnchor: [0, -48],
+  iconUrl:
+    "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzAzLm9yZy9yZ2IvMjAwMC9zdmciPgogIDxjaXJjbGUgY3g9IjIwIiBjeT0iMjAiIHI9IjE4IiBmaWxsPSIjRkNCOTAwIiBzdHJva2U9IndoaXRlIiBzdHJva2Utd2lkdGg9IjIiLz4KICA8cGF0aCBkPSJNMjAgMTJ2MTZNMTIgMjBoMTYiIHN0cm9rZT0id2hpdGUiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+Cjwvc3ZnPg==", // Placeholder SVG base64
+  iconSize: [52, 52],
+  iconAnchor: [26, 52],
+  popupAnchor: [0, -48],
 });
 
 // Custom Blue Temple Icon for Pin Points
 const templePinIcon = new L.Icon({
-    iconUrl: '/icons/Untitled design.png',
-    iconSize: [52, 52],
-    iconAnchor: [26, 52], // Bottom center
-    popupAnchor: [0, -48], // Adjusted for new icon height
+  iconUrl: "/icons/Untitled design.png",
+  iconSize: [52, 52],
+  iconAnchor: [26, 52], // Bottom center
+  popupAnchor: [0, -48], // Adjusted for new icon height
 });
 
 const sthanIconsMap: Record<string, L.DivIcon> = {};
 
 // The 4 canonical sthan type categories used in the Sthana Category filter
 const CANONICAL_STHAN_TYPES: { label: string; keywords: string[] }[] = [
-    { label: "Mahasthan",   keywords: ["mahasthan"] },
-    { label: "Avasthan",    keywords: ["avasthan"] },
-    { label: "Vasti Sthan", keywords: ["vasti", "vishti"] },
-    { label: "Asan Sthan",  keywords: ["asan"] },
+  { label: "Mahasthan", keywords: ["mahasthan"] },
+  { label: "Avasthan", keywords: ["avasthan"] },
+  { label: "Vasti Sthan", keywords: ["vasti", "vishti"] },
+  { label: "Asan Sthan", keywords: ["asan"] },
 ];
 
 // Maps a raw sthan name from DB to one of the 4 canonical labels, or null if no match
 const toCanonicalSthan = (name: string): string | null => {
-    const n = name.toLowerCase();
-    for (const c of CANONICAL_STHAN_TYPES) {
-        if (c.keywords.some(k => n.includes(k))) return c.label;
-    }
-    return null;
+  const n = name.toLowerCase();
+  for (const c of CANONICAL_STHAN_TYPES) {
+    if (c.keywords.some((k) => n.includes(k))) return c.label;
+  }
+  return null;
 };
 
 // Helper function to get icon by sthan type and primary avatar
-function getIconForTemple(temple: Temple, sthanTypes: SthanType[]): L.Icon | L.DivIcon {
-    if (!temple) return templePinIcon;
+function getIconForTemple(
+  temple: Temple,
+  sthanTypes: SthanType[],
+): L.Icon | L.DivIcon {
+  if (!temple) return templePinIcon;
 
-    const sthanTypeId = (temple as any).sthanTypeId || "";
-    const pinIconField = (temple as any).pinIcon || "";
-    const sName = (temple as any).sthan || (temple as any).sthanType || temple.sthana || "";
+  const sthanTypeId = (temple as any).sthanTypeId || "";
+  const pinIconField = (temple as any).pinIcon || "";
+  const sName =
+    (temple as any).sthan || (temple as any).sthanType || temple.sthana || "";
 
-    // 1. Resolve the matched SthanType record from DB
-    //    Priority: sthanTypeId (exact ID match) → sthan name match
-    let matchedSthanType: SthanType | undefined;
-    if (sthanTypeId) {
-        matchedSthanType = sthanTypes.find(st => st.id === sthanTypeId);
-    }
-    if (!matchedSthanType && sName) {
-        matchedSthanType = sthanTypes.find(st => st.name === sName);
-    }
+  // 1. Resolve the matched SthanType record from DB
+  //    Priority: sthanTypeId (exact ID match) → sthan name match
+  let matchedSthanType: SthanType | undefined;
+  if (sthanTypeId) {
+    matchedSthanType = sthanTypes.find((st) => st.id === sthanTypeId);
+  }
+  if (!matchedSthanType && sName) {
+    matchedSthanType = sthanTypes.find((st) => st.name === sName);
+  }
 
-    // 2. Resolve primary avatar
-    let primaryAvatarId = (temple as any).primaryAvatar || (temple as any).avatarSambandh || "";
-    if (!primaryAvatarId && matchedSthanType) {
-        primaryAvatarId = matchedSthanType.avatarSambandh || "";
-    }
-    const canonicalAvatarId = normalizeAvatarId(primaryAvatarId);
+  // 2. Resolve primary avatar
+  let primaryAvatarId =
+    (temple as any).primaryAvatar || (temple as any).avatarSambandh || "";
+  if (!primaryAvatarId && matchedSthanType) {
+    primaryAvatarId = matchedSthanType.avatarSambandh || "";
+  }
+  const canonicalAvatarId = normalizeAvatarId(primaryAvatarId);
 
-    // 3. Resolve avatar color
-    let avatarColor = "#0e3c6f"; // default blue
-    if (canonicalAvatarId) {
-        const avatarConfig = AVATAR_SAMBANDH_CONFIG.find(a => a.id === canonicalAvatarId);
-        if (avatarConfig) avatarColor = avatarConfig.color;
-    } else if (matchedSthanType?.color) {
-        avatarColor = matchedSthanType.color;
-    }
-
-    // 4. Resolve pinType from matched sthan type (the DB-configured icon path)
-    //    This is the critical fix: use matchedSthanType.pinType so every configured pin is respected.
-    const pinType = matchedSthanType?.pinType || pinIconField || "";
-
-    // 5. Build cache key and check cache
-    const cacheKey = `${canonicalAvatarId}_${sthanTypeId || sName}_${pinType}`;
-    if (sthanIconsMap[cacheKey]) return sthanIconsMap[cacheKey];
-
-    // 6. Render the pin HTML — pass all context for getSthanPinInfo to do final resolution
-    const html = getPinImageHtml(
-        avatarColor,
-        pinType,
-        52,
-        canonicalAvatarId,
-        sName,
-        pinIconField,
-        sthanTypeId,
-        sthanTypes
+  // 3. Resolve avatar color
+  let avatarColor = "#0e3c6f"; // default blue
+  if (canonicalAvatarId) {
+    const avatarConfig = AVATAR_SAMBANDH_CONFIG.find(
+      (a) => a.id === canonicalAvatarId,
     );
+    if (avatarConfig) avatarColor = avatarConfig.color;
+  } else if (matchedSthanType?.color) {
+    avatarColor = matchedSthanType.color;
+  }
 
-    const icon = L.divIcon({
-        html,
-        className: 'custom-sthan-pin',
-        iconSize: [52, 52],
-        iconAnchor: [26, 52],
-        popupAnchor: [0, -48]
-    });
+  // 4. Resolve pinType from matched sthan type (the DB-configured icon path)
+  //    This is the critical fix: use matchedSthanType.pinType so every configured pin is respected.
+  const pinType = matchedSthanType?.pinType || pinIconField || "";
 
-    sthanIconsMap[cacheKey] = icon;
-    return icon;
+  // 5. Build cache key and check cache
+  const cacheKey = `${canonicalAvatarId}_${sthanTypeId || sName}_${pinType}`;
+  if (sthanIconsMap[cacheKey]) return sthanIconsMap[cacheKey];
+
+  // 6. Render the pin HTML — pass all context for getSthanPinInfo to do final resolution
+  const html = getPinImageHtml(
+    avatarColor,
+    pinType,
+    52,
+    canonicalAvatarId,
+    sName,
+    pinIconField,
+    sthanTypeId,
+    sthanTypes,
+  );
+
+  const icon = L.divIcon({
+    html,
+    className: "custom-sthan-pin",
+    iconSize: [52, 52],
+    iconAnchor: [26, 52],
+    popupAnchor: [0, -48],
+  });
+
+  sthanIconsMap[cacheKey] = icon;
+  return icon;
 }
 
 // Inner Map Component to handle center/zoom updates
-function MapEffect({ temples, resetTrigger }: { temples: Temple[]; resetTrigger: number }) {
-    const map = useMap();
-    useEffect(() => {
-        if (temples.length > 0) {
-            const bounds = L.latLngBounds(temples.map(t => [t.latitude || 0, t.longitude || 0]));
-            if (bounds.isValid()) {
-                map.fitBounds(bounds, { padding: [50, 50] });
-            }
-        }
-    }, [temples, map, resetTrigger]);
-    return null;
+function MapEffect({
+  temples,
+  resetTrigger,
+}: {
+  temples: Temple[];
+  resetTrigger: number;
+}) {
+  const map = useMap();
+  useEffect(() => {
+    if (temples.length > 0) {
+      const bounds = L.latLngBounds(
+        temples.map((t) => [t.latitude || 0, t.longitude || 0]),
+      );
+      if (bounds.isValid()) {
+        map.fitBounds(bounds, { padding: [50, 50] });
+      }
+    }
+  }, [temples, map, resetTrigger]);
+  return null;
 }
 
 // Separate TempleMarker component to fix React closure issue
-function TempleMarker({ temple, onSelect, sthanTypes }: { temple: Temple; onSelect: (temple: Temple) => void; sthanTypes: SthanType[] }) {
-    const navigate = useNavigate();
-    const { t } = useLanguage();
-    const { user } = useAuth();
-    const [isSaved, setIsSaved] = useState(false);
-    const [isSaving, setIsSaving] = useState(false);
-    const [isPopupOpen, setIsPopupOpen] = useState(false);
+function TempleMarker({
+  temple,
+  onSelect,
+  sthanTypes,
+}: {
+  temple: Temple;
+  onSelect: (temple: Temple) => void;
+  sthanTypes: SthanType[];
+}) {
+  const navigate = useNavigate();
+  const { t } = useLanguage();
+  const { user } = useAuth();
+  const [isSaved, setIsSaved] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isPopupOpen, setIsPopupOpen] = useState(false);
 
-    const map = useMap();
+  const map = useMap();
 
-    // Check if temple is saved
-    useEffect(() => {
-        const checkIfSaved = async () => {
-            if (!user || !temple) {
-                setIsSaved(false);
-                return;
-            }
+  // Check if temple is saved
+  useEffect(() => {
+    const checkIfSaved = async () => {
+      if (!user || !temple) {
+        setIsSaved(false);
+        return;
+      }
 
-            try {
-                const savedRef = doc(db, `users/${user.uid}/savedTemples/${temple.id}`);
-                const savedDoc = await getDoc(savedRef);
-                setIsSaved(savedDoc.exists());
-            } catch (error) {
-                console.error("Error checking saved status:", error);
-                setIsSaved(false);
-            }
-        };
-
-        checkIfSaved();
-    }, [user, temple]);
-
-    // Toggle save/unsave
-    const toggleSave = async (e: React.MouseEvent) => {
-        e.stopPropagation();
-        if (!user || !temple || isSaving) return;
-
-        setIsSaving(true);
-        try {
-            const savedRef = doc(db, `users/${user.uid}/savedTemples/${temple.id}`);
-
-            if (isSaved) {
-                // Unsave
-                await deleteDoc(savedRef);
-                setIsSaved(false);
-            } else {
-                // Save
-                await setDoc(savedRef, {
-                    templeId: temple.id,
-                    savedAt: new Date(),
-                    templeName: temple.name,
-                    templeCity: temple.city || temple.address || "",
-                    templeImage: temple.sthanImages?.[0] || temple.images?.[0] || ""
-                });
-                setIsSaved(true);
-            }
-        } catch (error) {
-            console.error("Error toggling save:", error);
-        } finally {
-            setIsSaving(false);
-        }
+      try {
+        const savedRef = doc(db, `users/${user.uid}/savedTemples/${temple.id}`);
+        const savedDoc = await getDoc(savedRef);
+        setIsSaved(savedDoc.exists());
+      } catch (error) {
+        console.error("Error checking saved status:", error);
+        setIsSaved(false);
+      }
     };
 
-    return (
-        <Marker
-            position={[temple.latitude || 0, temple.longitude || 0]}
-            icon={getIconForTemple(temple, sthanTypes)}
-            eventHandlers={{
-                click: () => onSelect(temple),
-                popupopen: () => setIsPopupOpen(true),
-                popupclose: () => setIsPopupOpen(false)
-            }}
+    checkIfSaved();
+  }, [user, temple]);
+
+  // Toggle save/unsave
+  const toggleSave = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!user || !temple || isSaving) return;
+
+    setIsSaving(true);
+    try {
+      const savedRef = doc(db, `users/${user.uid}/savedTemples/${temple.id}`);
+
+      if (isSaved) {
+        // Unsave
+        await deleteDoc(savedRef);
+        setIsSaved(false);
+      } else {
+        // Save
+        await setDoc(savedRef, {
+          templeId: temple.id,
+          savedAt: new Date(),
+          templeName: temple.name,
+          templeCity: temple.city || temple.address || "",
+          templeImage: temple.sthanImages?.[0] || temple.images?.[0] || "",
+        });
+        setIsSaved(true);
+      }
+    } catch (error) {
+      console.error("Error toggling save:", error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  return (
+    <Marker
+      position={[temple.latitude || 0, temple.longitude || 0]}
+      icon={getIconForTemple(temple, sthanTypes)}
+      eventHandlers={{
+        click: () => onSelect(temple),
+        popupopen: () => setIsPopupOpen(true),
+        popupclose: () => setIsPopupOpen(false),
+      }}
+    >
+      {/* Tooltip - Shows on Hover only when popup is closed */}
+      {!isPopupOpen && (
+        <Tooltip
+          direction="top"
+          offset={[0, -12]}
+          className="rounded-lg shadow-xl border-none p-0 overflow-hidden"
         >
-            {/* Tooltip - Shows on Hover only when popup is closed */}
-            {!isPopupOpen && (
-                <Tooltip
-                    direction="top"
-                    offset={[0, -12]}
-                    className="rounded-lg shadow-xl border-none p-0 overflow-hidden"
-                >
-                    <div className="px-3 py-2 bg-popover/95 backdrop-blur-sm border-l-4 border-primary">
-                        <p className="font-heading text-popover-foreground font-bold text-sm whitespace-nowrap">{temple.name}</p>
-                        <p className="text-[10px] text-muted-foreground uppercase tracking-widest leading-none mt-1">
-                            {temple.city || temple.district || "Maharashtra"}
-                        </p>
-                    </div>
-                </Tooltip>
-            )}
+          <div className="px-3 py-2 bg-popover/95 backdrop-blur-sm border-l-4 border-primary">
+            <p className="font-heading text-popover-foreground font-bold text-sm whitespace-nowrap">
+              {temple.name}
+            </p>
+            <p className="text-[10px] text-muted-foreground uppercase tracking-widest leading-none mt-1">
+              {temple.city || temple.district || "Maharashtra"}
+            </p>
+          </div>
+        </Tooltip>
+      )}
 
-            {/* Popup - Shows on Click */}
-            <Popup
-                closeButton={false}
-                className="custom-temple-popup"
-                offset={[0, -5]}
-                minWidth={230}
-                maxWidth={250}
-                autoPan={true}
-                autoPanPaddingTopLeft={[20, 160]}
-                autoPanPaddingBottomRight={[100, 100]}
-                keepInView={true}
+      {/* Popup - Shows on Click */}
+      <Popup
+        closeButton={false}
+        className="custom-temple-popup"
+        offset={[0, -5]}
+        minWidth={230}
+        maxWidth={250}
+        autoPan={true}
+        autoPanPaddingTopLeft={[20, 160]}
+        autoPanPaddingBottomRight={[100, 100]}
+        keepInView={true}
+      >
+        <div className="px-3 py-3 w-full space-y-2">
+          <style>{popupStyles}</style>
+
+          {/* Row 1: Title + Close Icon */}
+          <div className="flex justify-between items-start gap-2">
+            <h3 className="font-heading font-bold text-xl md:text-2xl text-landing-primary dark:text-primary leading-tight">
+              {temple.name}
+            </h3>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                map.closePopup();
+              }}
+              className="text-muted-foreground hover:text-foreground transition-colors p-0.5 shrink-0"
             >
-                <div className="px-3 py-3 w-full space-y-2">
-                    <style>{popupStyles}</style>
+              <X size={20} />
+            </button>
+          </div>
 
-                    {/* Row 1: Title + Close Icon */}
-                    <div className="flex justify-between items-start gap-2">
-                        <h3 className="font-heading font-bold text-xl md:text-2xl text-landing-primary dark:text-primary leading-tight">
-                            {temple.name}
-                        </h3>
-                        <button
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                map.closePopup();
-                            }}
-                            className="text-muted-foreground hover:text-foreground transition-colors p-0.5 shrink-0"
-                        >
-                            <X size={20} />
-                        </button>
-                    </div>
+          {/* Row 2: Subtitle */}
+          <div className="flex items-start gap-1.5 text-sm md:text-base text-muted-foreground leading-snug">
+            <MapPin className="w-4 h-4 md:w-5 md:h-5 text-primary shrink-0 mt-1" />
+            <span>
+              {temple.city && temple.city !== temple.district
+                ? `${temple.city}, `
+                : ""}
+              {temple.district || "Maharashtra"}
+            </span>
+          </div>
 
-                    {/* Row 2: Subtitle */}
-                    <div className="flex items-start gap-1.5 text-sm md:text-base text-muted-foreground leading-snug">
-                        <MapPin className="w-4 h-4 md:w-5 md:h-5 text-primary shrink-0 mt-1" />
-                        <span>
-                            {temple.city && temple.city !== temple.district ? `${temple.city}, ` : ""}
-                            {temple.district || "Maharashtra"}
-                        </span>
-                    </div>
-
-                    {/* Row 3: Action Buttons (Details + Direction + Saved) */}
-                    <div className="flex items-center gap-2 pt-1">
-                        <Button
-                            className="flex-1 bg-landing-primary hover:bg-landing-primary/90 text-white h-8 md:h-9 rounded-lg shadow-sm text-xs md:text-xs font-bold px-0"
-                            onClick={() => navigate(`/temple/${temple.id}/architecture`)}
-                        >
-                            Details
-                        </Button>
-                        <button
-                            className="h-8 w-8 md:h-9 md:w-9 rounded-full border border-slate-200 bg-white transition-all duration-300 hover:bg-slate-50 text-blue-900 flex items-center justify-center shrink-0 shadow-sm"
-                            title="Navigate"
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                if (temple.latitude && temple.longitude) {
-                                    window.open(`https://www.google.com/maps/dir/?api=1&destination=${temple.latitude},${temple.longitude}`, "_blank");
-                                }
-                            }}
-                        >
-                            <Navigation className="w-4 h-4 md:w-5 md:h-5" />
-                        </button>
-                        <button
-                            onClick={toggleSave}
-                            disabled={isSaving || !user}
-                            className={cn(
-                                "h-8 w-8 md:h-9 md:w-9 rounded-full border flex-shrink-0 transition-all duration-300 shadow-sm flex items-center justify-center",
-                                isSaved
-                                    ? "bg-blue-50 border-blue-200 text-blue-900"
-                                    : "bg-white border-slate-200 text-blue-900 hover:bg-slate-50"
-                            )}
-                            title={isSaved ? "Unsave" : "Save"}
-                        >
-                            <Bookmark className={cn("w-4 h-4 md:w-5 md:h-5", isSaved && "fill-current")} />
-                        </button>
-                    </div>
-                </div>
-            </Popup>
-        </Marker>
-    );
+          {/* Row 3: Action Buttons (Details + Direction + Saved) */}
+          <div className="flex items-center gap-2 pt-1">
+              <Button
+                className="flex-1 bg-landing-primary hover:bg-landing-primary/90 text-white h-8 md:h-9 rounded-lg shadow-sm text-xs md:text-xs font-bold px-0"
+                onClick={() => navigate(`/temple/${temple.id}/architecture`)}
+              >
+                {t("explore.details")}
+              </Button>
+            <button
+              className="h-8 w-8 md:h-9 md:w-9 rounded-full border border-slate-200 bg-white transition-all duration-300 hover:bg-slate-50 text-blue-900 flex items-center justify-center shrink-0 shadow-sm"
+              title={t("explore.navigate")}
+              onClick={(e) => {
+                e.stopPropagation();
+                if (temple.latitude && temple.longitude) {
+                  window.open(
+                    `https://www.google.com/maps/dir/?api=1&destination=${temple.latitude},${temple.longitude}`,
+                    "_blank",
+                  );
+                }
+              }}
+            >
+              <Navigation className="w-4 h-4 md:w-5 md:h-5" />
+            </button>
+            <button
+              onClick={toggleSave}
+              disabled={isSaving || !user}
+              className={cn(
+                "h-8 w-8 md:h-9 md:w-9 rounded-full border flex-shrink-0 transition-all duration-300 shadow-sm flex items-center justify-center",
+                isSaved
+                  ? "bg-blue-50 border-blue-200 text-blue-900"
+                  : "bg-white border-slate-200 text-blue-900 hover:bg-slate-50",
+              )}
+              title={isSaved ? t("explore.unsave") : t("explore.save")}
+            >
+              <Bookmark
+                className={cn(
+                  "w-4 h-4 md:w-5 md:h-5",
+                  isSaved && "fill-current",
+                )}
+              />
+            </button>
+          </div>
+        </div>
+      </Popup>
+    </Marker>
+  );
 }
 
 const Explore = () => {
-    const [temples, setTemples] = useState<Temple[]>([]);
-    const [allTemplesForOptions, setAllTemplesForOptions] = useState<Temple[]>([]);
-    const [searchQuery, setSearchQuery] = useState("");
-    const [showFilters, setShowFilters] = useState(false);
-    const [sthanTypes, setSthanTypes] = useState<SthanType[]>([]);
+  const [temples, setTemples] = useState<Temple[]>([]);
+  const [allTemplesForOptions, setAllTemplesForOptions] = useState<Temple[]>(
+    [],
+  );
+  const [searchQuery, setSearchQuery] = useState("");
+  const [showFilters, setShowFilters] = useState(false);
+  const [sthanTypes, setSthanTypes] = useState<SthanType[]>([]);
 
-    // Pending states (for UI dropdowns)
-    const [pendingDistrict, setPendingDistrict] = useState<string>("");
-    const [pendingTaluka, setPendingTaluka] = useState<string>("");
-    const [pendingSthanaType, setPendingSthanaType] = useState<string>("");
-    const [pendingAvatarSambandh, setPendingAvatarSambandh] = useState<string>("ALL");
-    const [pendingAvatarSubdivision, setPendingAvatarSubdivision] = useState<string>("");
+  // Pending states (for UI dropdowns)
+  const [pendingDistrict, setPendingDistrict] = useState<string>("");
+  const [pendingTaluka, setPendingTaluka] = useState<string>("");
+  const [pendingSthanaType, setPendingSthanaType] = useState<string>("");
+  const [pendingAvatarSambandh, setPendingAvatarSambandh] =
+    useState<string>("ALL");
+  const [pendingAvatarSubdivision, setPendingAvatarSubdivision] =
+    useState<string>("");
 
-    // Applied states (for Firestore query and results)
-    const [appliedDistrict, setAppliedDistrict] = useState<string>("");
-    const [appliedTaluka, setAppliedTaluka] = useState<string>("");
-    const [appliedSthanaType, setAppliedSthanaType] = useState<string>("");
+  // Applied states (for Firestore query and results)
+  const [appliedDistrict, setAppliedDistrict] = useState<string>("");
+  const [appliedTaluka, setAppliedTaluka] = useState<string>("");
+  const [appliedSthanaType, setAppliedSthanaType] = useState<string>("");
 
-    // Hierarchical Avatar filter
-    const [appliedAvatarSambandh, setAppliedAvatarSambandh] = useState<string>("ALL");
-    const [appliedAvatarSubdivision, setAppliedAvatarSubdivision] = useState<string>("");
+  // Hierarchical Avatar filter
+  const [appliedAvatarSambandh, setAppliedAvatarSambandh] =
+    useState<string>("ALL");
+  const [appliedAvatarSubdivision, setAppliedAvatarSubdivision] =
+    useState<string>("");
 
-    const navigate = useNavigate();
-    const { t } = useLanguage();
-    const [selectedTemple, setSelectedTemple] = useState<Temple | null>(null);
-    const [resetTrigger, setResetTrigger] = useState(0);
+  const navigate = useNavigate();
+  const { t } = useLanguage();
+  const [selectedTemple, setSelectedTemple] = useState<Temple | null>(null);
+  const [resetTrigger, setResetTrigger] = useState(0);
 
-    // Load sthan types and generate icons
-    useEffect(() => {
-        const loadSthanTypes = async () => {
-            const types = await getSthanTypes();
-            
-            // Populate icons map using the fetched results directly
-            types.forEach(st => {
-                const avatarColor = getAvatarColor(st.avatarSambandh);
-                const html = getPinImageHtml(avatarColor, st.pinType, 52, st.avatarSambandh, st.name, '', st.id, types);
-                const cacheKey = `${st.avatarSambandh}_${st.id}_`;
-                sthanIconsMap[cacheKey] = L.divIcon({
-                    html,
-                    className: 'custom-sthan-pin',
-                    iconSize: [52, 52],
-                    iconAnchor: [26, 52],
-                    popupAnchor: [0, -48]
-                });
-            });
-            
-            // Trigger re-render which will now use populated map
-            setSthanTypes(types);
-        };
-        loadSthanTypes();
-    }, []);
+  // Load sthan types and generate icons
+  useEffect(() => {
+    const loadSthanTypes = async () => {
+      const types = await getSthanTypes();
 
-    // 1. Fetch all temples ONCE to populate filter options (Districts/Talukas)
-    useEffect(() => {
-        const unsubscribe = onSnapshot(collection(db, "temples"), (snapshot) => {
-            const data = snapshot.docs.map((doc) => {
-                const t = doc.data() as any;
-                // Robust coordinate extraction for filters - check extensive list of possibilities
-                let lat, lng;
-
-                // 1. Try top-level numeric or string fields
-                const rawLat = [t.latitude, t.lat, t.location?.latitude, t.location?.lat].find(v => v !== undefined && v !== null && v !== "");
-                const rawLng = [t.longitude, t.lng, t.location?.longitude, t.location?.lng].find(v => v !== undefined && v !== null && v !== "");
-
-                if (rawLat !== undefined) lat = Number(rawLat);
-                if (rawLng !== undefined) lng = Number(rawLng);
-
-                // 2. Fallback: Check if 'location' is a map with 'lat'/'lng' (common in user example)
-                if (lat === undefined && typeof t.location === 'object' && t.location !== null) {
-                    if (t.location.lat !== undefined) lat = Number(t.location.lat);
-                    if (t.location.lng !== undefined) lng = Number(t.location.lng);
-                }
-
-                // 3. Last Resort: Handle the specific weird case if needed (e.g. location as string, though unlikely for coords)
-
-                return {
-                    ...t,
-                    id: doc.id,
-                    latitude: lat,
-                    longitude: lng,
-                };
-            }) as Temple[];
-
-            // Debug logs
-            data.forEach(t => {
-                if (!t.latitude || !t.longitude) {
-                    const rawData = t as any;
-                    // Only warn if it's truly missing, sometimes we just have partial data
-                }
-            });
-
-            setAllTemplesForOptions(data);
+      // Populate icons map using the fetched results directly
+      types.forEach((st) => {
+        const avatarColor = getAvatarColor(st.avatarSambandh);
+        const html = getPinImageHtml(
+          avatarColor,
+          st.pinType,
+          52,
+          st.avatarSambandh,
+          st.name,
+          "",
+          st.id,
+          types,
+        );
+        const cacheKey = `${st.avatarSambandh}_${st.id}_`;
+        sthanIconsMap[cacheKey] = L.divIcon({
+          html,
+          className: "custom-sthan-pin",
+          iconSize: [52, 52],
+          iconAnchor: [26, 52],
+          popupAnchor: [0, -48],
         });
-        return () => unsubscribe();
-    }, []);
+      });
 
-    // 2. Main Temple Listener - Querying Firestore based on Applied Filters
-    useEffect(() => {
-        const templesRef = collection(db, "temples");
-        let q = query(templesRef);
+      // Trigger re-render which will now use populated map
+      setSthanTypes(types);
+    };
+    loadSthanTypes();
+  }, []);
 
-        const conditions = [];
-        if (appliedDistrict) {
-            conditions.push(where("district", "==", appliedDistrict));
-        }
-        if (appliedTaluka) {
-            conditions.push(where("taluka", "==", appliedTaluka));
+  // 1. Fetch all temples ONCE to populate filter options (Districts/Talukas)
+  useEffect(() => {
+    const unsubscribe = onSnapshot(collection(db, "temples"), (snapshot) => {
+      const data = snapshot.docs.map((doc) => {
+        const t = doc.data() as any;
+        // Robust coordinate extraction for filters - check extensive list of possibilities
+        let lat, lng;
+
+        // 1. Try top-level numeric or string fields
+        const rawLat = [
+          t.latitude,
+          t.lat,
+          t.location?.latitude,
+          t.location?.lat,
+        ].find((v) => v !== undefined && v !== null && v !== "");
+        const rawLng = [
+          t.longitude,
+          t.lng,
+          t.location?.longitude,
+          t.location?.lng,
+        ].find((v) => v !== undefined && v !== null && v !== "");
+
+        if (rawLat !== undefined) lat = Number(rawLat);
+        if (rawLng !== undefined) lng = Number(rawLng);
+
+        // 2. Fallback: Check if 'location' is a map with 'lat'/'lng' (common in user example)
+        if (
+          lat === undefined &&
+          typeof t.location === "object" &&
+          t.location !== null
+        ) {
+          if (t.location.lat !== undefined) lat = Number(t.location.lat);
+          if (t.location.lng !== undefined) lng = Number(t.location.lng);
         }
 
-        if (conditions.length > 0) {
-            console.log("🔍 Fetching temples with database filters:", conditions.length);
-            q = query(templesRef, ...conditions);
-        } else {
-            console.log("📜 Fetching all temples (no database filters)");
+        // 3. Last Resort: Handle the specific weird case if needed (e.g. location as string, though unlikely for coords)
+
+        return {
+          ...t,
+          id: doc.id,
+          latitude: lat,
+          longitude: lng,
+        };
+      }) as Temple[];
+
+      // Debug logs
+      data.forEach((t) => {
+        if (!t.latitude || !t.longitude) {
+          const rawData = t as any;
+          // Only warn if it's truly missing, sometimes we just have partial data
         }
+      });
 
-        const unsubscribe = onSnapshot(q, (snapshot) => {
-            const data = snapshot.docs.map((doc) => {
-                const t = doc.data() as any;
-                // Robust coordinate extraction for filters - check extensive list of possibilities
-                let lat, lng;
+      setAllTemplesForOptions(data);
+    });
+    return () => unsubscribe();
+  }, []);
 
-                // 1. Try top-level numeric or string fields
-                const rawLat = [t.latitude, t.lat, t.location?.latitude, t.location?.lat].find(v => v !== undefined && v !== null && v !== "");
-                const rawLng = [t.longitude, t.lng, t.location?.longitude, t.location?.lng].find(v => v !== undefined && v !== null && v !== "");
+  // 2. Main Temple Listener - Querying Firestore based on Applied Filters
+  useEffect(() => {
+    const templesRef = collection(db, "temples");
+    let q = query(templesRef);
 
-                if (rawLat !== undefined) lat = Number(rawLat);
-                if (rawLng !== undefined) lng = Number(rawLng);
+    const conditions = [];
+    if (appliedDistrict) {
+      conditions.push(where("district", "==", appliedDistrict));
+    }
+    if (appliedTaluka) {
+      conditions.push(where("taluka", "==", appliedTaluka));
+    }
 
-                // 2. Fallback: Check if 'location' is a map with 'lat'/'lng' (common in user example)
-                if (lat === undefined && typeof t.location === 'object' && t.location !== null) {
-                    if (t.location.lat !== undefined) lat = Number(t.location.lat);
-                    if (t.location.lng !== undefined) lng = Number(t.location.lng);
-                }
+    if (conditions.length > 0) {
+      console.log(
+        "🔍 Fetching temples with database filters:",
+        conditions.length,
+      );
+      q = query(templesRef, ...conditions);
+    } else {
+      console.log("📜 Fetching all temples (no database filters)");
+    }
 
-                // 3. Last Resort: Handle the specific weird case if needed (e.g. location as string, though unlikely for coords)
+    const unsubscribe = onSnapshot(
+      q,
+      (snapshot) => {
+        const data = snapshot.docs.map((doc) => {
+          const t = doc.data() as any;
+          // Robust coordinate extraction for filters - check extensive list of possibilities
+          let lat, lng;
 
-                return {
-                    ...t,
-                    id: doc.id,
-                    latitude: lat,
-                    longitude: lng,
-                };
-            }) as Temple[];
+          // 1. Try top-level numeric or string fields
+          const rawLat = [
+            t.latitude,
+            t.lat,
+            t.location?.latitude,
+            t.location?.lat,
+          ].find((v) => v !== undefined && v !== null && v !== "");
+          const rawLng = [
+            t.longitude,
+            t.lng,
+            t.location?.longitude,
+            t.location?.lng,
+          ].find((v) => v !== undefined && v !== null && v !== "");
 
-            console.log(`✅ Loaded ${data.length} temples from database`);
-            // Debug logs to verify coordinates
-            data.forEach(t => {
-                if (!t.latitude || !t.longitude) {
-                    const rawData = t as any;
-                    console.warn(`⚠️ Temple "${t.name}" (ID: ${t.id}) is missing valid coordinates! Raw Lat: ${rawData.latitude}, LocationObj: ${JSON.stringify(rawData.location)}`);
-                } else {
-                    console.log(`📍 Temple "${t.name}" at [${t.latitude}, ${t.longitude}]`);
-                }
-            });
-            setTemples(data);
+          if (rawLat !== undefined) lat = Number(rawLat);
+          if (rawLng !== undefined) lng = Number(rawLng);
 
-            if (data.length > 0 && !selectedTemple) {
-                const hampi = data.find(t => t.name.toLowerCase().includes("hampi"));
-                setSelectedTemple(hampi || data[0]);
-            }
-        }, (error) => {
-            console.error("❌ Firestore query error:", error);
-        });
+          // 2. Fallback: Check if 'location' is a map with 'lat'/'lng' (common in user example)
+          if (
+            lat === undefined &&
+            typeof t.location === "object" &&
+            t.location !== null
+          ) {
+            if (t.location.lat !== undefined) lat = Number(t.location.lat);
+            if (t.location.lng !== undefined) lng = Number(t.location.lng);
+          }
 
-        return () => unsubscribe();
-    }, [appliedDistrict, appliedTaluka]);
+          // 3. Last Resort: Handle the specific weird case if needed (e.g. location as string, though unlikely for coords)
 
-    // 3. Derived Filter Options with Counts from Database
-    const districts = Array.from(new Set(allTemplesForOptions.map(t => t.district).filter(Boolean)))
-        .sort()
-        .map(d => ({
-            value: d,
-            label: `${d} (${allTemplesForOptions.filter(t => t.district === d).length})`
-        }));
+          return {
+            ...t,
+            id: doc.id,
+            latitude: lat,
+            longitude: lng,
+          };
+        }) as Temple[];
 
-    const talukas = Array.from(new Set(
-        allTemplesForOptions
-            .filter(t => !pendingDistrict || t.district === pendingDistrict)
-            .map(t => t.taluka)
-            .filter(Boolean)
-    ))
-        .sort()
-        .map(t => ({
-            value: t,
-            label: `${t} (${allTemplesForOptions.filter(curr => curr.taluka === t && (!pendingDistrict || curr.district === pendingDistrict)).length})`
-        }));
-
-    // 4. Dynamic Sthana Category Options
-    const sthanaOptions = useMemo(() => {
-        // Normalize the selected avatar once for all comparisons
-        const normalizedPendingAvatar = pendingAvatarSambandh && pendingAvatarSambandh !== "ALL"
-            ? pendingAvatarSambandh
-            : "";
-
-        // Determine which sthan types from DB are in scope based on the selected avatar
-        let scopedTypes: SthanType[];
-        if (normalizedPendingAvatar) {
-            scopedTypes = sthanTypes.filter(st => normalizeAvatarId(st.avatarSambandh) === normalizedPendingAvatar);
-        } else {
-            scopedTypes = sthanTypes;
-        }
-
-        // Build a quick ID → canonical label lookup from scopedTypes for sthanTypeId matching
-        const idToCanonical = new Map<string, string>();
-        scopedTypes.forEach(st => {
-            const c = toCanonicalSthan(st.name);
-            if (c) idToCanonical.set(st.id, c);
-        });
-
-        // Collect which canonical categories are actually present in scoped sthan types
-        const canonicalPresent = new Set<string>(idToCanonical.values());
-
-        // Helper: resolve canonical sthan label for a single temple record
-        const getTempleCanonical = (t: Temple): string | null => {
-            const temp = t as any;
-
-            // 1. Try sthan name / sthana text field
-            const sthanText = (temp.sthan || t.sthana || "").toLowerCase();
-            if (sthanText) {
-                const c = toCanonicalSthan(sthanText);
-                if (c) return c;
-            }
-
-            // 2. Fallback: resolve via sthanTypeId
-            const sthanTypeId: string = temp.sthanTypeId || "";
-            if (sthanTypeId && idToCanonical.has(sthanTypeId)) {
-                return idToCanonical.get(sthanTypeId)!;
-            }
-
-            // 3. Fallback: resolve via sthan name match against all sthanTypes
-            if (sthanText) {
-                const matched = sthanTypes.find(st => st.name.toLowerCase() === sthanText || sthanText.includes(st.name.toLowerCase()));
-                if (matched) {
-                    return toCanonicalSthan(matched.name);
-                }
-            }
-
-            return null;
-        };
-
-        // Helper: check if temple matches the selected avatar (normalized)
-        const matchesAvatar = (t: Temple): boolean => {
-            if (!normalizedPendingAvatar) return true;
-            const temp = t as any;
-            const tAvatar = normalizeAvatarId(temp.primaryAvatar || temp.avatarSambandh || "");
-            if (tAvatar === normalizedPendingAvatar) return true;
-            // Also try via sthanTypeId for temples with no avatar field set
-            const sthanTypeId: string = temp.sthanTypeId || "";
-            if (sthanTypeId) {
-                const st = sthanTypes.find(s => s.id === sthanTypeId);
-                if (st && normalizeAvatarId(st.avatarSambandh) === normalizedPendingAvatar) return true;
-            }
-            return false;
-        };
-
-        // Helper: check if temple matches the selected subdivision
-        const matchesSubdivision = (t: Temple): boolean => {
-            if (!pendingAvatarSubdivision) return true;
-            const temp = t as any;
-            const subTypes: string[] = Array.isArray(temp.avatarSubTypes) ? temp.avatarSubTypes : [];
-            const sub: string = temp.avatarSubdivision || "";
-            return subTypes.includes(pendingAvatarSubdivision) || sub === pendingAvatarSubdivision;
-        };
-
-        // Build options only for present canonical types, counting correctly
-        return CANONICAL_STHAN_TYPES
-            .filter(c => canonicalPresent.has(c.label))
-            .map(c => {
-                const count = allTemplesForOptions.filter(t => {
-                    const templeCanonical = getTempleCanonical(t);
-                    if (templeCanonical !== c.label) return false;
-                    if (!matchesAvatar(t)) return false;
-                    if (!matchesSubdivision(t)) return false;
-                    return true;
-                }).length;
-
-                // Use the matching DB sthan type name as the filter value (for filteredTemples logic)
-                const matchingDbType = scopedTypes.find(st => toCanonicalSthan(st.name) === c.label);
-                return {
-                    value: matchingDbType?.name ?? c.label,
-                    label: `${c.label} (${count})`
-                };
-            });
-    }, [sthanTypes, allTemplesForOptions, pendingAvatarSambandh, pendingAvatarSubdivision]);
-
-    // 5. Calculate dynamic counts for Avatar Sambandh hierarchy
-    const avatarCounts = useMemo(() => {
-        const counts = {
-            ALL: allTemplesForOptions.length,
-            byAvatar: {} as Record<string, number>,
-            bySubdivision: {} as Record<string, number>,
-        };
-
-        allTemplesForOptions.forEach(t => {
-            const temp = t as any;
-            
-            // Resolve primary avatar
-            const resAvatarS = temp.primaryAvatar || temp.avatarSambandh;
-            
-            // Resolve sub division
-            let resAvatarSub = "";
-            if (temp.avatarSubTypes && temp.avatarSubTypes.length > 0) {
-                resAvatarSub = temp.avatarSubTypes[0]; // just count the first one for backwards compatibility or general counts
-            } else {
-                resAvatarSub = temp.avatarSubdivision;
-            }
-
-            if (resAvatarS) {
-                counts.byAvatar[resAvatarS] = (counts.byAvatar[resAvatarS] || 0) + 1;
-            }
-            if (resAvatarSub) {
-                counts.bySubdivision[resAvatarSub] = (counts.bySubdivision[resAvatarSub] || 0) + 1;
-            }
-
-            // Legacy fallback if fields are missing
-            if (!resAvatarS && (temp.sthan || temp.sthana)) {
-                const sName = temp.sthan || temp.sthana;
-                const sType = sthanTypes.find(st => st.name === sName);
-                if (sType?.avatarSambandh) {
-                    counts.byAvatar[sType.avatarSambandh] = (counts.byAvatar[sType.avatarSambandh] || 0) + 1;
-                    if (sType.avatarSubdivision) {
-                        counts.bySubdivision[sType.avatarSubdivision] = (counts.bySubdivision[sType.avatarSubdivision] || 0) + 1;
-                    }
-                }
-            }
-        });
-
-        return counts;
-    }, [allTemplesForOptions, sthanTypes]);
-
-    // Client-side filtering for Search, Sthana Category, and Avatar hierarchy
-    const filteredTemples = useMemo(() => {
-        return temples.filter(temple => {
-            const matchesSearch = !searchQuery ||
-                temple.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                temple.city?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                temple.district?.toLowerCase().includes(searchQuery.toLowerCase());
-
-            const matchesSthana = !appliedSthanaType || (
-                ((temple as any).sthan && (temple as any).sthan.toLowerCase().includes(appliedSthanaType.toLowerCase())) ||
-                (temple.sthana && temple.sthana.toLowerCase().includes(appliedSthanaType.toLowerCase()))
+        console.log(`✅ Loaded ${data.length} temples from database`);
+        // Debug logs to verify coordinates
+        data.forEach((t) => {
+          if (!t.latitude || !t.longitude) {
+            const rawData = t as any;
+            console.warn(
+              `⚠️ Temple "${t.name}" (ID: ${t.id}) is missing valid coordinates! Raw Lat: ${rawData.latitude}, LocationObj: ${JSON.stringify(rawData.location)}`,
             );
-
-            // Avatar hierarchy logic
-            if (appliedAvatarSambandh === "ALL") return matchesSearch && matchesSthana;
-
-            // Resolve primary avatar
-            let resAvatarS = (temple as any).primaryAvatar || (temple as any).avatarSambandh;
-            
-            // Resolve sub-type (array supported)
-            let resAvatarSubArray: string[] = [];
-            if ((temple as any).avatarSubTypes && Array.isArray((temple as any).avatarSubTypes)) {
-                resAvatarSubArray = (temple as any).avatarSubTypes;
-            } else if ((temple as any).avatarSubdivision) {
-                resAvatarSubArray = [(temple as any).avatarSubdivision];
-            }
-
-            // Try to resolve temple's avatar info if missing (legacy data)
-            if (!resAvatarS) {
-                const sName = (temple as any).sthan || temple.sthana;
-                const sType = sthanTypes.find(st => st.name === sName);
-                if (sType) {
-                    resAvatarS = sType.avatarSambandh;
-                    resAvatarSubArray = sType.avatarSubdivision ? [sType.avatarSubdivision] : [];
-                }
-            }
-
-            if (resAvatarS !== appliedAvatarSambandh) return false;
-            
-            if (appliedAvatarSubdivision) {
-                // If the filter is applied, ensure the required subdivision is in the temple's subtypes array
-                if (!resAvatarSubArray.includes(appliedAvatarSubdivision)) return false;
-            }
-
-            return matchesSearch && matchesSthana;
+          } else {
+            console.log(
+              `📍 Temple "${t.name}" at [${t.latitude}, ${t.longitude}]`,
+            );
+          }
         });
-    }, [temples, searchQuery, appliedSthanaType, appliedAvatarSambandh, appliedAvatarSubdivision, sthanTypes]);
+        setTemples(data);
 
-    const activeFiltersCount = (appliedDistrict ? 1 : 0) + (appliedTaluka ? 1 : 0) + (appliedSthanaType ? 1 : 0) + (appliedAvatarSambandh !== "ALL" ? 1 : 0);
+        if (data.length > 0 && !selectedTemple) {
+          const hampi = data.find((t) =>
+            t.name.toLowerCase().includes("hampi"),
+          );
+          setSelectedTemple(hampi || data[0]);
+        }
+      },
+      (error) => {
+        console.error("❌ Firestore query error:", error);
+      },
+    );
 
-    const handleApplyFilters = () => {
-        setAppliedDistrict(pendingDistrict);
-        setAppliedTaluka(pendingTaluka);
-        setAppliedSthanaType(pendingSthanaType);
-        setAppliedAvatarSambandh(pendingAvatarSambandh);
-        setAppliedAvatarSubdivision(pendingAvatarSubdivision);
-        setShowFilters(false);
+    return () => unsubscribe();
+  }, [appliedDistrict, appliedTaluka]);
+
+  // 3. Derived Filter Options with Counts from Database
+  const districts = Array.from(
+    new Set(allTemplesForOptions.map((t) => t.district).filter(Boolean)),
+  )
+    .sort()
+    .map((d) => ({
+      value: d,
+      label: `${d} (${allTemplesForOptions.filter((t) => t.district === d).length})`,
+    }));
+
+  const talukas = Array.from(
+    new Set(
+      allTemplesForOptions
+        .filter((t) => !pendingDistrict || t.district === pendingDistrict)
+        .map((t) => t.taluka)
+        .filter(Boolean),
+    ),
+  )
+    .sort()
+    .map((t) => ({
+      value: t,
+      label: `${t} (${allTemplesForOptions.filter((curr) => curr.taluka === t && (!pendingDistrict || curr.district === pendingDistrict)).length})`,
+    }));
+
+  // 4. Dynamic Sthana Category Options
+  const sthanaOptions = useMemo(() => {
+    // Normalize the selected avatar once for all comparisons
+    const normalizedPendingAvatar =
+      pendingAvatarSambandh && pendingAvatarSambandh !== "ALL"
+        ? pendingAvatarSambandh
+        : "";
+
+    // Determine which sthan types from DB are in scope based on the selected avatar
+    let scopedTypes: SthanType[];
+    if (normalizedPendingAvatar) {
+      scopedTypes = sthanTypes.filter(
+        (st) =>
+          normalizeAvatarId(st.avatarSambandh) === normalizedPendingAvatar,
+      );
+    } else {
+      scopedTypes = sthanTypes;
+    }
+
+    // Build a quick ID → canonical label lookup from scopedTypes for sthanTypeId matching
+    const idToCanonical = new Map<string, string>();
+    scopedTypes.forEach((st) => {
+      const c = toCanonicalSthan(st.name);
+      if (c) idToCanonical.set(st.id, c);
+    });
+
+    // Collect which canonical categories are actually present in scoped sthan types
+    const canonicalPresent = new Set<string>(idToCanonical.values());
+
+    // Helper: resolve canonical sthan label for a single temple record
+    const getTempleCanonical = (t: Temple): string | null => {
+      const temp = t as any;
+
+      // 1. Try sthan name / sthana text field
+      const sthanText = (temp.sthan || t.sthana || "").toLowerCase();
+      if (sthanText) {
+        const c = toCanonicalSthan(sthanText);
+        if (c) return c;
+      }
+
+      // 2. Fallback: resolve via sthanTypeId
+      const sthanTypeId: string = temp.sthanTypeId || "";
+      if (sthanTypeId && idToCanonical.has(sthanTypeId)) {
+        return idToCanonical.get(sthanTypeId)!;
+      }
+
+      // 3. Fallback: resolve via sthan name match against all sthanTypes
+      if (sthanText) {
+        const matched = sthanTypes.find(
+          (st) =>
+            st.name.toLowerCase() === sthanText ||
+            sthanText.includes(st.name.toLowerCase()),
+        );
+        if (matched) {
+          return toCanonicalSthan(matched.name);
+        }
+      }
+
+      return null;
     };
 
-    const clearFilters = () => {
-        setPendingDistrict("");
-        setPendingTaluka("");
-        setPendingSthanaType("");
-        setPendingAvatarSambandh("ALL");
-        setPendingAvatarSubdivision("");
-        setAppliedDistrict("");
-        setAppliedTaluka("");
-        setAppliedSthanaType("");
-        setAppliedAvatarSambandh("ALL");
-        setAppliedAvatarSubdivision("");
+    // Helper: check if temple matches the selected avatar (normalized)
+    const matchesAvatar = (t: Temple): boolean => {
+      if (!normalizedPendingAvatar) return true;
+      const temp = t as any;
+      const tAvatar = normalizeAvatarId(
+        temp.primaryAvatar || temp.avatarSambandh || "",
+      );
+      if (tAvatar === normalizedPendingAvatar) return true;
+      // Also try via sthanTypeId for temples with no avatar field set
+      const sthanTypeId: string = temp.sthanTypeId || "";
+      if (sthanTypeId) {
+        const st = sthanTypes.find((s) => s.id === sthanTypeId);
+        if (
+          st &&
+          normalizeAvatarId(st.avatarSambandh) === normalizedPendingAvatar
+        )
+          return true;
+      }
+      return false;
     };
 
-    return (
-        <div className="relative h-[calc(100vh-80px)] w-full overflow-hidden bg-background animate-in fade-in duration-300">
-            {/* Standard Header */}
-            {/* Header Container */}
-            <div className="absolute top-0 left-0 right-0 z-[400] flex flex-col pointer-events-none gap-1">
+    // Helper: check if temple matches the selected subdivision
+    const matchesSubdivision = (t: Temple): boolean => {
+      if (!pendingAvatarSubdivision) return true;
+      const temp = t as any;
+      const subTypes: string[] = Array.isArray(temp.avatarSubTypes)
+        ? temp.avatarSubTypes
+        : [];
+      const sub: string = temp.avatarSubdivision || "";
+      return (
+        subTypes.includes(pendingAvatarSubdivision) ||
+        sub === pendingAvatarSubdivision
+      );
+    };
 
-                {/* Top Row: Unified Glass Header */}
-                <div className="px-4 pt-3 pb-1 flex items-center justify-center pointer-events-auto z-[410]">
-                    <div className="relative w-full max-w-4xl flex items-center justify-center bg-background/10 backdrop-blur-md rounded-full border border-border/20 shadow-sm py-1.5 px-4">
-                        {/* Logo - Absolute Left */}
-                        <img src="/icons/Main logo.svg" alt="Logo" className="absolute left-2 w-12 h-12 object-contain" />
+    // Build options only for present canonical types, counting correctly
+    return CANONICAL_STHAN_TYPES.filter((c) =>
+      canonicalPresent.has(c.label),
+    ).map((c) => {
+      const count = allTemplesForOptions.filter((t) => {
+        const templeCanonical = getTempleCanonical(t);
+        if (templeCanonical !== c.label) return false;
+        if (!matchesAvatar(t)) return false;
+        if (!matchesSubdivision(t)) return false;
+        return true;
+      }).length;
 
-                        {/* Title - Center */}
-                        <h1 className="w-full px-10 text-center text-xl md:text-2xl font-heading font-bold text-landing-primary dark:text-primary font-serif whitespace-nowrap">
-                            Panchajanya Heritage Map
-                        </h1>
-                    </div>
-                </div>
+      // Use the matching DB sthan type name as the filter value (for filteredTemples logic)
+      const matchingDbType = scopedTypes.find(
+        (st) => toCanonicalSthan(st.name) === c.label,
+      );
+      return {
+        value: matchingDbType?.name ?? c.label,
+        label: `${t("explore." + c.label.toLowerCase().replace(" ", ""))} (${count})`,
+      };
+    });
+  }, [
+    sthanTypes,
+    allTemplesForOptions,
+    pendingAvatarSambandh,
+    pendingAvatarSubdivision,
+  ]);
 
-                {/* Second Row: Search Bar - Responsive & Centered */}
-                <div className="pointer-events-auto w-full max-w-sm mx-auto px-4 flex items-center gap-2">
-                    <div className="relative flex-1 rounded-full bg-background/95 backdrop-blur-md border border-border/40 flex items-center shadow-md">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-3 h-3" />
-                        <Input
-                            placeholder="Explore Holy Legacy"
-                            className="pl-9 pr-9 h-9 rounded-full border-none bg-transparent focus-visible:ring-0 text-xs placeholder:text-muted-foreground"
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                        />
-                        <button
-                            onClick={() => setShowFilters(!showFilters)}
-                            className="absolute right-2 top-1/2 -translate-y-1/2 text-landing-primary dark:text-primary w-8 h-8 flex items-center justify-center hover:bg-accent/10 rounded-full transition-colors"
-                        >
-                            <div className="relative">
-                                <Filter className="w-4 h-4" />
-                                {activeFiltersCount > 0 && (
-                                    <span className="absolute -top-1 -right-1 bg-accent-gold text-white text-[10px] font-bold rounded-full w-3 h-3 flex items-center justify-center">
-                                        {activeFiltersCount}
-                                    </span>
-                                )}
-                            </div>
-                        </button>
-                    </div>
+  // 5. Calculate dynamic counts for Avatar Sambandh hierarchy
+  const avatarCounts = useMemo(() => {
+    const counts = {
+      ALL: allTemplesForOptions.length,
+      byAvatar: {} as Record<string, number>,
+      bySubdivision: {} as Record<string, number>,
+    };
 
-                    <Popover>
-                        <PopoverTrigger asChild>
-                            <Button
-                                size="icon"
-                                variant="outline"
-                                className="h-9 w-9 rounded-full bg-background/95 backdrop-blur-md border-border/40 shadow-md text-landing-primary dark:text-primary hover:bg-accent/10 shrink-0"
-                                title="Sthan Types Information"
+    allTemplesForOptions.forEach((t) => {
+      const temp = t as any;
+
+      // Resolve primary avatar
+      const resAvatarS = temp.primaryAvatar || temp.avatarSambandh;
+
+      // Resolve sub division
+      let resAvatarSub = "";
+      if (temp.avatarSubTypes && temp.avatarSubTypes.length > 0) {
+        resAvatarSub = temp.avatarSubTypes[0]; // just count the first one for backwards compatibility or general counts
+      } else {
+        resAvatarSub = temp.avatarSubdivision;
+      }
+
+      if (resAvatarS) {
+        counts.byAvatar[resAvatarS] = (counts.byAvatar[resAvatarS] || 0) + 1;
+      }
+      if (resAvatarSub) {
+        counts.bySubdivision[resAvatarSub] =
+          (counts.bySubdivision[resAvatarSub] || 0) + 1;
+      }
+
+      // Legacy fallback if fields are missing
+      if (!resAvatarS && (temp.sthan || temp.sthana)) {
+        const sName = temp.sthan || temp.sthana;
+        const sType = sthanTypes.find((st) => st.name === sName);
+        if (sType?.avatarSambandh) {
+          counts.byAvatar[sType.avatarSambandh] =
+            (counts.byAvatar[sType.avatarSambandh] || 0) + 1;
+          if (sType.avatarSubdivision) {
+            counts.bySubdivision[sType.avatarSubdivision] =
+              (counts.bySubdivision[sType.avatarSubdivision] || 0) + 1;
+          }
+        }
+      }
+    });
+
+    return counts;
+  }, [allTemplesForOptions, sthanTypes]);
+
+  // Client-side filtering for Search, Sthana Category, and Avatar hierarchy
+  const filteredTemples = useMemo(() => {
+    return temples.filter((temple) => {
+      const matchesSearch =
+        !searchQuery ||
+        temple.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        temple.city?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        temple.district?.toLowerCase().includes(searchQuery.toLowerCase());
+
+      const matchesSthana =
+        !appliedSthanaType ||
+        ((temple as any).sthan &&
+          (temple as any).sthan
+            .toLowerCase()
+            .includes(appliedSthanaType.toLowerCase())) ||
+        (temple.sthana &&
+          temple.sthana
+            .toLowerCase()
+            .includes(appliedSthanaType.toLowerCase()));
+
+      // Avatar hierarchy logic
+      if (appliedAvatarSambandh === "ALL")
+        return matchesSearch && matchesSthana;
+
+      // Resolve primary avatar
+      let resAvatarS =
+        (temple as any).primaryAvatar || (temple as any).avatarSambandh;
+
+      // Resolve sub-type (array supported)
+      let resAvatarSubArray: string[] = [];
+      if (
+        (temple as any).avatarSubTypes &&
+        Array.isArray((temple as any).avatarSubTypes)
+      ) {
+        resAvatarSubArray = (temple as any).avatarSubTypes;
+      } else if ((temple as any).avatarSubdivision) {
+        resAvatarSubArray = [(temple as any).avatarSubdivision];
+      }
+
+      // Try to resolve temple's avatar info if missing (legacy data)
+      if (!resAvatarS) {
+        const sName = (temple as any).sthan || temple.sthana;
+        const sType = sthanTypes.find((st) => st.name === sName);
+        if (sType) {
+          resAvatarS = sType.avatarSambandh;
+          resAvatarSubArray = sType.avatarSubdivision
+            ? [sType.avatarSubdivision]
+            : [];
+        }
+      }
+
+      if (resAvatarS !== appliedAvatarSambandh) return false;
+
+      if (appliedAvatarSubdivision) {
+        // If the filter is applied, ensure the required subdivision is in the temple's subtypes array
+        if (!resAvatarSubArray.includes(appliedAvatarSubdivision)) return false;
+      }
+
+      return matchesSearch && matchesSthana;
+    });
+  }, [
+    temples,
+    searchQuery,
+    appliedSthanaType,
+    appliedAvatarSambandh,
+    appliedAvatarSubdivision,
+    sthanTypes,
+  ]);
+
+  const activeFiltersCount =
+    (appliedDistrict ? 1 : 0) +
+    (appliedTaluka ? 1 : 0) +
+    (appliedSthanaType ? 1 : 0) +
+    (appliedAvatarSambandh !== "ALL" ? 1 : 0);
+
+  const handleApplyFilters = () => {
+    setAppliedDistrict(pendingDistrict);
+    setAppliedTaluka(pendingTaluka);
+    setAppliedSthanaType(pendingSthanaType);
+    setAppliedAvatarSambandh(pendingAvatarSambandh);
+    setAppliedAvatarSubdivision(pendingAvatarSubdivision);
+    setShowFilters(false);
+  };
+
+  const clearFilters = () => {
+    setPendingDistrict("");
+    setPendingTaluka("");
+    setPendingSthanaType("");
+    setPendingAvatarSambandh("ALL");
+    setPendingAvatarSubdivision("");
+    setAppliedDistrict("");
+    setAppliedTaluka("");
+    setAppliedSthanaType("");
+    setAppliedAvatarSambandh("ALL");
+    setAppliedAvatarSubdivision("");
+  };
+
+  return (
+    <div className="relative h-[calc(100vh-80px)] w-full overflow-hidden bg-background animate-in fade-in duration-300">
+      {/* Standard Header */}
+      {/* Header Container */}
+      <div className="absolute top-0 left-0 right-0 z-[400] flex flex-col pointer-events-none gap-1">
+        {/* Top Row: Unified Glass Header */}
+        <div className="px-4 pt-3 pb-1 flex items-center justify-center pointer-events-auto z-[410]">
+          <div className="relative w-full max-w-4xl flex items-center justify-center bg-background/10 backdrop-blur-md rounded-full border border-border/20 shadow-sm py-1.5 px-4">
+            {/* Logo - Absolute Left */}
+            <img
+              src="/icons/Main logo.svg"
+              alt="Logo"
+              className="absolute left-2 w-12 h-12 object-contain"
+            />
+
+            {/* Title - Center */}
+            <h1 className="w-full px-10 text-center text-xl md:text-2xl font-heading font-bold text-landing-primary dark:text-primary font-serif whitespace-nowrap">
+              {t("explore.title")}
+            </h1>
+          </div>
+        </div>
+
+        {/* Second Row: Search Bar - Responsive & Centered */}
+        <div className="pointer-events-auto w-full max-w-sm mx-auto px-4 flex items-center gap-2">
+          <div className="relative flex-1 rounded-full bg-background/95 backdrop-blur-md border border-border/40 flex items-center shadow-md">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-3 h-3" />
+            <Input
+              placeholder={t("explore.searchPlaceholder")}
+              className="pl-9 pr-9 h-9 rounded-full border-none bg-transparent focus-visible:ring-0 text-xs placeholder:text-muted-foreground"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+            <button
+              onClick={() => setShowFilters(!showFilters)}
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-landing-primary dark:text-primary w-8 h-8 flex items-center justify-center hover:bg-accent/10 rounded-full transition-colors"
+            >
+              <div className="relative">
+                <Filter className="w-4 h-4" />
+                {activeFiltersCount > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-accent-gold text-white text-[10px] font-bold rounded-full w-3 h-3 flex items-center justify-center">
+                    {activeFiltersCount}
+                  </span>
+                )}
+              </div>
+            </button>
+          </div>
+
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                size="icon"
+                variant="outline"
+                className="h-9 w-9 rounded-full bg-background/95 backdrop-blur-md border-border/40 shadow-md text-landing-primary dark:text-primary hover:bg-accent/10 shrink-0"
+                title={t("explore.sthanTypesInfo")}
+              >
+                <Info className="w-5 h-5" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent
+              side="bottom"
+              align="end"
+              sideOffset={8}
+              className="w-56 rounded-[1.25rem] p-3.5 bg-[#FDFBF7] border-[#E8E2D5] shadow-xl"
+            >
+              <h3 className="text-lg font-heading font-black text-[#2D2D2D] mb-3 px-1 truncate">
+                {t("explore.sthanTypesInfo")}
+              </h3>
+              <div className="max-h-[50vh] overflow-y-auto pr-1 custom-scrollbar">
+                <Accordion
+                  type="single"
+                  collapsible
+                  className="w-full space-y-1"
+                >
+                  {AVATAR_SAMBANDH_CONFIG.map((avatar) => {
+                    // Find all sthan types belonging strictly to this avatar (for those w/o subdivisions)
+                    const directSthans = sthanTypes.filter(
+                      (st) =>
+                        st.avatarSambandh === avatar.id &&
+                        (!st.avatarSubdivision || st.avatarSubdivision === ""),
+                    );
+                    // Total sthans includes direct sthans + those inside subdivisions
+                    const hasAnySthans =
+                      directSthans.length > 0 ||
+                      avatar.subdivisions.some((sub) =>
+                        sthanTypes.some(
+                          (st) =>
+                            st.avatarSambandh === avatar.id &&
+                            st.avatarSubdivision === sub.id,
+                        ),
+                      );
+
+                    if (!hasAnySthans) return null;
+
+                    return (
+                      <AccordionItem
+                        value={avatar.id}
+                        key={avatar.id}
+                        className="border-none"
+                      >
+                        <AccordionTrigger className="hover:no-underline py-2 px-2 rounded-lg hover:bg-[#F5F1E8] transition-colors data-[state=open]:bg-[#F5F1E8]">
+                          <div className="flex items-center">
+                            <div
+                              className="w-2 h-2 rounded-full mr-2 shrink-0"
+                              style={{ backgroundColor: avatar.color }}
+                            />
+                            <span className="font-bold text-sm text-[#2D2D2D] truncate">
+                              {avatar.shortLabel}
+                            </span>
+                          </div>
+                        </AccordionTrigger>
+                        <AccordionContent className="pb-1 pt-1 px-1">
+                          {avatar.subdivisions.length > 0 ? (
+                            <Accordion
+                              type="single"
+                              collapsible
+                              className="w-full space-y-1 pl-3 border-l-2 ml-1"
+                              style={{ borderColor: `${avatar.color}40` }}
                             >
-                                <Info className="w-5 h-5" />
-                            </Button>
-                        </PopoverTrigger>
-                        <PopoverContent
-                            side="bottom"
-                            align="end"
-                            sideOffset={8}
-                            className="w-56 rounded-[1.25rem] p-3.5 bg-[#FDFBF7] border-[#E8E2D5] shadow-xl"
-                        >
-                            <h3 className="text-lg font-heading font-black text-[#2D2D2D] mb-3 px-1 truncate">
-                                Sthan Types
-                            </h3>
-                            <div className="max-h-[50vh] overflow-y-auto pr-1 custom-scrollbar">
-                                <Accordion type="single" collapsible className="w-full space-y-1">
-                                    {AVATAR_SAMBANDH_CONFIG.map(avatar => {
-                                        // Find all sthan types belonging strictly to this avatar (for those w/o subdivisions)
-                                        const directSthans = sthanTypes.filter(st => st.avatarSambandh === avatar.id && (!st.avatarSubdivision || st.avatarSubdivision === ''));
-                                        // Total sthans includes direct sthans + those inside subdivisions
-                                        const hasAnySthans = directSthans.length > 0 || avatar.subdivisions.some(sub => 
-                                            sthanTypes.some(st => st.avatarSambandh === avatar.id && st.avatarSubdivision === sub.id)
-                                        );
-                                        
-                                        if (!hasAnySthans) return null;
-
-                                        return (
-                                            <AccordionItem value={avatar.id} key={avatar.id} className="border-none">
-                                                <AccordionTrigger className="hover:no-underline py-2 px-2 rounded-lg hover:bg-[#F5F1E8] transition-colors data-[state=open]:bg-[#F5F1E8]">
-                                                    <div className="flex items-center">
-                                                        <div className="w-2 h-2 rounded-full mr-2 shrink-0" style={{ backgroundColor: avatar.color }} />
-                                                        <span className="font-bold text-sm text-[#2D2D2D] truncate">{avatar.shortLabel}</span>
-                                                    </div>
-                                                </AccordionTrigger>
-                                                <AccordionContent className="pb-1 pt-1 px-1">
-                                                    {avatar.subdivisions.length > 0 ? (
-                                                        <Accordion type="single" collapsible className="w-full space-y-1 pl-3 border-l-2 ml-1" style={{ borderColor: `${avatar.color}40` }}>
-                                                            {avatar.subdivisions.map(sub => {
-                                                                const subSthans = sthanTypes.filter(st => 
-                                                                    st.avatarSambandh === avatar.id && st.avatarSubdivision === sub.id
-                                                                );
-                                                                if (subSthans.length === 0) return null;
-
-                                                                return (
-                                                                    <AccordionItem value={sub.id} key={sub.id} className="border-none">
-                                                                        <AccordionTrigger className="hover:no-underline py-1.5 px-2 rounded-md hover:bg-slate-50 transition-colors data-[state=open]:bg-slate-50">
-                                                                            <span className="font-semibold text-xs text-slate-600 truncate">{sub.label}</span>
-                                                                        </AccordionTrigger>
-                                                                        <AccordionContent className="pb-0 pt-1 space-y-0.5">
-                                                                            {subSthans.map(st => {
-                                                                                const { src, filter, needsFilter } = getSthanPinInfo(st.color, st.pinType, avatar.id, st.name);
-                                                                                return (
-                                                                                    <div
-                                                                                        key={st.id}
-                                                                                        className="flex items-center gap-2 group cursor-default p-1.5 rounded-lg hover:bg-white transition-colors"
-                                                                                    >
-                                                                                        <div className="relative w-6 h-6 shrink-0 flex items-center justify-center transition-transform duration-300 group-hover:scale-110">
-                                                                                            <img
-                                                                                                src={src}
-                                                                                                alt={st.name}
-                                                                                                style={needsFilter ? { filter } : undefined}
-                                                                                                className="relative z-10 w-5 h-5 object-contain drop-shadow-sm"
-                                                                                            />
-                                                                                        </div>
-                                                                                        <span className="text-xs font-semibold text-[#6B6B6B] truncate leading-tight group-hover:text-[#2D2D2D] transition-colors">
-                                                                                            {st.name}
-                                                                                        </span>
-                                                                                    </div>
-                                                                                );
-                                                                            })}
-                                                                        </AccordionContent>
-                                                                    </AccordionItem>
-                                                                );
-                                                            })}
-                                                        </Accordion>
-                                                    ) : (
-                                                        <div className="space-y-0.5 pl-3 border-l-2 ml-1" style={{ borderColor: `${avatar.color}40` }}>
-                                                            {directSthans.map(st => {
-                                                                const { src, filter, needsFilter } = getSthanPinInfo(st.color, st.pinType, avatar.id, st.name);
-                                                                return (
-                                                                    <div
-                                                                        key={st.id}
-                                                                        className="flex items-center gap-2 group cursor-default p-1.5 rounded-lg hover:bg-white transition-colors"
-                                                                    >
-                                                                        <div className="relative w-6 h-6 shrink-0 flex items-center justify-center transition-transform duration-300 group-hover:scale-110">
-                                                                            <img
-                                                                                src={src}
-                                                                                alt={st.name}
-                                                                                style={needsFilter ? { filter } : undefined}
-                                                                                className="relative z-10 w-5 h-5 object-contain drop-shadow-sm"
-                                                                            />
-                                                                        </div>
-                                                                        <span className="text-xs font-semibold text-[#6B6B6B] truncate leading-tight group-hover:text-[#2D2D2D] transition-colors">
-                                                                            {st.name}
-                                                                        </span>
-                                                                    </div>
-                                                                );
-                                                            })}
-                                                        </div>
-                                                    )}
-                                                </AccordionContent>
-                                            </AccordionItem>
-                                        );
-                                    })}
-                                </Accordion>
-                            </div>
-                        </PopoverContent>
-                    </Popover>
-                </div>
-            </div>
-
-            {showFilters && (
-                <div className="absolute top-36 left-4 right-4 z-[400] pointer-events-auto">
-                    <div className="bg-map-bg/95 backdrop-blur-md rounded-[2rem] border border-border p-5 shadow-xl">
-                        <div className="flex items-center justify-between mb-3 px-1">
-                            <h3 className="font-heading font-black text-xl text-landing-primary dark:text-primary">Filters</h3>
-                            <button
-                                onClick={() => setShowFilters(false)}
-                                className="text-muted-foreground hover:text-foreground transition-colors p-1"
-                            >
-                                <X className="w-5 h-5" />
-                            </button>
-                        </div>
-
-                        <div className="space-y-4">
-                            {/* Area Row */}
-                            <div className="grid grid-cols-2 gap-3">
-                                {/* District Filter */}
-                                <div>
-                                    <label className="block text-[11px] font-bold text-muted-foreground mb-1.5 uppercase tracking-wider px-1">District</label>
-                                    <DataTableFilter
-                                        label="All Districts"
-                                        options={districts}
-                                        selectedValues={pendingDistrict ? [pendingDistrict] : []}
-                                        onChange={(values) => {
-                                            setPendingDistrict(values[0] || "");
-                                            setPendingTaluka("");
-                                        }}
-                                        className="w-full bg-background border-border h-9 text-xs"
-                                    />
-                                </div>
-
-                                {/* Taluka Filter */}
-                                <div>
-                                    <label className="block text-[11px] font-bold text-muted-foreground mb-1.5 uppercase tracking-wider px-1">Taluka</label>
-                                    <DataTableFilter
-                                        label="All Talukas"
-                                        options={talukas}
-                                        selectedValues={pendingTaluka ? [pendingTaluka] : []}
-                                        onChange={(values) => setPendingTaluka(values[0] || "")}
-                                        className="w-full bg-background border-border h-9 text-xs"
-                                    />
-                                </div>
-                            </div>
-
-                            {/* Avatar Sambandh Filter */}
-                            <div className="pt-1">
-                                <label className="block text-[11px] font-bold text-muted-foreground mb-1.5 uppercase tracking-wider px-1">Avatar Sambandh</label>
-                                <DataTableFilter
-                                    label="All Avatars"
-                                    options={[
-                                        { value: "ALL", label: `All Avatars (${avatarCounts.ALL})` },
-                                        ...AVATAR_SAMBANDH_CONFIG.map(a => ({
-                                            value: a.id,
-                                            label: `${a.shortLabel} (${avatarCounts.byAvatar[a.id] || 0})`
-                                        }))
-                                    ]}
-                                    selectedValues={pendingAvatarSambandh && pendingAvatarSambandh !== "ALL" ? [pendingAvatarSambandh] : []}
-                                    onChange={(values) => {
-                                        setPendingAvatarSambandh(values[0] || "ALL");
-                                        setPendingAvatarSubdivision("");
-                                        setPendingSthanaType("");
-                                    }}
-                                    className="w-full bg-background border-border h-9 text-xs"
-                                />
-                            </div>
-
-                            {/* Conditional Subdivision Filter */}
-                            {(() => {
-                                const selectedAvatarConfig = AVATAR_SAMBANDH_CONFIG.find(a => a.id === pendingAvatarSambandh);
-                                if (!selectedAvatarConfig || selectedAvatarConfig.subdivisions.length === 0) return null;
+                              {avatar.subdivisions.map((sub) => {
+                                const subSthans = sthanTypes.filter(
+                                  (st) =>
+                                    st.avatarSambandh === avatar.id &&
+                                    st.avatarSubdivision === sub.id,
+                                );
+                                if (subSthans.length === 0) return null;
 
                                 return (
-                                    <div className="pt-1">
-                                        <label className="block text-[11px] font-bold text-muted-foreground mb-1.5 uppercase tracking-wider px-1">Subdivision</label>
-                                        <DataTableFilter
-                                            label="All Subdivisions"
-                                            options={selectedAvatarConfig.subdivisions.map(sub => ({
-                                                value: sub.id,
-                                                label: `${sub.label} (${avatarCounts.bySubdivision[sub.id] || 0})`
-                                            }))}
-                                            selectedValues={pendingAvatarSubdivision ? [pendingAvatarSubdivision] : []}
-                                            onChange={(values) => {
-                                                setPendingAvatarSubdivision(values[0] || "");
-                                                setPendingSthanaType("");
-                                            }}
-                                            className="w-full bg-background border-border h-9 text-xs"
-                                        />
-                                    </div>
+                                  <AccordionItem
+                                    value={sub.id}
+                                    key={sub.id}
+                                    className="border-none"
+                                  >
+                                    <AccordionTrigger className="hover:no-underline py-1.5 px-2 rounded-md hover:bg-slate-50 transition-colors data-[state=open]:bg-slate-50">
+                                      <span className="font-semibold text-xs text-slate-600 truncate">
+                                        {sub.label}
+                                      </span>
+                                    </AccordionTrigger>
+                                    <AccordionContent className="pb-0 pt-1 space-y-0.5">
+                                      {subSthans.map((st) => {
+                                        const { src, filter, needsFilter } =
+                                          getSthanPinInfo(
+                                            st.color,
+                                            st.pinType,
+                                            avatar.id,
+                                            st.name,
+                                          );
+                                        return (
+                                          <div
+                                            key={st.id}
+                                            className="flex items-center gap-2 group cursor-default p-1.5 rounded-lg hover:bg-white transition-colors"
+                                          >
+                                            <div className="relative w-6 h-6 shrink-0 flex items-center justify-center transition-transform duration-300 group-hover:scale-110">
+                                              <img
+                                                src={src}
+                                                alt={st.name}
+                                                style={
+                                                  needsFilter
+                                                    ? { filter }
+                                                    : undefined
+                                                }
+                                                className="relative z-10 w-5 h-5 object-contain drop-shadow-sm"
+                                              />
+                                            </div>
+                                            <span className="text-xs font-semibold text-[#6B6B6B] truncate leading-tight group-hover:text-[#2D2D2D] transition-colors">
+                                              {st.name}
+                                            </span>
+                                          </div>
+                                        );
+                                      })}
+                                    </AccordionContent>
+                                  </AccordionItem>
                                 );
-                            })()}
-
-                            {/* Sthana Row */}
-                            <div className="pt-1">
-                                <label className="block text-[11px] font-bold text-muted-foreground mb-1.5 uppercase tracking-wider px-1">Sthana Category</label>
-                                <DataTableFilter
-                                    label="All Sthana Types"
-                                    options={sthanaOptions}
-                                    selectedValues={pendingSthanaType ? [pendingSthanaType] : []}
-                                    onChange={(values) => setPendingSthanaType(values[0] || "")}
-                                    className="w-full bg-white border-gray-200 h-9 text-xs"
-                                />
+                              })}
+                            </Accordion>
+                          ) : (
+                            <div
+                              className="space-y-0.5 pl-3 border-l-2 ml-1"
+                              style={{ borderColor: `${avatar.color}40` }}
+                            >
+                              {directSthans.map((st) => {
+                                const { src, filter, needsFilter } =
+                                  getSthanPinInfo(
+                                    st.color,
+                                    st.pinType,
+                                    avatar.id,
+                                    st.name,
+                                  );
+                                return (
+                                  <div
+                                    key={st.id}
+                                    className="flex items-center gap-2 group cursor-default p-1.5 rounded-lg hover:bg-white transition-colors"
+                                  >
+                                    <div className="relative w-6 h-6 shrink-0 flex items-center justify-center transition-transform duration-300 group-hover:scale-110">
+                                      <img
+                                        src={src}
+                                        alt={st.name}
+                                        style={
+                                          needsFilter ? { filter } : undefined
+                                        }
+                                        className="relative z-10 w-5 h-5 object-contain drop-shadow-sm"
+                                      />
+                                    </div>
+                                    <span className="text-xs font-semibold text-[#6B6B6B] truncate leading-tight group-hover:text-[#2D2D2D] transition-colors">
+                                      {st.name}
+                                    </span>
+                                  </div>
+                                );
+                              })}
                             </div>
+                          )}
+                        </AccordionContent>
+                      </AccordionItem>
+                    );
+                  })}
+                </Accordion>
+              </div>
+            </PopoverContent>
+          </Popover>
+        </div>
+      </div>
 
-                            {/* Action Buttons */}
-                            <div className="flex gap-3 pt-4 border-t border-border/10 mt-2">
-                                <Button
-                                    onClick={clearFilters}
-                                    variant="outline"
-                                    className="flex-1 border-border text-foreground hover:bg-accent/10 h-10 rounded-xl text-xs font-bold"
-                                >
-                                    Clear All
-                                </Button>
-                                <Button
-                                    onClick={handleApplyFilters}
-                                    className="flex-1 bg-landing-primary hover:bg-landing-primary/90 text-white h-10 rounded-xl shadow-md text-xs font-bold"
-                                >
-                                    Apply Filters
-                                </Button>
-                            </div>
-
-                            {/* Results Count */}
-                            <div className="text-center text-[10px] font-black text-accent-gold uppercase tracking-[0.2em] pt-3">
-                                SHOWING {filteredTemples.length} OF {temples.length} TEMPLES
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* Full Screen Map */}
-            <div className="absolute inset-0 z-0">
-                <MapContainer
-                    center={[20.5937, 78.9629]} // India Center
-                    zoom={5}
-                    style={{ height: "100%", width: "100%" }}
-                    zoomControl={false}
-                    attributionControl={false}
-                >
-                    <TileLayer
-                        url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png" // Cleaner, lighter map style
-                        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
-                    />
-
-                    <MapEffect temples={filteredTemples} resetTrigger={resetTrigger} />
-
-                    {/* Render each temple with its own TempleMarker component */}
-                    {filteredTemples.map((temple) => (
-                        temple.latitude && temple.longitude && (
-                            <TempleMarker
-                                key={temple.id}
-                                temple={temple}
-                                onSelect={setSelectedTemple}
-                                sthanTypes={sthanTypes}
-                            />
-                        )
-                    ))}
-                </MapContainer>
-
-                {/* Reset Zoom Button */}
-                <div className="absolute bottom-24 right-4 z-[400] pointer-events-auto">
-                    <Button
-                        onClick={() => setResetTrigger(prev => prev + 1)}
-                        className="h-10 px-4 rounded-full bg-background/95 backdrop-blur-md border border-border/40 text-landing-primary dark:text-primary shadow-lg hover:bg-accent/10 flex items-center gap-2 font-bold text-xs transition-all active:scale-95"
-                        title="Reset Map Zoom"
-                    >
-                        <Compass className="w-4 h-4" />
-                        Reset Zoom
-                    </Button>
-                </div>
+      {showFilters && (
+        <div className="absolute top-36 left-4 right-4 z-[400] pointer-events-auto">
+          <div className="bg-map-bg/95 backdrop-blur-md rounded-[2rem] border border-border p-5 shadow-xl">
+            <div className="flex items-center justify-between mb-3 px-1">
+              <h3 className="font-heading font-black text-xl text-landing-primary dark:text-primary">
+                {t("explore.filters")}
+              </h3>
+              <button
+                onClick={() => setShowFilters(false)}
+                className="text-muted-foreground hover:text-foreground transition-colors p-1"
+              >
+                <X className="w-5 h-5" />
+              </button>
             </div>
 
+            <div className="space-y-4">
+              {/* Area Row */}
+              <div className="grid grid-cols-2 gap-3">
+                {/* District Filter */}
+                <div>
+                  <label className="block text-[11px] font-bold text-muted-foreground mb-1.5 uppercase tracking-wider px-1">
+                    {t("explore.district")}
+                  </label>
+                  <DataTableFilter
+                    label={t("explore.allDistricts")}
+                    options={districts}
+                    selectedValues={pendingDistrict ? [pendingDistrict] : []}
+                    onChange={(values) => {
+                      setPendingDistrict(values[0] || "");
+                      setPendingTaluka("");
+                    }}
+                    className="w-full bg-background border-border h-9 text-xs"
+                  />
+                </div>
+
+                {/* Taluka Filter */}
+                <div>
+                  <label className="block text-[11px] font-bold text-muted-foreground mb-1.5 uppercase tracking-wider px-1">
+                    {t("explore.taluka")}
+                  </label>
+                  <DataTableFilter
+                    label={t("explore.allTalukas")}
+                    options={talukas}
+                    selectedValues={pendingTaluka ? [pendingTaluka] : []}
+                    onChange={(values) => setPendingTaluka(values[0] || "")}
+                    className="w-full bg-background border-border h-9 text-xs"
+                  />
+                </div>
+              </div>
+
+              {/* Avatar Sambandh Filter */}
+              <div className="pt-1">
+                <label className="block text-[11px] font-bold text-muted-foreground mb-1.5 uppercase tracking-wider px-1">
+                  Avatar Sambandh
+                </label>
+                <DataTableFilter
+                  label={t("explore.allAvatars")}
+                  options={[
+                    {
+                      value: "ALL",
+                      label: `${t("explore.allAvatars")} (${avatarCounts.ALL})`,
+                    },
+                    ...AVATAR_SAMBANDH_CONFIG.map((a) => ({
+                      value: a.id,
+                      label: `${a.shortLabel} (${avatarCounts.byAvatar[a.id] || 0})`,
+                    })),
+                  ]}
+                  selectedValues={
+                    pendingAvatarSambandh && pendingAvatarSambandh !== "ALL"
+                      ? [pendingAvatarSambandh]
+                      : []
+                  }
+                  onChange={(values) => {
+                    setPendingAvatarSambandh(values[0] || "ALL");
+                    setPendingAvatarSubdivision("");
+                    setPendingSthanaType("");
+                  }}
+                  className="w-full bg-background border-border h-9 text-xs"
+                />
+              </div>
+
+              {/* Conditional Subdivision Filter */}
+              {(() => {
+                const selectedAvatarConfig = AVATAR_SAMBANDH_CONFIG.find(
+                  (a) => a.id === pendingAvatarSambandh,
+                );
+                if (
+                  !selectedAvatarConfig ||
+                  selectedAvatarConfig.subdivisions.length === 0
+                )
+                  return null;
+
+                return (
+                  <div className="pt-1">
+                    <label className="block text-[11px] font-bold text-muted-foreground mb-1.5 uppercase tracking-wider px-1">
+                      {t("explore.subdivision")}
+                    </label>
+                    <DataTableFilter
+                      label={t("explore.allSubdivisions")}
+                      options={selectedAvatarConfig.subdivisions.map((sub) => ({
+                        value: sub.id,
+                        label: `${sub.label} (${avatarCounts.bySubdivision[sub.id] || 0})`,
+                      }))}
+                      selectedValues={
+                        pendingAvatarSubdivision
+                          ? [pendingAvatarSubdivision]
+                          : []
+                      }
+                      onChange={(values) => {
+                        setPendingAvatarSubdivision(values[0] || "");
+                        setPendingSthanaType("");
+                      }}
+                      className="w-full bg-background border-border h-9 text-xs"
+                    />
+                  </div>
+                );
+              })()}
+
+              {/* Sthana Row */}
+              <div className="pt-1">
+                <label className="block text-[11px] font-bold text-muted-foreground mb-1.5 uppercase tracking-wider px-1">
+                  {t("explore.sthanaCategory")}
+                </label>
+                <DataTableFilter
+                  label={t("explore.allSthanaTypes")}
+                  options={sthanaOptions}
+                  selectedValues={pendingSthanaType ? [pendingSthanaType] : []}
+                  onChange={(values) => setPendingSthanaType(values[0] || "")}
+                  className="w-full bg-white border-gray-200 h-9 text-xs"
+                />
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex gap-3 pt-4 border-t border-border/10 mt-2">
+                <Button
+                  onClick={clearFilters}
+                  variant="outline"
+                  className="flex-1 border-border text-foreground hover:bg-accent/10 h-10 rounded-xl text-xs font-bold"
+                >
+                  {t("explore.clearAll")}
+                </Button>
+                <Button
+                  onClick={handleApplyFilters}
+                  className="flex-1 bg-landing-primary hover:bg-landing-primary/90 text-white h-10 rounded-xl shadow-md text-xs font-bold"
+                >
+                  {t("explore.applyFilters")}
+                </Button>
+              </div>
+
+              {/* Results Count */}
+              <div className="text-center text-[10px] font-black text-accent-gold uppercase tracking-[0.2em] pt-3">
+                {t("explore.showing")} {filteredTemples.length} {t("explore.of")}{" "}
+                {temples.length} {t("explore.temples")}
+              </div>
+            </div>
+          </div>
         </div>
-    );
+      )}
+
+      {/* Full Screen Map */}
+      <div className="absolute inset-0 z-0">
+        <MapContainer
+          center={[20.5937, 78.9629]} // India Center
+          zoom={5}
+          style={{ height: "100%", width: "100%" }}
+          zoomControl={false}
+          attributionControl={false}
+        >
+          <TileLayer
+            url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png" // Cleaner, lighter map style
+            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+          />
+
+          <MapEffect temples={filteredTemples} resetTrigger={resetTrigger} />
+
+          {/* Render each temple with its own TempleMarker component */}
+          {filteredTemples.map(
+            (temple) =>
+              temple.latitude &&
+              temple.longitude && (
+                <TempleMarker
+                  key={temple.id}
+                  temple={temple}
+                  onSelect={setSelectedTemple}
+                  sthanTypes={sthanTypes}
+                />
+              ),
+          )}
+        </MapContainer>
+
+        {/* Reset Zoom Button */}
+        <div className="absolute bottom-24 right-4 z-[400] pointer-events-auto">
+            <Button
+              onClick={() => setResetTrigger((prev) => prev + 1)}
+              className="h-10 px-4 rounded-full bg-background/95 backdrop-blur-md border border-border/40 text-landing-primary dark:text-primary shadow-lg hover:bg-accent/10 flex items-center gap-2 font-bold text-xs transition-all active:scale-95"
+              title={t("explore.resetZoom")}
+            >
+              <Compass className="w-4 h-4" />
+              {t("explore.resetZoom")}
+            </Button>
+        </div>
+      </div>
+    </div>
+  );
 };
 
 export default Explore;

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ChevronLeft, Search, Music, Play, Pause, Image } from "lucide-react";
 import { Button } from "@/shared/components/ui/button";
+import { useTranslation } from "react-i18next";
 
 // Mock Data for Audio
 const audioData = [
@@ -115,6 +116,7 @@ const imageData = [
 
 function ELibrary() {
  const navigate = useNavigate();
+ const { t } = useTranslation();
  const [activeTab, setActiveTab] = useState<"audio" | "video" | "images">("audio");
 
  return (
@@ -124,7 +126,7 @@ function ELibrary() {
  <Button variant="ghost" size="icon" className="-ml-2 hover:bg-black/5" onClick={() => navigate(-1)}>
  <ChevronLeft className="w-7 h-7 text-blue-900" />
  </Button>
- <h1 className="text-2xl md:text-3xl font-heading font-bold text-[#0f3c6e] font-serif">Digital Library</h1>
+ <h1 className="text-2xl md:text-3xl font-heading font-bold text-[#0f3c6e] font-serif">{t('library.title')}</h1>
  <Button variant="ghost" size="icon" className="-mr-2 hover:bg-black/5">
  <Search className="w-6 h-6 text-blue-900" />
  </Button>
@@ -148,7 +150,7 @@ function ELibrary() {
  }`}
  onClick={() => setActiveTab("video")}
  >
- Videos
+ {t('library.videos')}
  </button>
  <button
  className={`flex-1 py-2 rounded-full font-bold text-sm transition-all ${activeTab === "images"

@@ -3,16 +3,18 @@ import { NavLink } from "@/shared/components/layout/NavLink";
 import { cn } from "@/shared/lib/utils";
 import { Button } from "@/shared/components/ui/button";
 import { useSidebar } from "@/shared/contexts/SidebarContext";
+import { useLanguage } from "@/shared/contexts/LanguageContext";
 
-const navigation = [
-  { name: "Dashboard", href: "/dashboard", icon: Home },
-  { name: "Explore Sthanas", href: "/explore", icon: Map },
-  { name: "Raj Viharan", href: "/raj-viharan", icon: Compass },
-  { name: "About Panchajanya", href: "/about", icon: BookOpen },
+const navigationLinks = [
+  { key: "nav.dashboard", href: "/dashboard", icon: Home },
+  { key: "nav.exploreSthanas", href: "/explore", icon: Map },
+  { key: "nav.rajViharan", href: "/raj-viharan", icon: Compass },
+  { key: "nav.aboutPanchajanya", href: "/about", icon: BookOpen },
 ];
 
 export const Sidebar = () => {
   const { isExpanded, setIsExpanded, isPinned, setIsPinned } = useSidebar();
+  const { t } = useLanguage();
 
   return (
     <>
@@ -45,13 +47,13 @@ export const Sidebar = () => {
 
         {/* Navigation */}
         <nav className="flex-1 py-8 px-3 space-y-3 overflow-hidden">
-          {navigation.map((item) => (
+          {navigationLinks.map((item) => (
             <NavLink
-              key={item.name}
+              key={item.key}
               to={item.href}
               className="flex items-center gap-4 px-3 py-3.5 rounded-xl text-sidebar-foreground/80 hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground transition-all duration-300 group"
               activeClassName="bg-sidebar-accent text-sidebar-accent-foreground shadow-sm"
-              title={!isExpanded ? item.name : undefined}
+              title={!isExpanded ? t(item.key) : undefined}
             >
               <item.icon className="w-5 h-5 flex-shrink-0 transition-transform group-hover:scale-110" />
               <span
@@ -60,7 +62,7 @@ export const Sidebar = () => {
                   isExpanded ? "opacity-100 w-auto" : "opacity-0 w-0"
                 )}
               >
-                {item.name}
+                {t(item.key)}
               </span>
             </NavLink>
           ))}
@@ -76,7 +78,7 @@ export const Sidebar = () => {
               "w-full justify-start gap-3 text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent/30 transition-all",
               !isExpanded && "justify-center px-0"
             )}
-            title={isPinned ? "Unpin sidebar" : "Pin sidebar"}
+            title={isPinned ? t("sidebar.unpin") : t("sidebar.pin")}
           >
             <ChevronRight className={cn(
               "w-4 h-4 transition-transform duration-300 flex-shrink-0",
@@ -88,7 +90,7 @@ export const Sidebar = () => {
                 isExpanded ? "opacity-100 w-auto" : "opacity-0 w-0"
               )}
             >
-              {isPinned ? "Unpin" : "Pin"}
+              {isPinned ? t("sidebar.unpin") : t("sidebar.pin")}
             </span>
           </Button>
         </div>

@@ -12,9 +12,11 @@ import {
     Map
 } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useLanguage } from "@/shared/contexts/LanguageContext";
 
 const Dashboard = () => {
     const { user } = useAuth();
+    const { t } = useLanguage();
     const userName = user?.displayName; // Fallback name from design
 
     return (
@@ -38,7 +40,7 @@ const Dashboard = () => {
                         </h1>
                     )}
                     <p className="text-[#D97706] italic font-medium font-serif text-lg tracking-wide">
-                        Jai Shri Chakradhar Swami
+                        {t("dashboard.greeting")}
                     </p>
                 </div>
 
@@ -55,10 +57,10 @@ const Dashboard = () => {
                             </div>
                             <div className="mt-4 space-y-1">
                                 <h3 className="font-heading font-bold text-lg text-blue-900 group-hover:text-[#B48A17] transition-colors">
-                                    Literature
+                                    {t("dashboard.literature")}
                                 </h3>
                                 <p className="text-xs text-muted-foreground leading-relaxed">
-                                    Ancient texts & sacred scrolls.
+                                    {t("dashboard.literatureDesc")}
                                 </p>
                             </div>
                         </Card>
@@ -74,10 +76,10 @@ const Dashboard = () => {
                             </div>
                             <div className="mt-4 space-y-1">
                                 <h3 className="font-heading font-bold text-lg text-blue-900 group-hover:text-[#B48A17] transition-colors">
-                                    Digital Library
+                                    {t("dashboard.digitalLibrary")}
                                 </h3>
                                 <p className="text-xs text-muted-foreground leading-relaxed">
-                                    Spiritual digital collection.
+                                    {t("dashboard.digitalLibraryDesc")}
                                 </p>
                             </div>
                         </Card>
@@ -93,10 +95,10 @@ const Dashboard = () => {
                             </div>
                             <div className="mt-4 space-y-1">
                                 <h3 className="font-heading font-bold text-lg text-blue-900 group-hover:text-[#B48A17] transition-colors">
-                                    What's New
+                                    {t("dashboard.whatsNew")}
                                 </h3>
                                 <p className="text-xs text-muted-foreground leading-relaxed">
-                                    Latest updates from the heritage.
+                                    {t("dashboard.whatsNewDesc")}
                                 </p>
                             </div>
                         </Card>
@@ -112,10 +114,10 @@ const Dashboard = () => {
                             </div>
                             <div className="mt-4 space-y-1">
                                 <h3 className="font-heading font-bold text-lg text-blue-900 group-hover:text-[#B48A17] transition-colors">
-                                    Jigyasa
+                                    {t("dashboard.jigyasa")}
                                 </h3>
                                 <p className="text-xs text-muted-foreground leading-relaxed">
-                                    Quest for deep knowledge.
+                                    {t("dashboard.jigyasaDesc")}
                                 </p>
                             </div>
                         </Card>
@@ -132,9 +134,9 @@ const Dashboard = () => {
                                     <img src="/icons/glance/sthaan.svg" className="w-12 h-12 object-contain" alt="Sthaan Vandan Icon" />
                                 </div>
                                 <div>
-                                    <h3 className="font-display font-bold text-xl">Sthaan Vandan</h3>
+                                    <h3 className="font-display font-bold text-xl">{t("dashboard.sthaanVandan")}</h3>
                                     <p className="text-blue-100 text-sm mt-1">
-                                        Sacred Salutation to holy sites.
+                                        {t("dashboard.sthaanVandanDesc")}
                                     </p>
                                 </div>
                             </div>
@@ -163,9 +165,9 @@ const Dashboard = () => {
                                     <Map className="w-10 h-10 text-white" />
                                 </div>
                                 <div>
-                                    <h3 className="font-display font-bold text-xl">Raj Viharan</h3>
+                                    <h3 className="font-display font-bold text-xl">{t("dashboard.rajViharan")}</h3>
                                     <p className="text-blue-100 text-sm mt-1">
-                                        Live Yatra status & historical traces.
+                                        {t("dashboard.rajViharanDesc")}
                                     </p>
                                 </div>
                             </div>
@@ -184,7 +186,7 @@ const Dashboard = () => {
 
                 <div className="space-y-4">
                     <div className="flex items-center gap-2 border-l-4 border-[#D97706] pl-3">
-                        <h2 className="font-heading font-bold text-xl text-blue-900">Quick Support</h2>
+                        <h2 className="font-heading font-bold text-xl text-blue-900">{t("dashboard.quickSupport")}</h2>
                     </div>
 
                     <div className="space-y-3">
@@ -194,7 +196,7 @@ const Dashboard = () => {
                                     <div className="p-2 bg-[#FFF4D1] text-[#B48A17] border border-[#B48A17]/40 rounded-full">
                                         <HelpCircle className="w-5 h-5" />
                                     </div>
-                                    <span className="font-heading font-bold text-amber-900 text-lg">About Panchajanya</span>
+                                    <span className="font-heading font-bold text-amber-900 text-lg">{t("dashboard.aboutPanchajanya")}</span>
                                 </div>
                                 <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:translate-x-1 transition-transform" />
                             </Button>
@@ -206,7 +208,7 @@ const Dashboard = () => {
                                     <div className="p-2 bg-[#FFF4D1] text-[#B48A17] border border-[#B48A17]/40 rounded-full">
                                         <User className="w-5 h-5" />
                                     </div>
-                                    <span className="font-heading font-bold text-amber-900 text-lg">My Account</span>
+                                    <span className="font-heading font-bold text-amber-900 text-lg">{t("dashboard.myAccount")}</span>
                                 </div>
                                 <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:translate-x-1 transition-transform" />
                             </Button>

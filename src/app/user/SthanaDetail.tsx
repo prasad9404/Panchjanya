@@ -8,10 +8,12 @@ import { Button } from "@/shared/components/ui/button";
 import { Temple, Hotspot, SthanDetail } from "@/types";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/components/ui/tabs";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 export default function SthanaDetail() {
     const { id, sthanaId } = useParams<{ id: string; sthanaId: string }>();
     const navigate = useNavigate();
+    const { t } = useTranslation();
     const [searchParams] = useSearchParams();
     const viewParam = searchParams.get('view') || 'architectural';
     const [hotspot, setHotspot] = useState<any | null>(null);
@@ -119,7 +121,7 @@ export default function SthanaDetail() {
     const nextSthana = currentIndex < allHotspots.length - 1 ? allHotspots[currentIndex + 1] : null;
 
     if (loading) return <div className="min-h-full flex-1 bg-background flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary" /></div>;
-    if (!hotspot) return <div className="min-h-full flex-1 flex items-center justify-center text-foreground">Sthana not found</div>;
+    if (!hotspot) return <div className="min-h-full flex-1 flex items-center justify-center text-foreground">{t('temple.noSthanFound')}</div>;
 
     return (
         <div className="min-h-full flex-1 bg-background flex flex-col animate-in fade-in duration-300">
@@ -172,11 +174,11 @@ export default function SthanaDetail() {
                                 : 'border-landing-primary dark:border-primary text-landing-primary dark:text-primary bg-transparent hover:bg-accent/5 active:bg-accent/10'
                                 }`}
                         >
-                            Previous
+                            {t('common.previous')}
                         </button>
 
                         <div className="text-landing-primary dark:text-primary font-bold text-sm whitespace-nowrap px-4">
-                            Page {currentIndex + 1} of {allHotspots.length}
+                            {t('common.pageOf', { current: currentIndex + 1, total: allHotspots.length })}
                         </div>
 
                         <button
@@ -187,7 +189,7 @@ export default function SthanaDetail() {
                                 : 'border-landing-primary dark:border-primary text-landing-primary dark:text-primary bg-transparent hover:bg-accent/5 active:bg-accent/10'
                                 }`}
                         >
-                            Next
+                            {t('common.next')}
                         </button>
                     </div>
 
@@ -223,7 +225,7 @@ export default function SthanaDetail() {
                             {/* Label for Old Images Mode */}
                             {viewMode === 'old' && (
                                 <div className="absolute top-4 right-4 bg-accent-gold text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg uppercase tracking-wider">
-                                    Old Image
+                                    {t('temple.oldImage')}
                                 </div>
                             )}
                         </div>
@@ -241,7 +243,7 @@ export default function SthanaDetail() {
                                     : 'bg-card text-muted-foreground hover:bg-muted'
                                     }`}
                             >
-                                Details
+                                {t('common.details')}
                             </button>
                             <button
                                 onClick={() => setContentMode('leela')}
@@ -250,7 +252,7 @@ export default function SthanaDetail() {
                                     : 'bg-card text-muted-foreground hover:bg-muted'
                                     }`}
                             >
-                                Leela
+                                {t('common.leela')}
                             </button>
                         </div>
                     </div>
@@ -264,12 +266,12 @@ export default function SthanaDetail() {
                                 <div className="pl-2">
                                     <div className="flex items-center gap-2 mb-2">
                                         <div className="w-1 h-6 bg-amber-600"></div>
-                                        <h3 className="text-blue-900 dark:text-primary font-bold tracking-widest text-xl">{hotspot.generalDescriptionTitle || "Description"}</h3>
+                                        <h3 className="text-blue-900 dark:text-primary font-bold tracking-widest text-xl">{hotspot.generalDescriptionTitle || t('common.description')}</h3>
                                     </div>
                                     <div className="bg-card border border-border rounded-xl p-4 shadow-sm relative z-10 space-y-4">
                                         <div>
                                             <p className="font-serif text-lg text-foreground leading-relaxed">
-                                                {hotspot.description || hotspot.significance || "No info available"}
+                                                {hotspot.description || hotspot.significance || t('common.noInfo')}
                                             </p>
                                         </div>
                                     </div>
@@ -323,7 +325,7 @@ export default function SthanaDetail() {
                                                             {index + 1}
                                                         </span>
                                                         <span className={`font-serif text-lg leading-snug transition-colors duration-200 text-amber-600 dark:text-foreground font-bold`}>
-                                                            {((typeof leela === 'object' && leela.title) ? leela.title : `Leela ${index + 1}`)}
+                                                            {((typeof leela === 'object' && leela.title) ? leela.title : `${t('common.leela')} ${index + 1}`)}
                                                         </span>
                                                     </div>
                                                     <div className={`shrink-0 transition-transform duration-300 ${isExpanded ? 'rotate-180 text-accent-gold' : 'text-muted-foreground'}`}>
