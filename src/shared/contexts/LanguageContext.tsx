@@ -7,7 +7,7 @@ type Language = "marathi" | "hindi" | "english";
 interface LanguageContextType {
     language: Language;
     setLanguage: (lang: Language) => void;
-    t: (key: string) => string;
+    t: (key: string, options?: any) => string;
 }
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
@@ -55,8 +55,9 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
         setLanguageState(lang);
     };
 
-    const t = (key: string): string => {
-        return i18nT(key);
+    const t = (key: string, options?: any): string => {
+        const result = i18nT(key, options);
+        return typeof result === "string" ? result : key;
     };
 
     return (

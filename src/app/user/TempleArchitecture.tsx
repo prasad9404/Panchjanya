@@ -175,7 +175,7 @@ export default function TempleArchitecture() {
 
         const shareData = {
             title: temple.name,
-            text: `Check out ${temple.name} on Panchajanya`,
+            text: t('temple.shareMessage', { name: temple.name }),
             url: window.location.href,
         };
 
@@ -287,7 +287,7 @@ export default function TempleArchitecture() {
                             >
                                 <img
                                     src="/icons/signpost.png"
-                                    alt="Directions"
+                                    alt={t('temple.navigation')}
                                     className="w-6 h-6 md:w-6 md:h-6 object-contain"
                                 />
                                 <span className="text-sm md:text-base">{temple.directions_title || t('temple.wayToReach')}</span>
@@ -407,7 +407,7 @@ export default function TempleArchitecture() {
                     >
                         <img
                             src="/icons/explore_safari.png"
-                            alt="Explore"
+                            alt={t('temple.explore')}
                             className="w-5 h-5 md:w-6 md:h-6 shrink-0 object-contain brightness-0 invert"
                         />
                         <span>{t('temple.exploreSthan')}</span>
