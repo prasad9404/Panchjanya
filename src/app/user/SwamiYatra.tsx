@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/shared/components/ui/button";
-import { ChevronLeft, Share2, Compass, MapPin, GripHorizontal, ChevronRight, ExternalLink, Loader2 } from "lucide-react";
+import { ChevronLeft, Share2, Compass, MapPin, GripHorizontal, ChevronRight, ExternalLink, Loader2, Navigation2 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import YatraMap, { YatraLocation } from "@/shared/components/features/YatraMap";
 import { Card } from "@/shared/components/ui/card";
 import {
@@ -38,6 +39,8 @@ const SwamiYatra = () => {
     const [selectedRoute, setSelectedRoute] = useState(ROUTES[0].id);
     const [selectedSubRoute, setSelectedSubRoute] = useState<string | null>(null);
     const [currentIndex, setCurrentIndex] = useState(0);
+    const [centerOnFullRoute, setCenterOnFullRoute] = useState(0);
+    const [forceFocus, setForceFocus] = useState(0);
 
     const [isFullScreen, setIsFullScreen] = useState(false);
     const [panelHeight, setPanelHeight] = useState(40);
@@ -145,19 +148,33 @@ const SwamiYatra = () => {
     return (
         <div className="min-h-full flex-1 bg-background lg:bg-card font-sans flex flex-col pb-24 lg:pb-0 overflow-hidden">
             {!isFullScreen && (
-                <div className="sticky top-0 z-40 bg-card shadow-sm">
-                    <div className="px-4 py-4 flex items-center justify-between border-b border-border">
-                        <Button variant="ghost" size="icon" className="-ml-2 hover:bg-black/5 flex-shrink-0" onClick={() => navigate(-1)}>
-                            <ChevronLeft className="w-7 h-7 text-landing-primary dark:text-primary" />
+                <div className="sticky top-0 z-40 bg-card/80 backdrop-blur-md border-b border-border/50 shadow-sm">
+                    <div className="px-5 py-5 flex items-center justify-between">
+                        <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors" 
+                            onClick={() => navigate(-1)}
+                        >
+                            <ChevronLeft className="w-6 h-6 text-landing-primary dark:text-primary" />
                         </Button>
-                        <div className="text-center flex-1">
-                            <h1 className="text-2xl md:text-3xl font-heading font-bold text-landing-primary dark:text-primary font_serif">Raj Viharan</h1>
+                        <div className="flex-1 text-center">
+                            <h1 className="text-2xl md:text-3xl font-heading font-black tracking-tight text-landing-primary dark:text-primary">
+                                Raj Viharan
+                            </h1>
+                            <div className="flex items-center justify-center gap-2 mt-0.5">
+                                <div className="h-[1px] w-4 bg-accent-gold/40" />
+                                <p className="text-[9px] uppercase tracking-[0.3em] font-black text-accent-gold/80">Spiritual Journey</p>
+                                <div className="h-[1px] w-4 bg-accent-gold/40" />
+                            </div>
                         </div>
-                        <div className="w-10"></div>
+                        <Button variant="ghost" size="icon" className="rounded-full group hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all">
+                            <Share2 className="w-5 h-5 text-landing-primary group-hover:scale-110 transition-transform" />
+                        </Button>
                     </div>
 
-                    <div className="px-4 py-2 bg-card/95 backdrop-blur-sm border-b border-border flex items-center">
-                        <div className="flex-1 min-w-0">
+                    <div className="px-4 pb-3 flex items-center gap-2">
+                        <div className="flex-1 relative">
                             <Select
                                 value={selectedSubRoute ? `${selectedRoute}:${selectedSubRoute}` : selectedRoute}
                                 onValueChange={(value) => {
@@ -166,19 +183,22 @@ const SwamiYatra = () => {
                                     setSelectedSubRoute(subRouteId === "all" || !subRouteId ? null : subRouteId);
                                 }}
                             >
-                                <SelectTrigger className="w-full h-10 bg-muted border-none shadow-none focus:ring-0 text-sm font-bold text-landing-primary dark:text-primary rounded-xl pl-3">
-                                    <SelectValue placeholder="Select Route" />
+                                <SelectTrigger className="w-full h-11 bg-muted/50 border-none shadow-none focus:ring-1 focus:ring-accent-gold/20 text-sm font-semibold text-landing-primary dark:text-primary rounded-2xl pl-4 hover:bg-muted transition-colors">
+                                    <div className="flex items-center gap-2 truncate">
+                                        <Compass className="w-4 h-4 text-accent-gold" />
+                                        <SelectValue placeholder="Select Route" />
+                                    </div>
                                 </SelectTrigger>
-                                <SelectContent className="rounded-2xl border-none shadow-xl">
-                                    <SelectItem value="swami-complete" className="font-bold py-3 text-sm">Shri Chakradhar Swami's complete Viharan</SelectItem>
-                                    <SelectItem value="swami-complete:ekant" className="pl-6 py-2 text-xs font-medium">Ekant</SelectItem>
-                                    <SelectItem value="swami-complete:purvardh" className="pl-6 py-2 text-xs font-medium">Purvardh</SelectItem>
-                                    <SelectItem value="swami-complete:uttarardh" className="pl-6 py-2 text-xs font-medium">Uttarardh</SelectItem>
-                                    <div className="h-px bg-border my-1" />
-                                    <SelectItem value="govind" className="font-bold py-2 text-sm">Shri Govind Prabhu Viharan</SelectItem>
-                                    <SelectItem value="chakrapani" className="font-bold py-2 text-sm">Shri Chakrapani Prabhu Viharan</SelectItem>
-                                    <SelectItem value="dattatray" className="font-bold py-2 text-sm">Shri Dattatray Prabhu Viharan</SelectItem>
-                                    <SelectItem value="krishna" className="font-bold py-2 text-sm">Shri Krishan Bhagwan Viharan</SelectItem>
+                                <SelectContent className="rounded-3xl border border-border/50 shadow-2xl backdrop-blur-xl">
+                                    <SelectItem value="swami-complete" className="font-bold py-3 text-sm focus:bg-accent/5">Shri Chakradhar Swami's complete Viharan</SelectItem>
+                                    <SelectItem value="swami-complete:ekant" className="pl-6 py-2 text-xs font-medium focus:bg-accent/5">Ekant</SelectItem>
+                                    <SelectItem value="swami-complete:purvardh" className="pl-6 py-2 text-xs font-medium focus:bg-accent/5">Purvardh</SelectItem>
+                                    <SelectItem value="swami-complete:uttarardh" className="pl-6 py-2 text-xs font-medium focus:bg-accent/5">Uttarardh</SelectItem>
+                                    <div className="h-px bg-border/50 my-1 mx-2" />
+                                    <SelectItem value="govind" className="font-bold py-2 text-sm focus:bg-accent/5">Shri Govind Prabhu Viharan</SelectItem>
+                                    <SelectItem value="chakrapani" className="font-bold py-2 text-sm focus:bg-accent/5">Shri Chakrapani Prabhu Viharan</SelectItem>
+                                    <SelectItem value="dattatray" className="font-bold py-2 text-sm focus:bg-accent/5">Shri Dattatray Prabhu Viharan</SelectItem>
+                                    <SelectItem value="krishna" className="font-bold py-2 text-sm focus:bg-accent/5">Shri Krishan Bhagwan Viharan</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
@@ -187,22 +207,24 @@ const SwamiYatra = () => {
             )}
 
             <div
-                className={`relative transition-all ${isDragging ? '' : 'duration-300 ease-in-out'} ${isFullScreen
+                className={`relative transition-all ${isDragging ? '' : 'duration-500 cubic-bezier(0.4, 0, 0.2, 1)'} ${isFullScreen
                     ? "fixed inset-0 w-screen h-screen z-[99999] rounded-none bg-slate-100"
                     : "w-full"
-                    } bg-slate-100`}
+                    } bg-slate-100 overflow-hidden shadow-inner`}
                 style={!isFullScreen ? { height: `${100 - panelHeight - 15}vh` } : {}}
             >
-                <div className="w-full h-full">
+                <div className="w-full h-full scale-[1.01]">
                     <YatraMap
                         locations={filteredPlaces}
                         highlightedId={filteredPlaces[currentIndex]?.id}
+                        centerOnFullRoute={centerOnFullRoute}
+                        forceFocus={forceFocus}
                     />
                 </div>
 
                 {!isFullScreen && (
-                    <div className="absolute top-4 right-4 bg-accent-gold text-white text-[10px] font-bold px-3 py-1 rounded-full border border-white/20 z-[400]">
-                        CONFIRMED
+                    <div className="absolute top-4 right-4 z-[400]">
+                        {/* Removed CONFIRMED ROUTE badge as requested */}
                     </div>
                 )}
 
@@ -210,35 +232,57 @@ const SwamiYatra = () => {
                     <Button
                         variant="secondary"
                         size="icon"
-                        className="absolute top-6 left-6 z-[400] rounded-full bg-card/90 hover:bg-card text-landing-primary dark:text-primary h-12 w-12"
+                        className="absolute top-6 left-6 z-[400] rounded-full bg-card/90 backdrop-blur-md hover:bg-card text-landing-primary h-12 w-12 shadow-2xl border border-border/50"
                         onClick={toggleFullScreen}
                     >
                         <ChevronLeft className="w-6 h-6" />
                     </Button>
                 )}
 
-                <Button
-                    variant="secondary"
-                    size="icon"
-                    className="absolute bottom-6 right-6 z-[400] rounded-full bg-card/90 hover:bg-card text-landing-primary dark:text-primary h-12 w-12 border-2 border-accent-gold/20"
-                    onClick={toggleFullScreen}
-                >
-                    {isFullScreen ? (
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M4 14h6v6" />
-                            <path d="M20 10h-6V4" />
-                            <path d="M14 10l7-7" />
-                            <path d="M3 21l7-7" />
-                        </svg>
-                    ) : (
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M15 3h6v6" />
-                            <path d="M9 21H3v-6" />
-                            <path d="M21 3l-7 7" />
-                            <path d="M3 21l7-7" />
-                        </svg>
-                    )}
-                </Button>
+                <div className="absolute bottom-6 right-6 z-[400] flex flex-col gap-3">
+                    <Button
+                        variant="secondary"
+                        size="icon"
+                        title="Focus Current Location"
+                        className="rounded-full bg-card/90 backdrop-blur-md hover:bg-card text-landing-primary h-12 w-12 shadow-xl border border-border/50 group transition-all active:scale-95"
+                        onClick={() => setForceFocus(Date.now())}
+                    >
+                        <Navigation2 className="w-5 h-5 group-hover:text-blue-600 transition-colors" />
+                    </Button>
+
+                    <Button
+                        variant="secondary"
+                        size="icon"
+                        title="View Full Route"
+                        className="rounded-full bg-card/90 backdrop-blur-md hover:bg-card text-landing-primary h-12 w-12 shadow-xl border border-border/50 group transition-all active:scale-95"
+                        onClick={() => setCenterOnFullRoute(Date.now())}
+                    >
+                        <Compass className="w-5 h-5 group-hover:text-accent-gold transition-colors" />
+                    </Button>
+                    
+                    <Button
+                        variant="secondary"
+                        size="icon"
+                        className="rounded-full bg-card/90 backdrop-blur-md hover:bg-card text-landing-primary h-12 w-12 shadow-xl border border-border/50 group transition-all active:scale-95"
+                        onClick={toggleFullScreen}
+                    >
+                        {isFullScreen ? (
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="group-hover:rotate-12 transition-transform">
+                                <path d="M4 14h6v6" />
+                                <path d="M20 10h-6V4" />
+                                <path d="M14 10l7-7" />
+                                <path d="M3 21l7-7" />
+                            </svg>
+                        ) : (
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="group-hover:scale-110 transition-transform">
+                                <path d="M15 3h6v6" />
+                                <path d="M9 21H3v-6" />
+                                <path d="M21 3l-7 7" />
+                                <path d="M3 21l7-7" />
+                            </svg>
+                        )}
+                    </Button>
+                </div>
             </div>
 
             {!isFullScreen && (
@@ -246,14 +290,13 @@ const SwamiYatra = () => {
                     ref={dragRef}
                     onMouseDown={handleMouseDown}
                     onTouchStart={handleTouchStart}
-                    className={`relative z-30 bg-card/95 backdrop-blur-sm cursor-ns-resize select-none ${isDragging ? 'bg-accent/10' : 'hover:bg-muted'
-                        } transition-colors`}
-                    style={{ height: '32px' }}
+                    className={`relative z-30 bg-card/90 backdrop-blur-md cursor-ns-resize select-none border-t border-border/50 ${isDragging ? 'bg-accent/5' : 'hover:bg-muted/30'
+                        } transition-colors group px-4`}
+                    style={{ height: '36px' }}
                 >
                     <div className="absolute inset-0 flex items-center justify-center">
-                        <div className="flex flex-col items-center gap-0.5">
-                            <div className="w-12 h-1 bg-border rounded-full"></div>
-                            <GripHorizontal className="w-5 h-5 text-muted-foreground" />
+                        <div className="flex flex-col items-center gap-1">
+                            <div className="w-12 h-1.5 bg-muted-foreground/20 rounded-full group-hover:bg-muted-foreground/30 transition-colors"></div>
                         </div>
                     </div>
                 </div>
@@ -263,121 +306,143 @@ const SwamiYatra = () => {
                 className="flex-1 bg-background relative z-10 space-y-0 overflow-y-auto"
                 style={!isFullScreen ? { minHeight: `${panelHeight}vh`, height: `${panelHeight}vh` } : {}}
             >
-                <div className="px-6 pt-4 pb-6 space-y-8">
-                    <div className="flex items-center justify-between mb-4">
-                        <h2 className="font-heading font-bold text-xl text-blue-900">Yatra Itinerary</h2>
+                <div className="px-6 pt-6 pb-20 space-y-8">
+                    <div className="flex items-center justify-between mb-2">
+                        <div className="space-y-1">
+                            <h2 className="font-heading font-bold text-xl text-landing-primary tracking-tight">Yatra Itinerary</h2>
+                            <div className="h-1 w-12 bg-accent-gold rounded-full opacity-60" />
+                        </div>
 
                         <div className="flex items-center gap-3">
-                            <div className="flex items-center bg-card border border-border rounded-full px-2 py-1 shadow-sm gap-2">
+                            <div className="flex items-center bg-muted/30 border border-border/50 rounded-2xl px-2 py-1.5 shadow-sm gap-2 backdrop-blur-sm">
                                 <Button
                                     variant="ghost"
                                     size="icon"
-                                    className="h-7 w-7 rounded-full hover:bg-muted disabled:opacity-30"
+                                    className="h-8 w-8 rounded-xl hover:bg-background/80 disabled:opacity-30 transition-all"
                                     disabled={currentIndex === 0}
                                     onClick={() => setCurrentIndex(Math.max(0, currentIndex - 1))}
                                 >
-                                    <ChevronLeft className="w-4 h-4 text-landing-primary dark:text-primary" />
+                                    <ChevronLeft className="w-4 h-4 text-landing-primary" />
                                 </Button>
 
-                                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-tight whitespace-nowrap">
-                                    {filteredPlaces.length > 0 ? `${currentIndex + 1} of ${filteredPlaces.length}` : "0 of 0"}
+                                <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider tabular-nums px-1">
+                                    {filteredPlaces.length > 0 ? `${currentIndex + 1} / ${filteredPlaces.length}` : "0 / 0"}
                                 </span>
 
                                 <Button
                                     variant="ghost"
                                     size="icon"
-                                    className="h-7 w-7 rounded-full hover:bg-slate-100 disabled:opacity-30"
+                                    className="h-8 w-8 rounded-xl hover:bg-background/80 disabled:opacity-30 transition-all"
                                     disabled={currentIndex >= filteredPlaces.length - 1}
                                     onClick={() => setCurrentIndex(Math.min(filteredPlaces.length - 1, currentIndex + 1))}
                                 >
-                                    <ChevronRight className="w-4 h-4 text-landing-primary dark:text-primary" />
+                                    <ChevronRight className="w-4 h-4 text-landing-primary" />
                                 </Button>
                             </div>
-
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                className="text-landing-primary dark:text-primary bg-accent/5 hover:bg-accent/10 rounded-full h-8 w-8"
-                                onClick={() => setPanelHeight(panelHeight === 20 ? 40 : 20)}
-                            >
-                                {panelHeight === 20 ? (
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                        <polyline points="18 15 12 9 6 15"></polyline>
-                                    </svg>
-                                ) : (
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                        <polyline points="6 9 12 15 18 9"></polyline>
-                                    </svg>
-                                )}
-                            </Button>
                         </div>
                     </div>
 
-                    <div className="relative pl-4 space-y-12">
-                        <div className="absolute left-[-11px] top-0 bottom-0 w-0.5 bg-border z-0" />
-                        {(() => {
-                            if (filteredPlaces.length === 0) return (
-                                <div className="text-center py-12 bg-card/50 rounded-3xl border-2 border-dashed border-border">
-                                    <MapPin className="w-12 h-12 text-muted mx-auto mb-3" />
-                                    <h3 className="text-muted-foreground font-bold">No places found</h3>
-                                    <p className="text-slate-400 text-xs mt-1">Information for this route segment will be added soon.</p>
-                                </div>
-                            );
-
-                            return (
-                                <div className="space-y-4">
-                                    <div
-                                        key={filteredPlaces[currentIndex].id}
-                                        className="relative pl-6 animate-in fade-in zoom-in-95 duration-500"
-                                    >
-                                        <div className="absolute -left-[27px] top-0 flex items-center justify-center w-8 h-8 rounded-full border-4 border-background z-10 bg-destructive text-white shadow-[0_0_10px_rgba(239,68,68,0.5)]">
-                                            <MapPin className="w-4 h-4" />
+                    <div className="relative pt-2">
+                        <AnimatePresence mode="wait">
+                            {filteredPlaces.length === 0 ? (
+                                <motion.div 
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: -10 }}
+                                    className="text-center py-16 bg-muted/20 rounded-[2rem] border-2 border-dashed border-border/50"
+                                >
+                                    <div className="w-16 h-16 bg-muted/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                                        <MapPin className="w-8 h-8 text-muted/60" />
+                                    </div>
+                                    <h3 className="text-muted-foreground font-bold text-lg">No places discovered yet</h3>
+                                    <p className="text-muted-foreground/60 text-sm mt-2 max-w-[240px] mx-auto italic">Our sages are mapping this sacred trail. It will appear here soon.</p>
+                                </motion.div>
+                            ) : (
+                                <motion.div
+                                    key={filteredPlaces[currentIndex].id}
+                                    initial={{ opacity: 0, x: 20 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    exit={{ opacity: 0, x: -20 }}
+                                    transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
+                                    className="space-y-6"
+                                >
+                                    <div className="flex items-center gap-3 px-1">
+                                        <div 
+                                            className={`w-10 h-10 rounded-2xl flex items-center justify-center text-white shadow-lg relative ${filteredPlaces[currentIndex].status === 'completed' ? 'bg-emerald-500 shadow-emerald-500/20' : 'bg-blue-500 shadow-blue-500/20 animate-pulse'}`}
+                                            style={{ backgroundColor: filteredPlaces[currentIndex].status === 'completed' ? '#10B981' : (filteredPlaces[currentIndex].pinColor || '#2A6DF4') }}
+                                        >
+                                            <MapPin className="w-5 h-5" />
+                                            {filteredPlaces[currentIndex].status !== 'completed' && (
+                                                <div className="absolute -inset-1 rounded-2xl border-2 border-primary/20 animate-ping opacity-20"></div>
+                                            )}
                                         </div>
-
-                                        <div className="space-y-3">
-                                            <div className="flex items-center justify-between pr-2">
-                                                <span className="text-[10px] font-bold tracking-widest uppercase text-blue-600">
-                                                    {filteredPlaces[currentIndex].status}
+                                        <div>
+                                            <div className="flex items-center gap-2">
+                                                <span className={`text-[10px] font-black tracking-[0.2em] uppercase px-2 py-0.5 rounded-md ${filteredPlaces[currentIndex].status === 'completed' ? 'bg-emerald-100 text-emerald-700' : 'bg-blue-100 text-blue-700'}`}>
+                                                    {filteredPlaces[currentIndex].status === 'completed' ? 'Visited' : (filteredPlaces[currentIndex].status === 'current' ? 'Next Stop' : 'Upcoming')}
                                                 </span>
                                             </div>
-
-                                            <Card className="p-4 rounded-2xl border-none shadow-xl ring-2 ring-destructive/20 bg-card">
-                                                <div className="flex gap-4">
-                                                    <div className="flex-1 space-y-2">
-                                                        <h3 className="font-heading font-bold text-lg text-landing-primary dark:text-primary leading-tight">
-                                                            {filteredPlaces[currentIndex].title}
-                                                        </h3>
-                                                        <p className="text-sm text-muted-foreground leading-relaxed line-clamp-3">
-                                                            {filteredPlaces[currentIndex].description}
-                                                        </p>
-
-                                                        {filteredPlaces[currentIndex].locationLink && (
-                                                            <Button
-                                                                onClick={() => window.open(filteredPlaces[currentIndex].locationLink, '_blank')}
-                                                                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl h-10 shadow-sm transition-all mt-2"
-                                                            >
-                                                                <ExternalLink className="w-4 h-4 mr-2" /> VIEW ON MAP
-                                                            </Button>
-                                                        )}
-                                                    </div>
-
-                                                    <LazyImage
-                                                        src={filteredPlaces[currentIndex].image || "/placeholder-temple.jpg"}
-                                                        alt={filteredPlaces[currentIndex].title || ""}
-                                                        containerClassName="w-24 h-24 rounded-xl bg-muted flex-shrink-0 shadow-inner"
-                                                        className="w-full h-full object-cover"
-                                                    />
-                                                </div>
-                                            </Card>
+                                            <p className="text-xs text-muted-foreground mt-1 font-medium">Point {currentIndex + 1} of the Journey</p>
                                         </div>
                                     </div>
 
-                                    <div className="text-center pt-8 opacity-40">
-                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">Guided Pilgrimage Focus</p>
+                                    <Card className="overflow-hidden rounded-[2rem] border-none shadow-2xl shadow-blue-900/5 bg-card relative">
+                                        <div className="absolute top-0 right-0 p-4 z-10">
+                                            <div className="bg-white/90 backdrop-blur-sm rounded-full w-8 h-8 flex items-center justify-center shadow-sm text-landing-primary font-bold text-xs border border-border/20">
+                                                {currentIndex + 1}
+                                            </div>
+                                        </div>
+                                        
+                                        <div className="flex flex-col">
+                                            <div className="h-48 relative overflow-hidden group">
+                                                <LazyImage
+                                                    src={filteredPlaces[currentIndex].image || "/placeholder-temple.jpg"}
+                                                    alt={filteredPlaces[currentIndex].title || ""}
+                                                    containerClassName="w-full h-full bg-muted transition-transform duration-700 group-hover:scale-110"
+                                                    className="w-full h-full object-cover"
+                                                />
+                                                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+                                                <div className="absolute bottom-4 left-6 right-6">
+                                                    <h3 className="font-heading font-black text-2xl text-white leading-tight drop-shadow-md">
+                                                        {filteredPlaces[currentIndex].title}
+                                                    </h3>
+                                                </div>
+                                            </div>
+                                            
+                                            <div className="p-6 pt-5 space-y-4">
+                                                <p className="text-sm text-balance text-muted-foreground/80 leading-relaxed min-h-[4.5rem]">
+                                                    {filteredPlaces[currentIndex].description}
+                                                </p>
+
+                                                {filteredPlaces[currentIndex].locationLink && (
+                                                    <Button
+                                                        onClick={() => window.open(filteredPlaces[currentIndex].locationLink, '_blank')}
+                                                        className="w-full bg-[#0038A8] hover:bg-[#002B82] text-white font-bold rounded-2xl h-12 shadow-lg shadow-blue-900/10 transition-all hover:-translate-y-0.5 active:translate-y-0"
+                                                    >
+                                                        <ExternalLink className="w-4 h-4 mr-2" /> OPEN IN GOOGLE MAPS
+                                                    </Button>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </Card>
+
+                                    <div className="flex items-center justify-center py-4">
+                                        <div className="flex gap-1.5">
+                                            {Array.from({ length: Math.min(filteredPlaces.length, 5) }).map((_, i) => {
+                                                const dotIndex = Math.floor(currentIndex / 5) * 5 + i;
+                                                if (dotIndex >= filteredPlaces.length) return null;
+                                                return (
+                                                    <div 
+                                                        key={dotIndex}
+                                                        className={`h-1.5 transition-all duration-300 rounded-full ${dotIndex === currentIndex ? 'w-6 bg-accent-gold' : 'w-1.5 bg-border'}`}
+                                                    />
+                                                );
+                                            })}
+                                        </div>
                                     </div>
-                                </div>
-                            );
-                        })()}
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
                     </div>
                 </div>
             </div>

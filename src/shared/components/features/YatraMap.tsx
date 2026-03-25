@@ -31,83 +31,101 @@ const getArrowIcon = (angle: number) => {
 };
 
 const markerIcons = new Map<string, L.DivIcon>();
-const getNumberedMarker = (sequence: number, status: string, isHighlighted: boolean, customColor?: string) => {
-    const key = `${sequence}-${status}-${isHighlighted}-${customColor || ''}`;
+const getNumberedMarker = (
+    sequence: number, 
+    status: string, 
+    isHighlighted: boolean, 
+    customColor?: string,
+    isStart?: boolean,
+    isEnd?: boolean
+) => {
+    const key = `${sequence}-${status}-${isHighlighted}-${customColor || ''}-${isStart}-${isEnd}`;
     if (markerIcons.has(key)) return markerIcons.get(key)!;
 
-    // Base color selection
-    const baseColor = customColor || (
-        status === "current" ? "#F59E0B" : // Amber-500
-            status === "completed" ? "#4F46E5" : // Indigo-600
-                "#10B981" // Emerald-500 (Upcoming)
-    );
-
-    const isUpcoming = status === "upcoming";
-    const mainBg = isHighlighted ? "#EF4444" : (isUpcoming ? "white" : baseColor);
-    const borderColor = isHighlighted ? "white" : (isUpcoming ? baseColor : "white");
-    const textColor = isHighlighted ? "white" : (isUpcoming ? baseColor : "white");
-    const pulseClass = isHighlighted ? "animate-pulse" : "";
-
     const icon = L.divIcon({
-        className: `custom-number-marker ${isHighlighted ? 'active-marker' : ''}`,
+        className: 'custom-yatra-marker',
         html: `
-            <div class="${pulseClass}" style="
-                width: 52px; height: 52px; background-color: ${mainBg};
-                border: 3px solid ${borderColor}; border-radius: 50%;
-                display: flex; align-items: center; justify-content: center;
-                color: ${textColor}; font-weight: bold; font-size: 20px;
-                box-shadow: 0 0 15px rgba(0,0,0,0.3); transition: all 0.3s ease;
-            ">
-                ${sequence}
+            <div style="position: relative; display: flex; flex-direction: column; align-items: center; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));">
+                <div style="
+                    background: ${isHighlighted ? '#EF4444' : '#2A6DF4'}; 
+                    width: ${isStart || isEnd ? '32px' : '28px'}; 
+                    height: ${isStart || isEnd ? '32px' : '28px'}; 
+                    border-radius: 4px; 
+                    border: 2px solid white; 
+                    display: flex; 
+                    align-items: center; 
+                    justify-content: center; 
+                    color: white; 
+                    font-weight: 900; 
+                    font-size: ${isStart || isEnd ? '14px' : '12px'};
+                    box-shadow: inset 0 0 10px rgba(0,0,0,0.2);
+                    z-index: 10;
+                ">
+                    ${sequence}
+                </div>
+                <!-- Stem/Tail -->
+                <div style="
+                    width: 2px; 
+                    height: 6px; 
+                    background: white; 
+                    margin-top: -1px;
+                "></div>
+                
+                ${isStart ? `
+                    <div style="position: absolute; bottom: -18px; font-weight: 900; color: white; font-size: 9px; background: #2A6DF4; padding: 1px 6px; border-radius: 2px; box-shadow: 0 2px 5px rgba(0,0,0,0.3); z-index: 5; border: 1px solid white; white-space: nowrap;">START</div>
+                ` : ''}
+                ${isEnd ? `
+                    <div style="position: absolute; bottom: -18px; font-weight: 900; color: white; font-size: 9px; background: #EF4444; padding: 1px 6px; border-radius: 2px; box-shadow: 0 2px 5px rgba(0,0,0,0.3); z-index: 5; border: 1px solid white; white-space: nowrap;">END</div>
+                ` : ''}
             </div>
         `,
-        iconSize: [52, 52],
-        iconAnchor: [26, 26],
+        iconSize: [32, 45],
+        iconAnchor: [16, 45],
     });
     markerIcons.set(key, icon);
     return icon;
 };
 
-function MapBounds({ locations }: { locations: YatraLocation[] }) {
+function MapBounds({ locations, centerOnFullRoute }: { locations: YatraLocation[], centerOnFullRoute?: number }) {
     const map = useMap();
-
     useEffect(() => {
         if (locations.length > 0) {
             const bounds = L.latLngBounds(locations.map(l => [l.latitude, l.longitude]));
-            if (bounds.isValid()) {
-                map.fitBounds(bounds, { padding: [50, 50] });
-            }
+            map.fitBounds(bounds, { padding: [50, 50], maxZoom: 16 });
         }
-    }, [locations, map]);
-
+    }, [locations, centerOnFullRoute, map]);
     return null;
 }
 
-function MapCenter({ locations, highlightedId }: { locations: YatraLocation[], highlightedId?: string }) {
+function MapCenter({ highlightedId, locations, forceFocus }: { highlightedId?: string, locations: YatraLocation[], forceFocus?: number }) {
     const map = useMap();
-
     useEffect(() => {
         if (highlightedId) {
             const loc = locations.find(l => l.id === highlightedId);
             if (loc) {
-                map.flyTo([loc.latitude, loc.longitude], Math.max(map.getZoom(), 12), {
-                    duration: 1.5
-                });
+                map.setView([loc.latitude, loc.longitude], 15, { animate: true });
             }
         }
-    }, [highlightedId, locations, map]);
-
+    }, [highlightedId, locations, forceFocus, map]);
     return null;
 }
 
 interface YatraMapProps {
     locations: YatraLocation[];
     highlightedId?: string;
+    centerOnFullRoute?: number;
+    forceFocus?: number;
 }
 
-function RouteArrows({ locations }: { locations: YatraLocation[] }) {
+function RouteVisualization({ locations, highlightedId }: { locations: YatraLocation[], highlightedId?: string }) {
     const map = useMap();
     const [zoom, setZoom] = useState(map.getZoom());
+    const [fullPath, setFullPath] = useState<[number, number][]>([]);
+    const [currentPathIndex, setCurrentPathIndex] = useState(0);
+
+    const sortedLocations = useMemo(() => 
+        [...locations].sort((a, b) => a.sequence - b.sequence), 
+    [locations]);
 
     useEffect(() => {
         const syncZoom = () => setZoom(map.getZoom());
@@ -117,57 +135,198 @@ function RouteArrows({ locations }: { locations: YatraLocation[] }) {
         };
     }, [map]);
 
-    // Optimize: Reduce density as zoom level decreases
-    const desiredPixelGap = zoom > 12 ? 15 : zoom > 8 ? 30 : 60;
+    // Segmented routing to ENFORCE sequence 1 -> 2 -> 3 -> 4 -> 5 -> 6
+    useEffect(() => {
+        if (sortedLocations.length < 2) {
+            setFullPath([]);
+            return;
+        }
 
-    const routeCoordinates = useMemo(() => [...locations]
-        .sort((a, b) => a.sequence - b.sequence)
-        .map(l => ({ lat: l.latitude, lng: l.longitude, id: l.id })), [locations]);
+        const fetchSegmentedRoute = async () => {
+            try {
+                const segmentPromises = sortedLocations.slice(0, -1).map((start, idx) => {
+                    const end = sortedLocations[idx + 1];
+                    const coords = `${start.longitude},${start.latitude};${end.longitude},${end.latitude}`;
+                    return fetch(`https://router.project-osrm.org/route/v1/driving/${coords}?overview=full&geometries=geojson`)
+                        .then(res => res.json());
+                });
 
-    if (routeCoordinates.length < 2) return null;
+                const results = await Promise.all(segmentPromises);
+                let combinedPath: [number, number][] = [];
 
+                results.forEach((data, idx) => {
+                    if (data.code === 'Ok' && data.routes?.[0]?.geometry?.coordinates) {
+                        const segmentPath = data.routes[0].geometry.coordinates.map((c: [number, number]) => [c[1], c[0]] as [number, number]);
+                        // Avoid duplicating overlapping points at segment boundaries
+                        if (combinedPath.length > 0) {
+                            combinedPath.push(...segmentPath.slice(1));
+                        } else {
+                            combinedPath.push(...segmentPath);
+                        }
+                    } else {
+                        // Fallback to straight line for this segment if OSRM fails
+                        const start = sortedLocations[idx];
+                        const end = sortedLocations[idx + 1];
+                        combinedPath.push([start.latitude, start.longitude], [end.latitude, end.longitude]);
+                    }
+                });
+
+                setFullPath(combinedPath);
+            } catch (error) {
+                console.error("Segmented routing error:", error);
+                // Fallback to full straight line path
+                setFullPath(sortedLocations.map(l => [l.latitude, l.longitude] as [number, number]));
+            }
+        };
+
+        fetchSegmentedRoute();
+    }, [sortedLocations]);
+
+    // Update progress index based on highlightedId
+    useEffect(() => {
+        if (!highlightedId || fullPath.length === 0) {
+            setCurrentPathIndex(0);
+            return;
+        }
+
+        const currentLoc = sortedLocations.find(l => l.id === highlightedId);
+        if (!currentLoc) return;
+
+        // Find the closest point in the fullPath to the current location
+        let closestIdx = 0;
+        let minOffset = Infinity;
+
+        // We only look up to the point where this sthan *should* be in the sequence
+        // This is simplified; a better way would be tracking segment boundaries
+        fullPath.forEach((pt, idx) => {
+            const dist = Math.abs(pt[0] - currentLoc.latitude) + Math.abs(pt[1] - currentLoc.longitude);
+            if (dist < minOffset) {
+                minOffset = dist;
+                closestIdx = idx;
+            }
+        });
+        
+        setCurrentPathIndex(closestIdx);
+    }, [highlightedId, fullPath, sortedLocations]);
+
+    if (fullPath.length < 2) return null;
+
+    const routeRed = "#EF4444";
+    const completedColor = "#10B981"; // Emerald for completed path
+
+    // Direction arrows along the road path
     const arrows: JSX.Element[] = [];
+    const desiredPixelGap = zoom > 14 ? 120 : zoom > 12 ? 200 : zoom > 10 ? 400 : 800;
 
-    routeCoordinates.slice(0, -1).forEach((coord, idx) => {
-        const nextCoord = routeCoordinates[idx + 1];
-
-        const p1 = map.project(L.latLng(coord.lat, coord.lng), zoom);
-        const p2 = map.project(L.latLng(nextCoord.lat, nextCoord.lng), zoom);
-
+    let lastArrowPixelDist = 0;
+    for (let i = 0; i < fullPath.length - 1; i++) {
+        const p1 = map.project(L.latLng(fullPath[i][0], fullPath[i][1]), zoom);
+        const p2 = map.project(L.latLng(fullPath[i + 1][0], fullPath[i + 1][1]), zoom);
+        
         const dx = p2.x - p1.x;
         const dy = p2.y - p1.y;
-        const pixelDistance = Math.sqrt(dx * dx + dy * dy);
-
-        const numArrows = Math.floor(pixelDistance / desiredPixelGap);
-        const angle = Math.round((Math.atan2(dy, dx) * (180 / Math.PI)) + 180);
-        const icon = getArrowIcon(angle);
-
-        const skipPixels = 20;
-
-        for (let i = 1; i <= numArrows; i++) {
-            const currentPixelDist = i * desiredPixelGap;
-            if (currentPixelDist < skipPixels || currentPixelDist > pixelDistance - skipPixels) continue;
-
-            const ratio = currentPixelDist / pixelDistance;
-            const arrowLat = coord.lat + (nextCoord.lat - coord.lat) * ratio;
-            const arrowLng = coord.lng + (nextCoord.lng - coord.lng) * ratio;
+        const segmentDist = Math.sqrt(dx * dx + dy * dy);
+        
+        if (lastArrowPixelDist + segmentDist >= desiredPixelGap) {
+            const angle = Math.atan2(dy, dx) * (180 / Math.PI);
+            const arrowIcon = L.divIcon({
+                className: 'nav-direction-arrow',
+                html: `<div style="transform: rotate(${angle}deg); display: flex; align-items: center; justify-content: center; filter: drop-shadow(0 0 2px rgba(255,255,255,0.8));">
+                         <svg width="12" height="12" viewBox="0 0 24 24" fill="#2A6DF4">
+                           <path d="M5 3l14 9-14 9V3z"/>
+                         </svg>
+                       </div>`,
+                iconSize: [12, 12],
+                iconAnchor: [6, 6],
+            });
 
             arrows.push(
                 <Marker
-                    key={`arrow-${coord.id}-${idx}-${i}`}
-                    position={[arrowLat, arrowLng]}
-                    icon={icon}
-                    zIndexOffset={-500}
+                    key={`nav-arrow-${i}`}
+                    position={[fullPath[i][0], fullPath[i][1]]}
+                    icon={arrowIcon}
+                    zIndexOffset={600}
                     interactive={false}
                 />
             );
+            lastArrowPixelDist = 0;
+        } else {
+            lastArrowPixelDist += segmentDist;
         }
-    });
+    }
 
-    return <>{arrows}</>;
+    return (
+        <>
+            <style>
+                {`
+                @keyframes path-flow {
+                    from { stroke-dashoffset: 40; }
+                    to { stroke-dashoffset: 0; }
+                }
+                .nav-path-animated {
+                    animation: path-flow 1.5s linear infinite;
+                }
+                `}
+            </style>
+            
+            {/* 1. Base Outline Layer */}
+            <Polyline
+                positions={fullPath}
+                pathOptions={{
+                    color: "white",
+                    weight: 10,
+                    opacity: 0.3,
+                    lineJoin: "round",
+                    lineCap: "round",
+                }}
+            />
+
+            {/* 2. Main Navigation Red Path (Mimic Image) */}
+            <Polyline
+                positions={fullPath}
+                pathOptions={{
+                    color: routeRed,
+                    weight: 6,
+                    opacity: 1,
+                    lineJoin: "round",
+                    lineCap: "round",
+                }}
+            />
+
+            {/* 3. Journey Progress Overly (Completed Part) */}
+            {currentPathIndex > 0 && (
+                <Polyline
+                    positions={fullPath.slice(0, currentPathIndex + 1)}
+                    pathOptions={{
+                        color: completedColor,
+                        weight: 6,
+                        opacity: 0.8,
+                        lineJoin: "round",
+                        lineCap: "round",
+                    }}
+                />
+            )}
+
+            {/* 4. Animated Flow Layer (White Dashes) */}
+            <Polyline
+                positions={fullPath}
+                className="nav-path-animated"
+                pathOptions={{
+                    color: "white",
+                    weight: 2,
+                    opacity: 0.4,
+                    lineJoin: "round",
+                    lineCap: "round",
+                    dashArray: "10, 30",
+                }}
+            />
+
+            {arrows}
+        </>
+    );
 }
 
-export default function YatraMap({ locations, highlightedId }: YatraMapProps) {
+export default function YatraMap({ locations, highlightedId, centerOnFullRoute, forceFocus }: YatraMapProps) {
     return (
         <div className="w-full h-full relative z-0">
             <MapContainer
@@ -183,23 +342,40 @@ export default function YatraMap({ locations, highlightedId }: YatraMapProps) {
                     maxZoom={20}
                 />
 
-                <MapBounds locations={locations} />
-                <MapCenter locations={locations} highlightedId={highlightedId} />
-                <RouteArrows locations={locations} />
+                <MapBounds locations={locations} centerOnFullRoute={centerOnFullRoute} />
+                <MapCenter locations={locations} highlightedId={highlightedId} forceFocus={forceFocus} />
+                <RouteVisualization locations={locations} highlightedId={highlightedId} />
 
                 {/* Markers */}
-                {locations.map((loc) => (
-                    <Marker
-                        key={loc.id}
-                        position={[loc.latitude, loc.longitude]}
-                        icon={getNumberedMarker(loc.sequence, loc.status, loc.id === highlightedId, loc.pinColor)}
-                        zIndexOffset={loc.id === highlightedId ? 2000 : 1000}
-                    >
-                        <Tooltip direction="top" offset={[0, -26]} opacity={1}>
-                            <span className="font-bold text-xs">{loc.name}</span>
-                        </Tooltip>
-                    </Marker>
-                ))}
+                {locations.map((loc, idx) => {
+                    const isStart = idx === 0;
+                    const isEnd = idx === locations.length - 1;
+                    const isHighlighted = loc.id === highlightedId;
+                    
+                    return (
+                        <Marker
+                            key={loc.id}
+                            position={[loc.latitude, loc.longitude]}
+                            icon={getNumberedMarker(
+                                loc.sequence, 
+                                loc.status, 
+                                isHighlighted, 
+                                loc.pinColor,
+                                isStart,
+                                isEnd
+                            )}
+                            zIndexOffset={isHighlighted ? 2000 : 1000}
+                        >
+                            <Tooltip direction="top" offset={[0, -26]} opacity={1}>
+                                <div className="px-2 py-1 bg-white/90 backdrop-blur-sm rounded-lg shadow-sm border border-border/50">
+                                    <span className="font-bold text-xs text-landing-primary block">{loc.name}</span>
+                                    {isStart && <span className="text-[10px] text-accent-gold font-bold uppercase">Journey Start</span>}
+                                    {isEnd && <span className="text-[10px] text-blue-600 font-bold uppercase">Journey Destination</span>}
+                                </div>
+                            </Tooltip>
+                        </Marker>
+                    );
+                })}
             </MapContainer>
         </div>
     );
