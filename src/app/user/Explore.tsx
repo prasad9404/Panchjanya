@@ -1026,7 +1026,7 @@ const Explore = () => {
                               style={{ backgroundColor: avatar.color }}
                             />
                             <span className="font-bold text-sm text-[#2D2D2D] truncate">
-                              {avatar.shortLabel}
+                              {t(avatar.labelKey)}
                             </span>
                           </div>
                         </AccordionTrigger>
@@ -1054,7 +1054,7 @@ const Explore = () => {
                                   >
                                     <AccordionTrigger className="hover:no-underline py-1.5 px-2 rounded-md hover:bg-slate-50 transition-colors data-[state=open]:bg-slate-50">
                                       <span className="font-semibold text-xs text-slate-600 truncate">
-                                        {sub.label}
+                                        {t(sub.labelKey)}
                                       </span>
                                     </AccordionTrigger>
                                     <AccordionContent className="pb-0 pt-1 space-y-0.5">

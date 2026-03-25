@@ -14,14 +14,16 @@ export const AVATAR_SAMBANDH_CONFIG: {
     id: string;
     label: string;
     shortLabel: string;
+    labelKey: string;
     color: string;
     count: number;
-    subdivisions: { id: string; label: string; count: number }[];
+    subdivisions: { id: string; label: string; labelKey: string; count: number }[];
 }[] = [
     {
         id: 'shri-krishna',
         label: 'Shri Krishan Bhagwan',
         shortLabel: 'Shri Krishan Bhagwan',
+        labelKey: 'avatars.krishna',
         color: '#EC4899', // Pink
         count: 5,
         subdivisions: [],
@@ -30,6 +32,7 @@ export const AVATAR_SAMBANDH_CONFIG: {
         id: 'shri-dattatray',
         label: 'Shri Dattatray Prabhu',
         shortLabel: 'Shri Dattatray Prabhu',
+        labelKey: 'avatars.dattatray',
         color: '#F59E0B', // Yellow/Amber
         count: 12,
         subdivisions: [],
@@ -38,6 +41,7 @@ export const AVATAR_SAMBANDH_CONFIG: {
         id: 'shri-chakrapani',
         label: 'Shri Chakrapani Prabhu',
         shortLabel: 'Shri Chakrapani Prabhu',
+        labelKey: 'avatars.chakrapani',
         color: '#9B1C1C', // Maroon
         count: 18,
         subdivisions: [],
@@ -46,31 +50,34 @@ export const AVATAR_SAMBANDH_CONFIG: {
         id: 'shri-govind',
         label: 'Shri Govind Prabhu',
         shortLabel: 'Shri Govind Prabhu',
+        labelKey: 'avatars.govind',
         color: '#16A34A', // Green
         count: 17,
         subdivisions: [
-            { id: 'complete', label: 'Complete', count: 17 },
-            { id: 'purvardh', label: 'Purvardh', count: 5 },
-            { id: 'uttarardh', label: 'Uttarardh', count: 12 },
+            { id: 'complete', label: 'Complete', labelKey: 'yatra.routes.swamiComplete', count: 17 },
+            { id: 'purvardh', label: 'Purvardh', labelKey: 'yatra.routes.purvardh', count: 5 },
+            { id: 'uttarardh', label: 'Uttarardh', labelKey: 'yatra.routes.uttarardh', count: 12 },
         ],
     },
     {
         id: 'shri-chakradhar',
         label: 'Shri Chakradhar Swami',
         shortLabel: 'Shri Chakradhar Swami',
+        labelKey: 'avatars.chakradhar',
         color: '#2563EB', // Blue
         count: 150,
         subdivisions: [
-            { id: 'complete', label: 'Complete', count: 150 },
-            { id: 'ekank', label: 'Ekank', count: 60 },
-            { id: 'purvardh', label: 'Purvardh', count: 50 },
-            { id: 'uttarardh', label: 'Uttarardh', count: 40 },
+            { id: 'complete', label: 'Complete', labelKey: 'yatra.routes.swamiComplete', count: 150 },
+            { id: 'ekank', label: 'Ekank', labelKey: 'yatra.routes.ekant', count: 60 },
+            { id: 'purvardh', label: 'Purvardh', labelKey: 'yatra.routes.purvardh', count: 50 },
+            { id: 'uttarardh', label: 'Uttarardh', labelKey: 'yatra.routes.uttarardh', count: 40 },
         ],
     },
     {
         id: 'mandalik',
         label: 'Mandalik Sthan',
         shortLabel: 'Mandalik',
+        labelKey: 'avatars.mandalik',
         color: '#92400E', // Brown
         count: 15,
         subdivisions: [],

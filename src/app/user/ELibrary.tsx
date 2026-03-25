@@ -141,7 +141,7 @@ function ELibrary() {
  }`}
  onClick={() => setActiveTab("audio")}
  >
- Audio
+ {t('library.audio')}
  </button>
  <button
  className={`flex-1 py-2 rounded-full font-bold text-sm transition-all ${activeTab === "video"
@@ -159,7 +159,7 @@ function ELibrary() {
  }`}
  onClick={() => setActiveTab("images")}
  >
- Images
+ {t('library.images')}
  </button>
  </div>
 
@@ -168,7 +168,7 @@ function ELibrary() {
  {activeTab === "audio" ? (
  <div>
  <h2 className="font-heading font-bold text-2xl text-blue-900 mb-6">
- Sacred Chants
+ {t('library.sacredChants')}
  </h2>
 
  {/* Featured Audio Card - Example: Vishnu Sahasranamam */}
@@ -187,7 +187,7 @@ function ELibrary() {
  <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-amber-600">
  <span>12:45</span>
  <span>•</span>
- <span>Ancient Vedic</span>
+ <span>{t('library.ancientVedic')}</span>
  </div>
  </div>
  <div className="w-10 h-10 rounded-full border-2 border-amber-200 flex items-center justify-center text-amber-600">
@@ -227,10 +227,10 @@ function ELibrary() {
  <div>
  <div className="flex items-center justify-between mb-6">
  <h2 className="font-heading font-bold text-2xl text-blue-900">
- Dharma Pravachan
+ {t('library.dharmaPravachan')}
  </h2>
  <button className="text-xs font-bold text-amber-600 uppercase tracking-wider">
- View All
+ {t('common.viewAll')}
  </button>
  </div>
 
@@ -276,10 +276,10 @@ function ELibrary() {
  <div>
  <div className="flex items-center justify-between mb-6">
  <h2 className="font-heading font-bold text-2xl text-blue-900">
- Sacred Gallery
+ {t('library.sacredGallery')}
  </h2>
  <button className="text-xs font-bold text-amber-600 uppercase tracking-wider">
- View All
+ {t('common.viewAll')}
  </button>
  </div>
 

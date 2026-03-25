@@ -19,6 +19,14 @@
     "pilgrimage": "तीर्थयात्रा",
     "community": "समुदाय"
   },
+  "avatars": {
+    "krishna": "श्री कृष्ण भगवान",
+    "dattatray": "श्री दत्तात्रय प्रभू",
+    "chakrapani": "श्री चक्रपाणी प्रभू",
+    "govind": "श्री गोविंद प्रभू",
+    "chakradhar": "श्री चक्रधर स्वामी",
+    "mandalik": "मांडलिक"
+  },
   "common": {
     "search": "शोधा",
     "loading": "लोड होत आहे...",

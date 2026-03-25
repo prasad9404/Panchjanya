@@ -19,6 +19,14 @@
     "pilgrimage": "Pilgrimage",
     "community": "Community"
   },
+  "avatars": {
+    "krishna": "Shri Krishan Bhagwan",
+    "dattatray": "Shri Dattatray Prabhu",
+    "chakrapani": "Shri Chakrapani Prabhu",
+    "govind": "Shri Govind Prabhu",
+    "chakradhar": "Shri Chakradhar Swami",
+    "mandalik": "Mandalik"
+  },
   "common": {
     "search": "Search",
     "loading": "Loading...",
@@ -154,7 +162,7 @@
     "presentView": "Present View",
     "oldImage": "Old Image",
     "sthanPothi": "Sthan Pothi",
-    "sthanDescription": "Sthan's Description",
+    "sthanDescription": "Sthan Description",
     "noArchDescription": "No architecture description available.",
     "archSection": "Architecture Section",
     "presSection": "Present View Section",
