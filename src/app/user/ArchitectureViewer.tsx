@@ -605,19 +605,16 @@ export default function ArchitectureViewer() {
                         });
 
                     return (showHotspots || selectedHotspotId) && activeHotspots
-                      .map((hotspot) => {
-                        const isSelected = selectedHotspotId === hotspot.id;
-                        const isHovered = hoveredHotspotId === hotspot.id;
+                      .map((hotspot) => {                        const isSelected = selectedHotspotId === hotspot.id || (hotspot.sthanaId && selectedHotspotId === hotspot.sthanaId);
+                        const isHovered = hoveredHotspotId === hotspot.id || (hotspot.sthanaId && hoveredHotspotId === hotspot.sthanaId);
 
                         // Hotspot is active (highlighted) if:
-                        // 1. Hovered
+                        // 1. Hovered (either directly or via list)
                         // 2. Selected from image/list
                         // 3. Selected from dropdown AND dropdown is open
                         const isActive = isHovered || (isSelected && (
                           selectionSource !== 'dropdown' || isPothiOpen
-                        )) || (
-                          selectionSource === 'list' && hotspot.sthanaId === selectedHotspotId
-                        );
+                        ));
 
                         // Hotspot is visible if showHotspots is on, OR if it's the active one
                         const isVisible = showHotspots || isActive;
@@ -646,6 +643,11 @@ export default function ArchitectureViewer() {
                             />
 
                             <div className="relative flex items-center justify-center">
+                              {/* Pulse Effect for Active Hotspot */}
+                              {isActive && (
+                                <div className="absolute inset-0 w-8 h-8 md:w-10 md:h-10 rounded-full bg-amber-500/40 animate-ping z-0" />
+                              )}
+                              
                               <svg
                                 width={isActive ? "32" : "24"}
                                 height={isActive ? "40" : "30"}
@@ -653,7 +655,7 @@ export default function ArchitectureViewer() {
                                 fill="none"
                                 xmlns="http://www.w3.org/2000/svg"
                                 className={cn(
-                                  "drop-shadow-md transition-all duration-300",
+                                  "drop-shadow-md transition-all duration-300 relative z-[1]",
                                   isActive ? 'text-amber-600 scale-110' : 'text-[#0f3c6e]'
                                 )}
                               >
@@ -671,7 +673,7 @@ export default function ArchitectureViewer() {
                               </svg>
 
                               <span className={cn(
-                                "absolute font-bold transition-all duration-300 text-white",
+                                "absolute font-bold transition-all duration-300 text-white z-[2]",
                                 isActive
                                   ? "text-xs top-[7px]"
                                   : "text-[10px] top-[4px]"
@@ -818,13 +820,13 @@ export default function ArchitectureViewer() {
                         className={`h-12 md:h-14 flex items-center justify-between gap-3 px-0 py-1 rounded-xl group cursor-pointer transition-all duration-300 ${isSelectedInPothi ? 'bg-amber-50/50 shadow-sm' : 'hover:bg-amber-50/40'}`}
                         onClick={(e) => {
                           e.preventDefault();
-                          handleSelectHotspot(d.targetId, 'dropdown');
-                          toggleHotspot(d.id);
-                        }}
-                        onMouseEnter={() => d.id && setHoveredHotspotId(d.id)}
-                        onMouseLeave={() => setHoveredHotspotId(null)}
-                      >
-                        <div className="flex-1 min-w-0 px-1 py-2">
+                    handleSelectHotspot(d.targetId, 'dropdown');
+                    toggleHotspot(d.id);
+                  }}
+                  onMouseEnter={() => setHoveredHotspotId(d.targetId)}
+                  onMouseLeave={() => setHoveredHotspotId(null)}
+                >
+                  <div className="flex-1 min-w-0 px-1 py-2">
                           <div className="flex items-center gap-3">
                             <div className="w-1 h-6 bg-amber-600 shrink-0"></div>
                             <h4 className={`font-heading font-bold text-xl tracking-wider transition-colors truncate ${isSelectedInPothi ? 'text-amber-700' : 'text-blue-900 group-hover:text-amber-700'}`}>{d.title}</h4>
@@ -898,7 +900,7 @@ export default function ArchitectureViewer() {
                           ? 'bg-amber-50 border-amber-200'
                           : 'hover:bg-slate-50 hover:border-amber-200'
                           }`}
-                        onMouseEnter={() => d.id && setHoveredHotspotId(d.id)}
+                        onMouseEnter={() => setHoveredHotspotId(d.targetId)}
                         onMouseLeave={() => setHoveredHotspotId(null)}
                       >
                         <div className="flex-1 h-full flex items-center px-1 py-2 gap-2 overflow-hidden">
