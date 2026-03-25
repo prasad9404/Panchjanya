@@ -55,7 +55,7 @@ export default function VideoPlayer() {
  videoUrl: "https://www.youtube.com/embed/dC0UvoytJ9A",
  thumbnailUrl: "https://img.youtube.com/vi/dC0UvoytJ9A/maxresdefault.jpg",
  contextNotes: {
- historicalContext: "A devotional lyric video dedicated to Swami.",
+  historicalContext: "A devotional lyric video dedicated to Shri Chakradhar Swami.",
  scripturalInsights: [],
  geographicSignificance: "N/A"
  }
@@ -83,7 +83,7 @@ export default function VideoPlayer() {
  videoUrl: "https://www.youtube.com/embed/vs1GKt0uk-s",
  thumbnailUrl: "https://img.youtube.com/vi/vs1GKt0uk-s/maxresdefault.jpg",
  contextNotes: {
- historicalContext: "Devotional song praising the lotus feet of Swami.",
+  historicalContext: "Devotional song praising the lotus feet of Shri Chakradhar Swami.",
  scripturalInsights: [],
  geographicSignificance: "N/A"
  }

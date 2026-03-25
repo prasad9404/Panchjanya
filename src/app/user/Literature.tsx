@@ -40,7 +40,7 @@ export default function Literature() {
  titleHindi: "श्रीमद्भगवद्गीता",
  author: "Vyasa Muni",
  authorHindi: "व्यास मुनी",
- description: "Divine dialogue between Lord Krishan and Arjuna",
+ description: "Divine dialogue between Shri Krishan Bhagwan and Arjuna",
  descriptionHindi: "मानवी जीवनाचे सार आणि कर्तव्याचे मार्गदर्शन करणारा पवित्र ग्रंथ.",
  category: "spiritual",
  coverImage: "https://images.unsplash.com/photo-1589829085413-56de8ae18c73?w=400",

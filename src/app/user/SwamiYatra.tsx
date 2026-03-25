@@ -18,7 +18,7 @@ import { LazyImage } from "@/shared/components/ui/LazyImage";
 const ROUTES = [
     {
         id: "swami-complete",
-        name: "Swami's complete journey",
+        name: "Shri Chakradhar Swami's complete journey",
         subRoutes: [
             { id: "ekant", name: "Ekant" },
             { id: "purvardh", name: "Purvardh" },
@@ -170,7 +170,7 @@ const SwamiYatra = () => {
                                     <SelectValue placeholder="Select Route" />
                                 </SelectTrigger>
                                 <SelectContent className="rounded-2xl border-none shadow-xl">
-                                    <SelectItem value="swami-complete" className="font-bold py-3 text-sm">Swami's complete Viharan</SelectItem>
+                                    <SelectItem value="swami-complete" className="font-bold py-3 text-sm">Shri Chakradhar Swami's complete Viharan</SelectItem>
                                     <SelectItem value="swami-complete:ekant" className="pl-6 py-2 text-xs font-medium">Ekant</SelectItem>
                                     <SelectItem value="swami-complete:purvardh" className="pl-6 py-2 text-xs font-medium">Purvardh</SelectItem>
                                     <SelectItem value="swami-complete:uttarardh" className="pl-6 py-2 text-xs font-medium">Uttarardh</SelectItem>

@@ -21,7 +21,7 @@ export const AVATAR_SAMBANDH_CONFIG: {
     {
         id: 'shri-krishna',
         label: 'Shri Krishan Bhagwan',
-        shortLabel: 'Krishan',
+        shortLabel: 'Shri Krishan Bhagwan',
         color: '#EC4899', // Pink
         count: 5,
         subdivisions: [],
@@ -29,7 +29,7 @@ export const AVATAR_SAMBANDH_CONFIG: {
     {
         id: 'shri-dattatray',
         label: 'Shri Dattatray Prabhu',
-        shortLabel: 'Datta',
+        shortLabel: 'Shri Dattatray Prabhu',
         color: '#F59E0B', // Yellow/Amber
         count: 12,
         subdivisions: [],
@@ -37,7 +37,7 @@ export const AVATAR_SAMBANDH_CONFIG: {
     {
         id: 'shri-chakrapani',
         label: 'Shri Chakrapani Prabhu',
-        shortLabel: 'Chakrapani',
+        shortLabel: 'Shri Chakrapani Prabhu',
         color: '#9B1C1C', // Maroon
         count: 18,
         subdivisions: [],
@@ -45,7 +45,7 @@ export const AVATAR_SAMBANDH_CONFIG: {
     {
         id: 'shri-govind',
         label: 'Shri Govind Prabhu',
-        shortLabel: 'Govind',
+        shortLabel: 'Shri Govind Prabhu',
         color: '#16A34A', // Green
         count: 17,
         subdivisions: [
@@ -57,7 +57,7 @@ export const AVATAR_SAMBANDH_CONFIG: {
     {
         id: 'shri-chakradhar',
         label: 'Shri Chakradhar Swami',
-        shortLabel: 'Chakradhar',
+        shortLabel: 'Shri Chakradhar Swami',
         color: '#2563EB', // Blue
         count: 150,
         subdivisions: [
@@ -460,7 +460,7 @@ export const PIN_ICON_MAP: Record<string, string> = {
 
 /**
  * Avatar (deity) type hierarchy for classifying Sthan Types.
- * Govind Prabhu and Chakradhar Swami have sub-periods.
+ * Shri Govind Prabhu and Shri Chakradhar Swami have sub-periods.
  */
 
 

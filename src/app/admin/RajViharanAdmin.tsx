@@ -56,7 +56,7 @@ L.Icon.Default.mergeOptions({
 const ROUTES = [
     {
         id: "swami-complete",
-        name: "Swami's complete journey",
+        name: "Shri Chakradhar Swami's complete journey",
         subRoutes: [
             { id: "ekant", name: "Ekant" },
             { id: "purvardh", name: "Purvardh" },
