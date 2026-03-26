@@ -290,7 +290,7 @@ export default function TempleArchitecture() {
                                     alt={t('temple.navigation')}
                                     className="w-6 h-6 md:w-6 md:h-6 object-contain"
                                 />
-                                <span className="text-sm md:text-base">{temple.directions_title || t('temple.wayToReach')}</span>
+                                <span className="text-sm md:text-base">{t('temple.wayToReach')}</span>
                             </Button>
                         </DialogTrigger>
                         <DialogContent className="max-w-md rounded-[2rem]">
@@ -301,7 +301,7 @@ export default function TempleArchitecture() {
                                         alt="Directions"
                                         className="w-5 h-5 object-contain"
                                     />
-                                    {temple.directions_title || t('temple.wayToReach')}
+                                    {t('temple.wayToReach')}
                                 </DialogTitle>
                             </DialogHeader>
                             <div className="py-4 space-y-6">
@@ -421,7 +421,7 @@ export default function TempleArchitecture() {
                         <div className="flex items-center gap-3">
                             <div className="w-1 h-6 bg-amber-600"></div>
                             <h3 className="font-heading text-xl font-bold text-blue-900">
-                                {temple.description_title || t('temple.sthanAtGlance')}
+                                {t('temple.sthanAtGlance')}
                             </h3>
                         </div>
 
@@ -480,7 +480,7 @@ export default function TempleArchitecture() {
                     <div className="flex items-center gap-3">
                         <div className="w-1 h-6 bg-amber-600"></div>
                         <h3 className="font-heading text-xl font-bold text-blue-900">
-                            {temple.sthana_info_title || t('temple.sthanDescription')}
+                            {t('temple.sthanDescription')}
                         </h3>
                     </div>
 
