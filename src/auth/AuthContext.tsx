@@ -11,6 +11,7 @@ interface AuthContextType {
   signOut: () => Promise<void>;
   refreshToken: () => Promise<void>;
   isAdmin: boolean;
+  isSuperAdmin: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -19,6 +20,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -30,28 +32,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           // Get the ID token and check for custom claims
           const idTokenResult = await currentUser.getIdTokenResult();
           const isUserAdmin = !!idTokenResult.claims.admin;
+          const isUserSuperAdmin = !!idTokenResult.claims.superAdmin;
 
           console.log(
             `👤 %cAuth State Change: ${currentUser.email}`, 
             "color: #3b82f6; font-weight: bold;",
-            `(Admin: ${isUserAdmin})`
+            `(Admin: ${isUserAdmin}, Super: ${isUserSuperAdmin})`
           );
           console.log("🔑 ID Token Claims:", JSON.stringify(idTokenResult.claims, null, 2));
 
-          // Fallback check if VITE_ADMIN_EMAIL is set and custom claim is missing
+          // Fallback check if VITE_ADMIN_EMAIL or VITE_SUPER_ADMIN_EMAIL is set
           const adminEmail = import.meta.env.VITE_ADMIN_EMAIL;
-          if (!isUserAdmin && adminEmail && currentUser.email === adminEmail) {
-            console.warn("⚠️ Custom claim 'admin' missing, but email matches VITE_ADMIN_EMAIL. Setting isAdmin to true as fallback.");
+          const superAdminEmail = import.meta.env.VITE_SUPER_ADMIN_EMAIL;
+
+          if (!isUserSuperAdmin && superAdminEmail && currentUser.email === superAdminEmail) {
+            console.warn("⚠️ Custom claim 'superAdmin' missing, but email matches VITE_SUPER_ADMIN_EMAIL.");
+            setIsSuperAdmin(true);
             setIsAdmin(true);
           } else {
-            setIsAdmin(isUserAdmin);
+            setIsSuperAdmin(isUserSuperAdmin);
+            
+            if (!isUserAdmin && adminEmail && currentUser.email === adminEmail) {
+              console.warn("⚠️ Custom claim 'admin' missing, but email matches VITE_ADMIN_EMAIL.");
+              setIsAdmin(true);
+            } else {
+              setIsAdmin(isUserAdmin || isUserSuperAdmin); // Super admin is also an admin
+            }
           }
         } catch (error) {
           console.error("Error checking admin claims:", error);
           setIsAdmin(false);
+          setIsSuperAdmin(false);
         }
       } else {
         setIsAdmin(false);
+        setIsSuperAdmin(false);
       }
 
       setLoading(false);
@@ -86,7 +101,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, signIn, signUp, signOut, refreshToken, isAdmin }}>
+    <AuthContext.Provider value={{ user, loading, signIn, signUp, signOut, refreshToken, isAdmin, isSuperAdmin }}>
       {children}
     </AuthContext.Provider>
   );

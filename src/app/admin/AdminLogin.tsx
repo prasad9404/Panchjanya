@@ -20,12 +20,35 @@ export default function AdminLogin() {
     e.preventDefault();
     setLoading(true);
     try {
-      await signInWithEmailAndPassword(auth, email, password);
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      console.log("🔓 Login successful, fetching claims...");
+      
+      const idTokenResult = await userCredential.user.getIdTokenResult(true);
+      console.log("🔑 Claims received:", idTokenResult.claims);
+      
+      const isSuperAdminClaim = !!idTokenResult.claims.superAdmin;
+      const superAdminEmail = import.meta.env.VITE_SUPER_ADMIN_EMAIL;
+      const isActuallySuperAdmin = isSuperAdminClaim || (superAdminEmail && userCredential.user.email === superAdminEmail);
+
+      console.log("📊 Role Check:", {
+        email: userCredential.user.email,
+        isSuperAdminClaim,
+        envEmail: superAdminEmail,
+        isActuallySuperAdmin
+      });
+
       toast({
         title: "Welcome back",
-        description: "Successfully logged in as admin",
+        description: `Successfully logged in as ${isActuallySuperAdmin ? "Super Admin" : "Admin"}`,
       });
-      navigate("/admin/dashboard");
+
+      if (isActuallySuperAdmin) {
+        console.log("🚀 Redirecting to /super-admin");
+        navigate("/super-admin");
+      } else {
+        console.log("🚀 Redirecting to /admin/dashboard");
+        navigate("/admin/dashboard");
+      }
     } catch (err: any) {
       console.error(err);
       toast({

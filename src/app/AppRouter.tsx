@@ -53,6 +53,10 @@ const TempleArchitectureAdmin = lazy(() => import("@/app/admin/TempleArchitectur
 const ManageYatra = lazy(() => import("@/app/admin/ManageYatra"));
 const RajViharanAdmin = lazy(() => import("@/app/admin/RajViharanAdmin"));
 const AbbreviationsManager = lazy(() => import("@/app/admin/AbbreviationsManager"));
+const SuperAdminDashboard = lazy(() => import("@/app/super-admin/SuperAdminDashboard"));
+const UserManagement = lazy(() => import("@/app/super-admin/UserManagement"));
+const AdminManagement = lazy(() => import("@/app/super-admin/AdminManagement"));
+
 const MultiStepFormDemo = lazy(() => import("@/app/demo/MultiStepFormDemo"));
 const DashboardDemo = lazy(() => import("@/app/demo/DashboardDemo"));
 const FormLayoutDemo = lazy(() => import("@/app/demo/FormLayoutDemo"));
@@ -249,6 +253,41 @@ const App = () => {
                         path="/admin/demo/form-layout"
                         element={<FormLayoutDemo />}
                       />
+
+                      {/* ---------------------- SUPER ADMIN ROUTES ---------------------- */}
+                      <Route
+                        path="/super-admin"
+                        element={
+                          <PrivateRoute adminRequired={true}>
+                            <SuperAdminDashboard />
+                          </PrivateRoute>
+                        }
+                      />
+                      <Route
+                        path="/super-admin/users"
+                        element={
+                          <PrivateRoute adminRequired={true}>
+                            <UserManagement />
+                          </PrivateRoute>
+                        }
+                      />
+                      <Route
+                        path="/super-admin/admins"
+                        element={
+                          <PrivateRoute adminRequired={true}>
+                            <AdminManagement />
+                          </PrivateRoute>
+                        }
+                      />
+                      <Route
+                        path="/super-admin/verification"
+                        element={
+                          <PrivateRoute adminRequired={true}>
+                            <SthanaVerification isSuperAdmin={true} />
+                          </PrivateRoute>
+                        }
+                      />
+
                       {/* ---------------------- 404 ---------------------- */}
                       <Route path="*" element={<NotFound />} />
                     </Routes>

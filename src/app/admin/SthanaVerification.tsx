@@ -55,6 +55,7 @@ import { cn } from "@/shared/lib/utils";
 import { useNavigate } from "react-router-dom";
 import { getAvatarColor } from "@/shared/utils/sthanTypes";
 import AdminLayout from "@/shared/components/admin/AdminLayout";
+import SuperAdminLayout from "@/shared/components/admin/SuperAdminLayout";
 
 interface ReviewComment {
   comment: string;
@@ -114,11 +115,14 @@ interface PendingSthana {
   verifiedAt?: any;
 }
 
-export default function SthanaVerification() {
+export default function SthanaVerification({ isSuperAdmin = false }: { isSuperAdmin?: boolean }) {
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
+  
+  // Choose Layout
+  const Layout = isSuperAdmin ? SuperAdminLayout : AdminLayout;
   
   // Data States
   const [pendingSthanas, setPendingSthanas] = useState<PendingSthana[]>([]);
@@ -269,7 +273,7 @@ export default function SthanaVerification() {
   };
 
   return (
-    <AdminLayout>
+    <Layout>
       <div className="p-0 space-y-10">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="space-y-2">
@@ -676,7 +680,7 @@ export default function SthanaVerification() {
           </DialogContent>
         </Dialog>
       </div>
-    </AdminLayout>
+    </Layout>
   );
 }
 
