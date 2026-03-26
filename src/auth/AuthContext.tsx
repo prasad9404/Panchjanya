@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { User, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut as firebaseSignOut, updateProfile } from 'firebase/auth';
+import { User, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut as firebaseSignOut, updateProfile, sendPasswordResetEmail } from 'firebase/auth';
 import { auth } from '@/auth/firebase';
 import { useNavigate } from 'react-router-dom';
 
@@ -10,6 +10,7 @@ interface AuthContextType {
   signUp: (email: string, password: string, fullName: string) => Promise<void>;
   signOut: () => Promise<void>;
   refreshToken: () => Promise<void>;
+  resetPassword: (email: string) => Promise<void>;
   isAdmin: boolean;
   isSuperAdmin: boolean;
 }
@@ -100,8 +101,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const resetPassword = async (email: string) => {
+    await sendPasswordResetEmail(auth, email);
+  };
+
   return (
-    <AuthContext.Provider value={{ user, loading, signIn, signUp, signOut, refreshToken, isAdmin, isSuperAdmin }}>
+    <AuthContext.Provider value={{ user, loading, signIn, signUp, signOut, refreshToken, resetPassword, isAdmin, isSuperAdmin }}>
       {children}
     </AuthContext.Provider>
   );

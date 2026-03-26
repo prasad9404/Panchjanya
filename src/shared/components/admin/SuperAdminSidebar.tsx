@@ -6,7 +6,8 @@ import {
   Settings, 
   LogOut, 
   LayoutDashboard,
-  UserPlus
+  UserPlus,
+  Activity
 } from 'lucide-react';
 import { cn } from '@/shared/lib/utils';
 import { useAuth } from '@/auth/AuthContext';
@@ -28,6 +29,7 @@ const SuperAdminSidebar = ({ isCollapsed, setIsCollapsed }: SidebarProps) => {
     { label: 'User Management', href: '/super-admin/users', icon: <Users className="h-5 w-5 flex-shrink-0" /> },
     { label: 'Sthan Verification', href: '/super-admin/verification', icon: <ShieldCheck className="h-5 w-5 flex-shrink-0" /> },
     { label: 'Admin Access', href: '/super-admin/admins', icon: <UserPlus className="h-5 w-5 flex-shrink-0" /> },
+    { label: 'Activity Logs', href: '/super-admin/logs', icon: <Activity className="h-5 w-5 flex-shrink-0" /> },
   ];
 
   const systemItems = [

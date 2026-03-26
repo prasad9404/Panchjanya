@@ -226,8 +226,11 @@ export default function TempleArchitectureAdmin({
   const [templeName, setTempleName] = useState("");
   const [viewType, setViewType] = useState<'architectural' | 'present'>('architectural');
   const [archImages, setArchImages] = useState<string[]>([]);
+  const [archImagesFitMode, setArchImagesFitMode] = useState<'cover' | 'contain'>('contain');
   const [presentImages, setPresentImages] = useState<string[]>([]);
+  const [presentImagesFitMode, setPresentImagesFitMode] = useState<'cover' | 'contain'>('contain');
   const [sthanImages, setSthanImages] = useState<string[]>([]);
+  const [sthanImagesFitMode, setSthanImagesFitMode] = useState<'cover' | 'contain'>('contain');
   const [archHotspots, setArchHotspots] = useState<Hotspot[]>([]);
   const [presentHotspots, setPresentHotspots] = useState<Hotspot[]>([]);
 
@@ -300,7 +303,7 @@ export default function TempleArchitectureAdmin({
     setEditingTitleId(null);
 
     // 2. Sync with Sthan Details! Create or Update the matching detail segment.
-    let updatedDetails = [...details];
+    const updatedDetails = [...details];
     const existingDetailIndex = updatedDetails.findIndex(d => d.hotspotId === hotspotId);
     
     if (existingDetailIndex >= 0) {
@@ -396,8 +399,11 @@ export default function TempleArchitectureAdmin({
         if (data) {
           setTempleName(data.name || "Unknown Temple");
           setArchImages(data.architectureImages || []);
+          setArchImagesFitMode(data.architectureImagesFitMode || 'contain');
           setPresentImages(data.presentImages || []);
+          setPresentImagesFitMode(data.presentImagesFitMode || 'contain');
           setSthanImages(data.sthanImages || []);
+          setSthanImagesFitMode(data.sthanImagesFitMode || 'contain');
           setArchHotspots(data.hotspots || []);
 
           setTodaysName(data.todaysName || "");
@@ -962,6 +968,36 @@ export default function TempleArchitectureAdmin({
         description: "Failed to update image",
         variant: "destructive",
       });
+    }
+  };
+
+  const handleUpdateFitMode = async (section: 'sthan' | 'architectural' | 'present', mode: 'cover' | 'contain') => {
+    if (!id) return;
+    try {
+      const fieldToUpdate = section === 'sthan'
+        ? "sthanImagesFitMode"
+        : section === 'architectural'
+          ? "architectureImagesFitMode"
+          : "presentImagesFitMode";
+
+      const token = await user?.getIdToken();
+      await fetch(`/api/admin/data?collection=temples&id=${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { "Authorization": `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({ [fieldToUpdate]: mode })
+      });
+
+      if (section === 'sthan') setSthanImagesFitMode(mode);
+      else if (section === 'architectural') setArchImagesFitMode(mode);
+      else setPresentImagesFitMode(mode);
+
+      toast({ title: "Fit Mode Updated", description: `Images will now use ${mode} mode.` });
+    } catch (error) {
+      console.error("Error updating fit mode:", error);
+      toast({ title: "Error", description: "Failed to update fit mode.", variant: "destructive" });
     }
   };
 
@@ -1696,6 +1732,8 @@ export default function TempleArchitectureAdmin({
                         folderPath={`sthan/${id}`}
                         onUpload={(url) => handleImageUpload(url, 'sthan')}
                         label="Upload Photo"
+                        fitMode={sthanImagesFitMode}
+                        onFitModeChange={(mode) => handleUpdateFitMode('sthan', mode)}
                       />
                     </div>
                   </div>
@@ -2249,6 +2287,8 @@ export default function TempleArchitectureAdmin({
                             folderPath={viewType === 'architectural' ? `architectural/${id}` : `present/${id}`}
                             onUpload={(url) => handleImageUpload(url, viewType === 'architectural' ? 'architectural' : 'present')}
                             label="Change Image"
+                            fitMode={viewType === 'architectural' ? archImagesFitMode : presentImagesFitMode}
+                            onFitModeChange={(mode) => handleUpdateFitMode(viewType === 'architectural' ? 'architectural' : 'present', mode)}
                           />
                         </PopoverContent>
                       </Popover>
@@ -2335,6 +2375,8 @@ export default function TempleArchitectureAdmin({
                             folderPath={viewType === 'architectural' ? `architectural/${id}` : `present/${id}`}
                             onUpload={(url) => handleImageUpload(url, viewType === 'architectural' ? 'architectural' : 'present')}
                             label="Add Photo to Gallery"
+                            fitMode={viewType === 'architectural' ? archImagesFitMode : presentImagesFitMode}
+                            onFitModeChange={(mode) => handleUpdateFitMode(viewType === 'architectural' ? 'architectural' : 'present', mode)}
                           />
                         </PopoverContent>
                       </Popover>
@@ -3062,6 +3104,42 @@ export default function TempleArchitectureAdmin({
                       </Badge>
                     </CardHeader>
                     <CardContent className="p-8">
+                      {/* Image Fit Mode Selection */}
+                      <div className="mb-8 flex flex-col sm:flex-row items-start sm:items-center justify-between p-6 bg-blue-50/50 rounded-3xl border border-blue-100/50 gap-4">
+                        <div className="space-y-1">
+                          <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-900/60 flex items-center gap-2">
+                            <ImageIcon className="w-3 h-3" /> Image Fit Mode
+                          </Label>
+                          <p className="text-[11px] text-slate-500 font-medium">Choose how images should fit in the container</p>
+                        </div>
+                        <div className="flex bg-white/80 backdrop-blur-sm p-1.5 rounded-2xl border border-blue-100 shadow-sm self-stretch sm:self-auto">
+                          <button
+                            type="button"
+                            onClick={() => setSelectedHotspot({ ...selectedHotspot, fitMode: 'cover' })}
+                            className={cn(
+                              "flex-1 sm:flex-none px-6 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all duration-300",
+                              selectedHotspot.fitMode === 'cover' 
+                                ? "bg-blue-900 text-white shadow-lg shadow-blue-900/20" 
+                                : "text-slate-400 hover:text-slate-600 hover:bg-slate-50"
+                            )}
+                          >
+                            Cover
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setSelectedHotspot({ ...selectedHotspot, fitMode: 'contain' })}
+                            className={cn(
+                              "flex-1 sm:flex-none px-6 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all duration-300",
+                              (!selectedHotspot.fitMode || selectedHotspot.fitMode === 'contain') 
+                                ? "bg-blue-900 text-white shadow-lg shadow-blue-900/20" 
+                                : "text-slate-400 hover:text-slate-600 hover:bg-slate-50"
+                            )}
+                          >
+                            Fit Inside
+                          </button>
+                        </div>
+                      </div>
+
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
                         {selectedHotspot.images?.map((url: string, idx: number) => (
                           <div key={idx} className="relative aspect-square group rounded-2xl overflow-hidden border border-slate-100 shadow-sm bg-slate-50">

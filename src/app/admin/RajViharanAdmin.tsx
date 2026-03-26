@@ -33,7 +33,8 @@ import {
     Trash,
     ChevronDown,
     Link,
-    Map
+    Map,
+    Image as ImageIcon
 } from "lucide-react";
 import { useToast } from "@/shared/hooks/use-toast";
 import { useAuth } from "@/auth/AuthContext";
@@ -43,6 +44,7 @@ import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
 import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea/dnd";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
+import { cn } from "@/shared/lib/utils";
 
 // Fix for default marker icons in Leaflet with React
 // @ts-ignore - access private property
@@ -611,10 +613,19 @@ export default function RajViharanAdmin() {
                                         folderPath={`yatra/${formData.id || 'new'}`}
                                         onUpload={(url) => setFormData({ ...formData, image: url })}
                                         label="Upload Image"
+                                        fitMode={formData.fitMode || 'cover'}
+                                        onFitModeChange={(mode) => setFormData({ ...formData, fitMode: mode })}
                                     />
                                     {formData.image && (
-                                        <div className="mt-6 rounded-2xl overflow-hidden border border-slate-200 relative group shadow-lg">
-                                            <img src={formData.image} alt="Preview" className="w-full h-56 object-cover" />
+                                        <div className="mt-6 rounded-2xl overflow-hidden border border-slate-200 relative group shadow-lg bg-slate-50 flex items-center justify-center">
+                                            <img 
+                                                src={formData.image} 
+                                                alt="Preview" 
+                                                className={cn(
+                                                    "w-full h-56 transition-all duration-300",
+                                                    formData.fitMode === 'contain' ? "object-contain" : "object-cover"
+                                                )} 
+                                            />
                                             <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                                                 <Button
                                                     variant="destructive"

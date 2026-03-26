@@ -56,6 +56,7 @@ const AbbreviationsManager = lazy(() => import("@/app/admin/AbbreviationsManager
 const SuperAdminDashboard = lazy(() => import("@/app/super-admin/SuperAdminDashboard"));
 const UserManagement = lazy(() => import("@/app/super-admin/UserManagement"));
 const AdminManagement = lazy(() => import("@/app/super-admin/AdminManagement"));
+const ActivityLogs = lazy(() => import("@/app/super-admin/ActivityLogs"));
 
 const MultiStepFormDemo = lazy(() => import("@/app/demo/MultiStepFormDemo"));
 const DashboardDemo = lazy(() => import("@/app/demo/DashboardDemo"));
@@ -284,6 +285,14 @@ const App = () => {
                         element={
                           <PrivateRoute adminRequired={true}>
                             <SthanaVerification isSuperAdmin={true} />
+                          </PrivateRoute>
+                        }
+                      />
+                      <Route
+                        path="/super-admin/logs"
+                        element={
+                          <PrivateRoute adminRequired={true}>
+                            <ActivityLogs />
                           </PrivateRoute>
                         }
                       />

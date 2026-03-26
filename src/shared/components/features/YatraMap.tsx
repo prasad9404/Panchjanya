@@ -153,7 +153,7 @@ function RouteVisualization({ locations, highlightedId }: { locations: YatraLoca
                 });
 
                 const results = await Promise.all(segmentPromises);
-                let combinedPath: [number, number][] = [];
+                const combinedPath: [number, number][] = [];
 
                 results.forEach((data, idx) => {
                     if (data.code === 'Ok' && data.routes?.[0]?.geometry?.coordinates) {

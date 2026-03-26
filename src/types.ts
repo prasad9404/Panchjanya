@@ -28,6 +28,7 @@ export interface Hotspot {
     isPresent?: boolean; // New: Whether this hotspot should appear in Present View
     sthanaId?: string; // New: Link to the source architectural hotspot (for Present View)
     order?: number; // New: Display order
+    fitMode?: 'cover' | 'contain'; // New: Image fit preference
 }
 
 export interface DescriptionSection {
@@ -107,12 +108,15 @@ export interface Temple {
     /** @deprecated Use sthanImages */
     images?: string[];
     sthanImages?: string[];
+    sthanImagesFitMode?: 'cover' | 'contain'; // New: Fit mode for sthan images
     /** @deprecated Use architectureImages */
     architectureImage?: string;
     architectureImages?: string[];
+    architectureImagesFitMode?: 'cover' | 'contain'; // New: Fit mode for architecture images
     /** @deprecated Use presentImages */
     presentImage?: string;
     presentImages?: string[];
+    presentImagesFitMode?: 'cover' | 'contain'; // New: Fit mode for present images
     hotspots?: Hotspot[];
     presentHotspots?: Hotspot[];
     present_hotspots?: Hotspot[];
@@ -144,6 +148,7 @@ export interface SthanDetail {
   generalDescriptionTitle?: string;
   hotspotId?: string | null; // Optional link to a map marker
   type?: string; // e.g. 'Structure', 'Tree', 'Ghat'
+  fitMode?: 'cover' | 'contain'; // New: Image fit preference
 }
 
 export interface YatraPlace {
@@ -155,6 +160,7 @@ export interface YatraPlace {
     latitude?: number;
     longitude?: number;
     image?: string;
+    fitMode?: 'cover' | 'contain'; // New: Image fit preference
     time?: string;
     isLive?: boolean;
     attendees?: string;

@@ -8,6 +8,7 @@ import { Upload, X, Loader2, CheckCircle, Link as LinkIcon, Image as ImageIcon }
 import { useToast } from "@/shared/hooks/use-toast";
 import { Label } from "@/shared/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/components/ui/tabs";
+import { cn } from "@/shared/lib/utils";
 
 interface ImageUploadProps {
     onUpload: (url: string) => void;
@@ -15,9 +16,19 @@ interface ImageUploadProps {
     mediaType?: MediaDocument['type'];
     label?: string;
     className?: string;
+    fitMode?: 'cover' | 'contain';
+    onFitModeChange?: (mode: 'cover' | 'contain') => void;
 }
 
-export function ImageUpload({ onUpload, folderPath, mediaType = "post-image", label = "Upload Image", className }: ImageUploadProps) {
+export function ImageUpload({
+    onUpload,
+    folderPath,
+    mediaType = "post-image",
+    label = "Upload Image",
+    className,
+    fitMode = 'cover',
+    onFitModeChange
+}: ImageUploadProps) {
     const [progress, setProgress] = useState(0);
     const [uploading, setUploading] = useState(false);
     const [preview, setPreview] = useState<string | null>(null);
@@ -152,22 +163,68 @@ export function ImageUpload({ onUpload, folderPath, mediaType = "post-image", la
             </Tabs>
 
             {preview && !uploading && (
-                <div className="relative inline-block mt-2">
-                    <img
-                        src={preview}
-                        alt="Preview"
-                        className="h-24 w-24 object-cover rounded-md border"
-                    />
-                    <button
-                        onClick={clearImage}
-                        className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full p-1 shadow-sm hover:bg-destructive/90"
-                        type="button"
-                    >
-                        <X className="w-3 h-3" />
-                    </button>
-                    <div className="absolute bottom-0 right-0 translate-x-1/3 translate-y-1/3 bg-green-500 text-white rounded-full p-0.5">
-                        <CheckCircle className="w-3 h-3" />
+                <div className="space-y-4 mt-4">
+                    <div className="flex items-center justify-between">
+                        <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Preview</Label>
+                        <button
+                            onClick={clearImage}
+                            className="text-[10px] font-bold text-destructive uppercase tracking-widest hover:underline"
+                            type="button"
+                        >
+                            Remove
+                        </button>
                     </div>
+
+                    <div className="relative aspect-[16/9] w-full rounded-2xl overflow-hidden border-2 border-slate-100 bg-slate-50 flex items-center justify-center shadow-inner group">
+                        <img
+                            src={preview}
+                            alt="Preview"
+                            className={cn(
+                                "max-w-full max-h-full transition-all duration-300",
+                                fitMode === 'cover' ? "w-full h-full object-cover" : "object-contain"
+                            )}
+                        />
+                        <div className="absolute top-3 right-3 bg-green-500 text-white rounded-full p-1 shadow-lg animate-in zoom-in-50">
+                            <CheckCircle className="w-4 h-4" />
+                        </div>
+                    </div>
+
+                    {onFitModeChange && (
+                        <div className="space-y-3">
+                            <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Image Fit Mode</Label>
+                            <div className="flex bg-slate-100 p-1 rounded-xl w-fit border border-slate-200/50">
+                                <button
+                                    type="button"
+                                    onClick={() => onFitModeChange('cover')}
+                                    className={cn(
+                                        "px-6 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all duration-200",
+                                        fitMode === 'cover'
+                                            ? "bg-white shadow-sm text-blue-600 ring-1 ring-slate-200/50"
+                                            : "text-slate-400 hover:text-slate-600"
+                                    )}
+                                >
+                                    Cover
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => onFitModeChange('contain')}
+                                    className={cn(
+                                        "px-6 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all duration-200",
+                                        fitMode === 'contain'
+                                            ? "bg-white shadow-sm text-blue-600 ring-1 ring-slate-200/50"
+                                            : "text-slate-400 hover:text-slate-600"
+                                    )}
+                                >
+                                    Fit Inside
+                                </button>
+                            </div>
+                            <p className="text-[10px] text-slate-400 italic ml-1">
+                                {fitMode === 'cover'
+                                    ? "Cover: Fills the entire container (may crop edges)."
+                                    : "Fit: Ensures the full image is visible inside."}
+                            </p>
+                        </div>
+                    )}
                 </div>
             )}
         </div>

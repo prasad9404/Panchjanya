@@ -218,7 +218,7 @@ export const getValidSthanTypes = (avatarId: string, allTypes: SthanType[]): Sth
     }
     
     // Convert Map values to array and ensure Mandalik fallback is present if applicable
-    let results = Array.from(map.values());
+    const results = Array.from(map.values());
     
     if (avatarId === 'mandalik' && !results.some(t => t.name === 'Mandalik')) {
         const fallback = allTypes.find(t => t.name === 'Mandalik' && (!t.avatarSambandh || t.avatarSambandh === 'mandalik'));
@@ -476,9 +476,9 @@ export const PIN_ICON_MAP: Record<string, string> = {
  */
 function hexToHsl(hex: string): [number, number, number] {
     const h = hex.replace('#', '');
-    let r = parseInt(h.substring(0, 2), 16) / 255;
-    let g = parseInt(h.substring(2, 4), 16) / 255;
-    let b = parseInt(h.substring(4, 6), 16) / 255;
+    const r = parseInt(h.substring(0, 2), 16) / 255;
+    const g = parseInt(h.substring(2, 4), 16) / 255;
+    const b = parseInt(h.substring(4, 6), 16) / 255;
     const max = Math.max(r, g, b), min = Math.min(r, g, b);
     let hue = 0, sat = 0;
     const lum = (max + min) / 2;

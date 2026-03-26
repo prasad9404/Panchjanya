@@ -16,6 +16,16 @@ service cloud.firestore {
     match /temples/{id} {
       allow read: if true;
       allow write: if isAdmin();
+
+      // Architecture and Present hotspots subcollections
+      match /architecture_hotspots/{hotspotId} {
+        allow read: if true;
+        allow write: if isAdmin();
+      }
+      match /present_hotspots/{hotspotId} {
+        allow read: if true;
+        allow write: if isAdmin();
+      }
     }
 
     match /sthan_types/{id} {

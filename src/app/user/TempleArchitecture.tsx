@@ -363,11 +363,14 @@ export default function TempleArchitecture() {
                         <Carousel className="w-full h-full">
                             <CarouselContent>
                                 {displayImages.map((img, index) => (
-                                    <CarouselItem key={index} className="w-full h-full">
+                                    <CarouselItem key={index} className="w-full h-full flex items-center justify-center">
                                         <img
                                             src={img}
                                             alt={`${temple.name} - ${index + 1}`}
-                                            className="w-full h-full object-contain cursor-pointer hover:opacity-90 transition-opacity"
+                                            className={cn(
+                                                "cursor-pointer hover:opacity-90 transition-all duration-500 object-center",
+                                                temple.sthanImagesFitMode === 'cover' ? "w-full h-full object-cover" : "max-w-full max-h-full object-contain"
+                                            )}
                                             onClick={() => {
                                                 setSelectedImageIndex(index);
                                                 setIsImageModalOpen(true);

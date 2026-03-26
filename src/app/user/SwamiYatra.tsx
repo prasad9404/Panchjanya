@@ -17,6 +17,7 @@ import { useTranslation } from "react-i18next";
 
 import { useYatraPlaces } from "@/shared/hooks/useYatraPlaces";
 import { LazyImage } from "@/shared/components/ui/LazyImage";
+import { cn } from "@/shared/lib/utils";
 
 const ROUTES = [
     {
@@ -78,7 +79,8 @@ const SwamiYatra = () => {
             route: data.route,
             subRoute: data.subRoute,
             locationLink: data.locationLink,
-            pinColor: data.pinColor
+            pinColor: data.pinColor,
+            fitMode: data.fitMode || 'cover'
         }));
     }, [rawPlaces]);
 
@@ -360,8 +362,14 @@ const SwamiYatra = () => {
                                                     <LazyImage
                                                         src={filteredPlaces[currentIndex].image || "/placeholder-temple.jpg"}
                                                         alt={filteredPlaces[currentIndex].title || ""}
-                                                        containerClassName="w-full h-full bg-muted"
-                                                        className="w-full h-full object-cover transition-transform duration-700 hover:scale-105"
+                                                        containerClassName={cn(
+                                                            "w-full h-full transition-all duration-300",
+                                                            filteredPlaces[currentIndex].fitMode === 'contain' ? "bg-slate-50" : "bg-muted"
+                                                        )}
+                                                        className={cn(
+                                                            "w-full h-full transition-all duration-700 hover:scale-105 object-center",
+                                                            filteredPlaces[currentIndex].fitMode === 'contain' ? "object-contain" : "object-cover"
+                                                        )}
                                                     />
                                                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
                                                     

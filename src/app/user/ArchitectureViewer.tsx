@@ -533,20 +533,29 @@ export default function ArchitectureViewer() {
                 className="relative w-full h-full flex items-center justify-center"
               >
                 <div
-                  className="relative"
+                  className="relative transition-all duration-500"
                   style={{
-                    aspectRatio: imageRatio || 'auto',
+                    aspectRatio: (imageType === 'architectural' ? temple.architectureImagesFitMode : temple.presentImagesFitMode) === 'cover' ? 'auto' : (imageRatio || 'auto'),
                     maxWidth: '100%',
                     maxHeight: '100%',
-                    width: imageRatio && imageRatio > (imageContainerRef.current?.clientWidth || 1) / (imageContainerRef.current?.clientHeight || 1) ? '100%' : 'auto',
-                    height: imageRatio && imageRatio <= (imageContainerRef.current?.clientWidth || 1) / (imageContainerRef.current?.clientHeight || 1) ? '100%' : 'auto'
+                    width: (imageType === 'architectural' ? temple.architectureImagesFitMode : temple.presentImagesFitMode) === 'cover'
+                      ? '100%'
+                      : (imageRatio && imageRatio > (imageContainerRef.current?.clientWidth || 1) / (imageContainerRef.current?.clientHeight || 1) ? '100%' : 'auto'),
+                    height: (imageType === 'architectural' ? temple.architectureImagesFitMode : temple.presentImagesFitMode) === 'cover'
+                      ? '100%'
+                      : (imageRatio && imageRatio <= (imageContainerRef.current?.clientWidth || 1) / (imageContainerRef.current?.clientHeight || 1) ? '100%' : 'auto')
                   }}
                 >
                   {imageUrl ? (
                     <img
                       src={imageUrl}
                       alt={`${temple.name} Architecture`}
-                      className="w-full h-full block select-none"
+                      className={cn(
+                        "block select-none transition-all duration-500 object-center",
+                        imageType === 'architectural'
+                          ? (temple.architectureImagesFitMode === 'cover' ? 'w-full h-full object-cover' : 'max-w-full max-h-full object-contain')
+                          : (temple.presentImagesFitMode === 'cover' ? 'w-full h-full object-cover' : 'max-w-full max-h-full object-contain')
+                      )}
                       draggable={false}
                       onLoad={(e) => setImageRatio(e.currentTarget.naturalWidth / e.currentTarget.naturalHeight)}
                     />
@@ -989,7 +998,7 @@ export default function ArchitectureViewer() {
               <img
                 src={imageUrl}
                 alt={`${temple?.name} - Full view`}
-                className="max-w-full max-h-[100vh] object-contain"
+                className="max-w-full max-h-[100vh] object-contain object-center"
                 onError={(e) => {
                   (e.target as HTMLImageElement).src = '/placeholder-temple.jpg';
                 }}

@@ -9,6 +9,7 @@ import { Temple, Hotspot, SthanDetail } from "@/types";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/components/ui/tabs";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { cn } from "@/shared/lib/utils";
 
 export default function SthanaDetail() {
     const { id, sthanaId } = useParams<{ id: string; sthanaId: string }>();
@@ -195,11 +196,14 @@ export default function SthanaDetail() {
 
                     {/* Image Viewer */}
                     <div className="px-2 md:px-0">
-                        <div className="relative aspect-[4/3] w-full max-w-7xl mx-auto rounded-2xl overflow-hidden border-4 border-card bg-muted group">
+                        <div className="relative aspect-[4/3] w-full max-w-7xl mx-auto rounded-2xl overflow-hidden border-4 border-card bg-muted group flex items-center justify-center">
                             <img
                                 src={displayImages[currentImageIndex]}
                                 alt={hotspot.title}
-                                className="w-full h-full object-contain cursor-pointer"
+                                className={cn(
+                                    "cursor-pointer transition-all duration-500 object-center",
+                                    hotspot.fitMode === 'cover' ? "w-full h-full object-cover" : "max-w-full max-h-full object-contain"
+                                )}
                                 onClick={() => setIsImageModalOpen(true)}
                             />
                             {displayImages.length > 1 && (
@@ -360,7 +364,7 @@ export default function SthanaDetail() {
                         <img
                             src={displayImages[currentImageIndex]}
                             alt={`${hotspot.title} - Full view`}
-                            className="max-w-full max-h-[100vh] object-contain"
+                            className="max-w-full max-h-[100vh] object-contain object-center"
                             onError={(e) => {
                                 (e.target as HTMLImageElement).src = '/placeholder-temple.jpg';
                             }}
