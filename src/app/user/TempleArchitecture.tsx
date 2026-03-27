@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { db } from "@/auth/firebase";
 import { doc, getDoc, setDoc, deleteDoc } from "firebase/firestore";
 import * as LucideIcons from "lucide-react";
-import { X, MapPin, Compass, Share2, Navigation, Bookmark, ChevronLeft, ChevronRight, Info, Phone } from "lucide-react";
+import { X, MapPin, Compass, Share2, Navigation, Bookmark, ChevronLeft, ChevronRight, Info, Phone, BookOpen } from "lucide-react";
 import { Button } from "@/shared/components/ui/button";
 import { Button1 } from "@/shared/components/ui/button-1";
 import { Temple, AbbreviationItem } from "@/types";
@@ -30,6 +30,7 @@ import {
     CarouselNext,
     CarouselPrevious,
 } from "@/shared/components/ui/carousel";
+import { SafeHTML } from "@/shared/components/ui/SafeHTML";
 
 
 export default function TempleArchitecture() {
@@ -489,12 +490,67 @@ export default function TempleArchitecture() {
 
                     <div className="bg-white p-3 md:p-5 rounded-2xl border border-slate-100 relative overflow-hidden">
                         <div className="absolute top-0 left-0 w-1 h-full bg-orange-500/10"></div>
-                        <p className="font-serif text-slate-700 leading-relaxed text-md whitespace-pre-wrap pl-2">
-                            {temple.sthana_info_text ||
-                                temple.sthana ||
-                                t('common.noInfo')}
-                        </p>
+                        <div className="pl-2">
+                            <SafeHTML 
+                                html={temple.sthana_info_text || temple.sthana || t('common.noInfo')} 
+                            />
+                        </div>
                     </div>
+
+                    {/* Sthan Pothi (Temple Level) */}
+                    {temple.sthanPothiDescription && (
+                        <div className="space-y-3 md:space-y-4 pt-2">
+                            <div className="flex items-center gap-3">
+                                <div className="w-1 h-6 bg-amber-600"></div>
+                                <h3 className="font-heading text-xl font-bold text-blue-900 flex items-center gap-2">
+                                    <BookOpen className="w-5 h-5 text-amber-600" />
+                                    {temple.sthanPothiTitle || t('common.sthanPothi')}
+                                </h3>
+                            </div>
+                            <div className="bg-white p-3 md:p-5 rounded-2xl border border-slate-100 relative overflow-hidden">
+                                <div className="absolute top-0 left-0 w-1 h-full bg-amber-500/10"></div>
+                                <div className="pl-2">
+                                    <SafeHTML html={temple.sthanPothiDescription} />
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Description Sections (Step 1) */}
+                    {temple.descriptionSections && temple.descriptionSections.length > 0 && temple.descriptionSections.map((section) => (
+                        <div key={section.id} className="space-y-3 md:space-y-4 pt-2">
+                            <div className="flex items-center gap-3">
+                                <div className="w-1 h-6 bg-amber-600"></div>
+                                <h3 className="font-heading text-xl font-bold text-blue-900">
+                                    {section.title}
+                                </h3>
+                            </div>
+                            <div className="bg-white p-3 md:p-5 rounded-2xl border border-slate-100 relative overflow-hidden">
+                                <div className="absolute top-0 left-0 w-1 h-full bg-blue-500/10"></div>
+                                <div className="pl-2">
+                                    <SafeHTML html={section.content} />
+                                </div>
+                            </div>
+                        </div>
+                    ))}
+
+                    {/* Custom Blocks (Step 2) */}
+                    {temple.customBlocks && temple.customBlocks.length > 0 && temple.customBlocks.map((block) => (
+                        <div key={block.id} className="space-y-3 md:space-y-4 pt-2">
+                            <div className="flex items-center gap-3">
+                                <div className="w-1 h-6 bg-amber-600"></div>
+                                <h3 className="font-heading text-xl font-bold text-blue-900">
+                                    {block.title}
+                                </h3>
+                            </div>
+                            <div className="bg-white p-3 md:p-5 rounded-2xl border border-slate-100 relative overflow-hidden">
+                                <div className="absolute top-0 left-0 w-1 h-full bg-emerald-500/10"></div>
+                                <div className="pl-2">
+                                    <SafeHTML html={block.content} />
+                                </div>
+                            </div>
+                        </div>
+                    ))}
                 </div>
 
             </div>

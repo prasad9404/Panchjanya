@@ -13,6 +13,7 @@ import { Input } from "@/shared/components/ui/input";
 import { Textarea } from "@/shared/components/ui/textarea";
 import { Label } from "@/shared/components/ui/label";
 import { Separator } from "@/shared/components/ui/separator";
+import { RichTextEditor } from "@/shared/components/ui/RichTextEditor";
 import {
   Dialog,
   DialogContent,
@@ -1923,12 +1924,11 @@ export default function TempleArchitectureAdmin({
                           <span className="text-[10px] font-black text-blue-600 uppercase tracking-[0.2em]">Detailed Narrative</span>
                           <div className="h-px flex-1 bg-blue-100/50" />
                         </div>
-                        <Textarea
+                        <RichTextEditor
                           value={sthana_info_text}
-                          onChange={(e) => setSthanaInfoText(e.target.value)}
+                          onChange={setSthanaInfoText}
                           placeholder="Detailed sthan description..."
-                          rows={6}
-                          className="border-none bg-white rounded-xl focus:ring-2 focus:ring-blue-200 transition-all p-4 leading-relaxed"
+                          className="border-none"
                         />
                       </div>
                     </div>
@@ -1977,12 +1977,11 @@ export default function TempleArchitectureAdmin({
                                 <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Detailed Narrative</span>
                                 <div className="h-px flex-1 bg-slate-100" />
                               </div>
-                              <Textarea
+                              <RichTextEditor
                                 value={s.content}
-                                onChange={(e) => updateDescriptionSection(s.id, 'content', e.target.value)}
+                                onChange={(val) => updateDescriptionSection(s.id, 'content', val)}
                                 placeholder="Add custom content here..."
-                                rows={6}
-                                className="border-none bg-slate-50/80 rounded-xl focus:ring-2 focus:ring-blue-100 transition-all p-4 leading-relaxed"
+                                className="border-none"
                               />
                             </div>
                           </div>
@@ -2570,11 +2569,10 @@ export default function TempleArchitectureAdmin({
                 </div>
               </CardHeader>
               <CardContent className="p-6">
-                <Textarea
+                <RichTextEditor
                   placeholder="Provide a detailed architectural description of the temple complex..."
                   value={architectureDescription}
-                  onChange={(e) => setArchitectureDescription(e.target.value)}
-                  className="min-h-[150px] resize-y"
+                  onChange={setArchitectureDescription}
                 />
                 <p className="mt-2 text-xs text-slate-500">
                   This description will appear in the Architecture View section of the public site.
@@ -2645,12 +2643,10 @@ export default function TempleArchitectureAdmin({
                               placeholder="Block Title"
                               className="font-bold rounded-xl"
                             />
-                            <Textarea
+                            <RichTextEditor
                               value={block.content}
-                              onChange={(e) => updateCustomBlock(block.id, 'content', e.target.value)}
+                              onChange={(val) => updateCustomBlock(block.id, 'content', val)}
                               placeholder="Block content..."
-                              rows={4}
-                              className="rounded-xl"
                             />
                           </div>
 
@@ -3003,12 +2999,10 @@ export default function TempleArchitectureAdmin({
                           <Label className="text-xs font-black uppercase tracking-widest text-slate-400">General Description</Label>
                         </div>
                         <div className="space-y-2">
-                          <Textarea
+                          <RichTextEditor
                             value={selectedHotspot.description}
-                            onChange={(e) => setSelectedHotspot({ ...selectedHotspot, description: e.target.value })}
+                            onChange={(val) => setSelectedHotspot({ ...selectedHotspot, description: val })}
                             placeholder="Main architectural overview..."
-                            rows={4}
-                            className="rounded-2xl border-slate-200 min-h-[140px]"
                           />
                         </div>
                       </CardContent>
@@ -3023,12 +3017,10 @@ export default function TempleArchitectureAdmin({
                           <Label className="text-xs font-black uppercase tracking-widest text-slate-400">Sthan Pothi Details</Label>
                         </div>
                         <div className="space-y-2">
-                          <Textarea
+                          <RichTextEditor
                             value={selectedHotspot.sthanPothiDescription || ""}
-                            onChange={(e) => setSelectedHotspot({ ...selectedHotspot, sthanPothiDescription: e.target.value })}
+                            onChange={(val) => setSelectedHotspot({ ...selectedHotspot, sthanPothiDescription: val })}
                             placeholder="Details from scripture..."
-                            rows={8}
-                            className="rounded-2xl border-slate-200 min-h-[200px]"
                           />
                         </div>
                       </CardContent>
@@ -3070,12 +3062,10 @@ export default function TempleArchitectureAdmin({
                                   }}
                                 />
                               </div>
-                              <Textarea
+                              <RichTextEditor
                                 placeholder="Describe the divine leela..."
-                                rows={4}
-                                className="bg-white rounded-2xl p-4"
                                 value={leela.description}
-                                onChange={(e) => updateLeela(leela.id, e.target.value)}
+                                onChange={(val) => updateLeela(leela.id, val)}
                               />
                             </div>
                           ))}

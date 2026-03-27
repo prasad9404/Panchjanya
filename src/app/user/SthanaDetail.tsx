@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/components/ui
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/shared/lib/utils";
+import { SafeHTML } from "@/shared/components/ui/SafeHTML";
 
 export default function SthanaDetail() {
     const { id, sthanaId } = useParams<{ id: string; sthanaId: string }>();
@@ -274,9 +275,7 @@ export default function SthanaDetail() {
                                     </div>
                                     <div className="bg-card border border-border rounded-xl p-4 shadow-sm relative z-10 space-y-4">
                                         <div>
-                                            <p className="font-serif text-lg text-foreground leading-relaxed">
-                                                {hotspot.description || hotspot.significance || t('common.noInfo')}
-                                            </p>
+                                            <SafeHTML html={hotspot.description || hotspot.significance || t('common.noInfo')} />
                                         </div>
                                     </div>
                                 </div>
@@ -338,13 +337,11 @@ export default function SthanaDetail() {
                                                 </button>
 
                                                 <div
-                                                    className={`transition-all duration-300 ease-in-out ${isExpanded ? 'max-h-[1000px] opacity-100 pb-5 px-5' : 'max-h-0 opacity-0'
+                                                    className={`transition-all duration-300 ease-in-out ${isExpanded ? 'max-h-[5000px] opacity-100 pb-5 px-5' : 'max-h-0 opacity-0'
                                                         }`}
                                                 >
                                                     <div className="pt-2 border-t border-accent/10">
-                                                        <p className="font-serif text-lg text-foreground leading-relaxed whitespace-pre-wrap">
-                                                            {content}
-                                                        </p>
+                                                        <SafeHTML html={content} />
                                                     </div>
                                                 </div>
                                             </div>
