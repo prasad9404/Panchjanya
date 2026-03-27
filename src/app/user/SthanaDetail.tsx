@@ -202,7 +202,7 @@ export default function SthanaDetail() {
                                 src={displayImages[currentImageIndex]}
                                 alt={hotspot.title}
                                 className={cn(
-                                    "cursor-pointer transition-all duration-500 object-center",
+                                    "cursor-pointer transition-all duration-500 object-center mx-auto block",
                                     hotspot.fitMode === 'cover' ? "w-full h-full object-cover" : "max-w-full max-h-full object-contain"
                                 )}
                                 onClick={() => setIsImageModalOpen(true)}

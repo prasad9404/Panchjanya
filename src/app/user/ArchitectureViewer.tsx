@@ -544,7 +544,8 @@ export default function ArchitectureViewer() {
                       : (imageRatio && imageRatio > (imageContainerRef.current?.clientWidth || 1) / (imageContainerRef.current?.clientHeight || 1) ? '100%' : 'auto'),
                     height: (imageType === 'architectural' ? temple.architectureImagesFitMode : temple.presentImagesFitMode) === 'cover'
                       ? '100%'
-                      : (imageRatio && imageRatio <= (imageContainerRef.current?.clientWidth || 1) / (imageContainerRef.current?.clientHeight || 1) ? '100%' : 'auto')
+                      : (imageRatio && imageRatio <= (imageContainerRef.current?.clientWidth || 1) / (imageContainerRef.current?.clientHeight || 1) ? '100%' : 'auto'),
+                    margin: 'auto'
                   }}
                 >
                   {imageUrl ? (
@@ -552,7 +553,7 @@ export default function ArchitectureViewer() {
                       src={imageUrl}
                       alt={`${temple.name} Architecture`}
                       className={cn(
-                        "block select-none transition-all duration-500 object-center",
+                        "block select-none transition-all duration-500 object-center mx-auto",
                         imageType === 'architectural'
                           ? (temple.architectureImagesFitMode === 'cover' ? 'w-full h-full object-cover' : 'max-w-full max-h-full object-contain')
                           : (temple.presentImagesFitMode === 'cover' ? 'w-full h-full object-cover' : 'max-w-full max-h-full object-contain')
