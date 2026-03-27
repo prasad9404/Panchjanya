@@ -362,14 +362,14 @@ export default function TempleArchitecture() {
                 <div className="pb-2">
                     <div className="relative aspect-[4/3] w-full rounded-2xl overflow-hidden border-4 border-white bg-gray-200 group">
                         <Carousel className="w-full h-full">
-                            <CarouselContent>
+                            <CarouselContent className="h-full">
                                 {displayImages.map((img, index) => (
                                     <CarouselItem key={index} className="w-full h-full flex items-center justify-center">
                                         <img
                                             src={img}
                                             alt={`${temple.name} - ${index + 1}`}
                                             className={cn(
-                                                "cursor-pointer hover:opacity-90 transition-all duration-500 object-center",
+                                                "cursor-pointer hover:opacity-90 transition-all duration-500 object-center mx-auto block",
                                                 temple.sthanImagesFitMode === 'cover' ? "w-full h-full object-cover" : "max-w-full max-h-full object-contain"
                                             )}
                                             onClick={() => {
