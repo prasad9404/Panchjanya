@@ -307,7 +307,7 @@ export default function TempleArchitecture() {
                             </DialogHeader>
                             <div className="py-4 space-y-6">
                                 <div className="text-sm text-slate-700 font-serif leading-relaxed px-1">
-                                    {temple.directions_text || t('temple.noInfo')}
+                                    <SafeHTML html={temple.directions_text || t('temple.noInfo')} />
                                 </div>
 
                                 {(temple.contactName || temple.contactNumber || temple.contactDetails) && (

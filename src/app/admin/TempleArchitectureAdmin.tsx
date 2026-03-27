@@ -1631,12 +1631,9 @@ export default function TempleArchitectureAdmin({
                 <div className="lg:col-span-2 space-y-6">
                   <div className="space-y-2">
                     <Label className="text-sm font-semibold text-slate-700">Detailed Directions</Label>
-                    <Textarea
+                    <RichTextEditor
                       value={directions_text}
-                      onChange={(e) => setDirectionsText(e.target.value)}
-                      placeholder="Detailed instructions for trains, buses, etc..."
-                      rows={3}
-                      className="rounded-xl border-slate-200 focus:border-blue-500 focus:ring-blue-500"
+                      onChange={setDirectionsText}
                     />
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
