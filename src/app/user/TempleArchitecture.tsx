@@ -517,7 +517,9 @@ export default function TempleArchitecture() {
                     )}
 
                     {/* Description Sections (Step 1) */}
-                    {temple.descriptionSections && temple.descriptionSections.length > 0 && temple.descriptionSections.map((section) => (
+                    {temple.descriptionSections && temple.descriptionSections.length > 0 && temple.descriptionSections
+                        .filter(section => (section.page_type || 'page1') === 'page1')
+                        .map((section) => (
                         <div key={section.id} className="space-y-3 md:space-y-4 pt-2">
                             <div className="flex items-center gap-3">
                                 <div className="w-1 h-6 bg-amber-600"></div>
@@ -535,7 +537,9 @@ export default function TempleArchitecture() {
                     ))}
 
                     {/* Custom Blocks (Step 2) */}
-                    {temple.customBlocks && temple.customBlocks.length > 0 && temple.customBlocks.map((block) => (
+                    {temple.customBlocks && temple.customBlocks.length > 0 && temple.customBlocks
+                        .filter(block => (block.page_type || 'page2') === 'page1')
+                        .map((block) => (
                         <div key={block.id} className="space-y-3 md:space-y-4 pt-2">
                             <div className="flex items-center gap-3">
                                 <div className="w-1 h-6 bg-amber-600"></div>

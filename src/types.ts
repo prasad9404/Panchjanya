@@ -35,6 +35,8 @@ export interface DescriptionSection {
     id: string;
     title: string;
     content: string;
+    page_type?: 'page1' | 'page2';
+    order?: number;
 }
 
 export interface GlanceItem {
@@ -53,6 +55,8 @@ export interface CustomBlock {
     id: string;
     title: string;
     content: string;
+    page_type?: 'page1' | 'page2';
+    order?: number;
 }
 
 export interface RelatedAvatar {

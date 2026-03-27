@@ -5,7 +5,7 @@ import AdminLayout from "@/shared/components/admin/AdminLayout";
 import { SthanaIdentifier } from "@/shared/components/admin/SthanaIdentifier";
 
 import { v4 as uuidv4 } from "uuid";
-import { Hotspot, Leela, GlanceItem, AbbreviationItem, CustomBlock, SthanDetail } from "@/types";
+import { Hotspot, Leela, GlanceItem, AbbreviationItem, CustomBlock, DescriptionSection, SthanDetail } from "@/types";
 import * as LucideIcons from "lucide-react";
 import { X, Save, Trash2, Upload, ArrowLeft, ZoomIn, ZoomOut, ChevronLeft, ChevronRight, Plus, ChevronDown, Image as ImageIcon, Info, MousePointer2, ExternalLink, FileText, Search, ArrowUp, ArrowDown, Check, Database, MapPin } from "lucide-react";
 import { Button } from "@/shared/components/ui/button";
@@ -756,7 +756,13 @@ export default function TempleArchitectureAdmin({
   };
 
   const addDescriptionSection = () => {
-    const newSection = { id: uuidv4(), title: "", content: "" };
+    const newSection: DescriptionSection = { 
+      id: uuidv4(), 
+      title: "", 
+      content: "", 
+      page_type: 'page1',
+      order: descriptionSections.length 
+    };
     setDescriptionSections([...descriptionSections, newSection]);
   };
 
@@ -782,7 +788,13 @@ export default function TempleArchitectureAdmin({
   };
 
   const addCustomBlock = () => {
-    const newBlock: CustomBlock = { id: uuidv4(), title: "", content: "" };
+    const newBlock: CustomBlock = { 
+      id: uuidv4(), 
+      title: "", 
+      content: "", 
+      page_type: 'page2',
+      order: customBlocks.length
+    };
     setCustomBlocks([...customBlocks, newBlock]);
   };
 

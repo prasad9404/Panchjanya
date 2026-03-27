@@ -8,6 +8,7 @@ import { Button } from "@/shared/components/ui/button";
 import { Button1 } from "@/shared/components/ui/button-1";
 import { Temple, AbbreviationItem, Hotspot, SthanDetail } from "@/types";
 import { useTranslation } from "react-i18next";
+import { SafeHTML } from "@/shared/components/ui/SafeHTML";
 
 // ... (rest of imports)
 
@@ -890,8 +891,49 @@ export default function ArchitectureViewer() {
             >
               <div className="space-y-4 pb-[450px]">
                 {/* Description Card */}
-                <div className="bg-white p-3 md:p-4 rounded-2xl shadow-sm border border-slate-100/50 text-base text-slate-600 leading-relaxed font-serif">
-                  {temple.architectureDescription || t('temple.noArchDescription')}
+                <div className="bg-white p-3 md:p-4 rounded-2xl shadow-sm border border-slate-100/50 text-base text-slate-600 leading-relaxed">
+                  <SafeHTML html={temple.architectureDescription || t('temple.noArchDescription')} />
+                </div>
+
+                {/* Additional Content Blocks (Step 1 & 2 Filtered) */}
+                {(temple.descriptionSections?.some(s => (s.page_type || 'page1') === 'page2') || 
+                  temple.customBlocks?.some(b => (b.page_type || 'page2') === 'page2')) && (
+                  <div className="space-y-5">
+                    {temple.descriptionSections
+                      ?.filter(section => (section.page_type || 'page1') === 'page2')
+                      .sort((a, b) => (a.order || 0) - (b.order || 0))
+                      .map((section) => (
+                        <div key={section.id} className="space-y-2">
+                          <h4 className="font-heading font-bold text-blue-900 border-l-4 border-amber-600 pl-3 leading-none">
+                            {section.title}
+                          </h4>
+                          <div className="bg-white p-3 md:p-4 rounded-2xl border border-slate-100/50 shadow-sm">
+                            <SafeHTML html={section.content} />
+                          </div>
+                        </div>
+                      ))
+                    }
+                    {temple.customBlocks
+                      ?.filter(block => (block.page_type || 'page2') === 'page2')
+                      .sort((a, b) => (a.order || 0) - (b.order || 0))
+                      .map((block) => (
+                        <div key={block.id} className="space-y-2">
+                          <h4 className="font-heading font-bold text-blue-900 border-l-4 border-amber-600 pl-3 leading-none">
+                            {block.title}
+                          </h4>
+                          <div className="bg-white p-3 md:p-4 rounded-2xl border border-slate-100/50 shadow-sm">
+                            <SafeHTML html={block.content} />
+                          </div>
+                        </div>
+                      ))
+                    }
+                  </div>
+                )}
+
+                {/* Sthana List Heading */}
+                <div className="flex items-center gap-3 pt-4 pb-2">
+                  <div className="w-1 h-6 bg-amber-600"></div>
+                  <h4 className="font-heading text-xl font-bold text-blue-900">{t('temple.differentSthans')}</h4>
                 </div>
 
                 {/* Sthana List */}
@@ -971,25 +1013,6 @@ export default function ArchitectureViewer() {
             </div>
           </div>
         </div>
-
-        {/* Custom Blocks */}
-        {temple.customBlocks && temple.customBlocks.length > 0 && (
-          <div className="space-y-4 mt-6">
-            {temple.customBlocks.map((block) => (
-              <div key={block.id} className="space-y-3 md:space-y-4 group pb-2">
-                <div className="flex items-center gap-3">
-                  <div className="w-1 h-6 bg-amber-600"></div>
-                  <h3 className="font-heading text-xl font-bold text-blue-900">
-                    {block.title}
-                  </h3>
-                </div>
-                <div className="bg-white p-3 md:p-4 rounded-2xl shadow-sm border border-slate-100/50 text-base text-slate-600 leading-relaxed font-serif whitespace-pre-wrap">
-                  {block.content}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
 
         {/* Full-Screen Image Modal */}
         <Dialog open={isImageModalOpen} onOpenChange={setIsImageModalOpen}>
