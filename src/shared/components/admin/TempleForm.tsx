@@ -19,6 +19,11 @@ import ReactSelect from "react-select";
 import { RelatedAvatarsSelect } from "./RelatedAvatarsSelect";
 import { RelatedAvatar } from "@/types";
 import { cn } from "@/shared/lib/utils";
+import { Tabs, TabsList, TabsTrigger } from "@/shared/components/ui/tabs";
+import { Languages, Wand2 } from "lucide-react";
+import { ensureMultilingual } from "@/shared/services/translationService";
+import { autoTranslateMultilingual } from "@/shared/services/autoTranslate";
+import { MultilingualString } from "@/types";
 
 interface TempleFormProps {
     templeId?: string;
@@ -32,15 +37,16 @@ export default function TempleForm({ templeId }: TempleFormProps) {
     const [loading, setLoading] = useState(false);
     const [fetching, setFetching] = useState(!!templeId);
     const [sthanTypes, setSthanTypes] = useState<SthanType[]>([]);
+    const [activeLang, setActiveLang] = useState<'en' | 'hi' | 'mr'>('en');
 
-    // ── Basic Information ──
-    const [name, setName] = useState("");
-    const [todaysNameTitle, setTodaysNameTitle] = useState("");
-    const [todaysName, setTodaysName] = useState("");
-    const [address, setAddress] = useState("");
-    const [taluka, setTaluka] = useState("");
-    const [district, setDistrict] = useState("");
-    const [sthan, setSthan] = useState("");
+    // ── Multilingual Information ──
+    const [name, setName] = useState<MultilingualString>({ en: "", hi: "", mr: "" });
+    const [todaysNameTitle, setTodaysNameTitle] = useState<MultilingualString>({ en: "", hi: "", mr: "" });
+    const [todaysName, setTodaysName] = useState<MultilingualString>({ en: "", hi: "", mr: "" });
+    const [address, setAddress] = useState<MultilingualString>({ en: "", hi: "", mr: "" });
+    const [taluka, setTaluka] = useState<MultilingualString>({ en: "", hi: "", mr: "" });
+    const [district, setDistrict] = useState<MultilingualString>({ en: "", hi: "", mr: "" });
+    const [sthan, setSthan] = useState<MultilingualString>({ en: "", hi: "", mr: "" });
     const [sthanTypeId, setSthanTypeId] = useState("");
     const [pinIcon, setPinIcon] = useState("");
     
@@ -87,13 +93,13 @@ export default function TempleForm({ templeId }: TempleFormProps) {
                 }
 
                 if (data) {
-                    setName(data.name || "");
-                    setTodaysNameTitle(data.todaysNameTitle || "");
-                    setTodaysName(data.todaysName || "");
-                    setAddress(data.address || "");
-                    setTaluka(data.taluka || "");
-                    setDistrict(data.district || "");
-                    setSthan(data.sthan || "");
+                    setName(ensureMultilingual(data.name));
+                    setTodaysNameTitle(ensureMultilingual(data.todaysNameTitle));
+                    setTodaysName(ensureMultilingual(data.todaysName));
+                    setAddress(ensureMultilingual(data.address));
+                    setTaluka(ensureMultilingual(data.taluka));
+                    setDistrict(ensureMultilingual(data.district));
+                    setSthan(ensureMultilingual(data.sthan));
                     setSthanTypeId(data.sthanTypeId || "");
                     
                     // Legacy fallback loading
@@ -137,6 +143,39 @@ export default function TempleForm({ templeId }: TempleFormProps) {
         fetchTemple();
     }, [templeId, navigate, toast, user]);
 
+    const handleAutoTranslate = async () => {
+        if (!name.en) {
+            toast({ title: "English Name Required", description: "Please enter the English name first.", variant: "destructive" });
+            return;
+        }
+
+        setLoading(true);
+        try {
+            const fieldsToTranslate = [
+                { key: 'name', value: name.en, setter: setName },
+                { key: 'todaysNameTitle', value: todaysNameTitle.en, setter: setTodaysNameTitle },
+                { key: 'todaysName', value: todaysName.en, setter: setTodaysName },
+                { key: 'address', value: address.en, setter: setAddress },
+                { key: 'taluka', value: taluka.en, setter: setTaluka },
+                { key: 'district', value: district.en, setter: setDistrict },
+                { key: 'sthan', value: sthan.en, setter: setSthan },
+            ];
+
+            for (const field of fieldsToTranslate) {
+                if (field.value) {
+                    const translated = await autoTranslateMultilingual(field.value);
+                    field.setter(translated);
+                }
+            }
+
+            toast({ title: "Translation Complete", description: "Hindi and Marathi fields have been populated." });
+        } catch (error) {
+            toast({ title: "Translation Error", description: "Failed to auto-translate fields.", variant: "destructive" });
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!user) return;
@@ -171,7 +210,7 @@ export default function TempleForm({ templeId }: TempleFormProps) {
                 primaryAvatar,
                 primarySubtype,
                 relatedAvatars,
-                sthanType: sthan,
+                sthanType: sthan, // Storing as object for backward compat (will need getter)
                 sthanTypeId,
                 
                 // Legacy fields for backward compatibility
@@ -285,6 +324,42 @@ export default function TempleForm({ templeId }: TempleFormProps) {
 
     return (
         <div className="w-full">
+            <div className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-100 mb-8 py-4 -mx-6 px-6 flex items-center justify-between">
+                <Tabs value={activeLang} onValueChange={(v: any) => setActiveLang(v)} className="w-fit">
+                    <TabsList className="bg-slate-100/50 p-1 rounded-xl">
+                        <TabsTrigger value="en" className="rounded-lg px-6 data-[state=active]:bg-white data-[state=active]:shadow-sm">
+                            <span className="flex items-center gap-2">
+                                <span className="text-[10px] font-bold">EN</span>
+                                English
+                            </span>
+                        </TabsTrigger>
+                        <TabsTrigger value="hi" className="rounded-lg px-6 data-[state=active]:bg-white data-[state=active]:shadow-sm">
+                            <span className="flex items-center gap-2">
+                                <span className="text-[10px] font-bold">HI</span>
+                                हिंदी
+                            </span>
+                        </TabsTrigger>
+                        <TabsTrigger value="mr" className="rounded-lg px-6 data-[state=active]:bg-white data-[state=active]:shadow-sm">
+                            <span className="flex items-center gap-2">
+                                <span className="text-[10px] font-bold">MR</span>
+                                मराठी
+                            </span>
+                        </TabsTrigger>
+                    </TabsList>
+                </Tabs>
+
+                <Button 
+                    type="button" 
+                    variant="outline" 
+                    onClick={handleAutoTranslate}
+                    disabled={loading || !name.en}
+                    className="rounded-xl border-slate-200 hover:bg-slate-50 gap-2 h-10 px-4 group"
+                >
+                    <Wand2 className="w-4 h-4 text-blue-500 group-hover:rotate-12 transition-transform" />
+                    <span className="text-xs font-bold uppercase tracking-wider">Auto Translate</span>
+                </Button>
+            </div>
+
             <form onSubmit={handleSubmit} className="space-y-12">
 
                     {/* ── 1. Primary Identity ── */}
@@ -307,10 +382,10 @@ export default function TempleForm({ templeId }: TempleFormProps) {
                                         <div className="relative group">
                                             <Input
                                                 id="name"
-                                                value={name}
-                                                onChange={(e) => setName(e.target.value)}
+                                                value={name[activeLang]}
+                                                onChange={(e) => setName(prev => ({ ...prev, [activeLang]: e.target.value }))}
                                                 required
-                                                placeholder="संस्थानचे नाव प्रविष्ट करा"
+                                                placeholder={activeLang === 'en' ? "संस्थानचे नाव प्रविष्ट करा" : "प्रविष्ट करा"}
                                                 className="h-14 pl-12 rounded-2xl border-slate-100 bg-slate-50/30 focus:bg-white transition-all text-sm font-medium"
                                             />
                                             <Home className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 group-focus-within:text-blue-600 transition-colors" />
@@ -319,8 +394,8 @@ export default function TempleForm({ templeId }: TempleFormProps) {
                                     <div className="space-y-3">
                                         <div className="flex items-center gap-2">
                                             <Input
-                                                value={todaysNameTitle}
-                                                onChange={(e) => setTodaysNameTitle(e.target.value)}
+                                                value={todaysNameTitle[activeLang]}
+                                                onChange={(e) => setTodaysNameTitle(prev => ({ ...prev, [activeLang]: e.target.value }))}
                                                 className="h-8 p-0 px-2 w-fit min-w-[120px] text-[10px] font-black uppercase tracking-widest text-slate-400 border-transparent hover:border-slate-100 focus:border-blue-400/50 rounded-md transition-all bg-transparent"
                                                 placeholder="Label Name"
                                             />
@@ -328,8 +403,8 @@ export default function TempleForm({ templeId }: TempleFormProps) {
                                         </div>
                                         <Input
                                             id="todaysName"
-                                            value={todaysName}
-                                            onChange={(e) => setTodaysName(e.target.value)}
+                                            value={todaysName[activeLang]}
+                                            onChange={(e) => setTodaysName(prev => ({ ...prev, [activeLang]: e.target.value }))}
                                             placeholder="e.g. Patan, Gujarat"
                                             className="h-14 rounded-2xl border-slate-100 bg-slate-50/30 focus:bg-white focus:border-blue-500/50 transition-all text-sm font-medium"
                                         />
@@ -341,8 +416,8 @@ export default function TempleForm({ templeId }: TempleFormProps) {
                                     <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Address</Label>
                                     <Textarea
                                         id="address"
-                                        value={address}
-                                        onChange={(e) => setAddress(e.target.value)}
+                                        value={address[activeLang]}
+                                        onChange={(e) => setAddress(prev => ({ ...prev, [activeLang]: e.target.value }))}
                                         placeholder="Enter the complete address..."
                                         rows={3}
                                         className="rounded-2xl border-slate-100 bg-slate-50/30 focus:bg-white focus:border-blue-500/50 transition-all text-sm font-medium resize-none min-h-[120px]"
@@ -355,8 +430,8 @@ export default function TempleForm({ templeId }: TempleFormProps) {
                                         <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Taluka</Label>
                                         <Input
                                             id="taluka"
-                                            value={taluka}
-                                            onChange={(e) => setTaluka(e.target.value)}
+                                            value={taluka[activeLang]}
+                                            onChange={(e) => setTaluka(prev => ({ ...prev, [activeLang]: e.target.value }))}
                                             placeholder="e.g. Sidhpur"
                                             className="h-14 rounded-2xl border-slate-100 bg-slate-50/30 focus:bg-white focus:border-blue-500/50 transition-all text-sm font-medium"
                                         />
@@ -365,8 +440,8 @@ export default function TempleForm({ templeId }: TempleFormProps) {
                                         <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">District</Label>
                                         <Input
                                             id="district"
-                                            value={district}
-                                            onChange={(e) => setDistrict(e.target.value)}
+                                            value={district[activeLang]}
+                                            onChange={(e) => setDistrict(prev => ({ ...prev, [activeLang]: e.target.value }))}
                                             placeholder="e.g. Patan"
                                             className="h-14 rounded-2xl border-slate-100 bg-slate-50/30 focus:bg-white focus:border-blue-500/50 transition-all text-sm font-medium"
                                         />
@@ -447,24 +522,26 @@ export default function TempleForm({ templeId }: TempleFormProps) {
                                     <div className="space-y-3">
                                         <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Sthan Type *</Label>
                                         <Select 
-                                            value={sthanTypeId || sthan} 
+                                            value={sthanTypeId || sthan[activeLang]} 
                                             onValueChange={(v) => {
                                                 const typeObj = sthanTypes.find(t => t.id === v || t.name === v);
                                                 if (typeObj) {
-                                                    setSthan(typeObj.name);
+                                                    setSthan(prev => ({ ...prev, [activeLang]: typeObj.name }));
                                                     setSthanTypeId(typeObj.id);
                                                     if (typeObj.pinType) {
                                                         setPinIcon(typeObj.pinType);
                                                     }
                                                 } else {
-                                                    setSthan(v);
+                                                    setSthan(prev => ({ ...prev, [activeLang]: v }));
                                                     setSthanTypeId("");
                                                 }
                                             }} 
                                             required
                                         >
                                             <SelectTrigger className="h-14 rounded-2xl border-slate-100 bg-slate-50/30 focus:bg-white transition-all text-sm">
-                                                <SelectValue placeholder="Select Sthan Type" />
+                                                <SelectValue placeholder="Select Sthan Type">
+                                                    <span className="font-bold">{sthan[activeLang]}</span>
+                                                </SelectValue>
                                             </SelectTrigger>
                                             <SelectContent>
                                                 {getValidSthanTypes(primaryAvatar, sthanTypes).map((st) => (

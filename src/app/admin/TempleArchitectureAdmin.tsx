@@ -5,9 +5,9 @@ import AdminLayout from "@/shared/components/admin/AdminLayout";
 import { SthanaIdentifier } from "@/shared/components/admin/SthanaIdentifier";
 
 import { v4 as uuidv4 } from "uuid";
-import { Hotspot, Leela, GlanceItem, AbbreviationItem, CustomBlock, DescriptionSection, SthanDetail } from "@/types";
+import { Hotspot, Leela, GlanceItem, AbbreviationItem, CustomBlock, DescriptionSection, SthanDetail, MultilingualString } from "@/types";
 import * as LucideIcons from "lucide-react";
-import { X, Save, Trash2, Upload, ArrowLeft, ZoomIn, ZoomOut, ChevronLeft, ChevronRight, Plus, ChevronDown, Image as ImageIcon, Info, MousePointer2, ExternalLink, FileText, Search, ArrowUp, ArrowDown, Check, Database, MapPin } from "lucide-react";
+import { X, Save, Trash2, Upload, ArrowLeft, ZoomIn, ZoomOut, ChevronLeft, ChevronRight, Plus, ChevronDown, Image as ImageIcon, Info, MousePointer2, ExternalLink, FileText, Search, ArrowUp, ArrowDown, Check, Database, MapPin, Loader2, RefreshCw, Globe } from "lucide-react";
 import { Button } from "@/shared/components/ui/button";
 import { Input } from "@/shared/components/ui/input";
 import { Textarea } from "@/shared/components/ui/textarea";
@@ -22,6 +22,11 @@ import {
   DialogFooter,
   DialogDescription,
 } from "@/shared/components/ui/dialog";
+import { Tabs, TabsList, TabsTrigger } from "@/shared/components/ui/tabs";
+import { Languages, Wand2 } from "lucide-react";
+import { ensureMultilingual } from "@/shared/services/translationService";
+import { autoTranslateMultilingual } from "@/shared/services/autoTranslate";
+import { getTranslatedValue } from "@/shared/utils/translationUtils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/components/ui/card";
 import { Badge } from "@/shared/components/ui/badge";
 import {
@@ -76,7 +81,7 @@ const CUSTOM_ICONS = [
   { name: "Route Path", path: "/icons/glance/route_path.svg" },
   { name: "Parivaar", path: "/icons/glance/parivaar.svg" },
   { name: "Aasan Sthan", path: "/icons/glance/Aasan Sthan.svg" },
-  { name: "Sthaan", path: "/icons/glance/sthaan.svg" },
+  { name: "Sthan", path: "/icons/glance/sthan.svg" },
 ];
 
 interface HotspotMarkerProps {
@@ -224,7 +229,8 @@ export default function TempleArchitectureAdmin({
   const { user } = useAuth();
   const imageRef = useRef<HTMLImageElement>(null);
 
-  const [templeName, setTempleName] = useState("");
+  const [activeLang, setActiveLang] = useState<'en' | 'hi' | 'mr'>('en');
+  const [templeName, setTempleName] = useState<MultilingualString>({ en: "", hi: "", mr: "" });
   const [viewType, setViewType] = useState<'architectural' | 'present'>('architectural');
   const [archImages, setArchImages] = useState<string[]>([]);
   const [archImagesFitMode, setArchImagesFitMode] = useState<'cover' | 'contain'>('contain');
@@ -236,28 +242,28 @@ export default function TempleArchitectureAdmin({
   const [presentHotspots, setPresentHotspots] = useState<Hotspot[]>([]);
 
   // New Temple Metadata & Sections
-  const [todaysName, setTodaysName] = useState("");
-  const [todaysNameTitle, setTodaysNameTitle] = useState("");
-  const [address, setAddress] = useState("");
-  const [taluka, setTaluka] = useState("");
-  const [district, setDistrict] = useState("");
-  const [directions_text, setDirectionsText] = useState("");
+  const [todaysName, setTodaysName] = useState<MultilingualString>({ en: "", hi: "", mr: "" });
+  const [todaysNameTitle, setTodaysNameTitle] = useState<MultilingualString>({ en: "", hi: "", mr: "" });
+  const [address, setAddress] = useState<MultilingualString>({ en: "", hi: "", mr: "" });
+  const [taluka, setTaluka] = useState<MultilingualString>({ en: "", hi: "" , mr: "" });
+  const [district, setDistrict] = useState<MultilingualString>({ en: "", hi: "", mr: "" });
+  const [directions_text, setDirectionsText] = useState<MultilingualString>({ en: "", hi: "", mr: "" });
   const [locationLink, setLocationLink] = useState("");
   const [latitude, setLatitude] = useState("");
   const [longitude, setLongitude] = useState("");
-  const [description_title, setDescriptionTitle] = useState("Sthan At Glance");
-  const [description_text, setDescriptionText] = useState("");
-  const [sthana_info_title, setSthanaInfoTitle] = useState("Sthan Description");
-  const [sthana_info_text, setSthanaInfoText] = useState("");
-  const [descriptionSections, setDescriptionSections] = useState<{ id: string, title: string, content: string }[]>([]);
+  const [description_title, setDescriptionTitle] = useState<MultilingualString>({ en: "Sthan At Glance", hi: "एक नज़र में स्थान", mr: "एका दृष्टीक्षेपात स्थान" });
+  const [description_text, setDescriptionText] = useState<MultilingualString>({ en: "", hi: "", mr: "" });
+  const [sthana_info_title, setSthanaInfoTitle] = useState<MultilingualString>({ en: "Sthan Description", hi: "स्थान विवरण", mr: "स्थान वर्णन" });
+  const [sthana_info_text, setSthanaInfoText] = useState<MultilingualString>({ en: "", hi: "", mr: "" });
+  const [descriptionSections, setDescriptionSections] = useState<DescriptionSection[]>([]);
   const [glanceItems, setGlanceItems] = useState<GlanceItem[]>([]);
   const [abbreviationItems, setAbbreviationItems] = useState<AbbreviationItem[]>([]);
   const [customBlocks, setCustomBlocks] = useState<CustomBlock[]>([]);
-  const [architectureDescription, setArchitectureDescription] = useState("");
-  const [contactDetails, setContactDetails] = useState("");
+  const [architectureDescription, setArchitectureDescription] = useState<MultilingualString>({ en: "", hi: "", mr: "" });
+  const [contactDetails, setContactDetails] = useState<MultilingualString>({ en: "", hi: "", mr: "" });
   const [contactName, setContactName] = useState("");
   const [contactNumber, setContactNumber] = useState("");
-  const [sthan, setSthan] = useState("");
+  const [sthan, setSthan] = useState<MultilingualString>({ en: "", hi: "", mr: "" });
   const [sthanTypeId, setSthanTypeId] = useState("");
   const [sthanTypes, setSthanTypes] = useState<SthanType[]>([]);
   const [primaryAvatar, setPrimaryAvatar] = useState("");
@@ -270,13 +276,16 @@ export default function TempleArchitectureAdmin({
   const [originalTempleData, setOriginalTempleData] = useState<any>(null);
   const [hasArchitecture, setHasArchitecture] = useState(false);
   const [globalLeelas, setGlobalLeelas] = useState<Leela[]>([]);
-  const [globalPothiDescription, setGlobalPothiDescription] = useState("");
+  const [globalPothiDescription, setGlobalPothiDescription] = useState<MultilingualString>({ en: "", hi: "", mr: "" });
+  const [globalPothiTitle, setGlobalPothiTitle] = useState<MultilingualString>({ en: "", hi: "", mr: "" });
   const [details, setDetails] = useState<SthanDetail[]>([]);
 
   const [repositioningId, setRepositioningId] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [zoom, setZoom] = useState(1);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [isTranslating, setIsTranslating] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [adminImageIndex, setAdminImageIndex] = useState(0);
   const [currentStep, setCurrentStepInternal] = useState<'sthan-info' | 'architecture-view' | 'sthana-details'>(initialStep || 'sthan-info');
 
@@ -297,9 +306,63 @@ export default function TempleArchitectureAdmin({
   const [editingTitleId, setEditingTitleId] = useState<string | null>(null);
   const [editingTitleValue, setEditingTitleValue] = useState("");
 
+  const handleAutoTranslateAll = async () => {
+    if (!templeName.en) {
+      toast({
+        title: "Missing Primary Content",
+        description: "Please enter at least the English Temple Name to begin translation.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      setIsTranslating(true);
+      toast({
+        title: "Google Translation Started",
+        description: "Translating English content to Hindi and Marathi. This may take a moment...",
+      });
+
+      // 1. Core Temple Fields
+      const fieldsToTranslate = [
+        { current: templeName, setter: setTempleName, label: "Temple Name" },
+        { current: address, setter: setAddress, label: "Address" },
+        { current: description_title, setter: setDescriptionTitle, label: "Sthan At Glance Title" },
+        { current: sthana_info_title, setter: setSthanaInfoTitle, label: "Detailed Narrative Title" },
+        { current: sthana_info_text, setter: setSthanaInfoText, label: "Detailed Narrative Content" },
+        { current: directions_text, setter: setDirectionsText, label: "Directions" },
+        { current: architectureDescription, setter: setArchitectureDescription, label: "Architecture Description" },
+      ];
+
+      for (const field of fieldsToTranslate) {
+        if (field.current.en) {
+          const translated = await autoTranslateMultilingual(field.current.en);
+          field.setter(translated);
+        }
+      }
+
+      toast({
+        title: "Translation Complete",
+        description: "All primary temple information has been localized using Google Cloud.",
+      });
+
+    } catch (error) {
+      console.error("[Admin] Batch translation failed:", error);
+      toast({
+        title: "Translation Error",
+        description: "An error occurred during batch translation. Please check your network or API key.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsTranslating(false);
+    }
+  };
+
   const updateHotspotTitle = async (hotspotId: string, newTitle: string) => {
     // 1. Update Hotspot Array
-    const updatedHotspots = archHotspots.map(h => h.id === hotspotId ? { ...h, title: newTitle } : h);
+    const updatedHotspots = archHotspots.map(h => 
+      h.id === hotspotId ? { ...h, title: { ...h.title, [activeLang]: newTitle } } : h
+    );
     setArchHotspots(updatedHotspots);
     setEditingTitleId(null);
 
@@ -309,15 +372,19 @@ export default function TempleArchitectureAdmin({
     
     if (existingDetailIndex >= 0) {
       // Update existing title
-      updatedDetails[existingDetailIndex] = { ...updatedDetails[existingDetailIndex], title: newTitle };
+      updatedDetails[existingDetailIndex] = { 
+        ...updatedDetails[existingDetailIndex], 
+        title: { ...updatedDetails[existingDetailIndex].title, [activeLang]: newTitle } 
+      };
     } else {
       // Create new linked detail automatically
       updatedDetails.push({
         id: uuidv4(),
         hotspotId: hotspotId,
-        title: newTitle,
-        description: "",
+        title: { en: activeLang === 'en' ? newTitle : "", hi: activeLang === 'hi' ? newTitle : "", mr: activeLang === 'mr' ? newTitle : "" },
+        description: { en: "", hi: "", mr: "" },
         images: [],
+        leelas: [],
         type: 'structure'
       } as SthanDetail);
     }
@@ -398,7 +465,7 @@ export default function TempleArchitectureAdmin({
 
         // 3. Populate State
         if (data) {
-          setTempleName(data.name || "Unknown Temple");
+          setTempleName(ensureMultilingual(data.name));
           setArchImages(data.architectureImages || []);
           setArchImagesFitMode(data.architectureImagesFitMode || 'contain');
           setPresentImages(data.presentImages || []);
@@ -407,28 +474,42 @@ export default function TempleArchitectureAdmin({
           setSthanImagesFitMode(data.sthanImagesFitMode || 'contain');
           setArchHotspots(data.hotspots || []);
 
-          setTodaysName(data.todaysName || "");
-          setTodaysNameTitle(data.todaysNameTitle || "");
-          setAddress(data.address || "");
-          setTaluka(data.taluka || "");
-          setDistrict(data.district || "");
-          setDirectionsText(data.directions_text || data.wayToReach || "");
+          setTodaysName(ensureMultilingual(data.todaysName));
+          setTodaysNameTitle(ensureMultilingual(data.todaysNameTitle));
+          setAddress(ensureMultilingual(data.address));
+          setTaluka(ensureMultilingual(data.taluka));
+          setDistrict(ensureMultilingual(data.district));
+          setDirectionsText(ensureMultilingual(data.directions_text || data.wayToReach));
           setLocationLink(data.locationLink || "");
           setLatitude(data.latitude || "");
           setLongitude(data.longitude || "");
-          setDescriptionTitle(data.description_title || "Sthan At Glance");
-          setDescriptionText(data.description_text || data.description || "");
-          setSthanaInfoTitle(data.sthana_info_title || "Sthan Description");
-          setSthanaInfoText(data.sthana_info_text || data.sthana || "");
-          setDescriptionSections(data.descriptionSections || []);
-          setGlanceItems(data.glanceItems || []);
-          setAbbreviationItems(data.abbreviationItems || []);
-          setCustomBlocks(data.customBlocks || []);
-          setArchitectureDescription(data.architectureDescription || "");
-          setContactDetails(data.contactDetails || "");
+          setDescriptionTitle(ensureMultilingual(data.description_title || "Sthan At Glance"));
+          setDescriptionText(ensureMultilingual(data.description_text || data.description));
+          setSthanaInfoTitle(ensureMultilingual(data.sthana_info_title || "Sthan Description"));
+          setSthanaInfoText(ensureMultilingual(data.sthana_info_text || data.sthana));
+          setDescriptionSections((data.descriptionSections || []).map((s: any) => ({
+            ...s,
+            title: ensureMultilingual(s.title),
+            content: ensureMultilingual(s.content)
+          })));
+          setGlanceItems((data.glanceItems || []).map((g: any) => ({
+            ...g,
+            description: ensureMultilingual(g.description)
+          })));
+          setAbbreviationItems((data.abbreviationItems || []).map((a: any) => ({
+            ...a,
+            description: ensureMultilingual(a.description)
+          })));
+          setCustomBlocks((data.customBlocks || []).map((b: any) => ({
+            ...b,
+            title: ensureMultilingual(b.title),
+            content: ensureMultilingual(b.content)
+          })));
+          setArchitectureDescription(ensureMultilingual(data.architectureDescription));
+          setContactDetails(ensureMultilingual(data.contactDetails));
           setContactName(data.contactName || "");
           setContactNumber(data.contactNumber || "");
-          setSthan(data.sthanType || data.sthan || "");
+          setSthan(ensureMultilingual(data.sthanType || data.sthan));
           setSthanTypeId(data.sthanTypeId || "");
           setPrimaryAvatar(data.primaryAvatar || data.avatarSambandh || "");
           setPrimarySubtype(data.primarySubtype || data.avatarSubTypes || (data.avatarSubdivision ? [data.avatarSubdivision] : []));
@@ -453,7 +534,8 @@ export default function TempleArchitectureAdmin({
             ? data.hasArchitecture
             : (data.isStandalone !== undefined ? !data.isStandalone : (data.architectureImages && data.architectureImages.length > 0)));
           setGlobalLeelas(data.leelas || []);
-          setGlobalPothiDescription(data.sthanPothiDescription || "");
+          setGlobalPothiDescription(ensureMultilingual(data.sthanPothiDescription));
+          setGlobalPothiTitle(ensureMultilingual(data.sthanPothiTitle));
 
           // ── Migration / Sync Logic ──
           let masterDetails = data.details || [];
@@ -462,13 +544,13 @@ export default function TempleArchitectureAdmin({
           if (masterDetails.length === 0 && data.hotspots && data.hotspots.length > 0) {
             masterDetails = data.hotspots.map((h: any) => ({
               id: h.id,
-              title: h.title || `Sacred Point #${h.number}`,
-              description: h.description || "",
+              title: ensureMultilingual(h.title || `Sacred Point #${h.number}`),
+              description: ensureMultilingual(h.description),
               images: h.images || [],
               leelas: h.leelas || [],
-              sthanPothiDescription: h.sthanPothiDescription || "",
-              sthanPothiTitle: h.sthanPothiTitle || "",
-              generalDescriptionTitle: h.generalDescriptionTitle || "",
+              sthanPothiDescription: ensureMultilingual(h.sthanPothiDescription),
+              sthanPothiTitle: ensureMultilingual(h.sthanPothiTitle),
+              generalDescriptionTitle: ensureMultilingual(h.generalDescriptionTitle),
               hotspotId: h.id, // Link to self for existing hotspots
               type: h.type || 'Structure'
             }));
@@ -551,8 +633,8 @@ export default function TempleArchitectureAdmin({
       x,
       y,
       imageIndex: adminImageIndex,
-      title: "",
-      description: "", // Required by Hotspot type
+      title: { en: "", hi: "", mr: "" },
+      description: { en: "", hi: "", mr: "" }, // Required by Hotspot type
       images: [],      // Required by Hotspot type
       number: archHotspots.length + 1,
       isPresent: false,
@@ -758,8 +840,8 @@ export default function TempleArchitectureAdmin({
   const addDescriptionSection = () => {
     const newSection: DescriptionSection = { 
       id: uuidv4(), 
-      title: "", 
-      content: "", 
+      title: { en: "", hi: "", mr: "" }, 
+      content: { en: "", hi: "", mr: "" }, 
       page_type: 'page1',
       order: descriptionSections.length 
     };
@@ -767,7 +849,7 @@ export default function TempleArchitectureAdmin({
   };
 
   const updateDescriptionSection = (sId: string, field: 'title' | 'content', value: string) => {
-    setDescriptionSections(descriptionSections.map(s => s.id === sId ? { ...s, [field]: value } : s));
+    setDescriptionSections(descriptionSections.map(s => s.id === sId ? { ...s, [field]: { ...s[field], [activeLang]: value } } : s));
   };
 
   const removeDescriptionSection = (sId: string) => {
@@ -775,12 +857,16 @@ export default function TempleArchitectureAdmin({
   };
 
   const addGlanceItem = () => {
-    const newItem: GlanceItem = { id: uuidv4(), icon: CUSTOM_ICONS[0].path, description: "" };
+    const newItem: GlanceItem = { id: uuidv4(), icon: CUSTOM_ICONS[0].path, description: { en: "", hi: "", mr: "" } };
     setGlanceItems([...glanceItems, newItem]);
   };
 
   const updateGlanceItem = (gId: string, field: 'icon' | 'description', value: string) => {
-    setGlanceItems(glanceItems.map(g => g.id === gId ? { ...g, [field]: value } : g));
+    if (field === 'icon') {
+        setGlanceItems(glanceItems.map(g => g.id === gId ? { ...g, icon: value } : g));
+    } else {
+        setGlanceItems(glanceItems.map(g => g.id === gId ? { ...g, description: { ...g.description, [activeLang]: value } } : g));
+    }
   };
 
   const removeGlanceItem = (gId: string) => {
@@ -790,18 +876,16 @@ export default function TempleArchitectureAdmin({
   const addCustomBlock = () => {
     const newBlock: CustomBlock = { 
       id: uuidv4(), 
-      title: "", 
-      content: "", 
+      title: { en: "", hi: "", mr: "" }, 
+      content: { en: "", hi: "", mr: "" }, 
       page_type: 'page2',
       order: customBlocks.length
     };
     setCustomBlocks([...customBlocks, newBlock]);
   };
 
-  const updateCustomBlock = (id: string, field: 'title' | 'content', value: string) => {
-    setCustomBlocks(customBlocks.map(block =>
-      block.id === id ? { ...block, [field]: value } : block
-    ));
+  const updateCustomBlock = (bId: string, field: 'title' | 'content', value: string) => {
+    setCustomBlocks(customBlocks.map(b => b.id === bId ? { ...b, [field]: { ...b[field], [activeLang]: value } } : b));
   };
 
   const removeCustomBlock = (id: string) => {
@@ -825,12 +909,16 @@ export default function TempleArchitectureAdmin({
   };
 
   const addAbbreviationItem = () => {
-    const newItem: AbbreviationItem = { id: uuidv4(), icon: CUSTOM_ICONS[0].path, description: "" };
+    const newItem: AbbreviationItem = { id: uuidv4(), icon: CUSTOM_ICONS[0].path, description: { en: "", hi: "", mr: "" } };
     setAbbreviationItems([...abbreviationItems, newItem]);
   };
 
   const updateAbbreviationItem = (gId: string, field: 'icon' | 'description', value: string) => {
-    setAbbreviationItems(abbreviationItems.map(g => g.id === gId ? { ...g, [field]: value } : g));
+    if (field === 'icon') {
+        setAbbreviationItems(abbreviationItems.map(g => g.id === gId ? { ...g, icon: value } : g));
+    } else {
+        setAbbreviationItems(abbreviationItems.map(g => g.id === gId ? { ...g, description: { ...g.description, [activeLang]: value } } : g));
+    }
   };
 
   const removeAbbreviationItem = (gId: string) => {
@@ -1188,7 +1276,11 @@ export default function TempleArchitectureAdmin({
 
   const addLeela = () => {
     if (!selectedHotspot) return;
-    const newLeela: Leela = { id: uuidv4(), description: "" };
+    const newLeela: Leela = { 
+      id: uuidv4(), 
+      title: { en: "", hi: "", mr: "" },
+      description: { en: "", hi: "", mr: "" } 
+    };
     setSelectedHotspot({
       ...selectedHotspot,
       leelas: (Array.isArray(selectedHotspot.leelas)
@@ -1202,7 +1294,7 @@ export default function TempleArchitectureAdmin({
     setSelectedHotspot({
       ...selectedHotspot,
       leelas: (selectedHotspot.leelas as any[]).map((l: any) =>
-        typeof l === 'string' ? l : (l.id === id ? { ...l, description } : l)
+        typeof l === 'string' ? l : (l.id === id ? { ...l, description: { ...l.description, [activeLang]: description } } : l)
       ) as Leela[]
     });
   };
@@ -1220,8 +1312,8 @@ export default function TempleArchitectureAdmin({
   const addDetail = () => {
     const newDetail: SthanDetail = {
       id: uuidv4(),
-      title: "",
-      description: "",
+      title: { en: "", hi: "", mr: "" },
+      description: { en: "", hi: "", mr: "" },
       images: [],
       leelas: [],
       type: 'Structure',
@@ -1284,7 +1376,7 @@ export default function TempleArchitectureAdmin({
                   <ArrowLeft className="w-4 h-4 text-slate-400 group-hover:text-blue-600 group-hover:-translate-x-0.5 transition-all" />
                 </Button>
                 <div className="space-y-0.5">
-                  <p className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-400">Panchajanya Admin</p>
+                  <p className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-400">Panchjanya Admin</p>
                   <h1 className="text-sm font-black text-slate-900 uppercase tracking-tight">Manage Architecture</h1>
                 </div>
               </div>
@@ -1308,10 +1400,6 @@ export default function TempleArchitectureAdmin({
                     );
                   })}
                 </div>
-                <div className="w-px h-6 bg-slate-100" />
-                <Button onClick={saveTempleDetails} size="sm" className="bg-slate-900 text-white hover:bg-blue-600 rounded-xl px-6 h-10 text-[10px] font-black uppercase tracking-widest transition-all duration-500 shadow-xl shadow-slate-900/10">
-                  <Save className="w-3.5 h-3.5 mr-2" /> Save All
-                </Button>
               </div>
             </div>
             
@@ -1328,165 +1416,105 @@ export default function TempleArchitectureAdmin({
         )}
 
         <div className={cn("max-w-7xl mx-auto w-full px-8 lg:px-12 py-10 pb-32", isEmbedded && "max-w-none px-0 pt-0")}>
+            {/* Page Header Row (Sticky) */}
+            <div className="sticky top-0 z-40 w-full bg-white border-b border-slate-200 shadow-sm -mx-8 lg:-mx-12 px-8 lg:px-12 py-3 mb-10">
+              <div className="max-w-5xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+                {/* Left side: Language switcher + Auto-Translate button */}
+                <div className="flex flex-wrap items-center gap-4">
+                  <div className="flex items-center gap-3 pr-4 border-r border-slate-100 hidden sm:flex">
+                    <div className="p-1.5 bg-blue-50 rounded-lg">
+                      <Languages className="w-4 h-4 text-blue-600" />
+                    </div>
+                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Content Language</span>
+                  </div>
+
+                  <Tabs value={activeLang} onValueChange={(v) => setActiveLang(v as any)} className="w-fit">
+                    <TabsList className="bg-slate-100 p-1 h-10 rounded-xl border border-slate-200">
+                      <TabsTrigger value="en" className="rounded-lg px-4 text-[11px] font-bold data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-sm transition-all">English</TabsTrigger>
+                      <TabsTrigger value="hi" className="rounded-lg px-4 text-[11px] font-bold data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-sm transition-all">हिंदी</TabsTrigger>
+                      <TabsTrigger value="mr" className="rounded-lg px-4 text-[11px] font-bold data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-sm transition-all">मराठी</TabsTrigger>
+                    </TabsList>
+                  </Tabs>
+
+                  <Button 
+                    onClick={handleAutoTranslateAll}
+                    disabled={isTranslating}
+                    variant="outline"
+                    className="h-10 rounded-xl border-blue-200 text-blue-700 hover:bg-blue-50 font-bold px-4 gap-2 transition-all"
+                  >
+                    {isTranslating ? (
+                      <>
+                        <RefreshCw className="w-4 h-4 animate-spin" />
+                        Translating...
+                      </>
+                    ) : (
+                      <>
+                        <Globe className="w-4 h-4" />
+                        Auto-Translate (Google)
+                      </>
+                    )}
+                  </Button>
+                </div>
+
+                {/* Right side: Primary Save Changes button */}
+                <Button 
+                  onClick={saveTempleDetails} 
+                  className="bg-blue-900 text-white hover:bg-black rounded-xl px-8 h-11 font-black text-[11px] uppercase tracking-widest shadow-xl shadow-blue-900/20 transition-all flex items-center gap-3 shrink-0"
+                >
+                  <Save className="w-4 h-4" />
+                  Save Changes
+                </Button>
+              </div>
+            </div>
 
         {/* Step 1: Sthan Info */}
         {currentStep === 'sthan-info' && (
-          <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 pb-32">
-            <div className="flex flex-col gap-6 mb-10">
-              <div className="flex items-center justify-between">
-                <div className="space-y-1">
-                  <h1 className="text-3xl font-serif font-bold text-primary tracking-tight">Temple Configuration</h1>
-                  <p className="text-sm text-slate-500 font-medium">Configure primary metadata and descriptive content blocks.</p>
-                </div>
-                <Button onClick={saveTempleDetails} className="bg-blue-900 text-white hover:bg-blue-800 rounded-xl px-8 h-12 shadow-lg shadow-blue-900/20">
-                  <Save className="w-4 h-4 mr-2" /> Save Changes
-                </Button>
-              </div>
+          <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 space-y-10 max-w-5xl mx-auto pb-32">
 
-              {/* ── Basic Information (Step 1 Entry) ── */}
-              <Card className="border-slate-200 shadow-sm rounded-3xl overflow-hidden mb-8">
-                <CardHeader className="bg-slate-50 border-b border-slate-100 pb-3">
-                  <div className="flex items-center gap-2">
-                    <Database className="w-5 h-5 text-blue-600" />
-                    <CardTitle className="text-lg font-bold text-slate-900">Basic Information</CardTitle>
-                  </div>
-                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest leading-relaxed mt-2">
-                    Core identification and geographic metadata for this Sthana.
-                  </p>
-                </CardHeader>
-                <CardContent className="p-8 space-y-8">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <div className="space-y-2">
-                      <Label className="text-xs font-black uppercase tracking-widest text-slate-400 pl-1">Sthan Name</Label>
-                      <Input 
-                        value={templeName} 
-                        onChange={e => setTempleName(e.target.value)} 
-                        placeholder="Principal historical name..."
-                        className="h-14 bg-white border-2 border-slate-100 hover:border-slate-200 rounded-[1.25rem] px-6 font-bold text-slate-700 transition-all shadow-sm"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label className="text-xs font-black uppercase tracking-widest text-slate-400 pl-1">Modern Name (Vartman)</Label>
-                      <div className="flex gap-2">
-                        <Input 
-                          value={todaysNameTitle} 
-                          onChange={e => setTodaysNameTitle(e.target.value)} 
-                          placeholder="e.g. Aaj" 
-                          className="h-14 w-24 bg-white border-2 border-slate-100 hover:border-slate-200 rounded-[1.25rem] px-4 font-bold text-slate-700 transition-all shadow-sm"
-                        />
-                        <Input 
-                          value={todaysName} 
-                          onChange={e => setTodaysName(e.target.value)} 
-                          placeholder="Current name..." 
-                          className="h-14 flex-1 bg-white border-2 border-slate-100 hover:border-slate-200 rounded-[1.25rem] px-6 font-bold text-slate-700 transition-all shadow-sm"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <div className="space-y-2">
-                      <Label className="text-xs font-black uppercase tracking-widest text-slate-400 pl-1">District</Label>
-                      <Input 
-                        value={district} 
-                        onChange={e => setDistrict(e.target.value)} 
-                        className="h-14 bg-white border-2 border-slate-100 hover:border-slate-200 rounded-[1.25rem] px-6 font-bold text-slate-700 transition-all shadow-sm"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label className="text-xs font-black uppercase tracking-widest text-slate-400 pl-1">Taluka / Village</Label>
-                      <Input 
-                        value={taluka} 
-                        onChange={e => setTaluka(e.target.value)} 
-                        className="h-14 bg-white border-2 border-slate-100 hover:border-slate-200 rounded-[1.25rem] px-6 font-bold text-slate-700 transition-all shadow-sm"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-8 pt-4">
-                    <div className="space-y-2">
-                      <Label className="text-xs font-black uppercase tracking-widest text-slate-400 pl-1 flex items-center gap-2">
-                        <MapPin className="w-3 h-3" /> Latitude
-                      </Label>
-                      <Input 
-                        value={latitude} 
-                        onChange={e => setLatitude(e.target.value)} 
-                        type="number"
-                        step="any"
-                        className="h-14 bg-slate-50 border-2 border-slate-100 hover:border-blue-100 rounded-[1.25rem] px-6 font-bold text-slate-700 transition-all"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label className="text-xs font-black uppercase tracking-widest text-slate-400 pl-1 flex items-center gap-2">
-                        <MapPin className="w-3 h-3" /> Longitude
-                      </Label>
-                      <Input 
-                        value={longitude} 
-                        onChange={e => setLongitude(e.target.value)} 
-                        type="number"
-                        step="any"
-                        className="h-14 bg-slate-50 border-2 border-slate-100 hover:border-blue-100 rounded-[1.25rem] px-6 font-bold text-slate-700 transition-all"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label className="text-xs font-black uppercase tracking-widest text-slate-400 pl-1">External Maps Link</Label>
-                      <Input 
-                        value={locationLink} 
-                        onChange={e => setLocationLink(e.target.value)} 
-                        placeholder="https://goo.gl/maps/..."
-                        className="h-14 bg-white border-2 border-slate-100 hover:border-slate-200 rounded-[1.25rem] px-6 font-bold text-slate-700 transition-all shadow-sm"
-                      />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-
-            </div>
-
-            <div className="space-y-12">
-              {/* 1. Primary Identity */}
+            <div className="grid grid-cols-1 gap-12 pt-4">
+              {/* 1. Essential Identity */}
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
                 <div>
-                  <h2 className="text-xl font-bold text-slate-900">Primary Identity</h2>
+                  <h2 className="text-xl font-bold text-slate-900">Essential Identity</h2>
                   <p className="mt-2 text-sm leading-relaxed text-slate-500 font-medium">
-                    This information appears in the main header and site-wide navigation.
+                    Basic information that identifies this sacred location on the platform.
                   </p>
                 </div>
                 <div className="lg:col-span-2 space-y-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
-                      <Label className="text-sm font-semibold text-slate-700">Sthan Name</Label>
+                      <Label className="text-sm font-semibold text-slate-700">Temple Name * ({activeLang.toUpperCase()})</Label>
                       <Input
-                        value={templeName}
-                        onChange={(e) => setTempleName(e.target.value)}
-                        placeholder="e.g. Shri Panchasara Parshvanath"
-                        className="h-12 rounded-xl border-slate-200 focus:border-blue-500 focus:ring-blue-500"
+                        value={templeName[activeLang]}
+                        onChange={(e) => setTempleName({ ...templeName, [activeLang]: e.target.value })}
+                        placeholder="e.g. Shri Chakradhar Swami Temple"
+                        className="h-12 rounded-xl border-slate-200 focus:border-blue-500 focus:ring-blue-500 font-medium"
+                        required
                       />
                     </div>
                     <div className="space-y-2">
                       <div className="flex items-center gap-2">
                         <Input
-                          value={todaysNameTitle}
-                          onChange={(e) => setTodaysNameTitle(e.target.value)}
+                          value={todaysNameTitle[activeLang]}
+                          onChange={(e) => setTodaysNameTitle({ ...todaysNameTitle, [activeLang]: e.target.value })}
                           className="h-8 p-0 px-2 w-fit min-w-[120px] text-sm font-semibold text-slate-700 border-transparent hover:border-slate-200 focus:border-blue-500 rounded-md transition-all"
                           placeholder="Label Name"
                         />
                         <span className="text-slate-400 font-normal text-sm">(Optional)</span>
                       </div>
                       <Input
-                        value={todaysName}
-                        onChange={(e) => setTodaysName(e.target.value)}
+                        value={todaysName[activeLang]}
+                        onChange={(e) => setTodaysName({ ...todaysName, [activeLang]: e.target.value })}
                         placeholder="e.g. Patan, Gujarat"
                         className="h-12 rounded-xl border-slate-200 focus:border-blue-500 focus:ring-blue-500"
                       />
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-sm font-semibold text-slate-700">Address</Label>
+                    <Label className="text-sm font-semibold text-slate-700">Address ({activeLang.toUpperCase()})</Label>
                     <Textarea
-                      value={address}
-                      onChange={(e) => setAddress(e.target.value)}
+                      value={address[activeLang]}
+                      onChange={(e) => setAddress({ ...address, [activeLang]: e.target.value })}
                       placeholder="Enter the complete address..."
                       rows={3}
                       className="rounded-xl border-slate-200 focus:border-blue-500 focus:ring-blue-500"
@@ -1494,19 +1522,19 @@ export default function TempleArchitectureAdmin({
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
-                      <Label className="text-sm font-semibold text-slate-700">Taluka</Label>
+                      <Label className="text-sm font-semibold text-slate-700">Taluka ({activeLang.toUpperCase()})</Label>
                       <Input
-                        value={taluka}
-                        onChange={(e) => setTaluka(e.target.value)}
+                        value={taluka[activeLang]}
+                        onChange={(e) => setTaluka({ ...taluka, [activeLang]: e.target.value })}
                         placeholder="e.g. Sidhpur"
                         className="h-12 rounded-xl border-slate-200 focus:border-blue-500 focus:ring-blue-500"
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label className="text-sm font-semibold text-slate-700">District</Label>
+                      <Label className="text-sm font-semibold text-slate-700">District ({activeLang.toUpperCase()})</Label>
                       <Input
-                        value={district}
-                        onChange={(e) => setDistrict(e.target.value)}
+                        value={district[activeLang]}
+                        onChange={(e) => setDistrict({ ...district, [activeLang]: e.target.value })}
                         placeholder="e.g. Patan"
                         className="h-12 rounded-xl border-slate-200 focus:border-blue-500 focus:ring-blue-500"
                       />
@@ -1579,17 +1607,17 @@ export default function TempleArchitectureAdmin({
                     <div className="space-y-2">
                       <Label className="text-sm font-semibold text-slate-700">Sthan Type *</Label>
                       <Select
-                        value={sthanTypeId || sthan}
+                        value={sthanTypeId || (typeof sthan === 'object' ? (sthan[activeLang] || "") : (sthan || ""))}
                         onValueChange={(v) => {
                           const typeObj = sthanTypes.find(t => t.id === v || t.name === v);
                           if (typeObj) {
-                            setSthan(typeObj.name);
+                            setSthan(ensureMultilingual(typeObj.name));
                             setSthanTypeId(typeObj.id);
                             if (typeObj.pinType) {
                               setPinIcon(typeObj.pinType);
                             }
                           } else {
-                            setSthan(v);
+                            setSthan({ ...sthan, [activeLang]: v });
                             setSthanTypeId("");
                           }
                         }}
@@ -1609,10 +1637,10 @@ export default function TempleArchitectureAdmin({
                               </div>
                             </SelectItem>
                           ))}
-                          {sthan && !sthanTypeId && !getValidSthanTypes(primaryAvatar, sthanTypes).some(t => t.name === sthan) && (
-                            <SelectItem value={sthan}>
+                          {sthan && !sthanTypeId && !getValidSthanTypes(primaryAvatar, sthanTypes).some(t => t.name === (typeof sthan === 'object' ? sthan[activeLang] : sthan)) && (
+                            <SelectItem value={typeof sthan === 'object' ? sthan[activeLang] : sthan || ""}>
                               <div className="flex items-center gap-2">
-                                <span>{sthan}</span>
+                                <span>{typeof sthan === 'object' ? sthan[activeLang] : sthan}</span>
                               </div>
                             </SelectItem>
                           )}
@@ -1642,10 +1670,10 @@ export default function TempleArchitectureAdmin({
                 </div>
                 <div className="lg:col-span-2 space-y-6">
                   <div className="space-y-2">
-                    <Label className="text-sm font-semibold text-slate-700">Detailed Directions</Label>
+                    <Label className="text-sm font-semibold text-slate-700">Detailed Directions ({activeLang.toUpperCase()})</Label>
                     <RichTextEditor
-                      value={directions_text}
-                      onChange={setDirectionsText}
+                      value={directions_text[activeLang]}
+                      onChange={(val) => setDirectionsText({ ...directions_text, [activeLang]: val })}
                     />
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -1671,8 +1699,8 @@ export default function TempleArchitectureAdmin({
                   <div className="space-y-2">
                     <Label className="text-sm font-semibold text-slate-700">Note <span className="text-slate-400 font-normal">(Optional)</span></Label>
                     <Textarea
-                      value={contactDetails}
-                      onChange={(e) => setContactDetails(e.target.value)}
+                      value={contactDetails[activeLang] || ""}
+                      onChange={(e) => setContactDetails({ ...contactDetails, [activeLang]: e.target.value })}
                       placeholder="Extra information, timings, etc..."
                       rows={2}
                       className="rounded-xl border-slate-200 focus:border-blue-500 focus:ring-blue-500"
@@ -1781,8 +1809,8 @@ export default function TempleArchitectureAdmin({
                           <div className="h-px flex-1 bg-amber-100/50" />
                         </div>
                         <Input
-                          value={description_title}
-                          onChange={(e) => setDescriptionTitle(e.target.value)}
+                          value={description_title[activeLang]}
+                          onChange={(e) => setDescriptionTitle({ ...description_title, [activeLang]: e.target.value })}
                           placeholder="Sthan At Glance"
                           className="h-12 border-none bg-white rounded-xl font-bold text-lg focus:ring-2 focus:ring-amber-200 transition-all px-4"
                         />
@@ -1835,7 +1863,7 @@ export default function TempleArchitectureAdmin({
                                               src={item.icon}
                                               className="w-4 h-4 object-contain"
                                               alt="icon"
-                                              onError={(e) => (e.currentTarget.src = "/icons/sthaan.png")}
+                                              onError={(e) => (e.currentTarget.src = "/icons/sthan.png")}
                                             />
                                           ) : (
                                             <Info className="w-4 h-4 text-amber-600" />
@@ -1889,7 +1917,7 @@ export default function TempleArchitectureAdmin({
                                 </div>
                                 <div className="md:col-span-3">
                                   <Input
-                                    value={item.description}
+                                    value={item.description[activeLang]}
                                     onChange={(e) => updateGlanceItem(item.id, 'description', e.target.value)}
                                     placeholder="Brief description..."
                                     className="h-10 rounded-xl border-amber-100 bg-white text-sm"
@@ -1922,8 +1950,8 @@ export default function TempleArchitectureAdmin({
                           <div className="h-px flex-1 bg-blue-100/50" />
                         </div>
                         <Input
-                          value={sthana_info_title}
-                          onChange={(e) => setSthanaInfoTitle(e.target.value)}
+                          value={sthana_info_title[activeLang]}
+                          onChange={(e) => setSthanaInfoTitle({ ...sthana_info_title, [activeLang]: e.target.value })}
                           placeholder="Sthan Description"
                           className="h-12 border-none bg-white rounded-xl font-bold text-lg focus:ring-2 focus:ring-blue-200 transition-all px-4"
                         />
@@ -1934,8 +1962,8 @@ export default function TempleArchitectureAdmin({
                           <div className="h-px flex-1 bg-blue-100/50" />
                         </div>
                         <RichTextEditor
-                          value={sthana_info_text}
-                          onChange={setSthanaInfoText}
+                          value={sthana_info_text[activeLang]}
+                          onChange={(val) => setSthanaInfoText({ ...sthana_info_text, [activeLang]: val })}
                           placeholder="Detailed sthan description..."
                           className="border-none"
                         />
@@ -1975,7 +2003,7 @@ export default function TempleArchitectureAdmin({
                                 <div className="h-px flex-1 bg-slate-100" />
                               </div>
                               <Input
-                                value={s.title}
+                                value={s.title[activeLang]}
                                 onChange={(e) => updateDescriptionSection(s.id, 'title', e.target.value)}
                                 placeholder="e.g. History"
                                 className="h-12 border-none bg-slate-50/80 rounded-xl font-bold text-lg focus:ring-2 focus:ring-blue-100 transition-all px-4"
@@ -1987,7 +2015,7 @@ export default function TempleArchitectureAdmin({
                                 <div className="h-px flex-1 bg-slate-100" />
                               </div>
                               <RichTextEditor
-                                value={s.content}
+                                value={s.content[activeLang]}
                                 onChange={(val) => updateDescriptionSection(s.id, 'content', val)}
                                 placeholder="Add custom content here..."
                                 className="border-none"
@@ -2083,7 +2111,7 @@ export default function TempleArchitectureAdmin({
                 </Button>
 
                 <div>
-                  <h2 className="text-2xl font-serif font-bold text-slate-800">{templeName}</h2>
+                  <h2 className="text-2xl font-serif font-bold text-slate-800">{templeName[activeLang]}</h2>
                   <p className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground/80 mt-1">Architecture Management</p>
                 </div>
               </div>
@@ -2102,9 +2130,6 @@ export default function TempleArchitectureAdmin({
                     <ZoomIn className="w-4 h-4" />
                   </Button>
                 </div>
-                <Button onClick={saveTempleDetails} className="bg-blue-900 text-white hover:bg-blue-800 rounded-xl px-6 shadow-lg">
-                  <Save className="w-4 h-4 mr-2" /> Save Changes
-                </Button>
               </div>
             </div>
 
@@ -2491,7 +2516,7 @@ export default function TempleArchitectureAdmin({
                                 />
                               ) : (
                                 <h4 className="flex-1 font-bold text-sm text-slate-900 truncate group-hover:text-primary transition-colors">
-                                  {hotspot.title || <span className="text-slate-400 italic">Untitled</span>}
+                                  {hotspot.title[activeLang] || <span className="text-slate-400 italic">Untitled</span>}
                                 </h4>
                               )}
 
@@ -2516,7 +2541,7 @@ export default function TempleArchitectureAdmin({
                                     variant="ghost" size="icon"
                                     className="h-7 w-7 text-slate-400 hover:text-primary hover:bg-primary/5"
                                     title="Edit title"
-                                    onClick={e => { e.stopPropagation(); setEditingTitleId(hotspot.id); setEditingTitleValue(hotspot.title || ''); }}
+                                    onClick={e => { e.stopPropagation(); setEditingTitleId(hotspot.id); setEditingTitleValue(hotspot.title[activeLang] || ''); }}
                                   >
                                     <LucideIcons.Pencil className="w-3.5 h-3.5" />
                                   </Button>
@@ -2580,8 +2605,8 @@ export default function TempleArchitectureAdmin({
               <CardContent className="p-6">
                 <RichTextEditor
                   placeholder="Provide a detailed architectural description of the temple complex..."
-                  value={architectureDescription}
-                  onChange={setArchitectureDescription}
+                  value={architectureDescription[activeLang]}
+                  onChange={(val) => setArchitectureDescription({ ...architectureDescription, [activeLang]: val })}
                 />
                 <p className="mt-2 text-xs text-slate-500">
                   This description will appear in the Architecture View section of the public site.
@@ -2647,13 +2672,13 @@ export default function TempleArchitectureAdmin({
 
                           <div className="flex-1 space-y-3">
                             <Input
-                              value={block.title}
+                              value={block.title[activeLang]}
                               onChange={(e) => updateCustomBlock(block.id, 'title', e.target.value)}
                               placeholder="Block Title"
                               className="font-bold rounded-xl"
                             />
                             <RichTextEditor
-                              value={block.content}
+                              value={block.content[activeLang]}
                               onChange={(val) => updateCustomBlock(block.id, 'content', val)}
                               placeholder="Block content..."
                             />
@@ -2728,9 +2753,6 @@ export default function TempleArchitectureAdmin({
                     <Button onClick={addDetail} className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl px-6">
                       <Plus className="w-4 h-4 mr-2" /> Add Sthan Detail
                     </Button>
-                    <Button onClick={saveTempleDetails} className="bg-blue-900 text-white rounded-xl px-6">
-                      <Save className="w-4 h-4 mr-2" /> Save All
-                    </Button>
                   </div>
                 </div>
 
@@ -2755,7 +2777,9 @@ export default function TempleArchitectureAdmin({
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {details
                     .filter(d => {
-                      const matchesSearch = d.title.toLowerCase().includes(searchQuery.toLowerCase()) || d.description.toLowerCase().includes(searchQuery.toLowerCase());
+                      const title = d.title[activeLang] || "";
+                      const desc = d.description[activeLang] || "";
+                      const matchesSearch = title.toLowerCase().includes(searchQuery.toLowerCase()) || desc.toLowerCase().includes(searchQuery.toLowerCase());
                       if (detailFilter === 'linked') return matchesSearch && !!d.hotspotId;
                       if (detailFilter === 'independent') return matchesSearch && !d.hotspotId;
                       return matchesSearch;
@@ -2806,7 +2830,7 @@ export default function TempleArchitectureAdmin({
                               <div className="flex items-start justify-between gap-4">
                                 <div>
                                   <h3 className="font-bold text-slate-900 text-lg group-hover:text-blue-600 transition-colors">
-                                    {detail.title || `Untitled Detail`}
+                                    {detail.title[activeLang] || `Untitled Detail`}
                                   </h3>
                                   <p className="text-xs font-black text-slate-400 uppercase tracking-widest mt-1">
                                     {detail.type || 'Structure'}
@@ -2830,7 +2854,7 @@ export default function TempleArchitectureAdmin({
                                 </Popover>
                               </div>
                               <p className="text-sm text-slate-500 line-clamp-2 leading-relaxed">
-                                {detail.description || "No description provided yet."}
+                                {detail.description[activeLang] || "No description provided yet."}
                               </p>
                               <div className="pt-4 flex items-center justify-between border-t border-slate-50">
                                 <span className={cn(
@@ -2890,7 +2914,7 @@ export default function TempleArchitectureAdmin({
                       <div className="flex items-center gap-3">
                         <p className="text-xs font-black text-slate-400 uppercase tracking-widest leading-none">Selected:</p>
                         <h2 className="text-xl font-serif font-bold text-primary truncate max-w-xs transition-all">
-                          {selectedHotspot.title || `Edit Sthan Detail`}
+                          {selectedHotspot.title[activeLang] || `Edit Sthan Detail`}
                         </h2>
                       </div>
                     </div>
@@ -2962,17 +2986,17 @@ export default function TempleArchitectureAdmin({
                                 <Label className="text-xs font-black uppercase tracking-widest text-slate-400 pl-1">Target Hotspot</Label>
                                 <div className="relative group">
                                   <LucideIcons.ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-hover:text-blue-500 transition-colors" />
-                                  <select
-                                    className="w-full h-14 bg-white border-2 border-slate-100 hover:border-blue-200 rounded-[1.25rem] px-6 appearance-none font-bold text-slate-700 focus:outline-none focus:border-blue-500 transition-all shadow-sm"
-                                    value={selectedHotspot.hotspotId || ""}
-                                    onChange={(e) => setSelectedHotspot({ ...selectedHotspot, hotspotId: e.target.value })}
-                                  >
-                                    {archHotspots.map(h => (
-                                      <option key={h.id} value={h.id}>
-                                        #{h.number} - {h.title || "Untitled Hotspot"}
-                                      </option>
-                                    ))}
-                                  </select>
+                                    <select
+                                      className="w-full h-14 bg-white border-2 border-slate-100 hover:border-blue-200 rounded-[1.25rem] px-6 appearance-none font-bold text-slate-700 focus:outline-none focus:border-blue-500 transition-all shadow-sm"
+                                      value={selectedHotspot.hotspotId || ""}
+                                      onChange={(e) => setSelectedHotspot({ ...selectedHotspot, hotspotId: e.target.value })}
+                                    >
+                                      {archHotspots.map(h => (
+                                        <option key={h.id} value={h.id}>
+                                          #{h.number} - {h.title[activeLang] || "Untitled Hotspot"}
+                                        </option>
+                                      ))}
+                                    </select>
                                 </div>
                                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2 pl-1">
                                   <Info className="w-3 h-3" /> When linked, this content will open when users click the marker #{archHotspots.find(h => h.id === selectedHotspot.hotspotId)?.number} on the map.
@@ -2998,8 +3022,8 @@ export default function TempleArchitectureAdmin({
                         <div className="space-y-2">
                           <Label className="text-xs font-black uppercase tracking-widest text-slate-400">Sthan Name</Label>
                           <Input
-                            value={selectedHotspot.title || ""}
-                            onChange={(e) => setSelectedHotspot({ ...selectedHotspot, title: e.target.value })}
+                            value={selectedHotspot.title[activeLang] || ""}
+                            onChange={(e) => setSelectedHotspot({ ...selectedHotspot, title: { ...selectedHotspot.title, [activeLang]: e.target.value } })}
                             placeholder="e.g. Garbhagriha"
                             className="h-12 rounded-2xl border-slate-200 focus:border-blue-500"
                           />
@@ -3009,8 +3033,8 @@ export default function TempleArchitectureAdmin({
                         </div>
                         <div className="space-y-2">
                           <RichTextEditor
-                            value={selectedHotspot.description}
-                            onChange={(val) => setSelectedHotspot({ ...selectedHotspot, description: val })}
+                            value={selectedHotspot.description[activeLang]}
+                            onChange={(val) => setSelectedHotspot({ ...selectedHotspot, description: { ...selectedHotspot.description, [activeLang]: val } })}
                             placeholder="Main architectural overview..."
                           />
                         </div>
@@ -3027,8 +3051,8 @@ export default function TempleArchitectureAdmin({
                         </div>
                         <div className="space-y-2">
                           <RichTextEditor
-                            value={selectedHotspot.sthanPothiDescription || ""}
-                            onChange={(val) => setSelectedHotspot({ ...selectedHotspot, sthanPothiDescription: val })}
+                            value={selectedHotspot.sthanPothiDescription[activeLang] || ""}
+                            onChange={(val) => setSelectedHotspot({ ...selectedHotspot, sthanPothiDescription: { ...selectedHotspot.sthanPothiDescription, [activeLang]: val } })}
                             placeholder="Details from scripture..."
                           />
                         </div>
@@ -3061,11 +3085,11 @@ export default function TempleArchitectureAdmin({
                                 </div>
                                 <Input
                                   placeholder="Leela Title"
-                                  value={leela.title || ""}
+                                  value={leela.title[activeLang] || ""}
                                   className="bg-white rounded-xl font-bold h-10"
                                   onChange={(e) => {
                                     const updatedLeelas = (selectedHotspot.leelas as any[]).map((l: any) =>
-                                      l.id === leela.id ? { ...l, title: e.target.value } : l
+                                      l.id === leela.id ? { ...l, title: { ...l.title, [activeLang]: e.target.value } } : l
                                     );
                                     setSelectedHotspot({ ...selectedHotspot, leelas: updatedLeelas as Leela[] });
                                   }}
@@ -3073,8 +3097,13 @@ export default function TempleArchitectureAdmin({
                               </div>
                               <RichTextEditor
                                 placeholder="Describe the divine leela..."
-                                value={leela.description}
-                                onChange={(val) => updateLeela(leela.id, val)}
+                                value={leela.description[activeLang]}
+                                onChange={(val) => {
+                                  const updatedLeelas = (selectedHotspot.leelas as any[]).map((l: any) =>
+                                    l.id === leela.id ? { ...l, description: { ...l.description, [activeLang]: val } } : l
+                                  );
+                                  setSelectedHotspot({ ...selectedHotspot, leelas: updatedLeelas as Leela[] });
+                                }}
                               />
                             </div>
                           ))}
@@ -3143,9 +3172,9 @@ export default function TempleArchitectureAdmin({
                         {selectedHotspot.images?.map((url: string, idx: number) => (
                           <div key={idx} className="relative aspect-square group rounded-2xl overflow-hidden border border-slate-100 shadow-sm bg-slate-50">
                             <img
-                              src={url || "/icons/sthaan.png"}
+                              src={url || "/icons/sthan.png"}
                               className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                              onError={(e) => (e.currentTarget.src = "/icons/sthaan.png")}
+                              onError={(e) => (e.currentTarget.src = "/icons/sthan.png")}
                             />
                             <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
                               <button
@@ -3234,8 +3263,8 @@ export default function TempleArchitectureAdmin({
                         {ah.number}
                       </span>
                       <div>
-                        <p className="font-bold text-slate-900">{ah.title || `Sthana #${ah.number}`}</p>
-                        <p className="text-xs text-slate-500 truncate max-w-[200px]">{ah.description}</p>
+                        <p className="font-bold text-slate-900">{ah.title[activeLang] || `Sthana #${ah.number}`}</p>
+                        <p className="text-xs text-slate-500 truncate max-w-[200px]">{ah.description[activeLang]}</p>
                       </div>
                     </button>
                   ))}
@@ -3249,10 +3278,9 @@ export default function TempleArchitectureAdmin({
             </DialogFooter>
           </DialogContent>
         </Dialog>
-
       </div>
     </div>
-  );
+);
 
   if (isEmbedded) return content;
 

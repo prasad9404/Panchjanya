@@ -24,7 +24,7 @@ export const BottomNav = () => {
                         {/* Sthaan */}
                         <NavLink to="/dashboard/sthana-vandan" className={({ isActive }) => cn("flex flex-col items-center gap-1 text-muted-foreground hover:text-primary transition-colors", isActive && "text-primary")}>
                             <MapIcon className="w-6 h-6" />
-                            <span className="text-[10px] font-bold uppercase tracking-wider">{t("nav.sthaan")}</span>
+                            <span className="text-[10px] font-bold uppercase tracking-wider">{t("nav.sthan")}</span>
                         </NavLink>
 
                         {/* Central Floating Button (Explore Map) */}
