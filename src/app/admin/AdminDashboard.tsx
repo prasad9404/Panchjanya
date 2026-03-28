@@ -114,7 +114,7 @@ export default function AdminDashboard() {
             </div>
             <div>
               <h1 className="text-3xl font-extrabold text-gray-900 dark:text-gray-100 tracking-tight">Admin Dashboard</h1>
-              <p className="text-gray-500 dark:text-gray-400 mt-1 font-medium italic">Welcome back to Panchajanya Console, {user?.displayName || "Administrator"}</p>
+              <p className="text-gray-500 dark:text-gray-400 mt-1 font-medium italic">Welcome back to Panchjanya Console, {user?.displayName || "Administrator"}</p>
             </div>
           </div>
           <div className="flex items-center gap-4 bg-white dark:bg-gray-900 p-2 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm">

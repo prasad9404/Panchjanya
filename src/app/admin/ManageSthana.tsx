@@ -13,6 +13,8 @@ import { SthanaIdentifier } from "@/shared/components/admin/SthanaIdentifier";
 import TempleForm from "@/shared/components/admin/TempleForm";
 import TempleArchitectureAdmin from "./TempleArchitectureAdmin";
 import { getAvatarColor } from "@/shared/utils/sthanTypes";
+import { useLanguage } from "@/shared/contexts/LanguageContext";
+import { getTranslatedValue, getLangCode } from "@/shared/utils/translationUtils";
 
 export default function ManageSthana() {
   const { id } = useParams<{ id: string }>();
@@ -24,6 +26,9 @@ export default function ManageSthana() {
   const [templeData, setTempleData] = useState<any>(null);
   const [activeStep, setActiveStep] = useState<'sthan-info' | 'architecture-view' | 'sthana-details'>('sthan-info');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  const { language } = useLanguage();
+  const langCode = getLangCode(language);
 
   const stepIds = ['sthan-info', 'architecture-view', 'sthana-details'];
 
@@ -142,7 +147,7 @@ export default function ManageSthana() {
 
             <div>
               <h1 className="text-xl font-bold text-slate-900 tracking-tight flex items-center gap-3">
-                {templeData.name}
+                {getTranslatedValue(templeData.name, langCode)}
                 {hasArchitecture ? (
                   <span className="text-[10px] font-black uppercase tracking-widest bg-blue-50 text-blue-600 px-3 py-1 rounded-full border border-blue-100">
                     Architecture

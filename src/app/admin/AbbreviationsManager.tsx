@@ -50,7 +50,7 @@ const CUSTOM_ICONS = [
     { name: "Route Path", path: "/icons/glance/route_path.svg" },
     { name: "Parivaar", path: "/icons/glance/parivaar.svg" },
     { name: "Aasan Sthan", path: "/icons/glance/Aasan Sthan.svg" },
-    { name: "Sthaan", path: "/icons/glance/sthaan.svg" },
+    { name: "Sthan", path: "/icons/glance/sthan.svg" },
 ];
 
 export default function AbbreviationsManager() {

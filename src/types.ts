@@ -1,8 +1,15 @@
 // Centralized interfaces for Temple Architecture
+
+export interface MultilingualString {
+    en: string;
+    hi?: string;
+    mr?: string;
+}
+
 export interface Leela {
     id: string;
-    title?: string; // New: Title for the leela
-    description: string;
+    title?: MultilingualString; // New: Title for the leela
+    description: MultilingualString;
     number?: number;
 }
 
@@ -12,14 +19,14 @@ export interface Hotspot {
     id: string;
     x: number;
     y: number;
-    title: string;
-    description: string;
+    title: MultilingualString;
+    description: MultilingualString;
     type?: HotspotType; // New: Categorization
     parentId?: string; // New: For clustering/grouping
-    significance?: string; // Detailed architectural/spiritual info
-    sthanPothiTitle?: string; // New: Title for Sthan Pothi section
-    sthanPothiDescription?: string; // New: Specific description for sthan pothi
-    generalDescriptionTitle?: string; // New: Title for General Description section
+    significance?: MultilingualString; // Detailed architectural/spiritual info
+    sthanPothiTitle?: MultilingualString; // New: Title for Sthan Pothi section
+    sthanPothiDescription?: MultilingualString; // New: Specific description for sthan pothi
+    generalDescriptionTitle?: MultilingualString; // New: Title for General Description section
     number?: number; // Sequence number
     imageIndex?: number; // Map to main (0) or supplemental (1+) images
     images: string[]; // Present day images
@@ -33,8 +40,8 @@ export interface Hotspot {
 
 export interface DescriptionSection {
     id: string;
-    title: string;
-    content: string;
+    title: MultilingualString;
+    content: MultilingualString;
     page_type?: 'page1' | 'page2';
     order?: number;
 }
@@ -42,19 +49,19 @@ export interface DescriptionSection {
 export interface GlanceItem {
     id: string;
     icon: string;
-    description: string;
+    description: MultilingualString;
 }
 
 export interface AbbreviationItem {
     id: string;
     icon: string;
-    description: string;
+    description: MultilingualString;
 }
 
 export interface CustomBlock {
     id: string;
-    title: string;
-    content: string;
+    title: MultilingualString;
+    content: MultilingualString;
     page_type?: 'page1' | 'page2';
     order?: number;
 }
@@ -68,18 +75,18 @@ export type SthanaStatus = "DRAFT" | "IN_PROGRESS" | "COMPLETE" | "VERIFIED" | "
 
 export interface Temple {
     id: string;
-    name: string;
-    todaysName?: string; // New: Today's name subtitle
-    todaysNameTitle?: string; // New: Dynamic label for today's name
-    address?: string;
+    name: MultilingualString;
+    todaysName?: MultilingualString; // New: Today's name subtitle
+    todaysNameTitle?: MultilingualString; // New: Dynamic label for today's name
+    address?: MultilingualString;
     locationLink?: string; // New: Direction link or coordinates
     contactName?: string;
     contactNumber?: string;
-    contactDetails?: string; // New: Additional contact info for Navigation
-    city: string;
-    taluka?: string;
-    district: string;
-    location: string | { lat: number; lng: number; address?: string };
+    contactDetails?: MultilingualString; // New: Additional contact info for Navigation
+    city: MultilingualString;
+    taluka?: MultilingualString;
+    district: MultilingualString;
+    location: string | { lat: number; lng: number; address?: MultilingualString };
     latitude: number;
     longitude: number;
     
@@ -87,7 +94,7 @@ export interface Temple {
     primaryAvatar?: string;
     primarySubtype?: string[];
     relatedAvatars?: RelatedAvatar[];
-    sthanType?: string; // Standardized Sthan Type field
+    sthanType?: MultilingualString; // Standardized Sthan Type field
     sthanTypeId?: string; // Link to Manage Sthan Types ID
     pinIcon?: string; // Persisted pin icon path or key
     
@@ -95,20 +102,20 @@ export interface Temple {
     avatarSambandh?: string;
     avatarSubdivision?: string;
 
-    description?: string;
-    description_title?: string;
-    description_text?: string;
+    description?: MultilingualString;
+    description_title?: MultilingualString;
+    description_text?: MultilingualString;
     glanceItems?: GlanceItem[];
     customBlocks?: CustomBlock[];
-    architectureDescription?: string; // New: Overall architectural description
+    architectureDescription?: MultilingualString; // New: Overall architectural description
     descriptionSections?: DescriptionSection[]; // New: Dynamic content blocks
-    sthana?: string;
-    sthana_info_title?: string;
-    sthana_info_text?: string;
-    directions_title?: string;
-    directions_text?: string;
-    leela?: string;
-    history?: string;
+    sthana?: MultilingualString;
+    sthana_info_title?: MultilingualString;
+    sthana_info_text?: MultilingualString;
+    directions_title?: MultilingualString;
+    directions_text?: MultilingualString;
+    leela?: MultilingualString;
+    history?: MultilingualString;
     /** @deprecated Use sthanImages */
     images?: string[];
     sthanImages?: string[];
@@ -136,20 +143,20 @@ export interface Temple {
     hasArchitecture?: boolean;       // Replacement for isStandalone
     architectureId?: string | null;  // null for standalone, id for linked
     leelas?: Leela[];               // Global leelas (for standalone)
-    sthanPothiDescription?: string;  // Global pothi (for standalone)
-    sthanPothiTitle?: string;        // Global pothi title (for standalone)
+    sthanPothiDescription?: MultilingualString;  // Global pothi (for standalone)
+    sthanPothiTitle?: MultilingualString;        // Global pothi title (for standalone)
     details?: SthanDetail[]; // New: Unified dynamic details array
 }
 
 export interface SthanDetail {
   id: string;
-  title: string;
-  description: string;
+  title: MultilingualString;
+  description: MultilingualString;
   images: string[];
   leelas: Leela[];
-  sthanPothiDescription?: string;
-  sthanPothiTitle?: string;
-  generalDescriptionTitle?: string;
+  sthanPothiDescription?: MultilingualString;
+  sthanPothiTitle?: MultilingualString;
+  generalDescriptionTitle?: MultilingualString;
   hotspotId?: string | null; // Optional link to a map marker
   type?: string; // e.g. 'Structure', 'Tree', 'Ghat'
   fitMode?: 'cover' | 'contain'; // New: Image fit preference
@@ -157,8 +164,8 @@ export interface SthanDetail {
 
 export interface YatraPlace {
     id: string;
-    name: string;
-    description: string;
+    name: MultilingualString;
+    description: MultilingualString;
     sequence: number;
     status: "visited" | "stayed" | "revisited" | "current" | "upcoming";
     latitude?: number;

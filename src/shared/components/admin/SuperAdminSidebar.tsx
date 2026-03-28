@@ -118,7 +118,7 @@ const Logo = ({ isCollapsed }: { isCollapsed: boolean }) => {
           SUPER ADMIN
         </span>
         <span className="block text-[8px] text-blue-600 font-black uppercase tracking-[0.2em]">
-          Panchajanya Console
+          Panchjanya Console
         </span>
       </motion.div>
     </div>

@@ -30,7 +30,7 @@ export const SearchBar = ({
       <div className="relative flex-1">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 lg:w-4 lg:h-4 text-primary" />
         <Input
-          placeholder="Search sthanas..."
+          placeholder="Search sthans..."
           className="pl-9 lg:pl-11 h-9 lg:h-10 text-sm lg:text-base border-none bg-transparent focus-visible:ring-0 placeholder:text-muted-foreground/60 font-medium"
           onChange={(e) => onSearch?.(e.target.value)}
         />

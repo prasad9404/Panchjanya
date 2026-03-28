@@ -44,7 +44,7 @@ export default function AudioPlayer() {
  const mockAudio: AudioContent = {
  id: "1",
  title: "Shri Chakradhar Swami Aarti",
- category: "Panchajanya Heritage",
+ category: "Panchjanya Heritage",
  duration: "05:42",
  location: "PAITHAN, MAHARASHTRA",
  audioUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3", // Demo URL
@@ -152,7 +152,7 @@ export default function AudioPlayer() {
  <Button variant="ghost" size="icon" className="-ml-2 hover:bg-black/5 rounded-full" onClick={() => navigate(-1)}>
  <ChevronLeft className="w-7 h-7 text-blue-900" />
  </Button>
- <h1 className="text-xl font-heading font-bold text-blue-900 font-serif">Panchajanya Heritage</h1>
+ <h1 className="text-xl font-heading font-bold text-blue-900 font-serif">Panchjanya Heritage</h1>
  <Button variant="ghost" size="icon" className="-mr-2 hover:bg-black/5 rounded-full">
  <Share2 className="w-6 h-6 text-blue-900" />
  </Button>

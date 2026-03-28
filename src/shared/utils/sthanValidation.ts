@@ -12,9 +12,9 @@ export const getSthanaStatus = (temple: Partial<Temple>): SthanaStatus => {
     // 2. Evaluate completeness
     // Basic data required to not be a DRAFT
     const hasBasic = Boolean(
-        temple.name &&
+        (typeof temple.name === 'string' ? temple.name : (temple.name as any)?.en) &&
         temple.sthanTypeId &&
-        temple.district
+        (typeof temple.district === 'string' ? temple.district : (temple.district as any)?.en)
     );
 
     // Complete data required to be COMPLETE (ready for verification)

@@ -4,8 +4,8 @@
     "dashboard": "Dashboard",
     "exploreSthanas": "Explore Sthanas",
     "rajViharan": "Raj Viharan",
-    "aboutPanchajanya": "About Panchajanya",
-    "sthaan": "Sthaan",
+    "aboutPanchjanya": "About Panchjanya",
+    "sthan": "Sthan",
     "viharan": "Viharan",
     "profile": "Profile",
     "search": "Search",
@@ -81,7 +81,7 @@
     "and": "and"
   },
   "explore": {
-    "title": "Panchajanya Heritage Map",
+    "title": "Panchjanya Heritage Map",
     "searchPlaceholder": "Explore Holy Legacy",
     "details": "Details",
     "navigate": "Navigate",
@@ -96,7 +96,7 @@
     "allAvatars": "All Avatars",
     "subdivision": "Subdivision",
     "allSubdivisions": "All Subdivisions",
-    "sthanaCategory": "Sthana Category",
+    "sthanaCategory": "Sthan Category",
     "allSthanaTypes": "All Sthana Types",
     "clearAll": "Clear All",
     "applyFilters": "Apply Filters",
@@ -131,7 +131,7 @@
   "profile": {
     "title": "Member Profile",
     "verified": "Verified",
-    "explorerSince": "Panchajanya Explorer since",
+    "explorerSince": "Panchjanya Explorer since",
     "sthanas": "Sthanas",
     "yatras": "Yatras",
     "spiritualJourney": "Spiritual Journey",
@@ -148,8 +148,8 @@
     "settingsDesc": "Notifications, security, and privacy"
   },
   "temple": {
-    "verified": "Panchajanya Verified",
-    "architecture": "Sthana Architecture",
+    "verified": "Panchjanya Verified",
+    "architecture": "Sthan Architecture",
     "navigation": "Navigation",
     "share": "Share",
     "information": "Temple Information",
@@ -161,7 +161,7 @@
     "sthanAtGlance": "Sthan At Glance",
     "sthanDescription": "Sthan Description",
     "differentSthans": "Different Sthans",
-    "shareMessage": "Check out {{name}} on Panchajanya",
+    "shareMessage": "Check out {{name}} on Panchjanya",
     "explore": "Explore",
     "mainImage": "Temple Main Image",
     "architecturalView": "Architectural View",
@@ -207,7 +207,7 @@
       "krishna": "Shri Krishan Bhagwan Viharan"
     },
     "description": "Sacred pilgrimage destination",
-    "vandanTitle": "Sthaan Vandan",
+    "vandanTitle": "Sthan Vandan",
     "vandanDesc": "Map your spiritual journey across ancient heritage sites with personalized itineraries.",
     "seeViharan": "See the viharan"
   },
@@ -251,7 +251,7 @@
     }
   },
   "notifications": {
-    "title": "Panchajanya",
+    "title": "Panchjanya",
     "featured": "Featured",
     "notificationsHeader": "Notifications",
     "noNotifications": "No notifications yet",
@@ -310,12 +310,12 @@
     "whatsNewDesc": "Latest updates from the heritage.",
     "jigyasa": "Jigyasa",
     "jigyasaDesc": "Quest for deep knowledge.",
-    "sthaanVandan": "Sthaan Vandan",
-    "sthaanVandanDesc": "Sacred Salutation to holy sites.",
+    "sthanVandan": "Sthan Vandan",
+    "sthanVandanDesc": "Sacred Salutation to holy sites.",
     "rajViharan": "Raj Viharan",
     "rajViharanDesc": "Live Yatra status & historical traces.",
     "quickSupport": "Quick Support",
-    "aboutPanchajanya": "About Panchajanya",
+    "aboutPanchjanya": "About Panchjanya",
     "myAccount": "My Account"
   }
 }

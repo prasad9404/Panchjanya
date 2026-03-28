@@ -27,7 +27,7 @@ const Dashboard = () => {
                 <div className="flex flex-col items-center justify-center pt-6 pb-2 md:pt-8 md:pb-4 w-full cursor-default">
                     <img
                         src="/icons/Homepage logo.svg"
-                        alt="Panchajanya Homepage Logo"
+                        alt="Panchjanya Homepage Logo"
                         className="h-16 md:h-20 lg:h-24 w-auto max-w-[85%] object-contain drop-shadow-[0_4px_12px_rgba(15,60,110,0.15)] transition-transform duration-500 ease-out hover:scale-[1.02]"
                     />
                 </div>
@@ -131,12 +131,12 @@ const Dashboard = () => {
                         <div className="relative z-10 flex items-center justify-between">
                             <div className="flex items-center gap-4">
                                 <div className="p-2 bg-white/20 rounded-full backdrop-blur-sm border border-white/20 shadow-sm">
-                                    <img src="/icons/glance/sthaan.svg" className="w-12 h-12 object-contain" alt="Sthaan Vandan Icon" />
+                                    <img src="/icons/glance/sthan.svg" className="w-12 h-12 object-contain" alt="Sthan Vandan Icon" />
                                 </div>
                                 <div>
-                                    <h3 className="font-display font-bold text-xl">{t("dashboard.sthaanVandan")}</h3>
+                                    <h3 className="font-display font-bold text-xl">{t("dashboard.sthanVandan")}</h3>
                                     <p className="text-blue-100 text-sm mt-1">
-                                        {t("dashboard.sthaanVandanDesc")}
+                                        {t("dashboard.sthanVandanDesc")}
                                     </p>
                                 </div>
                             </div>
@@ -196,7 +196,7 @@ const Dashboard = () => {
                                     <div className="p-2 bg-[#FFF4D1] text-[#B48A17] border border-[#B48A17]/40 rounded-full">
                                         <HelpCircle className="w-5 h-5" />
                                     </div>
-                                    <span className="font-heading font-bold text-amber-900 text-lg">{t("dashboard.aboutPanchajanya")}</span>
+                                    <span className="font-heading font-bold text-amber-900 text-lg">{t("dashboard.aboutPanchjanya")}</span>
                                 </div>
                                 <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:translate-x-1 transition-transform" />
                             </Button>

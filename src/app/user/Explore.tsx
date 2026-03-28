@@ -60,6 +60,7 @@ import {
   getAvatarColor,
 } from "@/shared/utils/sthanTypes";
 import { SthanType } from "@/shared/types/sthanType";
+import { getTranslatedValue, getLangCode } from "@/shared/utils/translationUtils";
 
 // Custom styles for Leaflet popup close button
 const popupStyles = `
@@ -128,7 +129,7 @@ function getIconForTemple(
   const sthanTypeId = (temple as any).sthanTypeId || "";
   const pinIconField = (temple as any).pinIcon || "";
   const sName =
-    (temple as any).sthan || (temple as any).sthanType || temple.sthana || "";
+    getTranslatedValue((temple as any).sthan || (temple as any).sthanType || temple.sthana, 'en');
 
   // 1. Resolve the matched SthanType record from DB
   //    Priority: sthanTypeId (exact ID match) → sthan name match
@@ -224,8 +225,9 @@ function TempleMarker({
   sthanTypes: SthanType[];
 }) {
   const navigate = useNavigate();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const { user } = useAuth();
+  const langCode = getLangCode(language);
   const [isSaved, setIsSaved] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isPopupOpen, setIsPopupOpen] = useState(false);
@@ -272,7 +274,7 @@ function TempleMarker({
           templeId: temple.id,
           savedAt: new Date(),
           templeName: temple.name,
-          templeCity: temple.city || temple.address || "",
+          templeCity: getTranslatedValue(temple.city, langCode) || getTranslatedValue(temple.address, langCode) || "",
           templeImage: temple.sthanImages?.[0] || temple.images?.[0] || "",
         });
         setIsSaved(true);
@@ -303,10 +305,10 @@ function TempleMarker({
         >
           <div className="px-3 py-2 bg-popover/95 backdrop-blur-sm border-l-4 border-primary">
             <p className="font-heading text-popover-foreground font-bold text-sm whitespace-nowrap">
-              {temple.name}
+              {getTranslatedValue(temple.name, langCode)}
             </p>
             <p className="text-[10px] text-muted-foreground uppercase tracking-widest leading-none mt-1">
-              {temple.city || temple.district || "Maharashtra"}
+              {getTranslatedValue(temple.city, langCode) || getTranslatedValue(temple.district, langCode) || "Maharashtra"}
             </p>
           </div>
         </Tooltip>
@@ -330,7 +332,7 @@ function TempleMarker({
           {/* Row 1: Title + Close Icon */}
           <div className="flex justify-between items-start gap-2">
             <h3 className="font-heading font-bold text-xl md:text-2xl text-landing-primary dark:text-primary leading-tight">
-              {temple.name}
+              {getTranslatedValue(temple.name, langCode)}
             </h3>
             <button
               onClick={(e) => {
@@ -347,10 +349,10 @@ function TempleMarker({
           <div className="flex items-start gap-1.5 text-sm md:text-base text-muted-foreground leading-snug">
             <MapPin className="w-4 h-4 md:w-5 md:h-5 text-primary shrink-0 mt-1" />
             <span>
-              {temple.city && temple.city !== temple.district
-                ? `${temple.city}, `
+              {getTranslatedValue(temple.city, langCode) && getTranslatedValue(temple.city, langCode) !== getTranslatedValue(temple.district, langCode)
+                ? `${getTranslatedValue(temple.city, langCode)}, `
                 : ""}
-              {temple.district || "Maharashtra"}
+              {getTranslatedValue(temple.district, langCode) || "Maharashtra"}
             </span>
           </div>
 
@@ -432,7 +434,8 @@ const Explore = () => {
     useState<string>("");
 
   const navigate = useNavigate();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+  const langCode = getLangCode(language);
   const [selectedTemple, setSelectedTemple] = useState<Temple | null>(null);
   const [resetTrigger, setResetTrigger] = useState(0);
 
@@ -535,10 +538,10 @@ const Explore = () => {
 
     const conditions = [];
     if (appliedDistrict) {
-      conditions.push(where("district", "==", appliedDistrict));
+      conditions.push(where("district.en", "==", appliedDistrict));
     }
     if (appliedTaluka) {
-      conditions.push(where("taluka", "==", appliedTaluka));
+      conditions.push(where("taluka.en", "==", appliedTaluka));
     }
 
     if (conditions.length > 0) {
@@ -614,7 +617,7 @@ const Explore = () => {
 
         if (data.length > 0 && !selectedTemple) {
           const hampi = data.find((t) =>
-            t.name.toLowerCase().includes("hampi"),
+            getTranslatedValue(t.name, "en").toLowerCase().includes("hampi"),
           );
           setSelectedTemple(hampi || data[0]);
         }
@@ -629,27 +632,43 @@ const Explore = () => {
 
   // 3. Derived Filter Options with Counts from Database
   const districts = Array.from(
-    new Set(allTemplesForOptions.map((t) => t.district).filter(Boolean)),
+    new Set(allTemplesForOptions.map((t) => getTranslatedValue(t.district, 'en')).filter(Boolean)),
   )
     .sort()
-    .map((d) => ({
-      value: d,
-      label: `${d} (${allTemplesForOptions.filter((t) => t.district === d).length})`,
-    }));
+    .map((d) => {
+      const firstT = allTemplesForOptions.find(t => getTranslatedValue(t.district, 'en') === d);
+      const translatedLabel = getTranslatedValue(firstT?.district, langCode);
+      const count = allTemplesForOptions.filter((t) => getTranslatedValue(t.district, 'en') === d).length;
+      return {
+        value: d,
+        label: `${translatedLabel || d} (${count})`,
+      };
+    });
 
   const talukas = Array.from(
     new Set(
       allTemplesForOptions
-        .filter((t) => !pendingDistrict || t.district === pendingDistrict)
-        .map((t) => t.taluka)
+        .filter((t) => !pendingDistrict || getTranslatedValue(t.district, 'en') === pendingDistrict)
+        .map((t) => getTranslatedValue(t.taluka, 'en'))
         .filter(Boolean),
     ),
   )
     .sort()
-    .map((t) => ({
-      value: t,
-      label: `${t} (${allTemplesForOptions.filter((curr) => curr.taluka === t && (!pendingDistrict || curr.district === pendingDistrict)).length})`,
-    }));
+    .map((tVal) => {
+      const firstT = allTemplesForOptions.find(curr => 
+        getTranslatedValue(curr.taluka, 'en') === tVal && 
+        (!pendingDistrict || getTranslatedValue(curr.district, 'en') === pendingDistrict)
+      );
+      const translatedLabel = getTranslatedValue(firstT?.taluka, langCode);
+      const count = allTemplesForOptions.filter((curr) => 
+        getTranslatedValue(curr.taluka, 'en') === tVal && 
+        (!pendingDistrict || getTranslatedValue(curr.district, 'en') === pendingDistrict)
+      ).length;
+      return {
+        value: tVal,
+        label: `${translatedLabel || tVal} (${count})`,
+      };
+    });
 
   // 4. Dynamic Sthana Category Options
   const sthanaOptions = useMemo(() => {
@@ -685,7 +704,7 @@ const Explore = () => {
       const temp = t as any;
 
       // 1. Try sthan name / sthana text field
-      const sthanText = (temp.sthan || t.sthana || "").toLowerCase();
+      const sthanText = getTranslatedValue(temp.sthan || t.sthana, 'en').toLowerCase();
       if (sthanText) {
         const c = toCanonicalSthan(sthanText);
         if (c) return c;
@@ -828,20 +847,17 @@ const Explore = () => {
     return temples.filter((temple) => {
       const matchesSearch =
         !searchQuery ||
-        temple.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        temple.city?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        temple.district?.toLowerCase().includes(searchQuery.toLowerCase());
+        getTranslatedValue(temple.name, "en").toLowerCase().includes(searchQuery.toLowerCase()) ||
+        getTranslatedValue(temple.name, "hi").toLowerCase().includes(searchQuery.toLowerCase()) ||
+        getTranslatedValue(temple.name, "mr").toLowerCase().includes(searchQuery.toLowerCase()) ||
+        getTranslatedValue(temple.city, langCode).toLowerCase().includes(searchQuery.toLowerCase()) ||
+        getTranslatedValue(temple.district, langCode).toLowerCase().includes(searchQuery.toLowerCase());
 
       const matchesSthana =
         !appliedSthanaType ||
-        ((temple as any).sthan &&
-          (temple as any).sthan
-            .toLowerCase()
-            .includes(appliedSthanaType.toLowerCase())) ||
-        (temple.sthana &&
-          temple.sthana
-            .toLowerCase()
-            .includes(appliedSthanaType.toLowerCase()));
+        getTranslatedValue((temple as any).sthan || temple.sthana, langCode)
+          .toLowerCase()
+          .includes(appliedSthanaType.toLowerCase());
 
       // Avatar hierarchy logic
       if (appliedAvatarSambandh === "ALL")
@@ -864,7 +880,7 @@ const Explore = () => {
 
       // Try to resolve temple's avatar info if missing (legacy data)
       if (!resAvatarS) {
-        const sName = (temple as any).sthan || temple.sthana;
+        const sName = getTranslatedValue((temple as any).sthan || temple.sthana, 'en');
         const sType = sthanTypes.find((st) => st.name === sName);
         if (sType) {
           resAvatarS = sType.avatarSambandh;

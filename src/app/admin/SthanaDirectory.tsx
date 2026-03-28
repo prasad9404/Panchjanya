@@ -4,6 +4,7 @@ import AdminLayout from "@/shared/components/admin/AdminLayout";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/auth/AuthContext";
 import { cn } from "@/shared/lib/utils";
+import { useLanguage } from "@/shared/contexts/LanguageContext";
 
 import { Button } from "@/shared/components/ui/button";
 import { Input } from "@/shared/components/ui/input";
@@ -59,6 +60,15 @@ export default function SthanaDirectory() {
     const { user } = useAuth();
     // Consume global cache – no extra Firestore fetch here
     const { sthanTypes } = useSthanTypes();
+    const { language } = useLanguage();
+    const activeLang: 'en' | 'hi' | 'mr' = language === 'hindi' ? 'hi' : language === 'marathi' ? 'mr' : 'en';
+
+    // Helper for safe display
+    const getDisp = (val: any) => {
+        if (!val) return "";
+        if (typeof val === 'string') return val;
+        return val[activeLang] || val.en || "";
+    };
 
     // 1. Data Fetching
     const fetchTemples = async () => {
@@ -133,17 +143,17 @@ export default function SthanaDirectory() {
     };
 
     // 3. Derived Filter Lists
-    const districts = Array.from(new Set(temples.map(t => t.district).filter(Boolean)));
-    const talukas = Array.from(new Set(temples.map(t => t.taluka).filter(Boolean)));
+    const districts = Array.from(new Set(temples.map(t => getDisp(t.district)).filter(Boolean)));
+    const talukas = Array.from(new Set(temples.map(t => getDisp(t.taluka)).filter(Boolean)));
 
     // 4. Filter Logic
     const filteredTemples = temples.filter((t) => {
         const matchesSearch =
-            (t.name || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+            (getDisp(t.name)).toLowerCase().includes(searchTerm.toLowerCase()) ||
             (t.id || "").toLowerCase().includes(searchTerm.toLowerCase());
 
-        const matchesDistrict = selectedDistrict === "District" || t.district === selectedDistrict;
-        const matchesTaluka = selectedTaluka === "Taluka" || t.taluka === selectedTaluka;
+        const matchesDistrict = selectedDistrict === "District" || getDisp(t.district) === selectedDistrict;
+        const matchesTaluka = selectedTaluka === "Taluka" || getDisp(t.taluka) === selectedTaluka;
 
         // 1. Identify the Source of Truth (Sthan Type) for THIS temple
         let matchedType: any = null;
@@ -155,16 +165,16 @@ export default function SthanaDirectory() {
             const contextSub = (t.avatarSubTypes && t.avatarSubTypes.length > 0) ? t.avatarSubTypes[0] : t.avatarSubdivision;
             
             matchedType = sthanTypes.find(st => 
-                st.name === t.sthan && 
+                st.name === getDisp(t.sthan) && 
                 st.avatarSambandh === contextAvatar && 
                 (st.avatarSubdivision || "") === (contextSub || "")
-            ) || sthanTypes.find(st => st.name === t.sthan);
+            ) || sthanTypes.find(st => st.name === (typeof t.sthan === 'string' ? t.sthan : (t.sthan?.en || "")));
         }
 
         // 2. Determine final classification
         const resAvatarS = matchedType ? matchedType.avatarSambandh : (t.primaryAvatar || t.avatarSambandh);
         const resAvatarSub = matchedType ? (matchedType.avatarSubdivision || "") : ((t.avatarSubTypes && t.avatarSubTypes.length > 0) ? t.avatarSubTypes[0] : (t.avatarSubdivision || ""));
-        const resSthanName = matchedType ? matchedType.name : (t.sthan || "");
+        const resSthanName = matchedType ? matchedType.name : (getDisp(t.sthan) || "");
 
         // 3. Compare against active filters
         const matchesSthan = selectedSthan === "Sthan Type" || resSthanName === selectedSthan;
@@ -232,7 +242,7 @@ export default function SthanaDirectory() {
                 
                 // Emergency Fallback: just match by name (legacy edge case)
                 if (!matchedType) {
-                    matchedType = sthanTypes.find(st => st.name === t.sthan);
+                    matchedType = sthanTypes.find(st => st.name === (typeof t.sthan === 'string' ? t.sthan : (t.sthan?.en || "")));
                 }
             }
 
@@ -258,10 +268,10 @@ export default function SthanaDirectory() {
 
             // 5) Record District & Taluka counts
             if (t.district) {
-                counts.byDistrict[t.district] = (counts.byDistrict[t.district] || 0) + 1;
+                counts.byDistrict[getDisp(t.district)] = (counts.byDistrict[getDisp(t.district)] || 0) + 1;
             }
             if (t.taluka) {
-                counts.byTaluka[t.taluka] = (counts.byTaluka[t.taluka] || 0) + 1;
+                counts.byTaluka[getDisp(t.taluka)] = (counts.byTaluka[getDisp(t.taluka)] || 0) + 1;
             }
 
             // 6) Record Status counts (Strict 5-tier)
@@ -608,7 +618,7 @@ export default function SthanaDirectory() {
                                     <div className="w-full sm:w-40 h-56 sm:h-32 rounded-2xl overflow-hidden bg-slate-100 shrink-0 border border-slate-100 shadow-inner group-hover:scale-[1.02] transition-transform duration-500">
                                         <img
                                             src={temple.sthanImages?.[0] || temple.images?.[0] || "/placeholder-temple.jpg"}
-                                            alt={temple.name}
+                                            alt={getDisp(temple.name)}
                                             className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                                             onError={(e) => {
                                                 (e.target as HTMLImageElement).src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="%23cbd5e1"><rect width="100%" height="100%" fill="%23f1f5f9"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>';
@@ -621,7 +631,7 @@ export default function SthanaDirectory() {
                                         <div className="space-y-1">
                                             <div className="flex items-center gap-3 flex-wrap">
                                                 <h3 className="text-2xl font-serif font-black text-slate-900 truncate max-w-[400px]">
-                                                    {temple.name}
+                                                    {getDisp(temple.name)}
                                                 </h3>
                                                 {(() => {
                                                     const derivedStatus = temple.status || getSthanaStatus(temple);
@@ -656,7 +666,7 @@ export default function SthanaDirectory() {
                                             <div className="flex items-center gap-4 text-slate-500 text-sm font-medium">
                                                 <div className="flex items-center gap-1.5">
                                                     <MapPin className="w-4 h-4 text-blue-600" />
-                                                    <span>{temple.city ? `${temple.city}, ` : ''}{temple.district}</span>
+                                                    <span>{temple.city ? `${getDisp(temple.city)}, ` : ''}{getDisp(temple.district)}</span>
                                                 </div>
                                                 <div className="w-1 h-1 rounded-full bg-slate-200" />
                                                 <span className="text-[10px] uppercase font-black tracking-widest text-slate-400">ID: {temple.id?.slice(-8).toUpperCase()}</span>
@@ -667,7 +677,7 @@ export default function SthanaDirectory() {
                                             {/* Sthan Type Badge */}
                                             {temple.sthan && (
                                                 (() => {
-                                                    const typeInfo = sthanTypes.find(st => st.name === temple.sthan);
+                                                    const typeInfo = sthanTypes.find(st => st.name === getDisp(temple.sthan));
                                                     const avatarColor = getAvatarColor(typeInfo?.avatarSambandh);
                                                     return (
                                                         <div 
@@ -676,7 +686,7 @@ export default function SthanaDirectory() {
                                                         >
                                                             <div className="w-2 h-2 rounded-full" style={{ backgroundColor: avatarColor || typeInfo?.color || '#94a3b8' }} />
                                                             <span className="text-[10px] font-black uppercase tracking-widest text-slate-700">
-                                                                {temple.sthan}
+                                                                {getDisp(temple.sthan)}
                                                             </span>
                                                         </div>
                                                     );
@@ -728,7 +738,7 @@ export default function SthanaDirectory() {
                                             variant="ghost"
                                             size="icon"
                                             className="h-12 w-12 rounded-2xl bg-red-50 text-red-500 hover:bg-red-600 hover:text-white hover:scale-110 transition-all duration-300 border border-red-100 shadow-sm"
-                                            onClick={() => handleDelete(temple.id, temple.name)}
+                                            onClick={() => handleDelete(temple.id, getDisp(temple.name))}
                                             title="Delete Permanently"
                                         >
                                             <Trash2 className="w-5 h-5" />

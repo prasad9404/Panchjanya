@@ -20,7 +20,7 @@ const About = () => {
         <div className="text-center space-y-6 text-left">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-primary/10 text-primary rounded-full text-xs font-bold uppercase tracking-widest border border-primary/20">
             <BookOpen className="w-4 h-4" />
-            Panchajanya Presents
+            Panchjanya Presents
           </div>
           <h1 className="font-heading text-4xl md:text-6xl lg:text-7xl font-black text-foreground tracking-tighter italic">
             About Panchjanya
@@ -98,7 +98,7 @@ const About = () => {
         </div>
 
         <div className="text-center pt-8 text-[10px] text-muted-foreground uppercase tracking-[0.4em]">
-          Panchajanya Project • 2026
+          Panchjanya Project • 2026
         </div>
       </div>
     </div>

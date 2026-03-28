@@ -98,7 +98,7 @@ export default function VandanHistory() {
  </h2>
  <div className="w-16 h-1 bg-amber-500 mx-auto mb-4" />
  <p className="text-gray-600 text-sm italic mb-6">
- Total Sthaan Vandans
+ Total Sthan Vandans
  <br />
  Completed in your journey
  </p>

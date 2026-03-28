@@ -17,9 +17,9 @@ export default function AdminManagement() {
   useEffect(() => {
     // Demo data
     setAdmins([
-      { id: '1', name: 'Sakshi Admin', email: 'admin@panchajanya.com', level: 'Super Admin', status: 'Active' },
-      { id: '2', name: 'Moderator 1', email: 'mod1@panchajanya.com', level: 'Moderator', status: 'Active' },
-      { id: '3', name: 'Coordinator North', email: 'north@panchajanya.com', level: 'Area Admin', status: 'Idle' },
+      { id: '1', name: 'Sakshi Admin', email: 'admin@panchjanya.com', level: 'Super Admin', status: 'Active' },
+      { id: '2', name: 'Moderator 1', email: 'mod1@panchjanya.com', level: 'Moderator', status: 'Active' },
+      { id: '3', name: 'Coordinator North', email: 'north@panchjanya.com', level: 'Area Admin', status: 'Idle' },
     ]);
   }, []);
 

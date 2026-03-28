@@ -7,8 +7,9 @@ import { cn } from "@/shared/lib/utils";
 import { Button } from "@/shared/components/ui/button";
 import { Button1 } from "@/shared/components/ui/button-1";
 import { Temple, AbbreviationItem, Hotspot, SthanDetail } from "@/types";
-import { useTranslation } from "react-i18next";
+import { useLanguage } from "@/shared/contexts/LanguageContext";
 import { SafeHTML } from "@/shared/components/ui/SafeHTML";
+import { getTranslatedValue, getLangCode } from "@/shared/utils/translationUtils";
 
 // ... (rest of imports)
 
@@ -38,7 +39,8 @@ import {
 export default function ArchitectureViewer() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { t } = useTranslation();
+  const { t, language } = useLanguage();
+  const langCode = getLangCode(language);
 
   const [temple, setTemple] = useState<Temple | null>(null);
   const [hotspots, setHotspots] = useState<Hotspot[]>([]);
@@ -445,7 +447,7 @@ export default function ArchitectureViewer() {
             <ChevronLeft className="w-7 h-7 text-[#0f3c6e]" />
           </Button>
           <h1 className="flex-1 font-heading font-bold text-xl md:text-2xl text-[#0f3c6e] font-serif truncate leading-tight">
-            {temple.name}
+            {getTranslatedValue(temple.name, langCode)}
           </h1>
 
           {abbreviationItems && abbreviationItems.length > 0 && (
@@ -465,7 +467,7 @@ export default function ArchitectureViewer() {
                       {item.icon && (
                         <img src={item.icon} className="w-5 h-5 object-contain shrink-0 mt-0.5" alt="icon" />
                       )}
-                      <span className="flex-1">{item.description}</span>
+                      <span className="flex-1">{getTranslatedValue(item.description, langCode)}</span>
                     </div>
                   ))}
                 </div>
@@ -551,7 +553,7 @@ export default function ArchitectureViewer() {
                   {imageUrl ? (
                     <img
                       src={imageUrl}
-                      alt={`${temple.name} Architecture`}
+                      alt={`${getTranslatedValue(temple.name, langCode)} Architecture`}
                       className={cn(
                         "block select-none transition-all duration-500 object-center mx-auto",
                         imageType === 'architectural'
@@ -845,7 +847,7 @@ export default function ArchitectureViewer() {
                   <div className="flex-1 min-w-0 px-1 py-2">
                           <div className="flex items-center gap-3">
                             <div className="w-1 h-6 bg-amber-600 shrink-0"></div>
-                            <h4 className={`font-heading font-bold text-xl tracking-wider transition-colors truncate ${isSelectedInPothi ? 'text-amber-700' : 'text-blue-900 group-hover:text-amber-700'}`}>{d.title}</h4>
+                            <h4 className={`font-heading font-bold text-xl tracking-wider transition-colors truncate ${isSelectedInPothi ? 'text-amber-700' : 'text-blue-900 group-hover:text-amber-700'}`}>{getTranslatedValue(d.title, langCode)}</h4>
                             {d.hasMapMarker && (
                               <div className="w-5 h-5 rounded-full bg-blue-100 flex items-center justify-center text-[10px] font-black text-blue-800 shrink-0">
                                 {d.number}
@@ -859,9 +861,9 @@ export default function ArchitectureViewer() {
                       </div>
                       {isExpanded && (
                         <div className="px-2 pb-3 pt-2">
-                          <p className="text-lg text-slate-600 font-serif leading-relaxed pl-3.5 animate-in fade-in slide-in-from-top-1 duration-200">
-                            {d.sthanPothiDescription || d.description || t('temple.pothiUpdateInfo')}
-                          </p>
+                          <div className="text-lg text-slate-600 font-serif leading-relaxed pl-3.5 animate-in fade-in slide-in-from-top-1 duration-200">
+                            <SafeHTML html={getTranslatedValue(d.sthanPothiDescription, langCode) || getTranslatedValue(d.description, langCode) || t('temple.pothiUpdateInfo')} />
+                          </div>
                         </div>
                       )}
                     </div>
@@ -893,7 +895,7 @@ export default function ArchitectureViewer() {
               <div className="space-y-4 pb-[450px]">
                 {/* Description Card */}
                 <div className="bg-white p-3 md:p-4 rounded-2xl shadow-sm border border-slate-100/50 text-base text-slate-600 leading-relaxed">
-                  <SafeHTML html={temple.architectureDescription || t('temple.noArchDescription')} />
+                  <SafeHTML html={getTranslatedValue(temple.architectureDescription, langCode) || t('temple.noArchDescription')} />
                 </div>
 
                 {/* Additional Content Blocks (Step 1 & 2 Filtered) */}
@@ -906,10 +908,10 @@ export default function ArchitectureViewer() {
                       .map((section) => (
                         <div key={section.id} className="space-y-2">
                           <h4 className="font-heading font-bold text-blue-900 border-l-4 border-amber-600 pl-3 leading-none">
-                            {section.title}
+                            {getTranslatedValue(section.title, langCode)}
                           </h4>
                           <div className="bg-white p-3 md:p-4 rounded-2xl border border-slate-100/50 shadow-sm">
-                            <SafeHTML html={section.content} />
+                            <SafeHTML html={getTranslatedValue(section.content, langCode)} />
                           </div>
                         </div>
                       ))
@@ -920,10 +922,10 @@ export default function ArchitectureViewer() {
                       .map((block) => (
                         <div key={block.id} className="space-y-2">
                           <h4 className="font-heading font-bold text-blue-900 border-l-4 border-amber-600 pl-3 leading-none">
-                            {block.title}
+                            {getTranslatedValue(block.title, langCode)}
                           </h4>
                           <div className="bg-white p-3 md:p-4 rounded-2xl border border-slate-100/50 shadow-sm">
-                            <SafeHTML html={block.content} />
+                            <SafeHTML html={getTranslatedValue(block.content, langCode)} />
                           </div>
                         </div>
                       ))
@@ -971,7 +973,7 @@ export default function ArchitectureViewer() {
                             ? 'text-amber-700'
                             : 'text-blue-900 group-hover:text-amber-700'
                             }`}>
-                            {d.title}
+                            {getTranslatedValue(d.title, langCode)}
                           </span>
                         </div>
                         <div
@@ -1021,7 +1023,7 @@ export default function ArchitectureViewer() {
             <div className="relative w-full h-full flex items-center justify-center">
               <img
                 src={imageUrl}
-                alt={`${temple?.name} - Full view`}
+                alt={`${getTranslatedValue(temple?.name, langCode)} - Full view`}
                 className="max-w-full max-h-[100vh] object-contain object-center"
                 onError={(e) => {
                   (e.target as HTMLImageElement).src = '/placeholder-temple.jpg';

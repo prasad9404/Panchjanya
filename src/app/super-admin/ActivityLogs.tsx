@@ -33,7 +33,7 @@ export default function ActivityLogs() {
     // Mock data for initial implementation
     setLogs([
       { id: '1', timestamp: '2026-03-26 14:30:12', type: 'security', message: 'Super Admin permissions updated for Sakshi', user: 'System', ip: '192.168.1.1' },
-      { id: '2', timestamp: '2026-03-26 13:15:05', type: 'auth', message: 'Successful login', user: 'admin@panchajanya.com', ip: '122.162.34.8' },
+      { id: '2', timestamp: '2026-03-26 13:15:05', type: 'auth', message: 'Successful login', user: 'admin@panchjanya.com', ip: '122.162.34.8' },
       { id: '3', timestamp: '2026-03-26 12:00:55', type: 'data', message: 'Sthan verification: "Omkareshwar" approved', user: 'Moderator 1', ip: '10.0.0.45' },
       { id: '4', timestamp: '2026-03-26 10:45:30', type: 'system', message: 'Firebase configuration refreshed', user: 'System' },
     ]);

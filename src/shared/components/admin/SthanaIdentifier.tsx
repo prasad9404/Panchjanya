@@ -1,17 +1,20 @@
 import React from "react";
 import { Check, LucideIcon } from "lucide-react";
 import { cn } from "@/shared/lib/utils";
+import { useLanguage } from "@/shared/contexts/LanguageContext";
+import { getTranslatedValue, getLangCode } from "@/shared/utils/translationUtils";
+import { MultilingualString } from "@/types";
 
 interface SthanaIdentifierProps {
     id: string;
     templeData: {
-        name: string;
+        name: MultilingualString | string;
         status?: string;
         reviewStatus?: string;
-        sthan?: string;
+        sthan?: MultilingualString | string;
         primaryAvatar?: string;
         avatarSambandh?: string;
-        district?: string;
+        district?: MultilingualString | string;
     };
     hasArchitecture: boolean;
     activeStep: 'sthan-info' | 'architecture-view' | 'sthana-details';
@@ -25,6 +28,9 @@ export const SthanaIdentifier: React.FC<SthanaIdentifierProps> = ({
     activeStep,
     className
 }) => {
+    const { language } = useLanguage();
+    const langCode = getLangCode(language);
+
     return (
         <div className={cn("space-y-16", className)}>
             {/* Card Header matching Form Section Header style */}
@@ -41,9 +47,11 @@ export const SthanaIdentifier: React.FC<SthanaIdentifierProps> = ({
 
                 <div>
                     <p className="text-[11px] leading-relaxed text-slate-400 font-bold uppercase tracking-widest mb-1.5">
-                        STHANA PROFILE
+                        STHAN PROFILE
                     </p>
-                    <h2 className="text-xl font-black tracking-tight leading-tight text-slate-900 uppercase">{templeData.name}</h2>
+                    <h2 className="text-xl font-black tracking-tight leading-tight text-slate-900 uppercase">
+                        {getTranslatedValue(templeData.name, langCode)}
+                    </h2>
                     <div className="flex flex-wrap gap-2 mt-4">
                         {hasArchitecture ? (
                             <span className="text-[9px] font-black uppercase tracking-widest bg-blue-50 text-blue-600 border border-blue-100/50 px-3 py-1.5 rounded-full">
@@ -86,7 +94,9 @@ export const SthanaIdentifier: React.FC<SthanaIdentifierProps> = ({
                         <div className="space-y-4">
                             <div className="flex items-center justify-between">
                                 <span className="text-[11px] font-medium text-slate-500">Sthan Type</span>
-                                <span className="text-[11px] font-bold text-slate-800">{templeData.sthan || '—'}</span>
+                                <span className="text-[11px] font-bold text-slate-800">
+                                    {getTranslatedValue(templeData.sthan, langCode) || '—'}
+                                </span>
                             </div>
                             <div className="flex items-center justify-between">
                                 <span className="text-[11px] font-medium text-slate-500">Main Avatar</span>
@@ -94,7 +104,9 @@ export const SthanaIdentifier: React.FC<SthanaIdentifierProps> = ({
                             </div>
                             <div className="flex items-center justify-between">
                                 <span className="text-[11px] font-medium text-slate-500">District</span>
-                                <span className="text-[11px] font-bold text-slate-800">{templeData.district || '—'}</span>
+                                <span className="text-[11px] font-bold text-slate-800">
+                                    {getTranslatedValue(templeData.district, langCode) || '—'}
+                                </span>
                             </div>
                         </div>
                     </div>

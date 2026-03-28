@@ -132,7 +132,7 @@ const Logo = ({ isCollapsed }: { isCollapsed: boolean }) => {
         className="transition-opacity duration-200"
       >
         <span className="block text-sm font-extrabold text-gray-900 dark:text-gray-100">
-          Panchajanya
+          Panchjanya
         </span>
         <span className="block text-[10px] text-[#C9A961] font-bold uppercase tracking-widest">
           Admin Console

@@ -7,6 +7,8 @@ import type { Temple } from "@/types";
 import { doc, setDoc, deleteDoc, getDoc } from "firebase/firestore";
 import { db } from "@/auth/firebase";
 import { useAuth } from "@/auth/AuthContext";
+import { useLanguage } from "@/shared/contexts/LanguageContext";
+import { getTranslatedValue, getLangCode } from "@/shared/utils/translationUtils";
 
 interface TempleDetailsProps {
   isOpen: boolean;
@@ -18,6 +20,9 @@ export const TempleDetails = ({ isOpen, onClose, temple }: TempleDetailsProps) =
   // 1. Move ALL hooks to the top level, unconditionally.
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { language } = useLanguage();
+  const langCode = getLangCode(language);
+  
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [cloudinaryImages, setCloudinaryImages] = useState<string[]>([]);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
@@ -74,7 +79,7 @@ export const TempleDetails = ({ isOpen, onClose, temple }: TempleDetailsProps) =
           templeId: temple.id,
           savedAt: new Date(),
           templeName: temple.name,
-          templeCity: temple.city || temple.address || "",
+          templeCity: getTranslatedValue(temple.city, langCode) || getTranslatedValue(temple.address, langCode) || "",
           templeImage: temple.sthanImages?.[0] || ""
         });
         setIsSaved(true);
@@ -106,8 +111,8 @@ export const TempleDetails = ({ isOpen, onClose, temple }: TempleDetailsProps) =
 
     // Prefer constructing address from components to ensure no duplication
     if (temple.city || temple.district) {
-      const city = temple.city?.trim();
-      const district = temple.district?.trim();
+      const city = getTranslatedValue(temple.city, langCode).trim();
+      const district = getTranslatedValue(temple.district, langCode).trim();
 
       if (city && district && city.toLowerCase() !== district.toLowerCase()) {
         return `${city}, ${district}`;
@@ -115,7 +120,7 @@ export const TempleDetails = ({ isOpen, onClose, temple }: TempleDetailsProps) =
       return city || district || "";
     }
 
-    if (temple.address) return temple.address;
+    if (temple.address) return getTranslatedValue(temple.address, langCode);
     if (typeof temple.location === 'object' && temple.location !== null) {
       return (temple.location as any).address || "Sacred Sthana";
     }
@@ -170,7 +175,7 @@ export const TempleDetails = ({ isOpen, onClose, temple }: TempleDetailsProps) =
               </div>
               <div>
                 <h2 className="font-heading text-base sm:text-xl font-bold tracking-tight text-foreground/90">
-                  Panchajanya Archive
+                  Panchjanya Archive
                 </h2>
                 <p className="text-[9px] sm:text-[10px] text-muted-foreground uppercase tracking-[0.2em] font-bold hidden sm:block">
                   Digital Heritage Record
@@ -216,10 +221,10 @@ export const TempleDetails = ({ isOpen, onClose, temple }: TempleDetailsProps) =
                   <>
                     <img
                       src={images[currentImageIndex]}
-                      alt={`${temple.name}`}
+                      alt={getTranslatedValue(temple.name, langCode)}
                       className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                       onError={(e) => {
-                        e.currentTarget.src = "https://placehold.co/1200x800?text=Sthana+Image";
+                        e.currentTarget.src = "https://placehold.co/1200x800?text=Sthan+Image";
                       }}
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-40 group-hover:opacity-30 transition-opacity" />
@@ -238,7 +243,7 @@ export const TempleDetails = ({ isOpen, onClose, temple }: TempleDetailsProps) =
                 ) : (
                   <div className="flex flex-col items-center justify-center w-full h-full text-muted-foreground gap-3">
                     <BookOpen className="w-12 h-12 opacity-20" />
-                    <p className="text-sm font-medium">No Sthana images uploaded</p>
+                    <p className="text-sm font-medium">No Sthan images uploaded</p>
                   </div>
                 )}
               </div>
@@ -248,7 +253,7 @@ export const TempleDetails = ({ isOpen, onClose, temple }: TempleDetailsProps) =
                 <div className="flex flex-wrap items-center gap-3">
                   <div className="inline-flex items-center gap-2 text-primary font-bold text-[10px] uppercase tracking-[0.2em]">
                     <Compass className="w-3.5 h-3.5" />
-                    Viraat Sthana
+                    Viraat Sthan
                   </div>
                   {(() => {
                     const isBasicComplete = Boolean(temple.name && ((temple as any).sthan || temple.sthana) && temple.district);
@@ -263,7 +268,7 @@ export const TempleDetails = ({ isOpen, onClose, temple }: TempleDetailsProps) =
                           <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
                             <polyline points="20 6 9 17 4 12"></polyline>
                           </svg>
-                          Verified by Panchajanya
+                          Verified by Panchjanya
                         </div>
                       );
                     } else if (isFullyComplete) {
@@ -294,7 +299,7 @@ export const TempleDetails = ({ isOpen, onClose, temple }: TempleDetailsProps) =
                 </div>
 
                 <h1 className="font-heading text-3xl lg:text-4xl font-black text-foreground tracking-tighter leading-[0.95]">
-                  {temple.name}
+                  {getTranslatedValue(temple.name, langCode)}
                 </h1>
               </div>
 
@@ -318,7 +323,7 @@ export const TempleDetails = ({ isOpen, onClose, temple }: TempleDetailsProps) =
                 >
                   <span className="font-bold uppercase tracking-wider text-xs flex items-center gap-2">
                     <Compass className="w-4 h-4" />
-                    Sthana Architecture View
+                    Sthan Architecture View
                   </span>
                   <ChevronRight className="w-4 h-4 opacity-50 group-hover:translate-x-1 transition-transform" />
                 </Button>
@@ -347,26 +352,26 @@ export const TempleDetails = ({ isOpen, onClose, temple }: TempleDetailsProps) =
                 {[
                   {
                     id: 'overview',
-                    title: temple.description_title || 'Archive Overview',
-                    content: temple.description_text || temple.description,
+                    title: getTranslatedValue(temple.description_title, langCode) || 'Archive Overview',
+                    content: getTranslatedValue(temple.description_text, langCode) || getTranslatedValue(temple.description, langCode),
                     icon: '📜'
                   },
                   {
                     id: 'history',
-                    title: temple.sthana_info_title || 'Sthana Information',
-                    content: temple.sthana_info_text || temple.sthana,
+                    title: getTranslatedValue(temple.sthana_info_title, langCode) || 'Sthan Information',
+                    content: getTranslatedValue(temple.sthana_info_text, langCode) || getTranslatedValue(temple.sthana, langCode),
                     icon: '🕉️'
                   },
                   {
                     id: 'directions',
-                    title: temple.directions_title || 'Directions',
-                    content: temple.directions_text,
+                    title: getTranslatedValue(temple.directions_title, langCode) || 'Directions',
+                    content: getTranslatedValue(temple.directions_text, langCode),
                     icon: '🧭'
                   },
                   {
                     id: 'leela',
                     title: 'Sacred Leelas',
-                    content: temple.leela,
+                    content: getTranslatedValue(temple.leela, langCode),
                     icon: '🌟'
                   }
                 ].map((section) => section.content && (
@@ -395,7 +400,7 @@ export const TempleDetails = ({ isOpen, onClose, temple }: TempleDetailsProps) =
                   <div className="w-1.5 h-1.5 bg-foreground/20 rounded-full" />
                 </div>
                 <p className="text-[10px] text-muted-foreground uppercase tracking-[0.3em] font-bold">
-                  End of Sthana Archive
+                  End of Sthan Archive
                 </p>
               </div>
             </div>

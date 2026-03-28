@@ -149,9 +149,9 @@ export default function AdminLogin() {
             whileHover={{ scale: 1.05 }}
             className="w-20 h-20 bg-white dark:bg-gray-900 rounded-[2rem] flex items-center justify-center p-4 shadow-xl shadow-gray-200/50 dark:shadow-black/50 border border-gray-100 dark:border-gray-800 mb-6"
           >
-            <img src="/icons/Main logo.svg" alt="Panchajanya" className="w-full h-full object-contain" />
+            <img src="/icons/Main logo.svg" alt="Panchjanya" className="w-full h-full object-contain" />
           </motion.div>
-          <h1 className="text-3xl font-black text-gray-900 dark:text-white tracking-widest mb-2 font-kokila">PANCHAJANYA</h1>
+          <h1 className="text-3xl font-black text-gray-900 dark:text-white tracking-widest mb-2 font-kokila">PANCHJANYA</h1>
           <div className="flex items-center gap-2 px-3 py-1 bg-[#0f3c6e]/5 dark:bg-[#0f3c6e]/20 rounded-full border border-[#0f3c6e]/10 dark:border-[#0f3c6e]/30">
             <ShieldCheck className="w-3 h-3 text-[#0f3c6e] dark:text-blue-400" />
             <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#0f3c6e] dark:text-blue-400">Secure Access Console</p>
@@ -184,7 +184,7 @@ export default function AdminLogin() {
                         required 
                         value={email} 
                         onChange={(e) => setEmail(e.target.value)}
-                        placeholder="admin@panchajanya.com"
+                        placeholder="admin@panchjanya.com"
                         className="bg-gray-50/50 dark:bg-gray-950/50 border-gray-100 dark:border-gray-800 h-14 pl-12 rounded-2xl text-gray-900 dark:text-gray-100 focus:ring-[#0f3c6e]/50 focus:border-[#0f3c6e] transition-all font-medium"
                       />
                     </div>
@@ -292,7 +292,7 @@ export default function AdminLogin() {
                         required 
                         value={email} 
                         onChange={(e) => setEmail(e.target.value)}
-                        placeholder="moderator@panchajanya.com"
+                        placeholder="moderator@panchjanya.com"
                         className="bg-gray-50/50 dark:bg-gray-950/50 border-gray-100 dark:border-gray-800 h-14 pl-12 rounded-2xl text-gray-900 dark:text-gray-100 focus:ring-[#0f3c6e]/50 focus:border-[#0f3c6e] transition-all font-medium"
                       />
                     </div>
@@ -353,7 +353,7 @@ export default function AdminLogin() {
                         required 
                         value={email} 
                         onChange={(e) => setEmail(e.target.value)}
-                        placeholder="registered@panchajanya.com"
+                        placeholder="registered@panchjanya.com"
                         className="bg-gray-50/50 dark:bg-gray-950/50 border-gray-100 dark:border-gray-800 h-14 pl-12 rounded-2xl text-gray-900 dark:text-gray-100 focus:ring-blue-500/50 focus:border-blue-500 transition-all font-medium"
                       />
                     </div>
@@ -374,7 +374,7 @@ export default function AdminLogin() {
 
         {/* Footer Info */}
         <div className="mt-12 text-center text-gray-400 dark:text-gray-500 text-[10px] font-black tracking-[0.3em] uppercase opacity-50">
-          V1.32.7 // Secure Protocol // Panchajanya spiritual platform
+          V1.32.7 // Secure Protocol // Panchjanya spiritual platform
         </div>
       </motion.div>
     </div>
