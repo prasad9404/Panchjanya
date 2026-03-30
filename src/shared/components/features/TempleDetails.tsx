@@ -9,6 +9,7 @@ import { db } from "@/auth/firebase";
 import { useAuth } from "@/auth/AuthContext";
 import { useLanguage } from "@/shared/contexts/LanguageContext";
 import { getTranslatedValue, getLangCode } from "@/shared/utils/translationUtils";
+import { getLocationUrl } from "@/shared/utils/locationUtils";
 
 interface TempleDetailsProps {
   isOpen: boolean;
@@ -332,8 +333,9 @@ export const TempleDetails = ({ isOpen, onClose, temple }: TempleDetailsProps) =
                   variant="outline"
                   className="h-14 rounded-2xl border-primary/20 hover:bg-primary/5 text-primary shadow-sm hover:shadow-md transition-all active:scale-95 justify-between px-6 group"
                   onClick={() => {
-                    if (temple.latitude && temple.longitude) {
-                      window.open(`https://www.google.com/maps/search/?api=1&query=${temple.latitude},${temple.longitude}`, "_blank");
+                    const url = getLocationUrl(temple.locationLink, temple.latitude, temple.longitude);
+                    if (url) {
+                      window.open(url, "_blank");
                     }
                   }}
                 >

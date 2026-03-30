@@ -326,18 +326,33 @@ export default function TempleArchitectureAdmin({
       // 1. Core Temple Fields
       const fieldsToTranslate = [
         { current: templeName, setter: setTempleName, label: "Temple Name" },
+        { current: todaysName, setter: setTodaysName, label: "Label Name" },
+        { current: todaysNameTitle, setter: setTodaysNameTitle, label: "Label Name Title" },
         { current: address, setter: setAddress, label: "Address" },
+        { current: taluka, setter: setTaluka, label: "Taluka" },
+        { current: district, setter: setDistrict, label: "District" },
         { current: description_title, setter: setDescriptionTitle, label: "Sthan At Glance Title" },
+        { current: description_text, setter: setDescriptionText, label: "Sthan At Glance Content" },
         { current: sthana_info_title, setter: setSthanaInfoTitle, label: "Detailed Narrative Title" },
         { current: sthana_info_text, setter: setSthanaInfoText, label: "Detailed Narrative Content" },
         { current: directions_text, setter: setDirectionsText, label: "Directions" },
         { current: architectureDescription, setter: setArchitectureDescription, label: "Architecture Description" },
+        { current: sthan, setter: setSthan, label: "Sthan Type" },
       ];
 
       for (const field of fieldsToTranslate) {
+        // We check the 'en' value from the snapshot 'field.current'
         if (field.current.en) {
           const translated = await autoTranslateMultilingual(field.current.en);
-          field.setter(translated);
+          
+          // Use functional update to merge with latest state!
+          // This avoids overwriting manual Hindi/Marathi work and ensures we don't 'wipe' states
+          field.setter((prev: any) => ({
+            ...prev,
+            hi: (prev && prev.hi) || translated.hi,
+            mr: (prev && prev.mr) || translated.mr,
+            // Keep existing languages if they exist, only fill if missing
+          }));
         }
       }
 
@@ -484,9 +499,13 @@ export default function TempleArchitectureAdmin({
           setLatitude(data.latitude || "");
           setLongitude(data.longitude || "");
           setDescriptionTitle(ensureMultilingual(data.description_title || "Sthan At Glance"));
-          setDescriptionText(ensureMultilingual(data.description_text || data.description));
+          setDescriptionText(ensureMultilingual(
+            data.description_text || data.description || data.architectureDescription
+          ));
           setSthanaInfoTitle(ensureMultilingual(data.sthana_info_title || "Sthan Description"));
-          setSthanaInfoText(ensureMultilingual(data.sthana_info_text || data.sthana));
+          setSthanaInfoText(ensureMultilingual(
+            data.sthana_info_text || data.sthana || data.sthanPothiDescription || data.details?.[0]?.sthanPothiDescription
+          ));
           setDescriptionSections((data.descriptionSections || []).map((s: any) => ({
             ...s,
             title: ensureMultilingual(s.title),
@@ -551,9 +570,46 @@ export default function TempleArchitectureAdmin({
               sthanPothiDescription: ensureMultilingual(h.sthanPothiDescription),
               sthanPothiTitle: ensureMultilingual(h.sthanPothiTitle),
               generalDescriptionTitle: ensureMultilingual(h.generalDescriptionTitle),
-              hotspotId: h.id, // Link to self for existing hotspots
+              hotspotId: h.id,
               type: h.type || 'Structure'
             }));
+          } else {
+            // Normalize ALL existing details: convert any legacy plain-string fields to MultilingualString
+            // This handles the case where descriptions were saved as raw strings before multilingual support
+            masterDetails = masterDetails.map((d: any) => {
+              // Normalize legacy leelas arrays or raw string .leela fields
+              let rawLeelas: any[] = [];
+              if (Array.isArray(d.leelas)) {
+                rawLeelas = d.leelas;
+              } else if (d.leelas && typeof d.leelas === 'string') {
+                rawLeelas = d.leelas.split('\n').filter((l: string) => l.trim());
+              } else if (d.leela && typeof d.leela === 'string') {
+                rawLeelas = d.leela.split('\n').filter((l: string) => l.trim());
+              }
+              
+              const normalizedLeelas = rawLeelas.map((l: any, i: number) => {
+                if (typeof l === 'string') {
+                   // Legacy simple string. Migrate onto 'description'
+                   return { id: `leela_${i}_${Date.now()}`, title: ensureMultilingual(''), description: ensureMultilingual(l) };
+                }
+                return {
+                  ...l,
+                  id: l.id || `leela_${i}_${Date.now()}`,
+                  title: ensureMultilingual(l.title || ''),
+                  description: ensureMultilingual(l.description || '')
+                };
+              });
+
+              return {
+                ...d,
+                title: ensureMultilingual(d.title),
+                description: ensureMultilingual(d.description),
+                sthanPothiDescription: ensureMultilingual(d.sthanPothiDescription),
+                sthanPothiTitle: ensureMultilingual(d.sthanPothiTitle),
+                generalDescriptionTitle: ensureMultilingual(d.generalDescriptionTitle),
+                leelas: normalizedLeelas
+              };
+            });
           }
 
           setDetails(masterDetails);
@@ -721,32 +777,45 @@ export default function TempleArchitectureAdmin({
     const isNewlyVerified = finalStatus === 'VERIFIED' && originalTempleData?.status !== 'VERIFIED' && originalTempleData?.status !== 'PUBLISHED';
     const isNewlyPublished = finalStatus === 'PUBLISHED' && originalTempleData?.status !== 'PUBLISHED';
     
+    // ── Deep-merge guard: never overwrite a non-empty DB value with an empty UI value ──
+    // If the admin UI has an empty string (e.g. due to a language switch), we fall back
+    // to the original data loaded from Firestore so we never destroy existing content.
+    const safeML = (uiVal: any, originalVal: any) => {
+      const ui = { en: uiVal?.en || '', hi: uiVal?.hi || '', mr: uiVal?.mr || '' };
+      const orig = { en: originalVal?.en || '', hi: originalVal?.hi || '', mr: originalVal?.mr || '' };
+      return {
+        en: ui.en || orig.en,
+        hi: ui.hi || orig.hi,
+        mr: ui.mr || orig.mr,
+      };
+    };
+
     const updateData: any = {
-      name: templeName,
-      todaysName,
-      todaysNameTitle,
-      address,
-      taluka,
-      district,
-      directions_text,
+      name: safeML(templeName, originalTempleData?.name),
+      todaysName: safeML(todaysName, originalTempleData?.todaysName),
+      todaysNameTitle: safeML(todaysNameTitle, originalTempleData?.todaysNameTitle),
+      address: safeML(address, originalTempleData?.address),
+      taluka: safeML(taluka, originalTempleData?.taluka),
+      district: safeML(district, originalTempleData?.district),
+      directions_text: safeML(directions_text, originalTempleData?.directions_text),
       locationLink,
       latitude,
       longitude,
       sthanImages: sthanImages,
-      description_title,
-      description_text,
-      sthana_info_title,
-      sthana_info_text,
+      description_title: safeML(description_title, originalTempleData?.description_title),
+      description_text: safeML(description_text, originalTempleData?.description_text),
+      sthana_info_title: safeML(sthana_info_title, originalTempleData?.sthana_info_title),
+      sthana_info_text: safeML(sthana_info_text, originalTempleData?.sthana_info_text),
       descriptionSections,
       glanceItems,
       abbreviationItems,
       customBlocks,
-      architectureDescription,
-      contactDetails,
+      architectureDescription: safeML(architectureDescription, originalTempleData?.architectureDescription),
+      contactDetails: safeML(contactDetails, originalTempleData?.contactDetails),
       contactName,
       contactNumber,
-      sthan,
-      sthanType: sthan, // Standardized field
+      sthan: safeML(sthan, originalTempleData?.sthan),
+      sthanType: safeML(sthan, originalTempleData?.sthanType), // Standardized field
       sthanTypeId,
       primaryAvatar,
       primarySubtype,
@@ -755,7 +824,7 @@ export default function TempleArchitectureAdmin({
       status: finalStatus,
       hasArchitecture,
       leelas: globalLeelas,
-      sthanPothiDescription: globalPothiDescription,
+      sthanPothiDescription: safeML(globalPothiDescription, originalTempleData?.sthanPothiDescription),
       isStandalone: !hasArchitecture, // sync for backward compatibility
       details: details, // New dynamic details array
       hotspots: archHotspots,
@@ -1637,13 +1706,19 @@ export default function TempleArchitectureAdmin({
                               </div>
                             </SelectItem>
                           ))}
-                          {sthan && !sthanTypeId && !getValidSthanTypes(primaryAvatar, sthanTypes).some(t => t.name === (typeof sthan === 'object' ? sthan[activeLang] : sthan)) && (
-                            <SelectItem value={typeof sthan === 'object' ? sthan[activeLang] : sthan || ""}>
-                              <div className="flex items-center gap-2">
-                                <span>{typeof sthan === 'object' ? sthan[activeLang] : sthan}</span>
-                              </div>
-                            </SelectItem>
-                          )}
+                          {sthan && !sthanTypeId && (() => {
+                            const sthanVal = typeof sthan === 'object' ? sthan[activeLang] : sthan;
+                            const existsInList = getValidSthanTypes(primaryAvatar, sthanTypes).some(t => t.name === sthanVal);
+                            // Only render if value is non-empty (Radix crashes on empty string values)
+                            if (!sthanVal || existsInList) return null;
+                            return (
+                              <SelectItem value={sthanVal}>
+                                <div className="flex items-center gap-2">
+                                  <span>{sthanVal}</span>
+                                </div>
+                              </SelectItem>
+                            );
+                          })()}
                         </SelectContent>
                       </Select>
                       <p className="text-xs text-slate-400">Defines the default map pin icon.</p>
@@ -1878,26 +1953,28 @@ export default function TempleArchitectureAdmin({
                                         <ChevronDown className="w-3 h-3 opacity-50" />
                                       </Button>
                                     </PopoverTrigger>
-                                    <PopoverContent className="w-80 p-3 space-y-3">
-                                      <div className="space-y-2">
-                                        <Label className="text-[10px] font-black uppercase text-slate-400">Select Custom Icon</Label>
-                                        <div className="grid grid-cols-3 gap-2">
+                                    <PopoverContent className="w-[360px] max-h-[420px] overflow-y-auto p-4 space-y-4 shadow-xl border-slate-200">
+                                      <div className="space-y-3">
+                                        <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">Select Custom Icon</Label>
+                                        <div className="grid grid-cols-4 gap-3">
                                           {CUSTOM_ICONS.map(icon => (
                                             <button
                                               key={icon.path}
                                               onClick={() => updateGlanceItem(item.id, 'icon', icon.path)}
-                                              className={`p-3 rounded-lg hover:bg-amber-50 flex flex-col items-center justify-center gap-2 transition-colors border ${item.icon === icon.path ? 'bg-amber-100 border-amber-300' : 'border-slate-200'}`}
+                                              className={`aspect-square rounded-xl p-2 flex flex-col items-center justify-center gap-1.5 transition-all duration-200 border bg-white ${item.icon === icon.path ? 'border-[#0f3c6e] bg-[#0f3c6e]/5 ring-1 ring-[#0f3c6e]/30 shadow-sm' : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50 hover:shadow-sm'}`}
                                               title={icon.name}
                                             >
-                                              <img src={icon.path} className="w-8 h-8 object-contain" alt={icon.name} />
-                                              <span className="text-[9px] font-medium text-slate-600 truncate w-full text-center">{icon.name}</span>
+                                              <img src={icon.path} className="w-7 h-7 object-contain opacity-90 transition-transform group-hover:scale-110" alt={icon.name} />
+                                              <span className="text-[10px] font-medium text-slate-600 truncate w-full text-center leading-tight">
+                                                {icon.name}
+                                              </span>
                                             </button>
                                           ))}
                                         </div>
                                       </div>
-                                      <Separator />
+                                      <Separator className="bg-slate-200" />
                                       <div className="space-y-2">
-                                        <Label className="text-[10px] font-black uppercase text-slate-400">Or Enter Custom URL</Label>
+                                        <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">Or Enter Custom URL</Label>
                                         <div className="flex gap-2">
                                           <Input
                                             placeholder="https://..."

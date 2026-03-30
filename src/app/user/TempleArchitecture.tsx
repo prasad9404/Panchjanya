@@ -11,6 +11,7 @@ import { useLanguage } from "@/shared/contexts/LanguageContext";
 import { useAuth } from "@/auth/AuthContext";
 import { cn } from "@/shared/lib/utils";
 import { getTranslatedValue, getLangCode } from "@/shared/utils/translationUtils";
+import { getLocationUrl } from "@/shared/utils/locationUtils";
 import {
     Accordion,
     AccordionContent,
@@ -194,11 +195,9 @@ export default function TempleArchitecture() {
     };
 
     const handleNavigation = () => {
-        if (temple?.latitude && temple?.longitude) {
-            window.open(
-                `https://www.google.com/maps/dir/?api=1&destination=${temple.latitude},${temple.longitude}`,
-                "_blank"
-            );
+        const url = getLocationUrl(temple?.locationLink, temple?.latitude, temple?.longitude);
+        if (url) {
+            window.open(url, "_blank");
         }
     };
 
@@ -499,24 +498,7 @@ export default function TempleArchitecture() {
                         </div>
                     </div>
 
-                    {/* Sthan Pothi (Temple Level) */}
-                    {temple.sthanPothiDescription && (
-                        <div className="space-y-3 md:space-y-4 pt-2">
-                            <div className="flex items-center gap-3">
-                                <div className="w-1 h-6 bg-amber-600"></div>
-                                <h3 className="font-heading text-xl font-bold text-blue-900 flex items-center gap-2">
-                                    <BookOpen className="w-5 h-5 text-amber-600" />
-                                    {getTranslatedValue(temple.sthanPothiTitle, langCode) || t('common.sthanPothi')}
-                                </h3>
-                            </div>
-                            <div className="bg-white p-3 md:p-5 rounded-2xl border border-slate-100 relative overflow-hidden">
-                                <div className="absolute top-0 left-0 w-1 h-full bg-amber-500/10"></div>
-                                <div className="pl-2">
-                                    <SafeHTML html={getTranslatedValue(temple.sthanPothiDescription, langCode)} />
-                                </div>
-                            </div>
-                        </div>
-                    )}
+
 
                     {/* Description Sections (Step 1) */}
                     {temple.descriptionSections && temple.descriptionSections.length > 0 && temple.descriptionSections

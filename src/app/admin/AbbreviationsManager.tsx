@@ -17,6 +17,10 @@ import {
 import { useToast } from "@/shared/hooks/use-toast";
 import AdminLayout from "@/shared/components/admin/AdminLayout";
 import { useAuth } from "@/auth/AuthContext";
+import { ensureMultilingual } from "@/shared/services/translationService";
+import { getLangCode, getTranslatedValue } from "@/shared/utils/translationUtils";
+import { Tabs, TabsList, TabsTrigger } from "@/shared/components/ui/tabs";
+import { Globe } from "lucide-react";
 
 const CUSTOM_ICONS = [
     { name: "Temple", path: "/icons/Blue_temple_icon-removebg.png" },
@@ -60,6 +64,7 @@ export default function AbbreviationsManager() {
     const [abbreviationItems, setAbbreviationItems] = useState<AbbreviationItem[]>([]);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
+    const [activeLang, setActiveLang] = useState<'en' | 'hi' | 'mr'>('en');
 
     useEffect(() => {
         const fetchAbbreviations = async () => {
@@ -73,13 +78,21 @@ export default function AbbreviationsManager() {
 
                 if (res.ok && contentType?.includes("application/json")) {
                     const data = await res.json();
-                    setAbbreviationItems(data.items || []);
+                    const items = (data.items || []).map((item: any) => ({
+                        ...item,
+                        description: ensureMultilingual(item.description)
+                    }));
+                    setAbbreviationItems(items);
                 } else {
                     console.warn("Abbreviations API not active locally. Using Client SDK.");
                     const docRef = doc(db, "settings", "abbreviations");
                     const docSnap = await getDoc(docRef);
                     if (docSnap.exists()) {
-                        setAbbreviationItems(docSnap.data().items || []);
+                        const items = (docSnap.data().items || []).map((item: any) => ({
+                            ...item,
+                            description: ensureMultilingual(item.description)
+                        }));
+                        setAbbreviationItems(items);
                     }
                 }
             } catch (error) {
@@ -98,12 +111,20 @@ export default function AbbreviationsManager() {
     }, [toast]);
 
     const addAbbreviationItem = () => {
-        const newItem: AbbreviationItem = { id: uuidv4(), icon: CUSTOM_ICONS[0].path, description: "" };
+        const newItem: AbbreviationItem = { id: uuidv4(), icon: CUSTOM_ICONS[0].path, description: { en: "", hi: "", mr: "" } };
         setAbbreviationItems([...abbreviationItems, newItem]);
     };
 
     const updateAbbreviationItem = (gId: string, field: 'icon' | 'description', value: string) => {
-        setAbbreviationItems(abbreviationItems.map(g => g.id === gId ? { ...g, [field]: value } : g));
+        setAbbreviationItems(abbreviationItems.map(g => {
+            if (g.id === gId) {
+                if (field === 'description') {
+                    return { ...g, description: { ...ensureMultilingual(g.description), [activeLang]: value } };
+                }
+                return { ...g, [field]: value };
+            }
+            return g;
+        }));
     };
 
     const removeAbbreviationItem = (gId: string) => {
@@ -217,6 +238,26 @@ export default function AbbreviationsManager() {
                         </p>
                     </div>
 
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 py-2 border-b border-slate-100">
+                        <Tabs value={activeLang} onValueChange={(v: any) => setActiveLang(v)} className="w-full sm:w-auto">
+                            <TabsList className="bg-slate-100/50 p-1 h-10 rounded-xl">
+                                <TabsTrigger value="en" className="rounded-lg px-4 text-xs font-bold data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-sm">
+                                    English
+                                </TabsTrigger>
+                                <TabsTrigger value="hi" className="rounded-lg px-4 text-xs font-bold data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-sm">
+                                    हिंदी
+                                </TabsTrigger>
+                                <TabsTrigger value="mr" className="rounded-lg px-4 text-xs font-bold data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-sm">
+                                    मराठी
+                                </TabsTrigger>
+                            </TabsList>
+                        </Tabs>
+                        <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-400 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-100">
+                            <Globe className="w-3 h-3" />
+                            Editing {activeLang === 'en' ? 'English' : activeLang === 'hi' ? 'Hindi' : 'Marathi'} Content
+                        </div>
+                    </div>
+
                     <div className="space-y-4">
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
@@ -312,9 +353,9 @@ export default function AbbreviationsManager() {
                                         </div>
                                         <div className="md:col-span-3">
                                             <Input
-                                                value={item.description}
+                                                value={item.description[activeLang] || ""}
                                                 onChange={(e) => updateAbbreviationItem(item.id, 'description', e.target.value)}
-                                                placeholder="Abbreviation description..."
+                                                placeholder={`Description in ${activeLang === 'en' ? 'English' : activeLang === 'hi' ? 'Hindi' : 'Marathi'}...`}
                                                 className="h-10 rounded-xl border-slate-200 bg-white text-sm"
                                             />
                                         </div>

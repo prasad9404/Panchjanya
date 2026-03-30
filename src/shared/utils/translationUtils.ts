@@ -6,16 +6,17 @@ import { MultilingualString } from "@/types";
  * @param field The multilingual object or a legacy string
  * @param lang The target language code ('en', 'hi', 'mr')
  */
-export function getTranslatedValue(field: MultilingualString | string | undefined, lang: string = 'en'): string {
+export function getTranslatedValue(field: MultilingualString | string | undefined | null | any, lang: string = 'en'): string {
     if (!field) return '';
     
     if (typeof field === 'string') return field;
     
-    // Explicitly handle language keys
-    const targetValue = field[lang as keyof MultilingualString];
+    if (typeof field === 'object') {
+        const targetValue = field[lang as keyof MultilingualString];
+        return (targetValue || field.en || field.mr || field.hi || '') as string;
+    }
     
-    // Return target value if exists, otherwise fallback to English
-    return targetValue || field.en || '';
+    return '';
 }
 
 /**

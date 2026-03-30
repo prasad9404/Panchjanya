@@ -13,11 +13,13 @@ import {
     SelectValue,
 } from "@/shared/components/ui/select";
 import { Progress } from "@/shared/components/ui/progress";
-import { useTranslation } from "react-i18next";
+import { useLanguage } from "@/shared/contexts/LanguageContext";
+import { getTranslatedValue, getLangCode } from "@/shared/utils/translationUtils";
 
 import { useYatraPlaces } from "@/shared/hooks/useYatraPlaces";
 import { LazyImage } from "@/shared/components/ui/LazyImage";
 import { cn } from "@/shared/lib/utils";
+import { getLocationUrl } from "@/shared/utils/locationUtils";
 
 const ROUTES = [
     {
@@ -37,7 +39,8 @@ const ROUTES = [
 
 const SwamiYatra = () => {
     const navigate = useNavigate();
-    const { t } = useTranslation();
+    const { t, language } = useLanguage();
+    const langCode = getLangCode(language);
     const { data: rawPlaces = [], isLoading } = useYatraPlaces();
 
     const [selectedRoute, setSelectedRoute] = useState(ROUTES[0].id);
@@ -66,14 +69,14 @@ const SwamiYatra = () => {
     const places = useMemo(() => {
         return rawPlaces.map((data) => ({
             id: data.id,
-            name: data.name,
+            name: getTranslatedValue(data.name, langCode),
             latitude: data.latitude || 25.3176,
             longitude: data.longitude || 83.0062,
             sequence: data.sequence,
             status: (data.status === "visited" ? "completed" :
                 ["stayed", "current", "revisited"].includes(data.status) ? "current" : "upcoming") as YatraLocation["status"],
-            title: data.name,
-            description: data.description || t('yatra.description'),
+            title: getTranslatedValue(data.name, langCode),
+            description: getTranslatedValue(data.description, langCode) || t('yatra.description'),
             image: data.image || "/placeholder-temple.jpg",
             attendees: data.attendees || "",
             route: data.route,
@@ -82,7 +85,7 @@ const SwamiYatra = () => {
             pinColor: data.pinColor,
             fitMode: data.fitMode || 'cover'
         }));
-    }, [rawPlaces]);
+    }, [rawPlaces, langCode]);
 
     const filteredPlaces = useMemo(() => {
         return places.filter(p => {
@@ -397,7 +400,12 @@ const SwamiYatra = () => {
 
                                                     {filteredPlaces[currentIndex].locationLink && (
                                                         <Button
-                                                            onClick={() => window.open(filteredPlaces[currentIndex].locationLink, '_blank')}
+                                                            onClick={() => {
+                                                                const url = getLocationUrl(filteredPlaces[currentIndex].locationLink, filteredPlaces[currentIndex].latitude, filteredPlaces[currentIndex].longitude);
+                                                                if (url) {
+                                                                    window.open(url, '_blank');
+                                                                }
+                                                            }}
                                                             className="w-full bg-landing-primary hover:bg-landing-primary/90 text-white font-bold rounded-xl h-12 transition-all shadow-md active:scale-[0.98]"
                                                         >
                                                             <Navigation2 className="w-4 h-4 mr-2" /> {t('yatra.openInNavigation')}

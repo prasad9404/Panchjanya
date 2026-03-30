@@ -10,6 +10,8 @@ import { collection, getDocs, doc, updateDoc, orderBy, query } from "firebase/fi
 
 // Use the Project's shared Temple and Submission types
 import { Temple, TempleSubmission } from "@/types";
+import { getTranslatedValue } from "@/shared/utils/translationUtils";
+import { useTranslation } from "react-i18next";
 
 export default function Admin() {
   const [temples, setTemples] = useState<Temple[]>([]);
@@ -17,6 +19,8 @@ export default function Admin() {
   const [loading, setLoading] = useState(true);
   const { signOut } = useAuth();
   const { toast } = useToast();
+  const { i18n } = useTranslation();
+  const langCode = i18n?.language?.includes('hi') ? 'hi' : i18n?.language?.includes('mr') ? 'mr' : 'en';
 
   useEffect(() => {
     loadData();
@@ -133,8 +137,8 @@ export default function Admin() {
               <CardHeader>
                 <div className="flex justify-between items-start">
                   <div>
-                    <CardTitle>{temple.name}</CardTitle>
-                    <CardDescription>{typeof temple.location === 'string' ? temple.location : (temple.location as any)?.address || temple.city}</CardDescription>
+                    <CardTitle>{getTranslatedValue(temple.name, langCode)}</CardTitle>
+                    <CardDescription>{getTranslatedValue(typeof temple.location === 'string' ? temple.location : (temple.location as any)?.address || temple.city, langCode)}</CardDescription>
                   </div>
                   <div className="flex gap-2">
                     <Badge variant={temple.is_published ? 'default' : 'secondary'}>
@@ -151,7 +155,7 @@ export default function Admin() {
               </CardHeader>
               <CardContent>
                 <p className="text-sm text-muted-foreground">
-                  District: {temple.district} | Taluka: {temple.taluka}
+                  District: {getTranslatedValue(temple.district, langCode)} | Taluka: {getTranslatedValue(temple.taluka, langCode)}
                 </p>
               </CardContent>
             </Card>

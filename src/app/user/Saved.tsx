@@ -7,6 +7,7 @@ import { Card } from "@/shared/components/ui/card";
 import { useAuth } from "@/auth/AuthContext";
 import { collection, query, onSnapshot, deleteDoc, doc, getDocs } from "firebase/firestore";
 import { db } from "@/auth/firebase";
+import { getTranslatedValue, getLangCode } from "@/shared/utils/translationUtils";
 
 interface SavedTemple {
  id: string;
@@ -19,7 +20,8 @@ interface SavedTemple {
 
 const Saved = () => {
  const navigate = useNavigate();
- const { t } = useTranslation();
+ const { t, i18n } = useTranslation();
+ const langCode = getLangCode(i18n.language || 'en');
  const { user } = useAuth();
  const [savedTemples, setSavedTemples] = useState<SavedTemple[]>([]);
  const [loading, setLoading] = useState(true);
@@ -121,7 +123,7 @@ const Saved = () => {
  <div className="relative aspect-[4/3] overflow-hidden">
  <img
  src={temple.templeImage || "https://placehold.co/400x300?text=Temple"}
- alt={temple.templeName}
+ alt={getTranslatedValue(temple.templeName, langCode)}
  className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
  onError={(e) => {
  (e.target as HTMLImageElement).src = "https://placehold.co/400x300?text=Temple";
@@ -135,10 +137,10 @@ const Saved = () => {
  </div>
  <div className="p-4">
  <h3 className="font-bold text-[#0f3c6e] text-lg mb-1 line-clamp-2">
- {temple.templeName}
+ {getTranslatedValue(temple.templeName, langCode)}
  </h3>
  <p className="text-sm text-gray-500 mb-3 line-clamp-1">
- {temple.templeCity || "Location not specified"}
+ {getTranslatedValue(temple.templeCity, langCode) || "Location not specified"}
  </p>
  </div>
  </div>

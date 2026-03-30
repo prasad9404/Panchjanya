@@ -1,8 +1,10 @@
 import DOMPurify from 'dompurify';
 import { cn } from "@/shared/lib/utils";
+import { getTranslatedValue, getLangCode } from '../../utils/translationUtils';
+import { useTranslation } from 'react-i18next';
 
 interface SafeHTMLProps {
-  html: string;
+  html: any;
   className?: string;
 }
 
@@ -66,10 +68,15 @@ const processLinks = (html: string): string => {
 };
 
 export const SafeHTML = ({ html, className }: SafeHTMLProps) => {
-  if (!html) return null;
+  const { i18n } = useTranslation();
+  const langCode = getLangCode(i18n.language || 'en');
+
+  const safeContent = typeof html === "string" ? html : getTranslatedValue(html, langCode);
+
+  if (!safeContent) return null;
 
   // Process links to add icons and styles
-  const linkified = processLinks(html);
+  const linkified = processLinks(safeContent);
 
   // Then sanitize with DOMPurify, allowing necessary attributes
   const sanitizedHTML = DOMPurify.sanitize(linkified, {

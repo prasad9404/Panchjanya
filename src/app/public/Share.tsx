@@ -8,6 +8,7 @@ import { cn } from "@/shared/lib/utils";
 import { Button } from "@/shared/components/ui/button";
 import { collection, getDocs, query, orderBy } from "firebase/firestore";
 import { db } from "@/auth/firebase";
+import { getLocationUrl } from "@/shared/utils/locationUtils";
 
 interface YatraPlace {
   id: string;
@@ -209,7 +210,12 @@ const Share = () => {
                       size="sm"
                       variant="outline"
                       className="w-full text-xs"
-                      onClick={() => window.open(point.mapLink, "_blank")}
+                      onClick={() => {
+                        const url = getLocationUrl(point.mapLink, point.latitude, point.longitude);
+                        if (url) {
+                          window.open(url, "_blank");
+                        }
+                      }}
                     >
                       <Navigation className="w-3 h-3 mr-1" />
                       Open in Maps

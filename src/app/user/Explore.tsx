@@ -61,6 +61,7 @@ import {
 } from "@/shared/utils/sthanTypes";
 import { SthanType } from "@/shared/types/sthanType";
 import { getTranslatedValue, getLangCode } from "@/shared/utils/translationUtils";
+import { getLocationUrl } from "@/shared/utils/locationUtils";
 
 // Custom styles for Leaflet popup close button
 const popupStyles = `
@@ -369,11 +370,9 @@ function TempleMarker({
               title={t("explore.navigate")}
               onClick={(e) => {
                 e.stopPropagation();
-                if (temple.latitude && temple.longitude) {
-                  window.open(
-                    `https://www.google.com/maps/dir/?api=1&destination=${temple.latitude},${temple.longitude}`,
-                    "_blank",
-                  );
+                const url = getLocationUrl(temple.locationLink, temple.latitude, temple.longitude);
+                if (url) {
+                  window.open(url, "_blank");
                 }
               }}
             >

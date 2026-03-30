@@ -5,9 +5,11 @@ import { Compass, Info, ChevronLeft, Bell, Loader2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useTemples } from "@/shared/hooks/useTemples";
 import { LazyImage } from "@/shared/components/ui/LazyImage";
+import { getTranslatedValue, getLangCode } from "@/shared/utils/translationUtils";
 
 const SthanaVandan = () => {
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
+    const langCode = getLangCode(i18n.language || 'en');
     const { data: temples = [], isLoading } = useTemples();
 
     // Filter temples with architectural data
@@ -78,14 +80,14 @@ const SthanaVandan = () => {
                                 <Card className="overflow-hidden group cursor-pointer hover:shadow-xl transition-all h-full flex flex-col">
                                     <LazyImage
                                         src={temple.architectureImages?.[0] || temple.architectureImage || ""}
-                                        alt={temple.name}
+                                        alt={getTranslatedValue(temple.name, langCode)}
                                         containerClassName="h-40 bg-muted relative"
                                         className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                                     />
                                     <div className="p-4 space-y-2 flex-1 flex flex-col">
-                                        <h3 className="font-bold text-lg text-landing-primary dark:text-primary group-hover:text-accent-gold transition-colors">{temple.name}</h3>
+                                        <h3 className="font-bold text-lg text-landing-primary dark:text-primary group-hover:text-accent-gold transition-colors">{getTranslatedValue(temple.name, langCode)}</h3>
                                         <p className="text-sm text-muted-foreground line-clamp-2">
-                                            {temple.description || t('temple.studyOf', { name: temple.name })}
+                                            {getTranslatedValue(temple.description, langCode) || t('temple.studyOf', { name: getTranslatedValue(temple.name, langCode) })}
                                         </p>
                                         <div className="flex gap-2 pt-2 mt-auto">
                                             <Button className="flex-1 bg-landing-primary group-hover:bg-primary transition-colors text-sm h-9">

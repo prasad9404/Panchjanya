@@ -11,11 +11,13 @@ import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/shared/lib/utils";
 import { SafeHTML } from "@/shared/components/ui/SafeHTML";
+import { getTranslatedValue, getLangCode } from "@/shared/utils/translationUtils";
 
 export default function SthanaDetail() {
     const { id, sthanaId } = useParams<{ id: string; sthanaId: string }>();
     const navigate = useNavigate();
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
+    const langCode = getLangCode(i18n.language || 'en');
     const [searchParams] = useSearchParams();
     const viewParam = searchParams.get('view') || 'architectural';
     const [hotspot, setHotspot] = useState<any | null>(null);
@@ -141,7 +143,7 @@ export default function SthanaDetail() {
                         {hotspot.number}
                     </div>
                     <h1 className="text-2xl md:text-3xl font-heading font-bold text-amber-600 dark:text-foreground font-serif leading-tight truncate flex-1 tracking-wide">
-                        {hotspot.title}
+                        {getTranslatedValue(hotspot.title, langCode)}
                     </h1>
                 </div>
 
@@ -158,7 +160,7 @@ export default function SthanaDetail() {
                     </div>
 
                     <h1 className="text-2xl md:text-3xl font-heading font-bold text-amber-600 dark:text-primary text-center px-16 leading-tight max-w-2xl truncate font-serif tracking-wide">
-                        {hotspot.title}
+                        {getTranslatedValue(hotspot.title, langCode)}
                     </h1>
                 </div>
             </div>
@@ -200,7 +202,7 @@ export default function SthanaDetail() {
                         <div className="relative aspect-[4/3] w-full max-w-7xl mx-auto rounded-2xl overflow-hidden border-4 border-card bg-muted group flex items-center justify-center">
                             <img
                                 src={displayImages[currentImageIndex]}
-                                alt={hotspot.title}
+                                alt={getTranslatedValue(hotspot.title, langCode)}
                                 className={cn(
                                     "cursor-pointer transition-all duration-500 object-center mx-auto block",
                                     hotspot.fitMode === 'cover' ? "w-full h-full object-cover" : "max-w-full max-h-full object-contain"
@@ -271,7 +273,7 @@ export default function SthanaDetail() {
                                 <div className="pl-2">
                                     <div className="flex items-center gap-2 mb-2">
                                         <div className="w-1 h-6 bg-amber-600"></div>
-                                        <h3 className="text-blue-900 dark:text-primary font-bold tracking-widest text-xl">{hotspot.generalDescriptionTitle || t('common.description')}</h3>
+                                        <h3 className="text-blue-900 dark:text-primary font-bold tracking-widest text-xl">{getTranslatedValue(hotspot.generalDescriptionTitle, langCode) || t('common.description')}</h3>
                                     </div>
                                     <div className="bg-card border border-border rounded-xl p-4 shadow-sm relative z-10 space-y-4">
                                         <div>
@@ -327,8 +329,8 @@ export default function SthanaDetail() {
                                                         <span className="w-8 h-8 rounded-full bg-amber-500/10 text-amber-600 flex items-center justify-center font-bold text-xs shrink-0">
                                                             {index + 1}
                                                         </span>
-                                                        <span className={`font-serif text-lg leading-snug transition-colors duration-200 text-amber-600 dark:text-foreground font-bold`}>
-                                                            {((typeof leela === 'object' && leela.title) ? leela.title : `${t('common.leela')} ${index + 1}`)}
+                                                        <span className={`font-serif text-lg leading-snug transition-colors duration-200 text-blue-900 dark:text-foreground font-bold`}>
+                                                            {((typeof leela === 'object' && leela.title) ? getTranslatedValue(leela.title, langCode) : `${t('common.leela')} ${index + 1}`)}
                                                         </span>
                                                     </div>
                                                     <div className={`shrink-0 transition-transform duration-300 ${isExpanded ? 'rotate-180 text-accent-gold' : 'text-muted-foreground'}`}>
@@ -360,7 +362,7 @@ export default function SthanaDetail() {
                     <div className="relative w-full h-full flex items-center justify-center">
                         <img
                             src={displayImages[currentImageIndex]}
-                            alt={`${hotspot.title} - Full view`}
+                            alt={`${getTranslatedValue(hotspot.title, langCode)} - Full view`}
                             className="max-w-full max-h-[100vh] object-contain object-center"
                             onError={(e) => {
                                 (e.target as HTMLImageElement).src = '/placeholder-temple.jpg';
