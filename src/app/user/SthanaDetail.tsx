@@ -275,11 +275,13 @@ export default function SthanaDetail() {
                                         <div className="w-1 h-6 bg-amber-600"></div>
                                         <h3 className="text-blue-900 dark:text-primary font-bold tracking-widest text-xl">{getTranslatedValue(hotspot.generalDescriptionTitle, langCode) || t('common.description')}</h3>
                                     </div>
-                                    <div className="bg-card border border-border rounded-xl p-4 shadow-sm relative z-10 space-y-4">
-                                        <div>
-                                            <SafeHTML html={hotspot.description || hotspot.significance || t('common.noInfo')} />
+                                    {(hotspot.description || hotspot.significance) && (
+                                        <div className="bg-card border border-border rounded-xl p-4 shadow-sm relative z-10 space-y-4">
+                                            <div>
+                                                <SafeHTML html={hotspot.description || hotspot.significance} />
+                                            </div>
                                         </div>
-                                    </div>
+                                    )}
                                 </div>
 
                             </div>

@@ -903,7 +903,7 @@ export default function ArchitectureViewer() {
                   temple.customBlocks?.some(b => (b.page_type || 'page2') === 'page2')) && (
                   <div className="space-y-5">
                     {temple.descriptionSections
-                      ?.filter(section => (section.page_type || 'page1') === 'page2')
+                      ?.filter(section => (section.page_type || 'page1') === 'page2' && getTranslatedValue(section.content, langCode).trim() !== "")
                       .sort((a, b) => (a.order || 0) - (b.order || 0))
                       .map((section) => (
                         <div key={section.id} className="space-y-2">
@@ -917,7 +917,7 @@ export default function ArchitectureViewer() {
                       ))
                     }
                     {temple.customBlocks
-                      ?.filter(block => (block.page_type || 'page2') === 'page2')
+                      ?.filter(block => (block.page_type || 'page2') === 'page2' && getTranslatedValue(block.content, langCode).trim() !== "")
                       .sort((a, b) => (a.order || 0) - (b.order || 0))
                       .map((block) => (
                         <div key={block.id} className="space-y-2">
@@ -933,65 +933,68 @@ export default function ArchitectureViewer() {
                   </div>
                 )}
 
-                {/* Sthana List Heading */}
-                <div className="flex items-center gap-3 pt-4 pb-2">
-                  <div className="w-1 h-6 bg-amber-600"></div>
-                  <h4 className="font-heading text-xl font-bold text-blue-900">{t('temple.differentSthans')}</h4>
-                </div>
+                {/* Sthana List Heading & List */}
+                {displayDetails.length > 0 && (
+                  <>
+                    <div className="flex items-center gap-3 pt-4 pb-2">
+                      <div className="w-1 h-6 bg-amber-600"></div>
+                      <h4 className="font-heading text-xl font-bold text-blue-900">{t('temple.differentSthans')}</h4>
+                    </div>
 
-                {/* Sthana List */}
-                <div className="flex flex-col gap-2 md:gap-4">
-                  {displayDetails.map((d) => {
-                    const isSelected = selectedHotspotId === d.targetId || 
-                                     selectedHotspotId === d.id || 
-                                     presentHotspots.some(ph => ph.id === selectedHotspotId && ph.sthanaId === d.targetId);
+                    <div className="flex flex-col gap-2 md:gap-4">
+                      {displayDetails.map((d) => {
+                        const isSelected = selectedHotspotId === d.targetId || 
+                                        selectedHotspotId === d.id || 
+                                        presentHotspots.some(ph => ph.id === selectedHotspotId && ph.sthanaId === d.targetId);
 
-                    return (
-                      <div
-                        key={d.id}
-                        ref={(el) => (cardRefs.current[d.targetId] = el)}
-                        id={`sthana-card-${d.targetId}`}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleSelectHotspot(isSelected ? null : d.targetId, isSelected ? null : 'list');
-                        }}
-                        className={`w-full h-12 md:h-14 flex flex-row items-center justify-between px-3 md:px-6 py-1 bg-white rounded-2xl transition-all duration-300 group cursor-pointer shadow-sm border border-slate-100 ${isSelected
-                          ? 'bg-amber-50 border-amber-200'
-                          : 'hover:bg-slate-50 hover:border-amber-200'
-                          }`}
-                        onMouseEnter={() => setHoveredHotspotId(d.targetId)}
-                        onMouseLeave={() => setHoveredHotspotId(null)}
-                      >
-                        <div className="flex-1 h-full flex items-center px-1 py-2 gap-2 overflow-hidden">
-                          <div className={`w-8 h-8 rounded-full font-bold flex items-center justify-center border shrink-0 text-sm md:text-base transition-all duration-200 ${isSelected
-                            ? 'bg-amber-600 text-white border-amber-600'
-                            : ' text-amber-600 border-amber-600 group-hover:bg-amber-600 group-hover:text-white group-hover:border-amber-600'
-                            }`}>
-                            {d.number || "S"}
+                        return (
+                          <div
+                            key={d.id}
+                            ref={(el) => (cardRefs.current[d.targetId] = el)}
+                            id={`sthana-card-${d.targetId}`}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleSelectHotspot(isSelected ? null : d.targetId, isSelected ? null : 'list');
+                            }}
+                            className={`w-full h-12 md:h-14 flex flex-row items-center justify-between px-3 md:px-6 py-1 bg-white rounded-2xl transition-all duration-300 group cursor-pointer shadow-sm border border-slate-100 ${isSelected
+                              ? 'bg-amber-50 border-amber-200'
+                              : 'hover:bg-slate-50 hover:border-amber-200'
+                              }`}
+                            onMouseEnter={() => setHoveredHotspotId(d.targetId)}
+                            onMouseLeave={() => setHoveredHotspotId(null)}
+                          >
+                            <div className="flex-1 h-full flex items-center px-1 py-2 gap-2 overflow-hidden">
+                              <div className={`w-8 h-8 rounded-full font-bold flex items-center justify-center border shrink-0 text-sm md:text-base transition-all duration-200 ${isSelected
+                                ? 'bg-amber-600 text-white border-amber-600'
+                                : ' text-amber-600 border-amber-600 group-hover:bg-amber-600 group-hover:text-white group-hover:border-amber-600'
+                                }`}>
+                                {d.number || "S"}
+                              </div>
+                              <span className={`font-heading font-bold text-xl md:text-2xl leading-tight line-clamp-1 transition-colors duration-200 truncate ${isSelected
+                                ? 'text-amber-700'
+                                : 'text-blue-900 group-hover:text-amber-700'
+                                }`}>
+                                {getTranslatedValue(d.title, langCode)}
+                              </span>
+                            </div>
+                            <div
+                              className={`flex items-center justify-center w-12 md:w-16 h-full transition-all duration-300 rounded-r-2xl ${isSelected ? 'bg-amber-50/50' : 'hover:bg-slate-50'}`}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                navigate(`/temple/${id}/architecture/sthana/${d.id}?view=${imageType}`);
+                              }}
+                            >
+                              <ChevronRight className={`w-5 h-5 transition-all duration-300 group-hover:translate-x-1 ${isSelected
+                                ? 'text-amber-600'
+                                : 'text-amber-700 lg:text-slate-300 lg:group-hover:text-amber-500'
+                                }`} />
+                            </div>
                           </div>
-                          <span className={`font-heading font-bold text-xl md:text-2xl leading-tight line-clamp-1 transition-colors duration-200 truncate ${isSelected
-                            ? 'text-amber-700'
-                            : 'text-blue-900 group-hover:text-amber-700'
-                            }`}>
-                            {getTranslatedValue(d.title, langCode)}
-                          </span>
-                        </div>
-                        <div
-                          className={`flex items-center justify-center w-12 md:w-16 h-full transition-all duration-300 rounded-r-2xl ${isSelected ? 'bg-amber-50/50' : 'hover:bg-slate-50'}`}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            navigate(`/temple/${id}/architecture/sthana/${d.id}?view=${imageType}`);
-                          }}
-                        >
-                          <ChevronRight className={`w-5 h-5 transition-all duration-300 group-hover:translate-x-1 ${isSelected
-                            ? 'text-amber-600'
-                            : 'text-amber-700 lg:text-slate-300 lg:group-hover:text-amber-500'
-                            }`} />
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
+                        );
+                      })}
+                    </div>
+                  </>
+                )}
 
                 {/* Back to Top Button */}
                 <div className="flex flex-col items-center gap-2 pt-8">

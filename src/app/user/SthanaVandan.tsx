@@ -86,9 +86,11 @@ const SthanaVandan = () => {
                                     />
                                     <div className="p-4 space-y-2 flex-1 flex flex-col">
                                         <h3 className="font-bold text-lg text-landing-primary dark:text-primary group-hover:text-accent-gold transition-colors">{getTranslatedValue(temple.name, langCode)}</h3>
-                                        <p className="text-sm text-muted-foreground line-clamp-2">
-                                            {getTranslatedValue(temple.description, langCode) || t('temple.studyOf', { name: getTranslatedValue(temple.name, langCode) })}
-                                        </p>
+                                        {getTranslatedValue(temple.description, langCode).trim() && (
+                                            <p className="text-sm text-muted-foreground line-clamp-2">
+                                                {getTranslatedValue(temple.description, langCode)}
+                                            </p>
+                                        )}
                                         <div className="flex gap-2 pt-2 mt-auto">
                                             <Button className="flex-1 bg-landing-primary group-hover:bg-primary transition-colors text-sm h-9">
                                                 {t('temple.viewArchitecture')}

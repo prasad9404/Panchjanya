@@ -261,17 +261,28 @@ export default function TempleArchitecture() {
                         </div>
 
                         {/* Subtitle and Address - Aligned with Title */}
-                        <div className={cn(
-                            "space-y-1 overflow-hidden transition-all duration-300 ease-in-out origin-top will-change-[max-height,opacity]",
-                            isScrolled ? "max-h-0 opacity-0 mt-0" : "max-h-32 opacity-100 mt-1"
-                        )}>
-                            <h2 className="text-base text-[#0f3c6e] font-serif">
-                                <span className="font-bold">{getTranslatedValue(temple.todaysName, langCode)}</span> {temple.todaysNameTitle && `(${getTranslatedValue(temple.todaysNameTitle, langCode)})`}
-                            </h2>
-                            <p className="text-sm font-bold text-amber-600 leading-tight">
-                                {getTranslatedValue(temple.address, langCode)}
-                            </p>
-                        </div>
+                        {(getTranslatedValue(temple.todaysName, langCode).trim() || getTranslatedValue(temple.todaysNameTitle, langCode).trim() || getTranslatedValue(temple.address, langCode).trim()) && (
+                            <div className={cn(
+                                "space-y-1 overflow-hidden transition-all duration-300 ease-in-out origin-top will-change-[max-height,opacity]",
+                                isScrolled ? "max-h-0 opacity-0 mt-0" : "max-h-32 opacity-100 mt-1"
+                            )}>
+                                {(getTranslatedValue(temple.todaysName, langCode).trim() || getTranslatedValue(temple.todaysNameTitle, langCode).trim()) && (
+                                    <h2 className="text-base text-[#0f3c6e] font-serif">
+                                        {getTranslatedValue(temple.todaysName, langCode).trim() && (
+                                            <span className="font-bold">{getTranslatedValue(temple.todaysName, langCode)}</span>
+                                        )}
+                                        {getTranslatedValue(temple.todaysNameTitle, langCode).trim() && (
+                                            ` (${getTranslatedValue(temple.todaysNameTitle, langCode)})`
+                                        )}
+                                    </h2>
+                                )}
+                                {getTranslatedValue(temple.address, langCode).trim() && (
+                                    <p className="text-sm font-bold text-amber-600 leading-tight">
+                                        {getTranslatedValue(temple.address, langCode)}
+                                    </p>
+                                )}
+                            </div>
+                        )}
 
                     </div>
                 </div>
@@ -308,10 +319,12 @@ export default function TempleArchitecture() {
                             </DialogHeader>
                             <div className="py-4 space-y-6">
                                 <div className="text-sm text-slate-700 font-serif leading-relaxed px-1">
-                                    <SafeHTML html={getTranslatedValue(temple.directions_text, langCode) || t('temple.noInfo')} />
+                                    {getTranslatedValue(temple.directions_text, langCode).trim() ? (
+                                        <SafeHTML html={getTranslatedValue(temple.directions_text, langCode)} />
+                                    ) : null}
                                 </div>
 
-                                {(temple.contactName || temple.contactNumber || temple.contactDetails) && (
+                                {(temple.contactName || temple.contactNumber || (getTranslatedValue(temple.contactDetails, langCode).trim())) && (
                                     <div className="mt-2 p-2 rounded-2xl border border-blue-100/50 space-y-4">
                                         <div className="flex items-center gap-2">
                                             <div className="w-1.5 h-1.5 rounded-full bg-blue-600" />
@@ -325,7 +338,7 @@ export default function TempleArchitecture() {
                                                         : (temple.contactName || temple.contactNumber)}
                                                 </p>
                                             )}
-                                            {temple.contactDetails && (
+                                            {getTranslatedValue(temple.contactDetails, langCode).trim() && (
                                                 <div className="flex gap-2 text-sm text-slate-700 leading-relaxed font-serif pt-1 border-t border-blue-100/50">
                                                     <span className="font-bold text-slate-400 not-italic shrink-0">{t('common.note')}</span>
                                                     <p className="italic">{getTranslatedValue(temple.contactDetails, langCode)}</p>
@@ -489,20 +502,22 @@ export default function TempleArchitecture() {
                         </h3>
                     </div>
 
-                    <div className="bg-white p-3 md:p-5 rounded-2xl border border-slate-100 relative overflow-hidden">
-                        <div className="absolute top-0 left-0 w-1 h-full bg-orange-500/10"></div>
-                        <div className="pl-2">
-                            <SafeHTML 
-                                html={getTranslatedValue(temple.sthana_info_text, langCode) || getTranslatedValue(temple.sthana, langCode) || t('common.noInfo')} 
-                            />
+                    {(getTranslatedValue(temple.sthana_info_text, langCode).trim() || getTranslatedValue(temple.sthana, langCode).trim()) && (
+                        <div className="bg-white p-3 md:p-5 rounded-2xl border border-slate-100 relative overflow-hidden">
+                            <div className="absolute top-0 left-0 w-1 h-full bg-orange-500/10"></div>
+                            <div className="pl-2">
+                                <SafeHTML 
+                                    html={getTranslatedValue(temple.sthana_info_text, langCode) || getTranslatedValue(temple.sthana, langCode)} 
+                                />
+                            </div>
                         </div>
-                    </div>
+                    )}
 
 
 
                     {/* Description Sections (Step 1) */}
                     {temple.descriptionSections && temple.descriptionSections.length > 0 && temple.descriptionSections
-                        .filter(section => (section.page_type || 'page1') === 'page1')
+                        .filter(section => (section.page_type || 'page1') === 'page1' && getTranslatedValue(section.content, langCode).trim() !== "")
                         .map((section) => (
                         <div key={section.id} className="space-y-3 md:space-y-4 pt-2">
                             <div className="flex items-center gap-3">
@@ -522,7 +537,7 @@ export default function TempleArchitecture() {
 
                     {/* Custom Blocks (Step 2) */}
                     {temple.customBlocks && temple.customBlocks.length > 0 && temple.customBlocks
-                        .filter(block => (block.page_type || 'page2') === 'page1')
+                        .filter(block => (block.page_type || 'page2') === 'page1' && getTranslatedValue(block.content, langCode).trim() !== "")
                         .map((block) => (
                         <div key={block.id} className="space-y-3 md:space-y-4 pt-2">
                             <div className="flex items-center gap-3">
