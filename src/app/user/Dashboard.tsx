@@ -24,7 +24,7 @@ const Dashboard = () => {
             <div className="max-w-md mx-auto lg:max-w-4xl px-4 lg:px-6 space-y-8 animate-in fade-in duration-500">
 
                 {/* Top Bar - Homepage Logo Header */}
-                <div className="flex flex-col items-center justify-center pt-2 pb-0 w-full cursor-default overflow-hidden">
+                <div className="flex flex-col items-center justify-center pt-4 lg:pt-6 pb-0 w-full cursor-default overflow-hidden">
                     <img
                         src="/icons/Homepage logo.svg"
                         alt="Panchjanya Homepage Logo"
