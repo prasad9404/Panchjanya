@@ -24,11 +24,11 @@ const Dashboard = () => {
             <div className="max-w-md mx-auto lg:max-w-4xl px-4 lg:px-6 space-y-8 animate-in fade-in duration-500">
 
                 {/* Top Bar - Homepage Logo Header */}
-                <div className="flex flex-col items-center justify-center pt-6 pb-2 md:pt-8 md:pb-4 w-full cursor-default">
+                <div className="flex flex-col items-center justify-center pt-2 pb-0 w-full cursor-default overflow-hidden">
                     <img
                         src="/icons/Homepage logo.svg"
                         alt="Panchjanya Homepage Logo"
-                        className="h-20 sm:h-24 md:h-28 lg:h-32 w-auto max-w-[95%] object-contain drop-shadow-[0_4px_12px_rgba(15,60,110,0.15)] transition-transform duration-500 ease-out hover:scale-[1.02]"
+                        className="h-40 sm:h-52 md:h-64 lg:h-72 w-auto max-w-[80%] object-contain scale-[1.5] drop-shadow-[0_4px_12px_rgba(15,60,110,0.15)] transition-transform duration-500 ease-out hover:scale-[1.55]"
                     />
                 </div>
 
