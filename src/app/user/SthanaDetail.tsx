@@ -327,11 +327,19 @@ export default function SthanaDetail() {
                                                     onClick={() => setExpandedLeelaId(isExpanded ? null : leelaId)}
                                                     className={`w-full flex items-center justify-between p-4 text-left gap-4 transition-colors bg-transparent`}
                                                 >
-                                                    <div className="flex items-center gap-3">
-                                                        <span className="w-8 h-8 rounded-full bg-amber-500/10 text-amber-600 flex items-center justify-center font-bold text-xs shrink-0">
+                                                    <div className="flex items-center gap-3 md:gap-4">
+                                                        <span className={cn(
+                                                            "w-9 h-9 md:w-11 md:h-11 rounded-full transition-all duration-300 flex items-center justify-center font-bold text-sm md:text-base shrink-0",
+                                                            isExpanded 
+                                                                ? "bg-blue-900 text-white border-transparent shadow-md transform scale-110" 
+                                                                : "bg-transparent text-blue-900 border-2 border-blue-900/10"
+                                                        )}>
                                                             {index + 1}
                                                         </span>
-                                                        <span className={`font-serif text-lg leading-snug transition-colors duration-200 text-blue-900 dark:text-foreground font-bold`}>
+                                                        <span className={cn(
+                                                            "font-serif text-xl md:text-2xl leading-tight transition-all duration-300 font-bold tracking-tight md:tracking-wide",
+                                                            isExpanded ? "text-blue-900 scale-[1.02]" : "text-blue-900/80"
+                                                        )}>
                                                             {((typeof leela === 'object' && leela.title) ? getTranslatedValue(leela.title, langCode) : `${t('common.leela')} ${index + 1}`)}
                                                         </span>
                                                     </div>
