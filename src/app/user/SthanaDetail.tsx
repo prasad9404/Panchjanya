@@ -325,25 +325,31 @@ export default function SthanaDetail() {
                                             >
                                                 <button
                                                     onClick={() => setExpandedLeelaId(isExpanded ? null : leelaId)}
-                                                    className={`w-full flex items-center justify-between p-4 text-left gap-4 transition-colors bg-transparent`}
+                                                    className={cn(
+                                                        "w-full h-12 md:h-14 flex items-center justify-between px-3 md:px-6 py-1 text-left transition-all duration-300 bg-transparent",
+                                                        isExpanded && "h-auto py-3 border-b border-blue-900/5"
+                                                    )}
                                                 >
-                                                    <div className="flex items-center gap-3 md:gap-4">
+                                                    <div className="flex items-center gap-3 md:gap-4 flex-1 min-w-0">
                                                         <span className={cn(
-                                                            "w-9 h-9 md:w-11 md:h-11 rounded-full transition-all duration-300 flex items-center justify-center font-bold text-sm md:text-base shrink-0",
-                                                            isExpanded 
-                                                                ? "bg-blue-900 text-white border-transparent shadow-md transform scale-110" 
-                                                                : "bg-transparent text-blue-900 border-2 border-blue-900/10"
+                                                            "w-8 h-8 rounded-full transition-all duration-300 flex items-center justify-center font-bold text-sm md:text-base shrink-0",
+                                                            isExpanded
+                                                                ? "bg-blue-900 text-white border-transparent shadow-md transform scale-110"
+                                                                : "bg-transparent text-blue-900 border border-blue-900/70"
                                                         )}>
                                                             {index + 1}
                                                         </span>
                                                         <span className={cn(
-                                                            "font-serif text-xl md:text-2xl leading-tight transition-all duration-300 font-bold tracking-tight md:tracking-wide",
-                                                            isExpanded ? "text-blue-900 scale-[1.02]" : "text-blue-900/80"
+                                                            "font-serif text-xl md:text-2xl leading-tight transition-all duration-300 font-bold tracking-tight md:tracking-wide truncate",
+                                                            isExpanded ? "text-blue-900" : "text-blue-900/80"
                                                         )}>
                                                             {((typeof leela === 'object' && leela.title) ? getTranslatedValue(leela.title, langCode) : `${t('common.leela')} ${index + 1}`)}
                                                         </span>
                                                     </div>
-                                                    <div className={`shrink-0 transition-transform duration-300 ${isExpanded ? 'rotate-180 text-accent-gold' : 'text-muted-foreground'}`}>
+                                                    <div className={cn(
+                                                        "shrink-0 transition-all duration-300 ml-2",
+                                                        isExpanded ? "rotate-180 text-blue-900" : "text-blue-900/40"
+                                                    )}>
                                                         <ChevronDown className="w-5 h-5" />
                                                     </div>
                                                 </button>
