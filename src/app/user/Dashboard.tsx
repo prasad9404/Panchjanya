@@ -28,7 +28,7 @@ const Dashboard = () => {
                     <img
                         src="/icons/Homepage logo.svg"
                         alt="Panchjanya Homepage Logo"
-                        className="h-32 sm:h-40 md:h-48 lg:h-56 w-auto max-w-[80%] object-contain scale-[1.5] drop-shadow-[0_4px_12px_rgba(15,60,110,0.15)]"
+                        className="h-32 sm:h-40 md:h-48 lg:h-56 w-auto max-w-[80%] object-contain scale-[1.5] drop-shadow-[0_4px_12px_rgba(15,60,110,0.15)] mix-blend-multiply"
                     />
                 </div>
 

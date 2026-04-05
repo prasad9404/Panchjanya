@@ -374,7 +374,7 @@ export default function TempleArchitecture() {
 
                 {/* Image Slider */}
                 <div className="pb-2">
-                    <div className="relative aspect-[4/3] w-full rounded-2xl overflow-hidden border-4 border-white bg-gray-200 group">
+                    <div className="relative aspect-[4/3] w-full rounded-2xl overflow-hidden bg-transparent group">
                         <Carousel className="w-full h-full">
                             <CarouselContent className="h-full">
                                 {displayImages.map((img, index) => (
