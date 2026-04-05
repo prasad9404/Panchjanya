@@ -267,7 +267,7 @@ export default function TempleArchitecture() {
                                 isScrolled ? "max-h-0 opacity-0 mt-0" : "max-h-32 opacity-100 mt-1"
                             )}>
                                 {(getTranslatedValue(temple.todaysName, langCode).trim() || getTranslatedValue(temple.todaysNameTitle, langCode).trim()) && (
-                                    <h2 className="text-base text-[#0f3c6e] font-serif">
+                                    <h2 className="text-lg text-[#0f3c6e] font-serif">
                                         {getTranslatedValue(temple.todaysName, langCode).trim() && (
                                             <span className="font-bold">{getTranslatedValue(temple.todaysName, langCode)}</span>
                                         )}
