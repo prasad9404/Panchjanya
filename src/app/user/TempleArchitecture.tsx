@@ -272,7 +272,9 @@ export default function TempleArchitecture() {
                                             <span className="font-bold">{getTranslatedValue(temple.todaysName, langCode)}</span>
                                         )}
                                         {getTranslatedValue(temple.todaysNameTitle, langCode).trim() && (
-                                            ` (${getTranslatedValue(temple.todaysNameTitle, langCode)})`
+                                            <span className="text-sm font-normal ml-1 whitespace-nowrap">
+                                                ({getTranslatedValue(temple.todaysNameTitle, langCode)})
+                                            </span>
                                         )}
                                     </h2>
                                 )}
@@ -506,8 +508,8 @@ export default function TempleArchitecture() {
                         <div className="bg-white p-3 md:p-5 rounded-2xl border border-slate-100 relative overflow-hidden">
                             <div className="absolute top-0 left-0 w-1 h-full bg-orange-500/10"></div>
                             <div className="pl-2">
-                                <SafeHTML 
-                                    html={getTranslatedValue(temple.sthana_info_text, langCode) || getTranslatedValue(temple.sthana, langCode)} 
+                                <SafeHTML
+                                    html={getTranslatedValue(temple.sthana_info_text, langCode) || getTranslatedValue(temple.sthana, langCode)}
                                 />
                             </div>
                         </div>
@@ -519,41 +521,41 @@ export default function TempleArchitecture() {
                     {temple.descriptionSections && temple.descriptionSections.length > 0 && temple.descriptionSections
                         .filter(section => (section.page_type || 'page1') === 'page1' && getTranslatedValue(section.content, langCode).trim() !== "")
                         .map((section) => (
-                        <div key={section.id} className="space-y-3 md:space-y-4 pt-2">
-                            <div className="flex items-center gap-3">
-                                <div className="w-1 h-6 bg-amber-600"></div>
-                                <h3 className="font-heading text-xl font-bold text-blue-900">
-                                    {getTranslatedValue(section.title, langCode)}
-                                </h3>
-                            </div>
-                            <div className="bg-white p-3 md:p-5 rounded-2xl border border-slate-100 relative overflow-hidden">
-                                <div className="absolute top-0 left-0 w-1 h-full bg-blue-500/10"></div>
-                                <div className="pl-2">
-                                    <SafeHTML html={getTranslatedValue(section.content, langCode)} />
+                            <div key={section.id} className="space-y-3 md:space-y-4 pt-2">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-1 h-6 bg-amber-600"></div>
+                                    <h3 className="font-heading text-xl font-bold text-blue-900">
+                                        {getTranslatedValue(section.title, langCode)}
+                                    </h3>
+                                </div>
+                                <div className="bg-white p-3 md:p-5 rounded-2xl border border-slate-100 relative overflow-hidden">
+                                    <div className="absolute top-0 left-0 w-1 h-full bg-blue-500/10"></div>
+                                    <div className="pl-2">
+                                        <SafeHTML html={getTranslatedValue(section.content, langCode)} />
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    ))}
+                        ))}
 
                     {/* Custom Blocks (Step 2) */}
                     {temple.customBlocks && temple.customBlocks.length > 0 && temple.customBlocks
                         .filter(block => (block.page_type || 'page2') === 'page1' && getTranslatedValue(block.content, langCode).trim() !== "")
                         .map((block) => (
-                        <div key={block.id} className="space-y-3 md:space-y-4 pt-2">
-                            <div className="flex items-center gap-3">
-                                <div className="w-1 h-6 bg-amber-600"></div>
-                                <h3 className="font-heading text-xl font-bold text-blue-900">
-                                    {getTranslatedValue(block.title, langCode)}
-                                </h3>
-                            </div>
-                            <div className="bg-white p-3 md:p-5 rounded-2xl border border-slate-100 relative overflow-hidden">
-                                <div className="absolute top-0 left-0 w-1 h-full bg-emerald-500/10"></div>
-                                <div className="pl-2">
-                                    <SafeHTML html={getTranslatedValue(block.content, langCode)} />
+                            <div key={block.id} className="space-y-3 md:space-y-4 pt-2">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-1 h-6 bg-amber-600"></div>
+                                    <h3 className="font-heading text-xl font-bold text-blue-900">
+                                        {getTranslatedValue(block.title, langCode)}
+                                    </h3>
+                                </div>
+                                <div className="bg-white p-3 md:p-5 rounded-2xl border border-slate-100 relative overflow-hidden">
+                                    <div className="absolute top-0 left-0 w-1 h-full bg-emerald-500/10"></div>
+                                    <div className="pl-2">
+                                        <SafeHTML html={getTranslatedValue(block.content, langCode)} />
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    ))}
+                        ))}
                 </div>
 
             </div>
