@@ -139,7 +139,7 @@ export default function SthanaDetail() {
                     <Button variant="ghost" size="icon" onClick={() => navigate(`/temple/${id}/architecture-view?view=${viewParam}`, { replace: true })} className="-ml-2 hover:bg-accent/10 shrink-0 bg-accent/5 h-9 w-9 rounded-full">
                         <ChevronLeft className="w-7 h-7 text-landing-primary dark:text-foreground" />
                     </Button>
-                    <div className="flex w-7 h-7 rounded-full bg-amber-500/10 text-amber-600 border border-amber-200 font-bold items-center justify-center text-sm shrink-0">
+                    <div className="flex w-7 h-7 rounded-full bg-amber-600 text-white border border-amber-200 font-bold items-center justify-center text-sm shrink-0">
                         {hotspot.number}
                     </div>
                     <h1 className="text-2xl md:text-3xl font-heading font-bold text-amber-600 dark:text-foreground font-serif leading-tight truncate flex-1 tracking-wide">
