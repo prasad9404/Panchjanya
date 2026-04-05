@@ -849,7 +849,12 @@ export default function ArchitectureViewer() {
                             <div className="w-1 h-6 bg-amber-600 shrink-0"></div>
                             <h4 className={`font-heading font-bold text-xl tracking-wider transition-colors truncate ${isSelectedInPothi ? 'text-amber-700' : 'text-blue-900 group-hover:text-amber-700'}`}>{getTranslatedValue(d.title, langCode)}</h4>
                             {d.hasMapMarker && (
-                              <div className="w-5 h-5 rounded-full bg-blue-100 flex items-center justify-center text-[10px] font-black text-blue-800 shrink-0">
+                              <div className={cn(
+                                "w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black shrink-0 transition-all duration-300",
+                                isSelectedInPothi 
+                                  ? "bg-amber-600 text-white shadow-sm" 
+                                  : "bg-blue-100 text-blue-800 group-hover:bg-amber-600 group-hover:text-white"
+                              )}>
                                 {d.number}
                               </div>
                             )}
