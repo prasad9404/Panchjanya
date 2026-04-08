@@ -64,6 +64,7 @@ export default function TempleForm({ templeId }: TempleFormProps) {
     const [originalTempleData, setOriginalTempleData] = useState<any>(null);
     const [manualStatus, setManualStatus] = useState<any>();
     const [hasArchitecture, setHasArchitecture] = useState(false); // default: false (standalone)
+    const [isAutoTranslateOn, setIsAutoTranslateOn] = useState(false);
 
     // Load sthan types
     useEffect(() => {
@@ -348,16 +349,31 @@ export default function TempleForm({ templeId }: TempleFormProps) {
                     </TabsList>
                 </Tabs>
 
-                <Button 
-                    type="button" 
-                    variant="outline" 
-                    onClick={handleAutoTranslate}
-                    disabled={loading || !name.en}
-                    className="rounded-xl border-slate-200 hover:bg-slate-50 gap-2 h-10 px-4 group"
-                >
-                    <Wand2 className="w-4 h-4 text-blue-500 group-hover:rotate-12 transition-transform" />
-                    <span className="text-xs font-bold uppercase tracking-wider">Auto Translate</span>
-                </Button>
+                <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2 bg-slate-100/50 px-3 py-2 rounded-xl border border-slate-100/50 transition-colors hover:bg-slate-100">
+                        <Label htmlFor="auto-translate-switch" className="text-[10px] font-bold uppercase tracking-wider text-slate-500 cursor-pointer">
+                            Auto Translate
+                        </Label>
+                        <Switch
+                            id="auto-translate-switch"
+                            checked={isAutoTranslateOn}
+                            onCheckedChange={setIsAutoTranslateOn}
+                            className="data-[state=checked]:bg-blue-500 h-[20px] w-[36px]"
+                        />
+                    </div>
+                    {isAutoTranslateOn && (
+                        <Button 
+                            type="button" 
+                            variant="outline" 
+                            onClick={handleAutoTranslate}
+                            disabled={loading || !name.en}
+                            className="rounded-xl border-slate-200 hover:bg-slate-50 gap-2 h-10 px-4 group"
+                        >
+                            <Wand2 className="w-4 h-4 text-blue-500 group-hover:rotate-12 transition-transform" />
+                            <span className="text-xs font-bold uppercase tracking-wider">Run Now</span>
+                        </Button>
+                    )}
+                </div>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-12">

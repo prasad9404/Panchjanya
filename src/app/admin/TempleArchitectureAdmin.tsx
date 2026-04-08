@@ -285,6 +285,7 @@ export default function TempleArchitectureAdmin({
   const [zoom, setZoom] = useState(1);
   const [loading, setLoading] = useState(false);
   const [isTranslating, setIsTranslating] = useState(false);
+  const [isAutoTranslateOn, setIsAutoTranslateOn] = useState(false);
   const [saving, setSaving] = useState(false);
   const [adminImageIndex, setAdminImageIndex] = useState(0);
   const [currentStep, setCurrentStepInternal] = useState<'sthan-info' | 'architecture-view' | 'sthana-details'>(initialStep || 'sthan-info');
@@ -1505,24 +1506,39 @@ export default function TempleArchitectureAdmin({
                 </TabsList>
               </Tabs>
 
-              <Button
-                onClick={handleAutoTranslateAll}
-                disabled={isTranslating}
-                variant="outline"
-                className="h-10 rounded-xl border-blue-200 text-blue-700 hover:bg-blue-50 font-bold px-4 gap-2 transition-all"
-              >
-                {isTranslating ? (
-                  <>
-                    <RefreshCw className="w-4 h-4 animate-spin" />
-                    Translating...
-                  </>
-                ) : (
-                  <>
-                    <Globe className="w-4 h-4" />
-                    Auto-Translate (Google)
-                  </>
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 bg-slate-100/50 px-3 py-2 rounded-xl border border-slate-100/50 transition-colors hover:bg-slate-100">
+                  <Label htmlFor="auto-translate-switch-admin" className="text-[10px] font-bold uppercase tracking-wider text-slate-500 cursor-pointer">
+                    Auto Translate
+                  </Label>
+                  <Switch
+                    id="auto-translate-switch-admin"
+                    checked={isAutoTranslateOn}
+                    onCheckedChange={setIsAutoTranslateOn}
+                    className="data-[state=checked]:bg-blue-500 h-[20px] w-[36px]"
+                  />
+                </div>
+                {isAutoTranslateOn && (
+                  <Button
+                    onClick={handleAutoTranslateAll}
+                    disabled={isTranslating}
+                    variant="outline"
+                    className="h-10 rounded-xl border-blue-200 text-blue-700 hover:bg-blue-50 font-bold px-4 gap-2 transition-all"
+                  >
+                    {isTranslating ? (
+                      <>
+                        <RefreshCw className="w-4 h-4 animate-spin" />
+                        Translating...
+                      </>
+                    ) : (
+                      <>
+                        <Globe className="w-4 h-4" />
+                        Auto-Translate (Google)
+                      </>
+                    )}
+                  </Button>
                 )}
-              </Button>
+              </div>
             </div>
 
             {/* Right side: Primary Save Changes button */}
