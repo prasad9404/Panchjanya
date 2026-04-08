@@ -50,38 +50,38 @@ import { RelatedAvatar } from "@/types";
 // Local UI state interfaces - The robust interfaces are in @/types
 
 const CUSTOM_ICONS = [
-  { name: "Temple", path: "/icons/Blue_temple_icon-removebg.png" },
-  { name: "Sthan Pin", path: "/icons/Sthan_pin.svg" },
-  { name: "Asan Sthan Pin", path: "/icons/Sthan_pin_Asan.svg" },
-  { name: "Avasthan Pin", path: "/icons/Sthan_pin_Avasthan.svg" },
-  { name: "Mandalik Pin", path: "/icons/Sthan_pin_Mandalik.svg" },
-  { name: "Vasti Pin", path: "/icons/Sthan_pin_Vasti.svg" },
-  { name: "Mahasthan Pin", path: "/icons/mahasthan pin.svg" },
-  { name: "Explore", path: "/icons/explore_safari.png" },
-  { name: "Direction", path: "/icons/left-arrow.png" },
-  { name: "Route", path: "/icons/route-arrow.png" },
-  { name: "Signpost", path: "/icons/signpost.png" },
+  // { name: "Temple", path: "/icons/Blue_temple_icon-removebg.png" },
+  // { name: "Sthan Pin", path: "/icons/Sthan_pin.svg" },
+  // { name: "Asan Sthan Pin", path: "/icons/Sthan_pin_Asan.svg" },
+  // { name: "Avasthan Pin", path: "/icons/Sthan_pin_Avasthan.svg" },
+  // { name: "Mandalik Pin", path: "/icons/Sthan_pin_Mandalik.svg" },
+  // { name: "Vasti Pin", path: "/icons/Sthan_pin_Vasti.svg" },
+  // { name: "Mahasthan Pin", path: "/icons/mahasthan pin.svg" },
 
   // Glance Icons
-  { name: "Blue Temple", path: "/icons/glance/Blue_temple_icon.svg" },
-  { name: "Logo", path: "/icons/glance/Logo.svg" },
-  { name: "All", path: "/icons/glance/all.svg" },
-  { name: "Categorization", path: "/icons/glance/categorization.svg" },
+  { name: "Avatar", path: "/icons/glance/icon.svg" },
   { name: "Chakra", path: "/icons/glance/chakra.svg" },
   { name: "Chinese Temple", path: "/icons/glance/chinese-temple.svg" },
-  { name: "Export", path: "/icons/glance/export.svg" },
-  { name: "Avatar", path: "/icons/glance/icon.svg" },
-  { name: "Import", path: "/icons/glance/import.svg" },
-  { name: "Not Available", path: "/icons/glance/not-available.svg" },
-  { name: "Available", path: "/icons/glance/available.svg" },
-  { name: "Quarantine", path: "/icons/glance/quarantine.svg" },
   { name: "Warehouse", path: "/icons/glance/warehouse.svg" },
-  { name: "Temple Simple", path: "/icons/glance/temple_simple.svg" },
-  { name: "Temple Solid", path: "/icons/glance/temple_solid.svg" },
   { name: "Route Path", path: "/icons/glance/route_path.svg" },
   { name: "Parivaar", path: "/icons/glance/parivaar.svg" },
-  { name: "Aasan Sthan", path: "/icons/glance/Aasan Sthan.svg" },
+  { name: "Temple Simple", path: "/icons/glance/temple_simple.svg" },
+  { name: "Temple Solid", path: "/icons/glance/temple_solid.svg" },
+  { name: "Available", path: "/icons/glance/available.svg" },
+  { name: "Not Available", path: "/icons/glance/not-available.svg" },
+  { name: "All", path: "/icons/glance/all.svg" },
+  { name: "Quarantine", path: "/icons/glance/quarantine.svg" },
   { name: "Sthan", path: "/icons/glance/sthan.svg" },
+  { name: "Categorization", path: "/icons/glance/categorization.svg" },
+  { name: "Import", path: "/icons/glance/import.svg" },
+  { name: "Export", path: "/icons/glance/export.svg" },
+  { name: "Explore", path: "/icons/explore_safari.png" },
+  { name: "Aasan Sthan", path: "/icons/glance/Aasan Sthan.svg" },
+  // { name: "Blue Temple", path: "/icons/glance/Blue_temple_icon.svg" },
+  // { name: "Direction", path: "/icons/left-arrow.png" },
+  // { name: "Route", path: "/icons/route-arrow.png" },
+  // { name: "Signpost", path: "/icons/signpost.png" },
+  // { name: "Logo", path: "/icons/glance/Logo.svg" },
 ];
 
 interface HotspotMarkerProps {
@@ -158,11 +158,11 @@ const HotspotMarker = ({
               d="M16 0C7.16344 0 0 7.16344 0 16C0 24.8366 16 40 16 40C16 40 32 24.8366 32 16C32 7.16344 24.8366 0 16 0Z"
               fill="currentColor"
             />
-            <circle 
-              cx="16" 
-              cy="16" 
-              r="11" 
-              fill={isSelected ? "#eff6ff" : "white"} 
+            <circle
+              cx="16"
+              cy="16"
+              r="11"
+              fill={isSelected ? "#eff6ff" : "white"}
               stroke={isSelected ? "#3b82f6" : "transparent"}
               strokeWidth={2}
             />
@@ -245,7 +245,7 @@ export default function TempleArchitectureAdmin({
   const [todaysName, setTodaysName] = useState<MultilingualString>({ en: "", hi: "", mr: "" });
   const [todaysNameTitle, setTodaysNameTitle] = useState<MultilingualString>({ en: "", hi: "", mr: "" });
   const [address, setAddress] = useState<MultilingualString>({ en: "", hi: "", mr: "" });
-  const [taluka, setTaluka] = useState<MultilingualString>({ en: "", hi: "" , mr: "" });
+  const [taluka, setTaluka] = useState<MultilingualString>({ en: "", hi: "", mr: "" });
   const [district, setDistrict] = useState<MultilingualString>({ en: "", hi: "", mr: "" });
   const [directions_text, setDirectionsText] = useState<MultilingualString>({ en: "", hi: "", mr: "" });
   const [locationLink, setLocationLink] = useState("");
@@ -344,7 +344,7 @@ export default function TempleArchitectureAdmin({
         // We check the 'en' value from the snapshot 'field.current'
         if (field.current.en) {
           const translated = await autoTranslateMultilingual(field.current.en);
-          
+
           // Use functional update to merge with latest state!
           // This avoids overwriting manual Hindi/Marathi work and ensures we don't 'wipe' states
           field.setter((prev: any) => ({
@@ -375,7 +375,7 @@ export default function TempleArchitectureAdmin({
 
   const updateHotspotTitle = async (hotspotId: string, newTitle: string) => {
     // 1. Update Hotspot Array
-    const updatedHotspots = archHotspots.map(h => 
+    const updatedHotspots = archHotspots.map(h =>
       h.id === hotspotId ? { ...h, title: { ...h.title, [activeLang]: newTitle } } : h
     );
     setArchHotspots(updatedHotspots);
@@ -384,12 +384,12 @@ export default function TempleArchitectureAdmin({
     // 2. Sync with Sthan Details! Create or Update the matching detail segment.
     const updatedDetails = [...details];
     const existingDetailIndex = updatedDetails.findIndex(d => d.hotspotId === hotspotId);
-    
+
     if (existingDetailIndex >= 0) {
       // Update existing title
-      updatedDetails[existingDetailIndex] = { 
-        ...updatedDetails[existingDetailIndex], 
-        title: { ...updatedDetails[existingDetailIndex].title, [activeLang]: newTitle } 
+      updatedDetails[existingDetailIndex] = {
+        ...updatedDetails[existingDetailIndex],
+        title: { ...updatedDetails[existingDetailIndex].title, [activeLang]: newTitle }
       };
     } else {
       // Create new linked detail automatically
@@ -586,11 +586,11 @@ export default function TempleArchitectureAdmin({
               } else if (d.leela && typeof d.leela === 'string') {
                 rawLeelas = d.leela.split('\n').filter((l: string) => l.trim());
               }
-              
+
               const normalizedLeelas = rawLeelas.map((l: any, i: number) => {
                 if (typeof l === 'string') {
-                   // Legacy simple string. Migrate onto 'description'
-                   return { id: `leela_${i}_${Date.now()}`, title: ensureMultilingual(''), description: ensureMultilingual(l) };
+                  // Legacy simple string. Migrate onto 'description'
+                  return { id: `leela_${i}_${Date.now()}`, title: ensureMultilingual(''), description: ensureMultilingual(l) };
                 }
                 return {
                   ...l,
@@ -770,13 +770,13 @@ export default function TempleArchitectureAdmin({
 
   const saveTempleDetails = async () => {
     if (!id || !user) return;
-    
+
     const finalStatus = manualStatus || liveStatus;
-    
+
     // Audit Trail Logic
     const isNewlyVerified = finalStatus === 'VERIFIED' && originalTempleData?.status !== 'VERIFIED' && originalTempleData?.status !== 'PUBLISHED';
     const isNewlyPublished = finalStatus === 'PUBLISHED' && originalTempleData?.status !== 'PUBLISHED';
-    
+
     // ── Deep-merge guard: never overwrite a non-empty DB value with an empty UI value ──
     // If the admin UI has an empty string (e.g. due to a language switch), we fall back
     // to the original data loaded from Firestore so we never destroy existing content.
@@ -837,7 +837,7 @@ export default function TempleArchitectureAdmin({
       updateData.verifiedAt = new Date().toISOString();
       updateData.verifiedBy = user.uid;
     }
-    
+
     if (isNewlyPublished) {
       updateData.publishedAt = new Date().toISOString();
       updateData.publishedBy = user.uid;
@@ -867,9 +867,9 @@ export default function TempleArchitectureAdmin({
 
   const saveTempleDetailsDirectly = async (data: any) => {
     if (!id || !user) return;
-    
+
     const sanitizedInput = sanitizeData(data);
-    
+
     // Safety audit timestamps for direct saves too if status is passed
     if (sanitizedInput.status === 'VERIFIED' && originalTempleData?.status !== 'VERIFIED' && originalTempleData?.status !== 'PUBLISHED') {
       sanitizedInput.verifiedAt = new Date().toISOString();
@@ -879,7 +879,7 @@ export default function TempleArchitectureAdmin({
       sanitizedInput.publishedAt = new Date().toISOString();
       sanitizedInput.publishedBy = user.uid;
     }
-    
+
     sanitizedInput.updatedAt = new Date().toISOString();
     sanitizedInput.updatedBy = user.uid;
 
@@ -902,17 +902,17 @@ export default function TempleArchitectureAdmin({
     // This is now redundant with handleImageUpload but keeping signature for safety if used elsewhere
     const url = type === 'arch' ? archImages[0] : presentImages[0];
     if (!url) return;
-    
+
     handleImageUpload(url, type === 'arch' ? 'architectural' : 'present');
   };
 
   const addDescriptionSection = () => {
-    const newSection: DescriptionSection = { 
-      id: uuidv4(), 
-      title: { en: "", hi: "", mr: "" }, 
-      content: { en: "", hi: "", mr: "" }, 
+    const newSection: DescriptionSection = {
+      id: uuidv4(),
+      title: { en: "", hi: "", mr: "" },
+      content: { en: "", hi: "", mr: "" },
       page_type: 'page1',
-      order: descriptionSections.length 
+      order: descriptionSections.length
     };
     setDescriptionSections([...descriptionSections, newSection]);
   };
@@ -932,9 +932,9 @@ export default function TempleArchitectureAdmin({
 
   const updateGlanceItem = (gId: string, field: 'icon' | 'description', value: string) => {
     if (field === 'icon') {
-        setGlanceItems(glanceItems.map(g => g.id === gId ? { ...g, icon: value } : g));
+      setGlanceItems(glanceItems.map(g => g.id === gId ? { ...g, icon: value } : g));
     } else {
-        setGlanceItems(glanceItems.map(g => g.id === gId ? { ...g, description: { ...g.description, [activeLang]: value } } : g));
+      setGlanceItems(glanceItems.map(g => g.id === gId ? { ...g, description: { ...g.description, [activeLang]: value } } : g));
     }
   };
 
@@ -943,10 +943,10 @@ export default function TempleArchitectureAdmin({
   };
 
   const addCustomBlock = () => {
-    const newBlock: CustomBlock = { 
-      id: uuidv4(), 
-      title: { en: "", hi: "", mr: "" }, 
-      content: { en: "", hi: "", mr: "" }, 
+    const newBlock: CustomBlock = {
+      id: uuidv4(),
+      title: { en: "", hi: "", mr: "" },
+      content: { en: "", hi: "", mr: "" },
       page_type: 'page2',
       order: customBlocks.length
     };
@@ -984,9 +984,9 @@ export default function TempleArchitectureAdmin({
 
   const updateAbbreviationItem = (gId: string, field: 'icon' | 'description', value: string) => {
     if (field === 'icon') {
-        setAbbreviationItems(abbreviationItems.map(g => g.id === gId ? { ...g, icon: value } : g));
+      setAbbreviationItems(abbreviationItems.map(g => g.id === gId ? { ...g, icon: value } : g));
     } else {
-        setAbbreviationItems(abbreviationItems.map(g => g.id === gId ? { ...g, description: { ...g.description, [activeLang]: value } } : g));
+      setAbbreviationItems(abbreviationItems.map(g => g.id === gId ? { ...g, description: { ...g.description, [activeLang]: value } } : g));
     }
   };
 
@@ -1304,12 +1304,12 @@ export default function TempleArchitectureAdmin({
             'Content-Type': 'application/json',
             ...(token ? { "Authorization": `Bearer ${token}` } : {})
           },
-          body: JSON.stringify({ 
+          body: JSON.stringify({
             [fieldToUpdate]: updatedImages,
             present_hotspots: updatedPresentHotspots
           })
         });
-        
+
         setPresentImages(updatedImages);
         setPresentHotspots(updatedPresentHotspots);
       }
@@ -1345,10 +1345,10 @@ export default function TempleArchitectureAdmin({
 
   const addLeela = () => {
     if (!selectedHotspot) return;
-    const newLeela: Leela = { 
-      id: uuidv4(), 
+    const newLeela: Leela = {
+      id: uuidv4(),
       title: { en: "", hi: "", mr: "" },
-      description: { en: "", hi: "", mr: "" } 
+      description: { en: "", hi: "", mr: "" }
     };
     setSelectedHotspot({
       ...selectedHotspot,
@@ -1431,110 +1431,110 @@ export default function TempleArchitectureAdmin({
   };
 
   const content = (
-      <div className="min-h-screen flex flex-col">
-        {!isEmbedded && (
-          <div className="bg-white border-b border-slate-100 transition-all duration-300 mb-8 rounded-[32px] shadow-sm">
-            <div className="max-w-full mx-auto px-8 py-5 flex items-center justify-between">
-              <div className="flex items-center gap-6">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => navigate("/admin/sthana-directory")}
-                  className="group flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-50 hover:bg-white border border-slate-100/50 hover:border-blue-100 transition-all duration-500"
-                >
-                  <ArrowLeft className="w-4 h-4 text-slate-400 group-hover:text-blue-600 group-hover:-translate-x-0.5 transition-all" />
-                </Button>
-                <div className="space-y-0.5">
-                  <p className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-400">Panchjanya Admin</p>
-                  <h1 className="text-sm font-black text-slate-900 uppercase tracking-tight">Manage Architecture</h1>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-8">
-                <div className="hidden md:flex items-center gap-6">
-                  {['sthan-info', 'architecture-view', 'sthana-details'].map((stepId) => {
-                    const isActive = currentStep === stepId;
-                    const labels = { 'sthan-info': 'Info', 'architecture-view': 'View', 'sthana-details': 'Details' };
-                    return (
-                      <button
-                        key={stepId}
-                        onClick={() => setCurrentStep(stepId as any)}
-                        className={cn(
-                          "text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-500",
-                          isActive ? "text-blue-600 scale-105" : "text-slate-300 hover:text-slate-400"
-                        )}
-                      >
-                        {labels[stepId as keyof typeof labels]}
-                      </button>
-                    );
-                  })}
-                </div>
+    <div className="min-h-screen flex flex-col">
+      {!isEmbedded && (
+        <div className="bg-white border-b border-slate-100 transition-all duration-300 mb-8 rounded-[32px] shadow-sm">
+          <div className="max-w-full mx-auto px-8 py-5 flex items-center justify-between">
+            <div className="flex items-center gap-6">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate("/admin/sthana-directory")}
+                className="group flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-50 hover:bg-white border border-slate-100/50 hover:border-blue-100 transition-all duration-500"
+              >
+                <ArrowLeft className="w-4 h-4 text-slate-400 group-hover:text-blue-600 group-hover:-translate-x-0.5 transition-all" />
+              </Button>
+              <div className="space-y-0.5">
+                <p className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-400">Panchjanya Admin</p>
+                <h1 className="text-sm font-black text-slate-900 uppercase tracking-tight">Manage Architecture</h1>
               </div>
             </div>
-            
-            {/* Integrated Progress Bar */}
-            <div className="bg-slate-50 h-[1.5px] w-full relative">
-              <div
-                className="h-full bg-blue-600 transition-all duration-1000 ease-out shadow-[0_0_8px_rgba(37,99,235,0.3)]"
-                style={{
-                  width: `${((['sthan-info', 'architecture-view', 'sthana-details'].indexOf(currentStep) + 1) / 3) * 100}%`
-                }}
-              />
+
+            <div className="flex items-center gap-8">
+              <div className="hidden md:flex items-center gap-6">
+                {['sthan-info', 'architecture-view', 'sthana-details'].map((stepId) => {
+                  const isActive = currentStep === stepId;
+                  const labels = { 'sthan-info': 'Info', 'architecture-view': 'View', 'sthana-details': 'Details' };
+                  return (
+                    <button
+                      key={stepId}
+                      onClick={() => setCurrentStep(stepId as any)}
+                      className={cn(
+                        "text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-500",
+                        isActive ? "text-blue-600 scale-105" : "text-slate-300 hover:text-slate-400"
+                      )}
+                    >
+                      {labels[stepId as keyof typeof labels]}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           </div>
-        )}
 
-        <div className={cn("max-w-7xl mx-auto w-full px-8 lg:px-12 py-10 pb-32", isEmbedded && "max-w-none px-0 pt-0")}>
-            {/* Page Header Row (Sticky) */}
-            <div className="sticky top-0 z-40 w-full bg-white border-b border-slate-200 shadow-sm -mx-8 lg:-mx-12 px-8 lg:px-12 py-3 mb-10">
-              <div className="max-w-5xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
-                {/* Left side: Language switcher + Auto-Translate button */}
-                <div className="flex flex-wrap items-center gap-4">
-                  <div className="flex items-center gap-3 pr-4 border-r border-slate-100 hidden sm:flex">
-                    <div className="p-1.5 bg-blue-50 rounded-lg">
-                      <Languages className="w-4 h-4 text-blue-600" />
-                    </div>
-                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Content Language</span>
-                  </div>
+          {/* Integrated Progress Bar */}
+          <div className="bg-slate-50 h-[1.5px] w-full relative">
+            <div
+              className="h-full bg-blue-600 transition-all duration-1000 ease-out shadow-[0_0_8px_rgba(37,99,235,0.3)]"
+              style={{
+                width: `${((['sthan-info', 'architecture-view', 'sthana-details'].indexOf(currentStep) + 1) / 3) * 100}%`
+              }}
+            />
+          </div>
+        </div>
+      )}
 
-                  <Tabs value={activeLang} onValueChange={(v) => setActiveLang(v as any)} className="w-fit">
-                    <TabsList className="bg-slate-100 p-1 h-10 rounded-xl border border-slate-200">
-                      <TabsTrigger value="en" className="rounded-lg px-4 text-[11px] font-bold data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-sm transition-all">English</TabsTrigger>
-                      <TabsTrigger value="hi" className="rounded-lg px-4 text-[11px] font-bold data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-sm transition-all">हिंदी</TabsTrigger>
-                      <TabsTrigger value="mr" className="rounded-lg px-4 text-[11px] font-bold data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-sm transition-all">मराठी</TabsTrigger>
-                    </TabsList>
-                  </Tabs>
-
-                  <Button 
-                    onClick={handleAutoTranslateAll}
-                    disabled={isTranslating}
-                    variant="outline"
-                    className="h-10 rounded-xl border-blue-200 text-blue-700 hover:bg-blue-50 font-bold px-4 gap-2 transition-all"
-                  >
-                    {isTranslating ? (
-                      <>
-                        <RefreshCw className="w-4 h-4 animate-spin" />
-                        Translating...
-                      </>
-                    ) : (
-                      <>
-                        <Globe className="w-4 h-4" />
-                        Auto-Translate (Google)
-                      </>
-                    )}
-                  </Button>
+      <div className={cn("max-w-7xl mx-auto w-full px-8 lg:px-12 py-10 pb-32", isEmbedded && "max-w-none px-0 pt-0")}>
+        {/* Page Header Row (Sticky) */}
+        <div className="sticky top-0 z-40 w-full bg-white border-b border-slate-200 shadow-sm -mx-8 lg:-mx-12 px-8 lg:px-12 py-3 mb-10">
+          <div className="max-w-5xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+            {/* Left side: Language switcher + Auto-Translate button */}
+            <div className="flex flex-wrap items-center gap-4">
+              <div className="flex items-center gap-3 pr-4 border-r border-slate-100 hidden sm:flex">
+                <div className="p-1.5 bg-blue-50 rounded-lg">
+                  <Languages className="w-4 h-4 text-blue-600" />
                 </div>
-
-                {/* Right side: Primary Save Changes button */}
-                <Button 
-                  onClick={saveTempleDetails} 
-                  className="bg-blue-900 text-white hover:bg-black rounded-xl px-8 h-11 font-black text-[11px] uppercase tracking-widest shadow-xl shadow-blue-900/20 transition-all flex items-center gap-3 shrink-0"
-                >
-                  <Save className="w-4 h-4" />
-                  Save Changes
-                </Button>
+                <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Content Language</span>
               </div>
+
+              <Tabs value={activeLang} onValueChange={(v) => setActiveLang(v as any)} className="w-fit">
+                <TabsList className="bg-slate-100 p-1 h-10 rounded-xl border border-slate-200">
+                  <TabsTrigger value="en" className="rounded-lg px-4 text-[11px] font-bold data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-sm transition-all">English</TabsTrigger>
+                  <TabsTrigger value="hi" className="rounded-lg px-4 text-[11px] font-bold data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-sm transition-all">हिंदी</TabsTrigger>
+                  <TabsTrigger value="mr" className="rounded-lg px-4 text-[11px] font-bold data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-sm transition-all">मराठी</TabsTrigger>
+                </TabsList>
+              </Tabs>
+
+              <Button
+                onClick={handleAutoTranslateAll}
+                disabled={isTranslating}
+                variant="outline"
+                className="h-10 rounded-xl border-blue-200 text-blue-700 hover:bg-blue-50 font-bold px-4 gap-2 transition-all"
+              >
+                {isTranslating ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                    Translating...
+                  </>
+                ) : (
+                  <>
+                    <Globe className="w-4 h-4" />
+                    Auto-Translate (Google)
+                  </>
+                )}
+              </Button>
             </div>
+
+            {/* Right side: Primary Save Changes button */}
+            <Button
+              onClick={saveTempleDetails}
+              className="bg-blue-900 text-white hover:bg-black rounded-xl px-8 h-11 font-black text-[11px] uppercase tracking-widest shadow-xl shadow-blue-900/20 transition-all flex items-center gap-3 shrink-0"
+            >
+              <Save className="w-4 h-4" />
+              Save Changes
+            </Button>
+          </div>
+        </div>
 
         {/* Step 1: Sthan Info */}
         {currentStep === 'sthan-info' && (
@@ -2311,7 +2311,7 @@ export default function TempleArchitectureAdmin({
                           ref={imageRef}
                           src={displayImages[adminImageIndex] || "/icons/temple-placeholder.jpg"}
                           alt="Active View"
-                          className="max-h-[80vh] w-auto shadow-2xl transition-transform duration-700 select-none pb-24"
+                          className="max-h-[80vh] w-auto shadow-2xl transition-transform duration-700 select-none"
                           draggable={false}
                           onError={(e) => (e.currentTarget.src = "/icons/temple-placeholder.jpg")}
                         />
@@ -3063,17 +3063,17 @@ export default function TempleArchitectureAdmin({
                                 <Label className="text-xs font-black uppercase tracking-widest text-slate-400 pl-1">Target Hotspot</Label>
                                 <div className="relative group">
                                   <LucideIcons.ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-hover:text-blue-500 transition-colors" />
-                                    <select
-                                      className="w-full h-14 bg-white border-2 border-slate-100 hover:border-blue-200 rounded-[1.25rem] px-6 appearance-none font-bold text-slate-700 focus:outline-none focus:border-blue-500 transition-all shadow-sm"
-                                      value={selectedHotspot.hotspotId || ""}
-                                      onChange={(e) => setSelectedHotspot({ ...selectedHotspot, hotspotId: e.target.value })}
-                                    >
-                                      {archHotspots.map(h => (
-                                        <option key={h.id} value={h.id}>
-                                          #{h.number} - {h.title[activeLang] || "Untitled Hotspot"}
-                                        </option>
-                                      ))}
-                                    </select>
+                                  <select
+                                    className="w-full h-14 bg-white border-2 border-slate-100 hover:border-blue-200 rounded-[1.25rem] px-6 appearance-none font-bold text-slate-700 focus:outline-none focus:border-blue-500 transition-all shadow-sm"
+                                    value={selectedHotspot.hotspotId || ""}
+                                    onChange={(e) => setSelectedHotspot({ ...selectedHotspot, hotspotId: e.target.value })}
+                                  >
+                                    {archHotspots.map(h => (
+                                      <option key={h.id} value={h.id}>
+                                        #{h.number} - {h.title[activeLang] || "Untitled Hotspot"}
+                                      </option>
+                                    ))}
+                                  </select>
                                 </div>
                                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2 pl-1">
                                   <Info className="w-3 h-3" /> When linked, this content will open when users click the marker #{archHotspots.find(h => h.id === selectedHotspot.hotspotId)?.number} on the map.
@@ -3223,8 +3223,8 @@ export default function TempleArchitectureAdmin({
                             onClick={() => setSelectedHotspot({ ...selectedHotspot, fitMode: 'cover' })}
                             className={cn(
                               "flex-1 sm:flex-none px-6 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all duration-300",
-                              selectedHotspot.fitMode === 'cover' 
-                                ? "bg-blue-900 text-white shadow-lg shadow-blue-900/20" 
+                              selectedHotspot.fitMode === 'cover'
+                                ? "bg-blue-900 text-white shadow-lg shadow-blue-900/20"
                                 : "text-slate-400 hover:text-slate-600 hover:bg-slate-50"
                             )}
                           >
@@ -3235,8 +3235,8 @@ export default function TempleArchitectureAdmin({
                             onClick={() => setSelectedHotspot({ ...selectedHotspot, fitMode: 'contain' })}
                             className={cn(
                               "flex-1 sm:flex-none px-6 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all duration-300",
-                              (!selectedHotspot.fitMode || selectedHotspot.fitMode === 'contain') 
-                                ? "bg-blue-900 text-white shadow-lg shadow-blue-900/20" 
+                              (!selectedHotspot.fitMode || selectedHotspot.fitMode === 'contain')
+                                ? "bg-blue-900 text-white shadow-lg shadow-blue-900/20"
                                 : "text-slate-400 hover:text-slate-600 hover:bg-slate-50"
                             )}
                           >
@@ -3357,7 +3357,7 @@ export default function TempleArchitectureAdmin({
         </Dialog>
       </div>
     </div>
-);
+  );
 
   if (isEmbedded) return content;
 

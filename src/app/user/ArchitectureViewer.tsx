@@ -537,18 +537,12 @@ export default function ArchitectureViewer() {
               >
                 <div
                   className="relative transition-all duration-500"
-                  style={{
-                    aspectRatio: (imageType === 'architectural' ? temple.architectureImagesFitMode : temple.presentImagesFitMode) === 'cover' ? 'auto' : (imageRatio || 'auto'),
-                    maxWidth: '100%',
-                    maxHeight: '100%',
-                    width: (imageType === 'architectural' ? temple.architectureImagesFitMode : temple.presentImagesFitMode) === 'cover'
-                      ? '100%'
-                      : (imageRatio && imageRatio > (imageContainerRef.current?.clientWidth || 1) / (imageContainerRef.current?.clientHeight || 1) ? '100%' : 'auto'),
-                    height: (imageType === 'architectural' ? temple.architectureImagesFitMode : temple.presentImagesFitMode) === 'cover'
-                      ? '100%'
-                      : (imageRatio && imageRatio <= (imageContainerRef.current?.clientWidth || 1) / (imageContainerRef.current?.clientHeight || 1) ? '100%' : 'auto'),
-                    margin: 'auto'
-                  }}
+                  style={
+                    // Using pure CSS shrink-wrap for contain fit prevents coordinate shift bugs from letter-boxing
+                    (imageType === 'architectural' ? temple.architectureImagesFitMode : temple.presentImagesFitMode) === 'cover'
+                      ? { width: '100%', height: '100%', display: 'block' }
+                      : { maxWidth: '100%', maxHeight: '100%', display: 'inline-flex', verticalAlign: 'middle', margin: 'auto' }
+                  }
                 >
                   {imageUrl ? (
                     <img
@@ -645,7 +639,7 @@ export default function ArchitectureViewer() {
                             style={{
                               left: `${hotspot.x}%`,
                               top: `${hotspot.y}%`,
-                              transform: 'translate(-50%, -50%)',
+                              transform: 'translate(-50%, -100%)',
                               transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
                             }}
                           >
