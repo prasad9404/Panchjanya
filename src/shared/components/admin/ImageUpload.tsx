@@ -18,6 +18,8 @@ interface ImageUploadProps {
     className?: string;
     fitMode?: 'cover' | 'contain';
     onFitModeChange?: (mode: 'cover' | 'contain') => void;
+    onRemove?: () => void;
+    variant?: 'default' | 'gallery' | 'compact';
 }
 
 export function ImageUpload({
@@ -27,10 +29,13 @@ export function ImageUpload({
     label = "Upload Image",
     className,
     fitMode = 'cover',
-    onFitModeChange
+    onFitModeChange,
+    onRemove,
+    variant = 'default'
 }: ImageUploadProps) {
     const [progress, setProgress] = useState(0);
     const [uploading, setUploading] = useState(false);
+    const [isDragging, setIsDragging] = useState(false);
     const [preview, setPreview] = useState<string | null>(null);
     const [urlInput, setUrlInput] = useState("");
     const { toast } = useToast();
@@ -81,7 +86,177 @@ export function ImageUpload({
         setPreview(null);
         setProgress(0);
         setUrlInput("");
+        if (onRemove) onRemove();
     };
+
+    const handleDragOver = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDragging(true);
+    };
+
+    const handleDragLeave = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDragging(false);
+    };
+
+    const handleDrop = async (e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDragging(false);
+
+        const file = e.dataTransfer.files?.[0];
+        if (!file || !file.type.startsWith('image/')) {
+            toast({
+                title: "Invalid File",
+                description: "Please drop a valid image file.",
+                variant: "destructive"
+            });
+            return;
+        }
+
+        const pseudoEvent = { target: { files: [file] } } as any;
+        handleFileChange(pseudoEvent);
+    };
+
+    if (variant === 'gallery') {
+        return (
+            <div className={cn("p-3 bg-white border border-slate-100 rounded-2xl shadow-sm", className)}>
+                <div className="flex flex-col md:flex-row gap-4">
+                    {/* Left side: Upload/URL Box */}
+                    <div className="flex-1 space-y-3">
+                        <Tabs defaultValue="upload" className="w-full">
+                            <TabsList className="grid w-full grid-cols-2 p-1 bg-slate-100 rounded-lg h-9">
+                                <TabsTrigger value="upload" className="text-[10px] rounded-md data-[state=active]:bg-white data-[state=active]:shadow-sm transition-all py-1">
+                                    <Upload className="w-3 h-3 mr-1.5" />
+                                    Upload
+                                </TabsTrigger>
+                                <TabsTrigger value="url" className="text-[10px] rounded-md data-[state=active]:bg-white data-[state=active]:shadow-sm transition-all py-1">
+                                    <LinkIcon className="w-3 h-3 mr-1.5" />
+                                    URL
+                                </TabsTrigger>
+                            </TabsList>
+
+                            <TabsContent value="upload" className="mt-3">
+                                <div
+                                    onDragOver={handleDragOver}
+                                    onDragLeave={handleDragLeave}
+                                    onDrop={handleDrop}
+                                    className="relative"
+                                >
+                                    <Input
+                                        type="file"
+                                        accept="image/*"
+                                        onChange={handleFileChange}
+                                        disabled={uploading}
+                                        className="hidden"
+                                        id={`image-upload-${label.replace(/\s+/g, "-")}`}
+                                    />
+                                    <label
+                                        htmlFor={`image-upload-${label.replace(/\s+/g, "-")}`}
+                                        className={cn(
+                                            "flex flex-col items-center justify-center w-full h-[160px] border-2 border-dashed rounded-xl cursor-pointer transition-all duration-300",
+                                            isDragging ? "border-blue-500 bg-blue-50/50 scale-[1.01]" : "border-slate-200 bg-slate-50/50 hover:bg-slate-100/50 hover:border-slate-300",
+                                            uploading ? "opacity-50 cursor-not-allowed" : ""
+                                        )}
+                                    >
+                                        <div className="flex flex-col items-center gap-1.5 text-slate-400 p-2 text-center">
+                                            <div className={cn("p-2 rounded-xl shadow-sm transition-colors", isDragging ? "bg-blue-500 text-white" : "bg-white")}>
+                                                <Upload className="w-5 h-5" />
+                                            </div>
+                                            <div>
+                                                <p className="text-[10px] font-bold text-slate-900 mb-0.5">
+                                                    {isDragging ? "Drop here" : "Upload File"}
+                                                </p>
+                                                <p className="text-[9px] text-slate-400 font-medium">JPG/PNG up to 10MB</p>
+                                            </div>
+                                        </div>
+                                    </label>
+                                </div>
+                            </TabsContent>
+
+                            <TabsContent value="url" className="mt-3 space-y-2">
+                                <div className="space-y-1">
+                                    <Label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest ml-1">Image URL</Label>
+                                    <div className="flex gap-1.5">
+                                        <Input
+                                            placeholder="https://..."
+                                            value={urlInput}
+                                            onChange={(e) => setUrlInput(e.target.value)}
+                                            className="h-8 text-[10px] bg-slate-50 border-slate-200 focus:bg-white rounded-lg"
+                                        />
+                                        <Button onClick={handleUrlSubmit} type="button" size="sm" className="h-8 px-3 rounded-lg bg-blue-600 text-[10px]">
+                                            Add
+                                        </Button>
+                                    </div>
+                                </div>
+                            </TabsContent>
+                        </Tabs>
+
+                        {uploading && (
+                            <div className="space-y-2 animate-in fade-in slide-in-from-top-2">
+                                <Progress value={progress} className="h-1.5 bg-slate-100" />
+                                <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-widest text-blue-600">
+                                    <span>Uploading...</span>
+                                    <span>{Math.round(progress)}%</span>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Right side: Preview Card */}
+                    <div className="flex-1 min-w-[200px]">
+                        <div className="h-full flex flex-col">
+                            <div className="flex items-center justify-between mb-2">
+                                <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Live Preview</Label>
+                                {preview && (
+                                    <button
+                                        onClick={clearImage}
+                                        className="text-[10px] font-black text-red-500 uppercase tracking-widest hover:text-red-600 transition-colors"
+                                        type="button"
+                                    >
+                                        Remove
+                                    </button>
+                                )}
+                            </div>
+
+                            <div className="flex-1 relative h-[160px] w-full rounded-xl overflow-hidden border-2 border-slate-50 bg-slate-50/30 flex items-center justify-center group shadow-inner">
+                                {preview ? (
+                                    <>
+                                        <img
+                                            src={preview}
+                                            alt="Preview"
+                                            className={cn(
+                                                "max-w-full max-h-full transition-all duration-500 group-hover:scale-105",
+                                                fitMode === 'cover' ? "w-full h-full object-cover" : "object-contain"
+                                            )}
+                                        />
+                                        <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                            <Button
+                                                variant="secondary"
+                                                size="sm"
+                                                className="rounded-xl h-8 text-[10px] font-bold uppercase gap-1.5 bg-white/90 backdrop-blur-sm shadow-xl"
+                                                onClick={() => window.open(preview, '_blank')}
+                                            >
+                                                <LinkIcon className="w-3 h-3" />
+                                                Full View
+                                            </Button>
+                                        </div>
+                                    </>
+                                ) : (
+                                    <div className="flex flex-col items-center gap-1.5 text-slate-300">
+                                        <ImageIcon className="w-8 h-8 opacity-20" />
+                                        <span className="text-[9px] font-bold uppercase tracking-widest">No Selection</span>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className={`p-4 bg-white ${className}`}>

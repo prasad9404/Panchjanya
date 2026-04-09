@@ -299,6 +299,7 @@ export default function TempleArchitectureAdmin({
     if (onStepChange) onStepChange(step);
   };
   const [hoveredHotspotId, setHoveredHotspotId] = useState<string | null>(null);
+  const [isAddingHotspot, setIsAddingHotspot] = useState(false);
   const [pendingClickPosition, setPendingClickPosition] = useState<{ x: number, y: number } | null>(null);
   const [hotspotPage, setHotspotPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState("");
@@ -684,7 +685,9 @@ export default function TempleArchitectureAdmin({
       return;
     }
 
-    // Default: Create a new hotspot (for arch view)
+    // Default: Create a new hotspot (for arch view) - ONLY if in placement mode
+    if (!isAddingHotspot) return;
+
     const newHotspot: Hotspot = {
       id: uuidv4(),
       x,
@@ -700,6 +703,7 @@ export default function TempleArchitectureAdmin({
     setArchHotspots(prev => [...prev, newHotspot]);
     setEditingTitleId(newHotspot.id);
     setEditingTitleValue('');
+    setIsAddingHotspot(false); // Disable mode after adding
     toast({ title: "Hotspot Added", description: `Placement #${newHotspot.number} created. Please enter a title.` });
   };
 
@@ -1434,7 +1438,7 @@ export default function TempleArchitectureAdmin({
   const content = (
     <div className="min-h-screen flex flex-col">
       {!isEmbedded && (
-        <div className="bg-white border-b border-slate-100 transition-all duration-300 mb-8 rounded-[32px] shadow-sm">
+        <div className="bg-white border-b border-slate-100 transition-all duration-300 mb-2 rounded-[32px] shadow-sm">
           <div className="max-w-full mx-auto px-8 py-5 flex items-center justify-between">
             <div className="flex items-center gap-6">
               <Button
@@ -1485,9 +1489,9 @@ export default function TempleArchitectureAdmin({
         </div>
       )}
 
-      <div className={cn("max-w-7xl mx-auto w-full px-8 lg:px-12 py-10 pb-32", isEmbedded && "max-w-none px-0 pt-0")}>
-        {/* Page Header Row (Sticky) */}
-        <div className="sticky top-0 z-40 w-full bg-white border-b border-slate-200 shadow-sm -mx-8 lg:-mx-12 px-8 lg:px-12 py-3 mb-10">
+      {/* Admin Operations Header (Non-Sticky) */}
+      <div className="w-full bg-white border-b border-slate-200 py-3 mb-6 transition-all">
+        <div className={cn("max-w-7xl mx-auto px-8 lg:px-12", isEmbedded && "max-w-none px-0")}>
           <div className="max-w-5xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
             {/* Left side: Language switcher + Auto-Translate button */}
             <div className="flex flex-wrap items-center gap-4">
@@ -1551,6 +1555,9 @@ export default function TempleArchitectureAdmin({
             </Button>
           </div>
         </div>
+      </div>
+
+      <div className={cn("max-w-7xl mx-auto w-full px-8 lg:px-12 py-10 pb-32", isEmbedded && "max-w-none px-0 pt-0")}>
 
         {/* Step 1: Sthan Info */}
         {currentStep === 'sthan-info' && (
@@ -1835,35 +1842,69 @@ export default function TempleArchitectureAdmin({
               <Separator className="bg-slate-200/60" />
 
               {/* Temple Gallery */}
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 <div>
                   <h2 className="text-xl font-bold text-slate-900">Sthan Gallery</h2>
-                  <p className="mt-2 text-sm leading-relaxed text-slate-500 font-medium">
-                    Upload beautiful photos of the temple entrance, surroundings, and general views.
+                  <p className="mt-1.5 text-xs font-medium leading-relaxed text-slate-500">
+                    Upload photos of the temple entrance, surroundings, and views.
                   </p>
                 </div>
-                <div className="lg:col-span-2">
-                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                    {sthanImages.map((url, idx) => (
-                      <div key={idx} className="relative aspect-square group rounded-2xl overflow-hidden border border-slate-100 shadow-sm bg-slate-50">
-                        <img src={url} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
-                        <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity" />
-                        <button
-                          onClick={() => handleDeleteImage(url, 'sthan')}
-                          className="absolute top-2 right-2 bg-red-600 text-white p-2 rounded-xl scale-90 opacity-0 group-hover:opacity-100 group-hover:scale-100 transition-all shadow-xl hover:bg-red-700 z-10"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    ))}
-                    <div className="aspect-square rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50/50 hover:bg-white hover:border-blue-400 transition-all flex items-center justify-center p-2 group/upload overflow-hidden">
-                      <ImageUpload
-                        folderPath={`sthan/${id}`}
-                        onUpload={(url) => handleImageUpload(url, 'sthan')}
-                        label="Upload Photo"
-                        fitMode={sthanImagesFitMode}
-                        onFitModeChange={(mode) => handleUpdateFitMode('sthan', mode)}
-                      />
+                <div className="lg:col-span-2 space-y-4 max-w-2xl">
+                  {/* Dedicated Upload Area */}
+                  <div className="animate-in fade-in slide-in-from-top-4 duration-500">
+                    <ImageUpload
+                      variant="gallery"
+                      folderPath={`sthan/${id}`}
+                      onUpload={(url) => handleImageUpload(url, 'sthan')}
+                      label="Upload Photo"
+                      fitMode={sthanImagesFitMode}
+                      onFitModeChange={(mode) => handleUpdateFitMode('sthan', mode)}
+                      className="bg-slate-50/50 border-slate-200/60"
+                    />
+                  </div>
+
+                  {/* Existing Photos Grid */}
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-3">
+                      <div className="h-px flex-1 bg-slate-100" />
+                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] whitespace-nowrap">Gallery Images ({sthanImages.length})</span>
+                      <div className="h-px flex-1 bg-slate-100" />
+                    </div>
+
+                    <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3">
+                      {sthanImages.map((url, idx) => (
+                        <div key={idx} className="relative aspect-square group rounded-2xl overflow-hidden border border-slate-100 shadow-lg bg-slate-50 transition-all duration-300 hover:shadow-xl hover:scale-[1.02]">
+                          <img src={url} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end justify-between p-2">
+                            <Button
+                              variant="secondary"
+                              size="icon"
+                              className="w-6 h-6 rounded-md bg-white/90 backdrop-blur-sm text-slate-900 border-none shadow-lg hover:bg-white"
+                              onClick={() => window.open(url, '_blank')}
+                              title="Preview"
+                            >
+                              <ImageIcon className="w-3.5 h-3.5" />
+                            </Button>
+                            <Button
+                              variant="destructive"
+                              size="icon"
+                              className="w-6 h-6 rounded-md bg-red-600/90 backdrop-blur-sm text-white border-none shadow-lg hover:bg-red-600"
+                              onClick={() => handleDeleteImage(url, 'sthan')}
+                              title="Remove"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+
+                      {sthanImages.length === 0 && (
+                        <div className="md:col-span-3 lg:col-span-4 p-12 border-2 border-dashed border-slate-100 rounded-3xl bg-slate-50/30 flex flex-col items-center justify-center text-center">
+                          <ImageIcon className="w-12 h-12 text-slate-200 mb-4" />
+                          <p className="text-sm font-bold text-slate-400">No photos in gallery yet.</p>
+                          <p className="text-[10px] text-slate-300 uppercase tracking-widest mt-1">Uploaded images will appear here</p>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -2278,13 +2319,17 @@ export default function TempleArchitectureAdmin({
                 {viewType === 'architectural' && (
                   <Button
                     onClick={() => {
+                      setIsAddingHotspot(true);
                       window.scrollTo({ top: 0, behavior: 'smooth' });
                       toast({
-                        title: "Ready to Add",
+                        title: "Placement Mode Active",
                         description: "Click anywhere on the large architectural image at the top to place a new hotspot pinpoint.",
                       });
                     }}
-                    className="h-12 px-6 rounded-xl bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-600/10 transition-all font-bold gap-2 group shrink-0"
+                    className={cn(
+                      "h-12 px-6 rounded-xl shadow-lg transition-all font-bold gap-2 group shrink-0",
+                      isAddingHotspot ? "bg-amber-600 hover:bg-amber-700 shadow-amber-600/20" : "bg-blue-600 hover:bg-blue-700 shadow-blue-600/10"
+                    )}
                   >
                     <Plus className="w-4 h-4 group-hover:rotate-90 transition-transform" />
                     <span>Add New Hotspot</span>
