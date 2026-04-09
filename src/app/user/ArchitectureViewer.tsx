@@ -508,10 +508,10 @@ export default function ArchitectureViewer() {
         <div className="flex justify-center">
           <div
             ref={imageContainerRef}
-            className="relative aspect-square md:aspect-[4/3] w-full max-w-7xl mx-auto rounded-2xl overflow-hidden border-4 border-white bg-slate-50 group touch-none transition-all duration-500 ease-in-out"
+            className="relative aspect-square md:aspect-[4/3] w-full max-w-7xl mx-auto rounded-2xl overflow-hidden border-4 border-white bg-slate-950 group touch-none transition-all duration-500 ease-in-out"
           >
             <div
-              className={cn("w-full h-full", imageUrl ? "cursor-move" : "cursor-default")}
+              className={cn("w-full h-full flex items-center justify-center", imageUrl ? "cursor-move" : "cursor-default")}
               onMouseDown={imageUrl ? handleMouseDown : undefined}
               onMouseMove={imageUrl ? handleMouseMove : undefined}
               onMouseUp={imageUrl ? handleMouseUp : undefined}
@@ -536,23 +536,22 @@ export default function ArchitectureViewer() {
                 className="relative w-full h-full flex items-center justify-center"
               >
                 <div
-                  className="relative transition-all duration-500"
-                  style={
-                    // Using pure CSS shrink-wrap for contain fit prevents coordinate shift bugs from letter-boxing
-                    (imageType === 'architectural' ? temple.architectureImagesFitMode : temple.presentImagesFitMode) === 'cover'
-                      ? { width: '100%', height: '100%', display: 'block' }
-                      : { maxWidth: '100%', maxHeight: '100%', display: 'inline-flex', verticalAlign: 'middle', margin: 'auto' }
-                  }
+                  className={cn(
+                    "relative transition-all duration-500",
+                    (imageType === 'architectural' ? (temple.architectureImagesFitMode || 'contain') : (temple.presentImagesFitMode || 'contain')) === 'cover'
+                      ? "w-full h-full block"
+                      : "w-full h-full flex items-center justify-center m-auto"
+                  )}
                 >
                   {imageUrl ? (
                     <img
                       src={imageUrl}
                       alt={`${getTranslatedValue(temple.name, langCode)} Architecture`}
                       className={cn(
-                        "block select-none transition-all duration-500 object-center mx-auto",
-                        imageType === 'architectural'
-                          ? (temple.architectureImagesFitMode === 'cover' ? 'w-full h-full object-cover' : 'max-w-full max-h-full object-contain')
-                          : (temple.presentImagesFitMode === 'cover' ? 'w-full h-full object-cover' : 'max-w-full max-h-full object-contain')
+                        "block select-none transition-all duration-500 m-auto",
+                        (imageType === 'architectural' ? (temple.architectureImagesFitMode || 'contain') : (temple.presentImagesFitMode || 'contain')) === 'cover'
+                          ? 'w-full h-full object-cover object-center'
+                          : 'max-w-full max-h-full object-contain object-center'
                       )}
                       draggable={false}
                       onLoad={(e) => setImageRatio(e.currentTarget.naturalWidth / e.currentTarget.naturalHeight)}

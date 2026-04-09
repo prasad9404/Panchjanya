@@ -1169,10 +1169,9 @@ export default function TempleArchitectureAdmin({
       else if (section === 'architectural') setArchImagesFitMode(mode);
       else setPresentImagesFitMode(mode);
 
-      toast({ title: "Fit Mode Updated", description: `Images will now use ${mode} mode.` });
+      // Silent update for better UX as it happens during upload flow
     } catch (error) {
       console.error("Error updating fit mode:", error);
-      toast({ title: "Error", description: "Failed to update fit mode.", variant: "destructive" });
     }
   };
 
@@ -2372,7 +2371,12 @@ export default function TempleArchitectureAdmin({
                           ref={imageRef}
                           src={displayImages[adminImageIndex] || "/icons/temple-placeholder.jpg"}
                           alt="Active View"
-                          className="max-h-[80vh] w-auto shadow-2xl transition-transform duration-700 select-none"
+                          className={cn(
+                            "shadow-2xl transition-all duration-700 select-none object-center mx-auto block",
+                            (viewType === 'architectural' ? archImagesFitMode : presentImagesFitMode) === 'cover'
+                              ? "w-full h-full object-cover"
+                              : "max-w-full max-h-[80vh] object-contain"
+                          )}
                           draggable={false}
                           onError={(e) => (e.currentTarget.src = "/icons/temple-placeholder.jpg")}
                         />

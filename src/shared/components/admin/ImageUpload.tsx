@@ -1,14 +1,24 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { uploadFile } from "@/shared/lib/storage";
 import type { MediaDocument } from "@/shared/lib/storage";
 import { Button } from "@/shared/components/ui/button";
 import { Input } from "@/shared/components/ui/input";
 import { Progress } from "@/shared/components/ui/progress";
-import { Upload, X, Loader2, CheckCircle, Link as LinkIcon, Image as ImageIcon } from "lucide-react";
+import { Upload, X, Loader2, CheckCircle, Link as LinkIcon, Image as ImageIcon, Crop as CropIcon } from "lucide-react";
 import { useToast } from "@/shared/hooks/use-toast";
 import { Label } from "@/shared/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/components/ui/tabs";
 import { cn } from "@/shared/lib/utils";
+import Cropper from "react-easy-crop";
+import type { Point, Area } from "react-easy-crop";
+import getCroppedImg from "@/shared/utils/cropUtils";
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogFooter,
+} from "@/shared/components/ui/dialog";
 
 interface ImageUploadProps {
     onUpload: (url: string) => void;
@@ -16,10 +26,11 @@ interface ImageUploadProps {
     mediaType?: MediaDocument['type'];
     label?: string;
     className?: string;
-    fitMode?: 'cover' | 'contain';
-    onFitModeChange?: (mode: 'cover' | 'contain') => void;
     onRemove?: () => void;
     variant?: 'default' | 'gallery' | 'compact';
+    aspectRatio?: number;
+    fitMode?: 'cover' | 'contain';
+    onFitModeChange?: (mode: 'cover' | 'contain') => void;
 }
 
 export function ImageUpload({
@@ -28,10 +39,11 @@ export function ImageUpload({
     mediaType = "post-image",
     label = "Upload Image",
     className,
-    fitMode = 'cover',
-    onFitModeChange,
     onRemove,
-    variant = 'default'
+    variant = 'default',
+    aspectRatio,
+    fitMode = 'cover',
+    onFitModeChange
 }: ImageUploadProps) {
     const [progress, setProgress] = useState(0);
     const [uploading, setUploading] = useState(false);
@@ -40,19 +52,54 @@ export function ImageUpload({
     const [urlInput, setUrlInput] = useState("");
     const { toast } = useToast();
 
-    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    // Cropping state
+    const [imageToCrop, setImageToCrop] = useState<string | null>(null);
+    const [originalFile, setOriginalFile] = useState<File | null>(null);
+    const [crop, setCrop] = useState<Point>({ x: 0, y: 0 });
+    const [zoom, setZoom] = useState(1);
+    const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
+    const [isCropModalOpen, setIsCropModalOpen] = useState(false);
+
+    // Determine default aspect ratio based on variant if not provided
+    const defaultAspectRatio = aspectRatio || (variant === 'gallery' ? 1 : 16 / 9);
+
+    const onCropComplete = useCallback((_croppedArea: Area, croppedAreaPixels: Area) => {
+        setCroppedAreaPixels(croppedAreaPixels);
+    }, []);
+
+    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement> | any) => {
         const file = e.target.files?.[0];
         if (!file) return;
 
-        // Create local preview immediately for responsive UI
-        const objectUrl = URL.createObjectURL(file);
-        setPreview(objectUrl);
-        setUploading(true);
-        setProgress(0);
+        setOriginalFile(file);
+        const reader = new FileReader();
+        reader.addEventListener("load", () => {
+            setImageToCrop(reader.result as string);
+            setIsCropModalOpen(true);
+        });
+        reader.readAsDataURL(file);
+    };
+
+    const handleCroppedUpload = async () => {
+        if (!imageToCrop || !croppedAreaPixels) return;
 
         try {
+            setUploading(true);
+            setIsCropModalOpen(false);
+
+            const croppedBlob = await getCroppedImg(imageToCrop, croppedAreaPixels);
+            if (!croppedBlob) throw new Error("Could not crop image");
+
+            const croppedFile = new File([croppedBlob], `cropped-${Date.now()}.jpg`, { type: 'image/jpeg' });
+
+            const objectUrl = URL.createObjectURL(croppedBlob);
+            setPreview(objectUrl);
+            setProgress(0);
+
+            if (onFitModeChange) onFitModeChange('cover');
+
             const result = await uploadFile({
-                file,
+                file: croppedFile,
                 folder: folderPath,
                 type: mediaType,
                 onProgress: setProgress,
@@ -60,9 +107,54 @@ export function ImageUpload({
 
             onUpload(result.downloadUrl);
             setUploading(false);
+            setImageToCrop(null);
             toast({
                 title: "Success",
-                description: "Image uploaded successfully",
+                description: "Cropped image uploaded successfully",
+            });
+        } catch (error: any) {
+            console.error("Upload failed:", error);
+            setUploading(false);
+            toast({
+                title: "Upload Failed",
+                description: error.message || "Failed to upload image",
+                variant: "destructive",
+            });
+        }
+    };
+
+    const handleFullImageUpload = async () => {
+        if (!originalFile && !urlInput) return;
+
+        try {
+            setUploading(true);
+            setIsCropModalOpen(false);
+            setProgress(0);
+
+            if (onFitModeChange) onFitModeChange('contain');
+
+            if (originalFile) {
+                const objectUrl = URL.createObjectURL(originalFile);
+                setPreview(objectUrl);
+
+                const result = await uploadFile({
+                    file: originalFile,
+                    folder: folderPath,
+                    type: mediaType,
+                    onProgress: setProgress,
+                });
+                onUpload(result.downloadUrl);
+            } else if (urlInput) {
+                setPreview(urlInput);
+                onUpload(urlInput);
+            }
+
+            setUploading(false);
+            setImageToCrop(null);
+            setOriginalFile(null);
+            toast({
+                title: "Success",
+                description: "Original image uploaded successfully",
             });
         } catch (error: any) {
             console.error("Upload failed:", error);
@@ -77,9 +169,9 @@ export function ImageUpload({
 
     const handleUrlSubmit = () => {
         if (!urlInput.trim()) return;
-        onUpload(urlInput);
-        setPreview(urlInput);
-        toast({ title: "Success", description: "Image URL added" });
+        setImageToCrop(urlInput);
+        setOriginalFile(null); // URL input doesn't have a File object
+        setIsCropModalOpen(true);
     };
 
     const clearImage = () => {
@@ -120,11 +212,91 @@ export function ImageUpload({
         handleFileChange(pseudoEvent);
     };
 
+    const cropDialogJSX = (
+        <Dialog open={isCropModalOpen} onOpenChange={setIsCropModalOpen}>
+            <DialogContent className="max-w-4xl h-[700px] flex flex-col p-0 overflow-hidden bg-white/95 backdrop-blur-md rounded-3xl border-none shadow-2xl">
+                <DialogHeader className="p-6 pb-0">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-2xl bg-blue-100 flex items-center justify-center">
+                                <CropIcon className="w-5 h-5 text-blue-600" />
+                            </div>
+                            <div>
+                                <DialogTitle className="text-xl font-bold text-slate-900">Process Image</DialogTitle>
+                                <p className="text-xs text-slate-500 font-medium tracking-tight mt-0.5">Adjust the crop area or choose to use the full image.</p>
+                            </div>
+                        </div>
+                        <Button
+                            variant="outline"
+                            onClick={handleFullImageUpload}
+                            className="rounded-2xl h-10 px-6 font-bold text-blue-600 border-blue-200 hover:bg-blue-50 transition-all"
+                        >
+                            Use Full Image
+                        </Button>
+                    </div>
+                </DialogHeader>
+
+                <div className="flex-1 relative mt-6 mx-6 rounded-2xl overflow-hidden bg-slate-900 shadow-inner">
+                    <Cropper
+                        image={imageToCrop || ""}
+                        crop={crop}
+                        zoom={zoom}
+                        aspect={defaultAspectRatio}
+                        onCropChange={setCrop}
+                        onCropComplete={onCropComplete}
+                        onZoomChange={setZoom}
+                    />
+                </div>
+
+                <div className="p-6 space-y-4">
+                    <div className="flex flex-col gap-2 px-6">
+                        <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-slate-400">
+                            <span>Zoom Level</span>
+                            <span className="text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md">{Math.round(zoom * 100)}%</span>
+                        </div>
+                        <Input
+                            type="range"
+                            value={zoom}
+                            min={1}
+                            max={3}
+                            step={0.1}
+                            aria-labelledby="Zoom"
+                            onChange={(e) => setZoom(Number(e.target.value))}
+                            className="w-full h-1.5 bg-slate-100 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                        />
+                    </div>
+
+                    <DialogFooter className="px-6 pb-6 pt-2 bg-white/50 border-t border-slate-100/50">
+                        <Button
+                            variant="ghost"
+                            onClick={() => {
+                                setIsCropModalOpen(false);
+                                setImageToCrop(null);
+                                setOriginalFile(null);
+                            }}
+                            className="rounded-2xl h-12 px-8 font-bold text-slate-500 hover:bg-slate-100"
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            onClick={handleCroppedUpload}
+                            disabled={uploading}
+                            className="bg-blue-900 hover:bg-black text-white rounded-2xl h-12 px-10 font-black text-xs uppercase tracking-widest shadow-xl shadow-blue-900/20 transition-all flex items-center gap-2"
+                        >
+                            <CheckCircle className="w-4 h-4" />
+                            Apply Crop & Save
+                        </Button>
+                    </DialogFooter>
+                </div>
+            </DialogContent>
+        </Dialog>
+    );
+
     if (variant === 'gallery') {
         return (
             <div className={cn("p-3 bg-white border border-slate-100 rounded-2xl shadow-sm", className)}>
+                {cropDialogJSX}
                 <div className="flex flex-col md:flex-row gap-4">
-                    {/* Left side: Upload/URL Box */}
                     <div className="flex-1 space-y-3">
                         <Tabs defaultValue="upload" className="w-full">
                             <TabsList className="grid w-full grid-cols-2 p-1 bg-slate-100 rounded-lg h-9">
@@ -205,7 +377,6 @@ export function ImageUpload({
                         )}
                     </div>
 
-                    {/* Right side: Preview Card */}
                     <div className="flex-1 min-w-[200px]">
                         <div className="h-full flex flex-col">
                             <div className="flex items-center justify-between mb-2">
@@ -228,8 +399,8 @@ export function ImageUpload({
                                             src={preview}
                                             alt="Preview"
                                             className={cn(
-                                                "max-w-full max-h-full transition-all duration-500 group-hover:scale-105",
-                                                fitMode === 'cover' ? "w-full h-full object-cover" : "object-contain"
+                                                "w-full h-full transition-all duration-500 group-hover:scale-105",
+                                                fitMode === 'cover' ? "object-cover" : "object-contain"
                                             )}
                                         />
                                         <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
@@ -260,6 +431,7 @@ export function ImageUpload({
 
     return (
         <div className={`p-4 bg-white ${className}`}>
+            {cropDialogJSX}
             <Tabs defaultValue="upload" className="w-full">
                 <TabsList className="grid w-full grid-cols-2 p-1 bg-slate-100 rounded-xl h-11">
                     <TabsTrigger
@@ -355,51 +527,14 @@ export function ImageUpload({
                             src={preview}
                             alt="Preview"
                             className={cn(
-                                "max-w-full max-h-full transition-all duration-300",
-                                fitMode === 'cover' ? "w-full h-full object-cover" : "object-contain"
+                                "w-full h-full transition-all duration-300",
+                                fitMode === 'cover' ? "object-cover" : "object-contain"
                             )}
                         />
                         <div className="absolute top-3 right-3 bg-green-500 text-white rounded-full p-1 shadow-lg animate-in zoom-in-50">
                             <CheckCircle className="w-4 h-4" />
                         </div>
                     </div>
-
-                    {onFitModeChange && (
-                        <div className="space-y-3">
-                            <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Image Fit Mode</Label>
-                            <div className="flex bg-slate-100 p-1 rounded-xl w-fit border border-slate-200/50">
-                                <button
-                                    type="button"
-                                    onClick={() => onFitModeChange('cover')}
-                                    className={cn(
-                                        "px-6 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all duration-200",
-                                        fitMode === 'cover'
-                                            ? "bg-white shadow-sm text-blue-600 ring-1 ring-slate-200/50"
-                                            : "text-slate-400 hover:text-slate-600"
-                                    )}
-                                >
-                                    Cover
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => onFitModeChange('contain')}
-                                    className={cn(
-                                        "px-6 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all duration-200",
-                                        fitMode === 'contain'
-                                            ? "bg-white shadow-sm text-blue-600 ring-1 ring-slate-200/50"
-                                            : "text-slate-400 hover:text-slate-600"
-                                    )}
-                                >
-                                    Fit Inside
-                                </button>
-                            </div>
-                            <p className="text-[10px] text-slate-400 italic ml-1">
-                                {fitMode === 'cover'
-                                    ? "Cover: Fills the entire container (may crop edges)."
-                                    : "Fit: Ensures the full image is visible inside."}
-                            </p>
-                        </div>
-                    )}
                 </div>
             )}
         </div>

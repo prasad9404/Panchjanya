@@ -45,6 +45,9 @@ import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import { cn } from "@/shared/lib/utils";
+import { ensureMultilingual } from "@/shared/services/translationService";
+import { getTranslatedValue } from "@/shared/utils/translationUtils";
+import { useLanguage } from "@/shared/contexts/LanguageContext";
 
 // Fix for default marker icons in Leaflet with React
 // @ts-ignore - access private property
@@ -101,6 +104,7 @@ function LocationPicker({ lat, lng, onSelect }: { lat?: number, lng?: number, on
 
 export default function RajViharanAdmin() {
     const navigate = useNavigate();
+    const { language } = useLanguage();
     const [places, setPlaces] = useState<YatraPlace[]>([]);
     const [loading, setLoading] = useState(true);
     const [selectedPlace, setSelectedPlace] = useState<YatraPlace | null>(null);
@@ -111,8 +115,8 @@ export default function RajViharanAdmin() {
 
     // Form state
     const [formData, setFormData] = useState<Partial<YatraPlace & { pinColor: string }>>({
-        name: "",
-        description: "",
+        name: { en: "" },
+        description: { en: "" },
         latitude: 0,
         longitude: 0,
         sequence: 1,
@@ -161,8 +165,8 @@ export default function RajViharanAdmin() {
         setFormData({
             ...place,
             // Ensure fields are never undefined for controlled inputs
-            name: place.name || "",
-            description: place.description || "",
+            name: ensureMultilingual(place.name),
+            description: ensureMultilingual(place.description),
             locationLink: place.locationLink || "",
             subRoute: place.subRoute || "",
             image: place.image || "",
@@ -177,8 +181,8 @@ export default function RajViharanAdmin() {
     const handleAddNew = () => {
         setSelectedPlace(null);
         setFormData({
-            name: "",
-            description: "",
+            name: { en: "" },
+            description: { en: "" },
             latitude: 19.8647, // Default coordinates
             longitude: 75.7714,
             sequence: places.length > 0 ? Math.max(...places.map(p => p.sequence)) + 1 : 1,
@@ -430,8 +434,11 @@ export default function RajViharanAdmin() {
                                         <Label htmlFor="name">Place Name *</Label>
                                         <Input
                                             id="name"
-                                            value={formData.name}
-                                            onChange={e => setFormData({ ...formData, name: e.target.value })}
+                                            value={formData.name?.en || ""}
+                                            onChange={e => setFormData({ 
+                                                ...formData, 
+                                                name: { ...ensureMultilingual(formData.name), en: e.target.value } 
+                                            })}
                                             placeholder="Enter place name..."
                                             required
                                             className="h-11 shadow-sm"
@@ -442,8 +449,11 @@ export default function RajViharanAdmin() {
                                         <Label htmlFor="description">Description (History/Significance)</Label>
                                         <Textarea
                                             id="description"
-                                            value={formData.description}
-                                            onChange={e => setFormData({ ...formData, description: e.target.value })}
+                                            value={formData.description?.en || ""}
+                                            onChange={e => setFormData({ 
+                                                ...formData, 
+                                                description: { ...ensureMultilingual(formData.description), en: e.target.value } 
+                                            })}
                                             placeholder="Describe the historical or spiritual significance..."
                                             rows={4}
                                             className="resize-none shadow-sm"
@@ -715,7 +725,7 @@ export default function RajViharanAdmin() {
                                                                                         </div>
                                                                                         <div className="w-16 h-12 rounded-xl bg-slate-200 overflow-hidden shrink-0 border border-slate-200">
                                                                                             {place.image ? (
-                                                                                                <img src={place.image} alt={place.name} className="w-full h-full object-cover" />
+                                                                                                <img src={place.image} alt={getTranslatedValue(place.name, language)} className="w-full h-full object-cover" />
                                                                                             ) : (
                                                                                                 <div className="w-full h-full flex items-center justify-center bg-slate-100 text-slate-300">
                                                                                                     <MapPin className="w-5 h-5 opacity-30" />
@@ -724,7 +734,7 @@ export default function RajViharanAdmin() {
                                                                                         </div>
                                                                                         <div>
                                                                                             <div className="flex items-center gap-2">
-                                                                                                <p className="text-sm font-bold text-slate-900">{place.name}</p>
+                                                                                                <p className="text-sm font-bold text-slate-900">{getTranslatedValue(place.name, language)}</p>
                                                                                             </div>
                                                                                             <p className="text-[10px] text-slate-400 font-medium flex items-center gap-1 uppercase tracking-tighter">
                                                                                                 {place.status}
