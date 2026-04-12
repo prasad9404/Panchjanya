@@ -508,10 +508,11 @@ export default function ArchitectureViewer() {
         <div className="flex justify-center">
           <div
             ref={imageContainerRef}
-            className="relative aspect-[4/3] w-full max-w-7xl mx-auto rounded-2xl overflow-visible border-4 border-white bg-transparent group touch-none transition-all duration-500 ease-in-out"
+            className="relative aspect-[4/3] w-full max-w-7xl mx-auto rounded-2xl overflow-hidden border-4 border-white bg-transparent group touch-none shadow-2xl transition-all duration-500 ease-in-out"
           >
+            {/* 1. Base Layer (Centering & Transforms) */}
             <div
-              className={cn("w-full h-full flex items-center justify-center", imageUrl ? "cursor-move" : "cursor-default")}
+              className={cn("absolute inset-0 w-full h-full flex items-center justify-center", imageUrl ? "cursor-move" : "cursor-default")}
               onMouseDown={imageUrl ? handleMouseDown : undefined}
               onMouseMove={imageUrl ? handleMouseMove : undefined}
               onMouseUp={imageUrl ? handleMouseUp : undefined}
@@ -523,36 +524,23 @@ export default function ArchitectureViewer() {
               <div
                 style={{
                   transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
-                  transition: isDragging ? 'none' : 'transform 0.2s ease-out'
+                  transition: isDragging ? 'none' : 'transform 0.2s ease-out',
+                  width: '100%',
+                  height: '100%',
+                  display: 'grid',
+                  placeItems: 'center'
                 }}
-                className="relative w-full h-full flex items-center justify-center"
               >
-                <div
-                  className={cn(
-                    "relative transition-all duration-500 m-auto",
-                    (imageType === 'architectural' ? (temple.architectureImagesFitMode || 'contain') : (temple.presentImagesFitMode || 'contain')) === 'cover'
-                      ? "w-full h-full block"
-                      : "w-full h-full flex items-center justify-center"
-                  )}
-                  onClick={(e) => {
-                    // Coordinate capture for backend support
-                    const rect = e.currentTarget.getBoundingClientRect();
-                    const x = ((e.clientX - rect.left) / rect.width) * 100;
-                    const y = ((e.clientY - rect.top) / rect.height) * 100;
-                    console.log(`Clicked coordinates: x: ${x.toFixed(2)}%, y: ${y.toFixed(2)}%`);
-                    handleSelectHotspot(null, null);
-                  }}
-                >
                   {imageUrl ? (
-                    <div className="relative overflow-visible">
+                    <div className="relative overflow-visible max-w-full max-h-full">
                       <img
                         src={imageUrl}
                         alt={`${getTranslatedValue(temple.name, langCode)} Architecture`}
                         className={cn(
                           "block select-none transition-all duration-500",
                           (imageType === 'architectural' ? (temple.architectureImagesFitMode || 'contain') : (temple.presentImagesFitMode || 'contain')) === 'cover'
-                            ? 'w-full h-full object-cover object-center'
-                            : 'max-w-full max-h-full object-contain object-center pointer-events-none'
+                            ? 'w-full h-full object-cover'
+                            : 'max-w-full max-h-full object-contain pointer-events-none'
                         )}
                         draggable={false}
                         onLoad={(e) => setImageRatio(e.currentTarget.naturalWidth / e.currentTarget.naturalHeight)}
@@ -575,8 +563,6 @@ export default function ArchitectureViewer() {
                             const isActive = isHovered || (isSelected && (selectionSource !== 'dropdown' || isPothiOpen));
                             const isVisible = showHotspots || isActive;
                             if (!isVisible) return null;
-
-                            console.log(`[User] Rendering Hotspot #${hotspot.number} at x=${hotspot.x}%, y=${hotspot.y}%`);
 
                             return (
                               <div
@@ -663,39 +649,39 @@ export default function ArchitectureViewer() {
                       </p>
                     </div>
                   )}
-
-                  {displayImages.length > 1 && (
-                    <>
-                      <button
-                        onClick={prevImage}
-                        className="absolute left-2 md:left-4 top-1/2 -translate-y-1/2 w-10 h-10 md:w-12 md:h-12 flex items-center justify-center text-white/90 hover:text-white transition-all hover:scale-110 drop-shadow-md z-[60] pointer-events-auto"
-                      >
-                        <ChevronLeft className="w-8 h-8 md:w-10 md:h-10" strokeWidth={3} />
-                      </button>
-                      <button
-                        onClick={nextImage}
-                        className="absolute right-2 md:right-4 top-1/2 -translate-y-1/2 w-10 h-10 md:w-12 md:h-12 flex items-center justify-center text-white/90 hover:text-white transition-all hover:scale-110 drop-shadow-md z-[60] pointer-events-auto"
-                      >
-                        <ChevronRight className="w-8 h-8 md:w-10 md:h-10" strokeWidth={3} />
-                      </button>
-                      {/* Indicator Dots */}
-                      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-[60]">
-                        {displayImages.map((_, idx) => (
-                          <div
-                            key={idx}
-                            className={`w-2 h-2 rounded-full transition-all ${idx === currentImageIndex ? 'bg-amber-500 w-4' : 'bg-white/50'}`}
-                          />
-                        ))}
-                      </div>
-                      <div className="absolute top-4 left-4 bg-black/40 text-white text-[10px] px-2 py-0.5 rounded-full z-[60] backdrop-blur-sm">
-                        {t('common.pageOf', { current: currentImageIndex + 1, total: displayImages.length })}
-                      </div>
-                    </>
-                  )}
-
-
-                </div>
               </div>
+            </div>
+
+            {/* 2. Static Overlay Layer (UI Controls locked to container) */}
+            <div className="absolute inset-0 pointer-events-none z-[60]">
+               {displayImages.length > 1 && (
+                  <>
+                    <button
+                      onClick={prevImage}
+                      className="absolute left-2 md:left-4 top-1/2 -translate-y-1/2 w-10 h-10 md:w-12 md:h-12 flex items-center justify-center text-white/90 hover:text-white transition-all hover:scale-110 drop-shadow-md z-[60] pointer-events-auto"
+                    >
+                      <ChevronLeft className="w-8 h-8 md:w-10 md:h-10" strokeWidth={3} />
+                    </button>
+                    <button
+                      onClick={nextImage}
+                      className="absolute right-2 md:right-4 top-1/2 -translate-y-1/2 w-10 h-10 md:w-12 md:h-12 flex items-center justify-center text-white/90 hover:text-white transition-all hover:scale-110 drop-shadow-md z-[60] pointer-events-auto"
+                    >
+                      <ChevronRight className="w-8 h-8 md:w-10 md:h-10" strokeWidth={3} />
+                    </button>
+                    {/* Indicator Dots */}
+                    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-[60] drop-shadow-lg">
+                      {displayImages.map((_, idx) => (
+                        <div
+                          key={idx}
+                          className={`w-2 h-2 rounded-full transition-all ${idx === currentImageIndex ? 'bg-amber-500 w-4' : 'bg-white/80'}`}
+                        />
+                      ))}
+                    </div>
+                    <div className="absolute top-4 left-4 bg-black/40 text-white text-[10px] px-2 py-0.5 rounded-full z-[60] backdrop-blur-sm border border-white/10">
+                      {t('common.pageOf', { current: currentImageIndex + 1, total: displayImages.length })}
+                    </div>
+                  </>
+                )}
             </div>
 
             <>

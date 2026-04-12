@@ -2343,24 +2343,26 @@ export default function TempleArchitectureAdmin({
               </CardHeader>
               <CardContent className="p-0 space-y-6">
                 {/* 1. Large Image Editor Area */}
-                <div className="bg-transparent rounded-2xl overflow-visible border-4 border-slate-200 shadow-2xl relative group aspect-[4/3] w-full flex items-center justify-center">
-                  {/* Navigation Arrows */}
-                  {displayImages.length > 1 && (
-                    <>
-                      <button
-                        onClick={() => setAdminImageIndex((p) => (p - 1 + displayImages.length) % displayImages.length)}
-                        className="absolute left-4 z-20 bg-white/10 hover:bg-white/20 text-white p-3 rounded-full backdrop-blur-xl transition-all border border-white/10 hover:scale-110 active:scale-95"
-                      >
-                        <ChevronLeft className="w-8 h-8" />
-                      </button>
-                      <button
-                        onClick={() => setAdminImageIndex((p) => (p + 1) % displayImages.length)}
-                        className="absolute right-4 z-20 bg-white/10 hover:bg-white/20 text-white p-3 rounded-full backdrop-blur-xl transition-all border border-white/10 hover:scale-110 active:scale-95"
-                      >
-                        <ChevronRight className="w-8 h-8" />
-                      </button>
-                    </>
-                  )}
+                <div className="bg-transparent rounded-2xl overflow-hidden border-4 border-slate-200 shadow-2xl relative group aspect-[4/3] w-full flex items-center justify-center">
+                  {/* Navigation Arrows Layer */}
+                  <div className="absolute inset-0 pointer-events-none z-20">
+                    {displayImages.length > 1 && (
+                      <>
+                        <button
+                          onClick={() => setAdminImageIndex((p) => (p - 1 + displayImages.length) % displayImages.length)}
+                          className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/10 hover:bg-white/20 text-white p-3 rounded-full backdrop-blur-xl transition-all border border-white/10 hover:scale-110 active:scale-95 pointer-events-auto shadow-xl"
+                        >
+                          <ChevronLeft className="w-8 h-8" />
+                        </button>
+                        <button
+                          onClick={() => setAdminImageIndex((p) => (p + 1) % displayImages.length)}
+                          className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/10 hover:bg-white/20 text-white p-3 rounded-full backdrop-blur-xl transition-all border border-white/10 hover:scale-110 active:scale-95 pointer-events-auto shadow-xl"
+                        >
+                          <ChevronRight className="w-8 h-8" />
+                        </button>
+                      </>
+                    )}
+                  </div>
 
                   {/* Hotspot Interaction Plane */}
                   <div
