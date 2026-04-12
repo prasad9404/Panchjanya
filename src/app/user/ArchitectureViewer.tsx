@@ -508,7 +508,7 @@ export default function ArchitectureViewer() {
         <div className="flex justify-center">
           <div
             ref={imageContainerRef}
-            className="relative aspect-square md:aspect-[4/3] w-full max-w-7xl mx-auto rounded-2xl overflow-hidden border-4 border-white bg-slate-950 group touch-none transition-all duration-500 ease-in-out"
+            className="relative aspect-square md:aspect-[4/3] w-full max-w-7xl mx-auto rounded-2xl overflow-visible border-4 border-white bg-slate-950 group touch-none transition-all duration-500 ease-in-out"
           >
             <div
               className={cn("w-full h-full flex items-center justify-center", imageUrl ? "cursor-move" : "cursor-default")}
@@ -519,14 +519,6 @@ export default function ArchitectureViewer() {
               onTouchStart={imageUrl ? handleTouchStart : undefined}
               onTouchMove={imageUrl ? handleTouchMove : undefined}
               onTouchEnd={imageUrl ? handleTouchEnd : undefined}
-              onClick={(e) => {
-                // Coordinate capture for backend support
-                const rect = e.currentTarget.getBoundingClientRect();
-                const x = ((e.clientX - rect.left) / rect.width) * 100;
-                const y = ((e.clientY - rect.top) / rect.height) * 100;
-                console.log(`Clicked coordinates: x: ${x.toFixed(2)}%, y: ${y.toFixed(2)}%`);
-                handleSelectHotspot(null, null);
-              }}
             >
               <div
                 style={{
@@ -537,21 +529,29 @@ export default function ArchitectureViewer() {
               >
                 <div
                   className={cn(
-                    "relative transition-all duration-500",
+                    "relative transition-all duration-500 m-auto",
                     (imageType === 'architectural' ? (temple.architectureImagesFitMode || 'contain') : (temple.presentImagesFitMode || 'contain')) === 'cover'
                       ? "w-full h-full block"
-                      : "w-full h-full flex items-center justify-center m-auto"
+                      : "w-full h-full flex items-center justify-center"
                   )}
+                  onClick={(e) => {
+                    // Coordinate capture for backend support
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    const x = ((e.clientX - rect.left) / rect.width) * 100;
+                    const y = ((e.clientY - rect.top) / rect.height) * 100;
+                    console.log(`Clicked coordinates: x: ${x.toFixed(2)}%, y: ${y.toFixed(2)}%`);
+                    handleSelectHotspot(null, null);
+                  }}
                 >
                   {imageUrl ? (
                     <img
                       src={imageUrl}
                       alt={`${getTranslatedValue(temple.name, langCode)} Architecture`}
                       className={cn(
-                        "block select-none transition-all duration-500 m-auto",
+                        "block select-none transition-all duration-500",
                         (imageType === 'architectural' ? (temple.architectureImagesFitMode || 'contain') : (temple.presentImagesFitMode || 'contain')) === 'cover'
                           ? 'w-full h-full object-cover object-center'
-                          : 'max-w-full max-h-full object-contain object-center'
+                          : 'w-full h-full object-contain object-center pointer-events-none'
                       )}
                       draggable={false}
                       onLoad={(e) => setImageRatio(e.currentTarget.naturalWidth / e.currentTarget.naturalHeight)}
@@ -638,7 +638,8 @@ export default function ArchitectureViewer() {
                             style={{
                               left: `${hotspot.x}%`,
                               top: `${hotspot.y}%`,
-                              transform: 'translate(-50%, -100%)',
+                              transform: `translate(${hotspot.x < 10 ? '0%' : hotspot.x > 90 ? '-100%' : '-50%'}, -100%)`,
+                              transformOrigin: 'bottom',
                               transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
                             }}
                           >

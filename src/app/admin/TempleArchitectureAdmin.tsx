@@ -25,6 +25,10 @@ import {
 import { Tabs, TabsList, TabsTrigger } from "@/shared/components/ui/tabs";
 import { Languages, Wand2 } from "lucide-react";
 import { ensureMultilingual } from "@/shared/services/translationService";
+
+function getLang(field: any, lang: string = "en") {
+  return field?.[lang] || "";
+}
 import { autoTranslateMultilingual } from "@/shared/services/autoTranslate";
 import { getTranslatedValue } from "@/shared/utils/translationUtils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/components/ui/card";
@@ -127,7 +131,8 @@ const HotspotMarker = ({
       style={{
         top: `${hotspot.y}%`,
         left: `${hotspot.x}%`,
-        transform: `translate(-50%, -100%) scale(${showActions ? 1.2 : 1})`,
+        transform: `translate(${hotspot.x < 10 ? '0%' : hotspot.x > 90 ? '-100%' : '-50%'}, -100%) scale(${showActions ? 1.2 : 1})`,
+        transformOrigin: 'bottom',
         opacity: showActions ? 1 : 0.95
       }}
       onMouseEnter={() => onMouseEnter(hotspot)}
@@ -378,7 +383,7 @@ export default function TempleArchitectureAdmin({
   const updateHotspotTitle = async (hotspotId: string, newTitle: string) => {
     // 1. Update Hotspot Array
     const updatedHotspots = archHotspots.map(h =>
-      h.id === hotspotId ? { ...h, title: { ...h.title, [activeLang]: newTitle } } : h
+      h.id === hotspotId ? { ...h, title: { ...(h.title || { en: "", hi: "", mr: "" }), [activeLang]: newTitle } } : h
     );
     setArchHotspots(updatedHotspots);
     setEditingTitleId(null);
@@ -655,10 +660,9 @@ export default function TempleArchitectureAdmin({
     setSelectedHotspot(null);
     setHoveredHotspotId(null);
 
-    if (!imageRef.current) return;
-    const rect = imageRef.current.getBoundingClientRect();
-    const x = ((e.clientX - rect.left) / rect.width) * 100;
-    const y = ((e.clientY - rect.top) / rect.height) * 100;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = Math.min(95, Math.max(5, ((e.clientX - rect.left) / rect.width) * 100));
+    const y = Math.min(95, Math.max(5, ((e.clientY - rect.top) / rect.height) * 100));
 
     // Handle Repositioning
     if (repositioningId) {
@@ -939,7 +943,7 @@ export default function TempleArchitectureAdmin({
     if (field === 'icon') {
       setGlanceItems(glanceItems.map(g => g.id === gId ? { ...g, icon: value } : g));
     } else {
-      setGlanceItems(glanceItems.map(g => g.id === gId ? { ...g, description: { ...g.description, [activeLang]: value } } : g));
+      setGlanceItems(glanceItems.map(g => g.id === gId ? { ...g, description: { ...(g.description || { en: "", hi: "", mr: "" }), [activeLang]: value } } : g));
     }
   };
 
@@ -991,7 +995,7 @@ export default function TempleArchitectureAdmin({
     if (field === 'icon') {
       setAbbreviationItems(abbreviationItems.map(g => g.id === gId ? { ...g, icon: value } : g));
     } else {
-      setAbbreviationItems(abbreviationItems.map(g => g.id === gId ? { ...g, description: { ...g.description, [activeLang]: value } } : g));
+      setAbbreviationItems(abbreviationItems.map(g => g.id === gId ? { ...g, description: { ...(g.description || { en: "", hi: "", mr: "" }), [activeLang]: value } } : g));
     }
   };
 
@@ -1367,7 +1371,7 @@ export default function TempleArchitectureAdmin({
     setSelectedHotspot({
       ...selectedHotspot,
       leelas: (selectedHotspot.leelas as any[]).map((l: any) =>
-        typeof l === 'string' ? l : (l.id === id ? { ...l, description: { ...l.description, [activeLang]: description } } : l)
+        typeof l === 'string' ? l : (l.id === id ? { ...l, description: { ...(l.description || { en: "", hi: "", mr: "" }), [activeLang]: description } } : l)
       ) as Leela[]
     });
   };
@@ -2050,7 +2054,7 @@ export default function TempleArchitectureAdmin({
                                 </div>
                                 <div className="md:col-span-3">
                                   <Input
-                                    value={item.description[activeLang]}
+                                    value={getLang(item.description, activeLang)}
                                     onChange={(e) => updateGlanceItem(item.id, 'description', e.target.value)}
                                     placeholder="Brief description..."
                                     className="h-10 rounded-xl border-amber-100 bg-white text-sm"
@@ -2136,7 +2140,7 @@ export default function TempleArchitectureAdmin({
                                 <div className="h-px flex-1 bg-slate-100" />
                               </div>
                               <Input
-                                value={s.title[activeLang]}
+                                value={getLang(s.title, activeLang)}
                                 onChange={(e) => updateDescriptionSection(s.id, 'title', e.target.value)}
                                 placeholder="e.g. History"
                                 className="h-12 border-none bg-slate-50/80 rounded-xl font-bold text-lg focus:ring-2 focus:ring-blue-100 transition-all px-4"
@@ -2148,7 +2152,7 @@ export default function TempleArchitectureAdmin({
                                 <div className="h-px flex-1 bg-slate-100" />
                               </div>
                               <RichTextEditor
-                                value={s.content[activeLang]}
+                                value={getLang(s.content, activeLang)}
                                 onChange={(val) => updateDescriptionSection(s.id, 'content', val)}
                                 placeholder="Add custom content here..."
                                 className="border-none"
@@ -2337,7 +2341,7 @@ export default function TempleArchitectureAdmin({
               </CardHeader>
               <CardContent className="p-0 space-y-6">
                 {/* 1. Large Image Editor Area */}
-                <div className="bg-slate-950 rounded-2xl overflow-hidden border-4 border-slate-800 shadow-2xl relative group min-h-[400px] md:min-h-[600px] flex items-center justify-center">
+                <div className="bg-slate-950 rounded-2xl overflow-visible border-4 border-slate-800 shadow-2xl relative group aspect-square md:aspect-[4/3] w-full flex items-center justify-center">
                   {/* Navigation Arrows */}
                   {displayImages.length > 1 && (
                     <>
@@ -2358,7 +2362,7 @@ export default function TempleArchitectureAdmin({
 
                   {/* Hotspot Interaction Plane */}
                   <div
-                    className="relative cursor-crosshair transition-all duration-500 ease-out"
+                    className="relative cursor-crosshair transition-all duration-500 ease-out m-auto w-full h-full flex items-center justify-center"
                     style={{
                       transform: `scale(${zoom})`,
                       filter: loading ? 'blur(10px)' : 'none'
@@ -2372,10 +2376,10 @@ export default function TempleArchitectureAdmin({
                           src={displayImages[adminImageIndex] || "/icons/temple-placeholder.jpg"}
                           alt="Active View"
                           className={cn(
-                            "shadow-2xl transition-all duration-700 select-none object-center mx-auto block",
+                            "shadow-2xl transition-all duration-700 select-none block pointer-events-none",
                             (viewType === 'architectural' ? archImagesFitMode : presentImagesFitMode) === 'cover'
                               ? "w-full h-full object-cover"
-                              : "max-w-full max-h-[80vh] object-contain"
+                              : "w-full h-full object-contain"
                           )}
                           draggable={false}
                           onError={(e) => (e.currentTarget.src = "/icons/temple-placeholder.jpg")}
@@ -2658,7 +2662,7 @@ export default function TempleArchitectureAdmin({
                                 />
                               ) : (
                                 <h4 className="flex-1 font-bold text-sm text-slate-900 truncate group-hover:text-primary transition-colors">
-                                  {hotspot.title[activeLang] || <span className="text-slate-400 italic">Untitled</span>}
+                                  {getLang(hotspot.title, activeLang) || <span className="text-slate-400 italic">Untitled</span>}
                                 </h4>
                               )}
 
@@ -2683,7 +2687,7 @@ export default function TempleArchitectureAdmin({
                                     variant="ghost" size="icon"
                                     className="h-7 w-7 text-slate-400 hover:text-primary hover:bg-primary/5"
                                     title="Edit title"
-                                    onClick={e => { e.stopPropagation(); setEditingTitleId(hotspot.id); setEditingTitleValue(hotspot.title[activeLang] || ''); }}
+                                    onClick={e => { e.stopPropagation(); setEditingTitleId(hotspot.id); setEditingTitleValue(getLang(hotspot.title, activeLang) || ''); }}
                                   >
                                     <LucideIcons.Pencil className="w-3.5 h-3.5" />
                                   </Button>
@@ -2814,13 +2818,13 @@ export default function TempleArchitectureAdmin({
 
                           <div className="flex-1 space-y-3">
                             <Input
-                              value={block.title[activeLang]}
+                              value={getLang(block.title, activeLang)}
                               onChange={(e) => updateCustomBlock(block.id, 'title', e.target.value)}
                               placeholder="Block Title"
                               className="font-bold rounded-xl"
                             />
                             <RichTextEditor
-                              value={block.content[activeLang]}
+                              value={getLang(block.content, activeLang)}
                               onChange={(val) => updateCustomBlock(block.id, 'content', val)}
                               placeholder="Block content..."
                             />
@@ -2919,8 +2923,8 @@ export default function TempleArchitectureAdmin({
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {details
                     .filter(d => {
-                      const title = d.title[activeLang] || "";
-                      const desc = d.description[activeLang] || "";
+                      const title = getLang(d.title, activeLang) || "";
+                      const desc = getLang(d.description, activeLang) || "";
                       const matchesSearch = title.toLowerCase().includes(searchQuery.toLowerCase()) || desc.toLowerCase().includes(searchQuery.toLowerCase());
                       if (detailFilter === 'linked') return matchesSearch && !!d.hotspotId;
                       if (detailFilter === 'independent') return matchesSearch && !d.hotspotId;
@@ -2972,7 +2976,7 @@ export default function TempleArchitectureAdmin({
                               <div className="flex items-start justify-between gap-4">
                                 <div>
                                   <h3 className="font-bold text-slate-900 text-lg group-hover:text-blue-600 transition-colors">
-                                    {detail.title[activeLang] || `Untitled Detail`}
+                                    {getLang(detail.title, activeLang) || `Untitled Detail`}
                                   </h3>
                                   <p className="text-xs font-black text-slate-400 uppercase tracking-widest mt-1">
                                     {detail.type || 'Structure'}
@@ -2996,7 +3000,7 @@ export default function TempleArchitectureAdmin({
                                 </Popover>
                               </div>
                               <p className="text-sm text-slate-500 line-clamp-2 leading-relaxed">
-                                {detail.description[activeLang] || "No description provided yet."}
+                                {getLang(detail.description, activeLang) || "No description provided yet."}
                               </p>
                               <div className="pt-4 flex items-center justify-between border-t border-slate-50">
                                 <span className={cn(
@@ -3056,7 +3060,7 @@ export default function TempleArchitectureAdmin({
                       <div className="flex items-center gap-3">
                         <p className="text-xs font-black text-slate-400 uppercase tracking-widest leading-none">Selected:</p>
                         <h2 className="text-xl font-serif font-bold text-primary truncate max-w-xs transition-all">
-                          {selectedHotspot.title[activeLang] || `Edit Sthan Detail`}
+                          {getLang(selectedHotspot.title, activeLang) || `Edit Sthan Detail`}
                         </h2>
                       </div>
                     </div>
@@ -3135,7 +3139,7 @@ export default function TempleArchitectureAdmin({
                                   >
                                     {archHotspots.map(h => (
                                       <option key={h.id} value={h.id}>
-                                        #{h.number} - {h.title[activeLang] || "Untitled Hotspot"}
+                                        #{h.number} - {getLang(h.title, activeLang) || "Untitled Hotspot"}
                                       </option>
                                     ))}
                                   </select>
@@ -3164,8 +3168,8 @@ export default function TempleArchitectureAdmin({
                         <div className="space-y-2">
                           <Label className="text-xs font-black uppercase tracking-widest text-slate-400">Sthan Name</Label>
                           <Input
-                            value={selectedHotspot.title[activeLang] || ""}
-                            onChange={(e) => setSelectedHotspot({ ...selectedHotspot, title: { ...selectedHotspot.title, [activeLang]: e.target.value } })}
+                            value={getLang(selectedHotspot.title, activeLang) || ""}
+                            onChange={(e) => setSelectedHotspot({ ...selectedHotspot, title: { ...(selectedHotspot.title || { en: "", hi: "", mr: "" }), [activeLang]: e.target.value } })}
                             placeholder="e.g. Garbhagriha"
                             className="h-12 rounded-2xl border-slate-200 focus:border-blue-500"
                           />
@@ -3175,8 +3179,8 @@ export default function TempleArchitectureAdmin({
                         </div>
                         <div className="space-y-2">
                           <RichTextEditor
-                            value={selectedHotspot.description[activeLang]}
-                            onChange={(val) => setSelectedHotspot({ ...selectedHotspot, description: { ...selectedHotspot.description, [activeLang]: val } })}
+                            value={getLang(selectedHotspot.description, activeLang)}
+                            onChange={(val) => setSelectedHotspot({ ...selectedHotspot, description: { ...(selectedHotspot.description || { en: "", hi: "", mr: "" }), [activeLang]: val } })}
                             placeholder="Main architectural overview..."
                           />
                         </div>
@@ -3193,8 +3197,8 @@ export default function TempleArchitectureAdmin({
                         </div>
                         <div className="space-y-2">
                           <RichTextEditor
-                            value={selectedHotspot.sthanPothiDescription[activeLang] || ""}
-                            onChange={(val) => setSelectedHotspot({ ...selectedHotspot, sthanPothiDescription: { ...selectedHotspot.sthanPothiDescription, [activeLang]: val } })}
+                            value={getLang(selectedHotspot.sthanPothiDescription, activeLang) || ""}
+                            onChange={(val) => setSelectedHotspot({ ...selectedHotspot, sthanPothiDescription: { ...(selectedHotspot.sthanPothiDescription || { en: "", hi: "", mr: "" }), [activeLang]: val } })}
                             placeholder="Details from scripture..."
                           />
                         </div>
@@ -3227,11 +3231,11 @@ export default function TempleArchitectureAdmin({
                                 </div>
                                 <Input
                                   placeholder="Leela Title"
-                                  value={leela.title[activeLang] || ""}
+                                  value={getLang(leela.title, activeLang) || ""}
                                   className="bg-white rounded-xl font-bold h-10"
                                   onChange={(e) => {
                                     const updatedLeelas = (selectedHotspot.leelas as any[]).map((l: any) =>
-                                      l.id === leela.id ? { ...l, title: { ...l.title, [activeLang]: e.target.value } } : l
+                                      l.id === leela.id ? { ...l, title: { ...(l.title || { en: "", hi: "", mr: "" }), [activeLang]: e.target.value } } : l
                                     );
                                     setSelectedHotspot({ ...selectedHotspot, leelas: updatedLeelas as Leela[] });
                                   }}
@@ -3239,10 +3243,10 @@ export default function TempleArchitectureAdmin({
                               </div>
                               <RichTextEditor
                                 placeholder="Describe the divine leela..."
-                                value={leela.description[activeLang]}
+                                value={getLang(leela.description, activeLang)}
                                 onChange={(val) => {
                                   const updatedLeelas = (selectedHotspot.leelas as any[]).map((l: any) =>
-                                    l.id === leela.id ? { ...l, description: { ...l.description, [activeLang]: val } } : l
+                                    l.id === leela.id ? { ...l, description: { ...(l.description || { en: "", hi: "", mr: "" }), [activeLang]: val } } : l
                                   );
                                   setSelectedHotspot({ ...selectedHotspot, leelas: updatedLeelas as Leela[] });
                                 }}
@@ -3405,8 +3409,8 @@ export default function TempleArchitectureAdmin({
                         {ah.number}
                       </span>
                       <div>
-                        <p className="font-bold text-slate-900">{ah.title[activeLang] || `Sthana #${ah.number}`}</p>
-                        <p className="text-xs text-slate-500 truncate max-w-[200px]">{ah.description[activeLang]}</p>
+                        <p className="font-bold text-slate-900">{getLang(ah.title, activeLang) || `Sthana #${ah.number}`}</p>
+                        <p className="text-xs text-slate-500 truncate max-w-[200px]">{getLang(ah.description, activeLang)}</p>
                       </div>
                     </button>
                   ))}
