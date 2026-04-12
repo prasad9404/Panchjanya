@@ -508,7 +508,7 @@ export default function ArchitectureViewer() {
         <div className="flex justify-center">
           <div
             ref={imageContainerRef}
-            className="relative aspect-square md:aspect-[4/3] w-full max-w-7xl mx-auto rounded-2xl overflow-visible border-4 border-white bg-slate-950 group touch-none transition-all duration-500 ease-in-out"
+            className="relative aspect-square md:aspect-[4/3] w-full max-w-7xl mx-auto rounded-2xl overflow-visible border-4 border-white bg-transparent group touch-none transition-all duration-500 ease-in-out"
           >
             <div
               className={cn("w-full h-full flex items-center justify-center", imageUrl ? "cursor-move" : "cursor-default")}
@@ -557,7 +557,7 @@ export default function ArchitectureViewer() {
                       onLoad={(e) => setImageRatio(e.currentTarget.naturalWidth / e.currentTarget.naturalHeight)}
                     />
                   ) : (
-                    <div className="w-full h-full flex flex-col items-center justify-center bg-slate-900/90 text-slate-300 p-4 md:p-8 text-center transition-all duration-500">
+                    <div className="w-full h-full flex flex-col items-center justify-center bg-slate-100/10 text-slate-300 p-4 md:p-8 text-center transition-all duration-500">
                       <div className="w-12 h-12 md:w-20 md:h-20 mb-4 md:mb-6 rounded-full bg-slate-800 flex items-center justify-center border border-slate-700 shadow-2xl animate-pulse">
                         <ImageIcon className="w-6 h-6 md:w-10 md:h-10 opacity-40" />
                       </div>

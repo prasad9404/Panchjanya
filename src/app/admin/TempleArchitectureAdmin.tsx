@@ -2341,7 +2341,7 @@ export default function TempleArchitectureAdmin({
               </CardHeader>
               <CardContent className="p-0 space-y-6">
                 {/* 1. Large Image Editor Area */}
-                <div className="bg-slate-950 rounded-2xl overflow-visible border-4 border-slate-800 shadow-2xl relative group aspect-square md:aspect-[4/3] w-full flex items-center justify-center">
+                <div className="bg-transparent rounded-2xl overflow-visible border-4 border-slate-200 shadow-2xl relative group aspect-square md:aspect-[4/3] w-full flex items-center justify-center">
                   {/* Navigation Arrows */}
                   {displayImages.length > 1 && (
                     <>
