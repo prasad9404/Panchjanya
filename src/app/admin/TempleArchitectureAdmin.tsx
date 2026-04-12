@@ -131,7 +131,7 @@ const HotspotMarker = ({
       style={{
         top: `${hotspot.y}%`,
         left: `${hotspot.x}%`,
-        transform: `translate(${hotspot.x < 10 ? '0%' : hotspot.x > 90 ? '-100%' : '-50%'}, -100%) scale(${showActions ? 1.2 : 1})`,
+        transform: `translate(-50%, -100%) scale(${showActions ? 1.2 : 1})`,
         transformOrigin: 'bottom',
         opacity: showActions ? 1 : 0.95
       }}
@@ -660,9 +660,11 @@ export default function TempleArchitectureAdmin({
     setSelectedHotspot(null);
     setHoveredHotspotId(null);
 
-    const rect = e.currentTarget.getBoundingClientRect();
+    const rect = imageRef.current?.getBoundingClientRect() || e.currentTarget.getBoundingClientRect();
     const x = Math.min(95, Math.max(5, ((e.clientX - rect.left) / rect.width) * 100));
     const y = Math.min(95, Math.max(5, ((e.clientY - rect.top) / rect.height) * 100));
+
+    console.log(`[Admin] Captured Hotspot Coordinate: x=${x.toFixed(2)}%, y=${y.toFixed(2)}% (Relative to Image)`);
 
     // Handle Repositioning
     if (repositioningId) {
@@ -2341,7 +2343,7 @@ export default function TempleArchitectureAdmin({
               </CardHeader>
               <CardContent className="p-0 space-y-6">
                 {/* 1. Large Image Editor Area */}
-                <div className="bg-transparent rounded-2xl overflow-visible border-4 border-slate-200 shadow-2xl relative group aspect-square md:aspect-[4/3] w-full flex items-center justify-center">
+                <div className="bg-transparent rounded-2xl overflow-visible border-4 border-slate-200 shadow-2xl relative group aspect-[4/3] w-full flex items-center justify-center">
                   {/* Navigation Arrows */}
                   {displayImages.length > 1 && (
                     <>
@@ -2362,15 +2364,17 @@ export default function TempleArchitectureAdmin({
 
                   {/* Hotspot Interaction Plane */}
                   <div
-                    className="relative cursor-crosshair transition-all duration-500 ease-out m-auto w-full h-full flex items-center justify-center"
+                    className="relative cursor-crosshair transition-all duration-500 ease-out m-auto max-w-full max-h-full overflow-visible"
                     style={{
                       transform: `scale(${zoom})`,
-                      filter: loading ? 'blur(10px)' : 'none'
+                      filter: loading ? 'blur(10px)' : 'none',
+                      display: 'grid',
+                      placeItems: 'center'
                     }}
                     onClick={handleImageClick}
                   >
                     {displayImages[adminImageIndex] ? (
-                      <>
+                      <div className="relative overflow-visible">
                         <img
                           ref={imageRef}
                           src={displayImages[adminImageIndex] || "/icons/temple-placeholder.jpg"}
@@ -2379,42 +2383,46 @@ export default function TempleArchitectureAdmin({
                             "shadow-2xl transition-all duration-700 select-none block pointer-events-none",
                             (viewType === 'architectural' ? archImagesFitMode : presentImagesFitMode) === 'cover'
                               ? "w-full h-full object-cover"
-                              : "w-full h-full object-contain"
+                              : "max-w-full max-h-full object-contain"
                           )}
                           draggable={false}
                           onError={(e) => (e.currentTarget.src = "/icons/temple-placeholder.jpg")}
                         />
 
                         {/* Active Image Hotspots */}
-                        {currentHotspots
-                          .filter(h => (h.imageIndex || 0) === adminImageIndex)
-                          .map((hotspot) => (
-                            <HotspotMarker
-                              key={hotspot.id}
-                              hotspot={hotspot}
-                              viewType={viewType}
-                              zoom={zoom}
-                              isSelected={selectedHotspot?.id === hotspot.id}
-                              isHovered={hoveredHotspotId === hotspot.id}
-                              onEdit={handleHotspotEdit}
-                              onDelete={deleteHotspot}
-                              onUnmap={unmapHotspot}
-                              onClick={(h) => {
-                                setSelectedHotspot(h);
-                                // Scroll the corresponding card in the list into view
-                                const cardId = `hotspot-card-${h.id}`;
-                                const cardElement = document.getElementById(cardId);
-                                if (cardElement) {
-                                  cardElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                                }
-                              }}
-                              onMouseEnter={(h) => setHoveredHotspotId(h.id)}
-                              onMouseLeave={() => setHoveredHotspotId(null)}
-                            />
-                          ))
-                        }
-
-                      </>
+                        <div className="absolute inset-0 pointer-events-none overflow-visible">
+                          {currentHotspots
+                            .filter(h => (h.imageIndex || 0) === adminImageIndex)
+                            .map((hotspot) => {
+                              console.log(`[Admin] Rendering Hotspot #${hotspot.number} at x=${hotspot.x}%, y=${hotspot.y}%`);
+                              return (
+                                <HotspotMarker
+                                  key={hotspot.id}
+                                  hotspot={hotspot}
+                                  viewType={viewType}
+                                  zoom={zoom}
+                                  isSelected={selectedHotspot?.id === hotspot.id}
+                                  isHovered={hoveredHotspotId === hotspot.id}
+                                  onEdit={handleHotspotEdit}
+                                  onDelete={deleteHotspot}
+                                  onUnmap={unmapHotspot}
+                                  onClick={(h) => {
+                                    setSelectedHotspot(h);
+                                    // Scroll the corresponding card in the list into view
+                                    const cardId = `hotspot-card-${h.id}`;
+                                    const cardElement = document.getElementById(cardId);
+                                    if (cardElement) {
+                                      cardElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                    }
+                                  }}
+                                  onMouseEnter={(h) => setHoveredHotspotId(h.id)}
+                                  onMouseLeave={() => setHoveredHotspotId(null)}
+                                />
+                              );
+                            })
+                          }
+                        </div>
+                      </div>
                     ) : (
                       <div className="text-white text-center p-20 border-4 border-dashed border-white/10 rounded-3xl backdrop-blur-sm">
                         <Upload className="w-16 h-16 mx-auto mb-4 text-slate-500" />

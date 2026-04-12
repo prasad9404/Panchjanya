@@ -508,7 +508,7 @@ export default function ArchitectureViewer() {
         <div className="flex justify-center">
           <div
             ref={imageContainerRef}
-            className="relative aspect-square md:aspect-[4/3] w-full max-w-7xl mx-auto rounded-2xl overflow-visible border-4 border-white bg-transparent group touch-none transition-all duration-500 ease-in-out"
+            className="relative aspect-[4/3] w-full max-w-7xl mx-auto rounded-2xl overflow-visible border-4 border-white bg-transparent group touch-none transition-all duration-500 ease-in-out"
           >
             <div
               className={cn("w-full h-full flex items-center justify-center", imageUrl ? "cursor-move" : "cursor-default")}
@@ -544,18 +544,107 @@ export default function ArchitectureViewer() {
                   }}
                 >
                   {imageUrl ? (
-                    <img
-                      src={imageUrl}
-                      alt={`${getTranslatedValue(temple.name, langCode)} Architecture`}
-                      className={cn(
-                        "block select-none transition-all duration-500",
-                        (imageType === 'architectural' ? (temple.architectureImagesFitMode || 'contain') : (temple.presentImagesFitMode || 'contain')) === 'cover'
-                          ? 'w-full h-full object-cover object-center'
-                          : 'w-full h-full object-contain object-center pointer-events-none'
-                      )}
-                      draggable={false}
-                      onLoad={(e) => setImageRatio(e.currentTarget.naturalWidth / e.currentTarget.naturalHeight)}
-                    />
+                    <div className="relative overflow-visible">
+                      <img
+                        src={imageUrl}
+                        alt={`${getTranslatedValue(temple.name, langCode)} Architecture`}
+                        className={cn(
+                          "block select-none transition-all duration-500",
+                          (imageType === 'architectural' ? (temple.architectureImagesFitMode || 'contain') : (temple.presentImagesFitMode || 'contain')) === 'cover'
+                            ? 'w-full h-full object-cover object-center'
+                            : 'max-w-full max-h-full object-contain object-center pointer-events-none'
+                        )}
+                        draggable={false}
+                        onLoad={(e) => setImageRatio(e.currentTarget.naturalWidth / e.currentTarget.naturalHeight)}
+                      />
+                      {/* Hotspot Rendering Layer */}
+                      <div className="absolute inset-0 pointer-events-none overflow-visible">
+                        {(showHotspots || selectedHotspotId) && (() => {
+                          const activeHotspots = imageType === 'architectural'
+                            ? hotspots.filter(h => (h.imageIndex || 0) === currentImageIndex)
+                            : presentHotspots
+                              .filter(ph => (ph.imageIndex || 0) === currentImageIndex)
+                              .map(ph => {
+                                const source = hotspots.find(ah => ah.id === ph.sthanaId || ah.id === ph.id);
+                                return { ...source, ...ph, isPresent: true };
+                              });
+
+                          return activeHotspots.map((hotspot) => {
+                            const isSelected = selectedHotspotId === hotspot.id || (hotspot.sthanaId && selectedHotspotId === hotspot.sthanaId);
+                            const isHovered = hoveredHotspotId === hotspot.id || (hotspot.sthanaId && hoveredHotspotId === hotspot.sthanaId);
+                            const isActive = isHovered || (isSelected && (selectionSource !== 'dropdown' || isPothiOpen));
+                            const isVisible = showHotspots || isActive;
+                            if (!isVisible) return null;
+
+                            console.log(`[User] Rendering Hotspot #${hotspot.number} at x=${hotspot.x}%, y=${hotspot.y}%`);
+
+                            return (
+                              <div
+                                key={hotspot.id}
+                                className={`absolute pointer-events-none ${isActive ? 'z-50' : 'z-10'}`}
+                                style={{
+                                  left: `${hotspot.x}%`,
+                                  top: `${hotspot.y}%`,
+                                  transform: `translate(-50%, -100%)`,
+                                  transformOrigin: 'bottom',
+                                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+                                }}
+                              >
+                                <div
+                                  className="absolute w-8 h-8 md:w-10 md:h-10 rounded-full z-[70] cursor-pointer pointer-events-auto"
+                                  style={{ transform: 'translate(-50%, -50%)', left: '50%', top: '50%' }}
+                                  onMouseEnter={() => setHoveredHotspotId(hotspot.id)}
+                                  onMouseLeave={() => setHoveredHotspotId(null)}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleSelectHotspot(isSelected ? null : hotspot.id, isSelected ? null : 'image');
+                                  }}
+                                />
+
+                                <div className="relative flex items-center justify-center">
+                                  {isActive && (
+                                    <div className="absolute inset-0 w-8 h-8 md:w-10 md:h-10 rounded-full bg-amber-500/40 animate-ping z-0" />
+                                  )}
+
+                                  <svg
+                                    width={isActive ? "32" : "24"}
+                                    height={isActive ? "40" : "30"}
+                                    viewBox="0 0 32 40"
+                                    fill="none"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    className={cn(
+                                      "drop-shadow-md transition-all duration-300 relative z-[1]",
+                                      isActive ? 'text-amber-600 scale-110' : 'text-[#0f3c6e]'
+                                    )}
+                                  >
+                                    <path
+                                      d="M16 0C7.16344 0 0 7.16344 0 16C0 24.8366 16 40 16 40C16 40 32 24.8366 32 16C32 7.16344 24.8366 0 16 0Z"
+                                      fill="currentColor"
+                                    />
+                                    <circle
+                                      cx="16"
+                                      cy="16"
+                                      r="11"
+                                      fill="currentColor"
+                                      opacity="1"
+                                    />
+                                  </svg>
+
+                                  <span className={cn(
+                                    "absolute font-bold transition-all duration-300 text-white z-[2]",
+                                    isActive
+                                      ? "text-xs top-[7px]"
+                                      : "text-[10px] top-[4px]"
+                                  )} style={{ left: '50%', transform: 'translateX(-50%)' }}>
+                                    {hotspot.number}
+                                  </span>
+                                </div>
+                              </div>
+                            );
+                          });
+                        })()}
+                      </div>
+                    </div>
                   ) : (
                     <div className="w-full h-full flex flex-col items-center justify-center bg-slate-100/10 text-slate-300 p-4 md:p-8 text-center transition-all duration-500">
                       <div className="w-12 h-12 md:w-20 md:h-20 mb-4 md:mb-6 rounded-full bg-slate-800 flex items-center justify-center border border-slate-700 shadow-2xl animate-pulse">
@@ -604,99 +693,7 @@ export default function ArchitectureViewer() {
                     </>
                   )}
 
-                  {/* Hotspot Rendering */}
-                  {(() => {
-                    const activeHotspots = imageType === 'architectural'
-                      ? hotspots.filter(h => (h.imageIndex || 0) === currentImageIndex)
-                      : presentHotspots
-                        .filter(ph => (ph.imageIndex || 0) === currentImageIndex)
-                        .map(ph => {
-                          const source = hotspots.find(ah => ah.id === ph.sthanaId || ah.id === ph.id);
-                          return { ...source, ...ph, isPresent: true };
-                        });
 
-                    return (showHotspots || selectedHotspotId) && activeHotspots
-                      .map((hotspot) => {                        const isSelected = selectedHotspotId === hotspot.id || (hotspot.sthanaId && selectedHotspotId === hotspot.sthanaId);
-                        const isHovered = hoveredHotspotId === hotspot.id || (hotspot.sthanaId && hoveredHotspotId === hotspot.sthanaId);
-
-                        // Hotspot is active (highlighted) if:
-                        // 1. Hovered (either directly or via list)
-                        // 2. Selected from image/list
-                        // 3. Selected from dropdown AND dropdown is open
-                        const isActive = isHovered || (isSelected && (
-                          selectionSource !== 'dropdown' || isPothiOpen
-                        ));
-
-                        // Hotspot is visible if showHotspots is on, OR if it's the active one
-                        const isVisible = showHotspots || isActive;
-                        if (!isVisible) return null;
-
-                        return (
-                          <div
-                            key={hotspot.id}
-                            className={`absolute pointer-events-none ${isActive ? 'z-50' : 'z-10'}`}
-                            style={{
-                              left: `${hotspot.x}%`,
-                              top: `${hotspot.y}%`,
-                              transform: `translate(${hotspot.x < 10 ? '0%' : hotspot.x > 90 ? '-100%' : '-50%'}, -100%)`,
-                              transformOrigin: 'bottom',
-                              transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
-                            }}
-                          >
-                            <div
-                              className="absolute w-8 h-8 md:w-10 md:h-10 rounded-full z-[70] cursor-pointer pointer-events-auto"
-                              style={{ transform: 'translate(-50%, -50%)', left: '50%', top: '50%' }}
-                              onMouseEnter={() => setHoveredHotspotId(hotspot.id)}
-                              onMouseLeave={() => setHoveredHotspotId(null)}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleSelectHotspot(isSelected ? null : hotspot.id, isSelected ? null : 'image');
-                              }}
-                            />
-
-                            <div className="relative flex items-center justify-center">
-                              {/* Pulse Effect for Active Hotspot */}
-                              {isActive && (
-                                <div className="absolute inset-0 w-8 h-8 md:w-10 md:h-10 rounded-full bg-amber-500/40 animate-ping z-0" />
-                              )}
-                              
-                              <svg
-                                width={isActive ? "32" : "24"}
-                                height={isActive ? "40" : "30"}
-                                viewBox="0 0 32 40"
-                                fill="none"
-                                xmlns="http://www.w3.org/2000/svg"
-                                className={cn(
-                                  "drop-shadow-md transition-all duration-300 relative z-[1]",
-                                  isActive ? 'text-amber-600 scale-110' : 'text-[#0f3c6e]'
-                                )}
-                              >
-                                <path
-                                  d="M16 0C7.16344 0 0 7.16344 0 16C0 24.8366 16 40 16 40C16 40 32 24.8366 32 16C32 7.16344 24.8366 0 16 0Z"
-                                  fill="currentColor"
-                                />
-                                <circle
-                                  cx="16"
-                                  cy="16"
-                                  r="11"
-                                  fill="currentColor"
-                                  opacity="1"
-                                />
-                              </svg>
-
-                              <span className={cn(
-                                "absolute font-bold transition-all duration-300 text-white z-[2]",
-                                isActive
-                                  ? "text-xs top-[7px]"
-                                  : "text-[10px] top-[4px]"
-                              )} style={{ left: '50%', transform: 'translateX(-50%)' }}>
-                                {hotspot.number}
-                              </span>
-                            </div>
-                          </div>
-                        );
-                      })
-                  })()}
                 </div>
               </div>
             </div>
