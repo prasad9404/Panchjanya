@@ -3,13 +3,17 @@ import { Toaster as Sonner } from "@/shared/components/ui/sonner";
 import { TooltipProvider } from "@/shared/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import { useEffect, lazy, Suspense } from "react";
+import { useEffect, useState, lazy, Suspense } from "react";
 import { PageLoader } from "@/shared/components/ui/PageLoader";
 import { ErrorBoundary } from "@/shared/components/layout/ErrorBoundary";
 import { AuthProvider } from "../auth/AuthContext";
 import { LanguageProvider } from "../shared/contexts/LanguageContext";
 import { ThemeProvider } from "../shared/contexts/ThemeContext";
 import { SthanTypesProvider } from "../shared/contexts/SthanTypesContext";
+import { checkForUpdate } from "@/utils/checkUpdate";
+import { WifiOff, RefreshCw } from "lucide-react";
+import { Button } from "@/shared/components/ui/button";
+
 import PrivateRoute from "@/shared/components/auth/PrivateRoute";
 
 // Layout
@@ -73,6 +77,45 @@ const queryClient = new QueryClient({
 });
 
 const App = () => {
+  const [isOffline, setIsOffline] = useState(!window.navigator.onLine);
+
+  useEffect(() => {
+    const handleOnline = () => setIsOffline(false);
+    const handleOffline = () => setIsOffline(true);
+
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+
+    // Initial check
+    checkForUpdate();
+
+    return () => {
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+    };
+  }, []);
+
+  if (isOffline) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 p-6 text-center">
+        <div className="w-20 h-20 bg-amber-100 rounded-full flex items-center justify-center mb-6 animate-pulse">
+          <WifiOff className="w-10 h-10 text-amber-600" />
+        </div>
+        <h1 className="text-2xl font-bold text-slate-900 mb-2 font-serif">Connection Lost</h1>
+        <p className="text-slate-600 mb-8 max-w-xs">
+          Panchajanya requires an active internet connection to deliver the latest sacred temple insights.
+        </p>
+        <Button 
+          onClick={() => window.location.reload()}
+          className="bg-blue-900 hover:bg-blue-800 text-white gap-2"
+        >
+          <RefreshCw className="w-4 h-4" />
+          Try Again
+        </Button>
+      </div>
+    );
+  }
+
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
