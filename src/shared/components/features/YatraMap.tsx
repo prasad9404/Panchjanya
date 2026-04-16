@@ -91,8 +91,21 @@ function MapBounds({ locations, centerOnFullRoute }: { locations: YatraLocation[
     const map = useMap();
     useEffect(() => {
         if (locations.length > 0) {
-            const bounds = L.latLngBounds(locations.map(l => [l.latitude, l.longitude]));
-            map.fitBounds(bounds, { padding: [50, 50], maxZoom: 16 });
+            const validCoords = locations
+                .filter(l => l.latitude && l.longitude && (Math.abs(l.latitude) > 0.1 || Math.abs(l.longitude) > 0.1))
+                .map(l => [l.latitude, l.longitude] as [number, number]);
+
+            if (validCoords.length > 0) {
+                const bounds = L.latLngBounds(validCoords);
+                if (bounds.isValid()) {
+                    map.fitBounds(bounds, { 
+                        padding: [80, 80], 
+                        maxZoom: 14,
+                        animate: true,
+                        duration: 1.5
+                    });
+                }
+            }
         }
     }, [locations, centerOnFullRoute, map]);
     return null;

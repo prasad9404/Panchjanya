@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { MapContainer, TileLayer, Marker, Polyline, Popup } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, Polyline, Popup, useMap } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { Compass, Milestone, MapPin, Navigation, Loader2, ChevronLeft } from "lucide-react";
@@ -51,6 +51,30 @@ const createMarkerIcon = (status: string, number: number) => {
   });
 };
 
+function MapBoundsFitter({ points }: { points: YatraPlace[] }) {
+  const map = useMap();
+  useEffect(() => {
+    if (points.length > 0) {
+      const validCoords = points
+        .filter(p => p.latitude && p.longitude && (Math.abs(p.latitude) > 0.1 || Math.abs(p.longitude) > 0.1))
+        .map(p => [p.latitude, p.longitude] as [number, number]);
+
+      if (validCoords.length > 0) {
+        const bounds = L.latLngBounds(validCoords);
+        if (bounds.isValid()) {
+          map.fitBounds(bounds, { 
+            padding: [80, 80], 
+            maxZoom: 14,
+            animate: true,
+            duration: 1.5
+          });
+        }
+      }
+    }
+  }, [points, map]);
+  return null;
+}
+
 const Share = () => {
   const navigate = useNavigate();
   const [selectedPoint, setSelectedPoint] = useState<number | null>(null);
@@ -79,14 +103,6 @@ const Share = () => {
 
   // Extract coordinates for the polyline
   const routeCoordinates = yatraRoute.map(point => [point.latitude, point.longitude] as [number, number]);
-
-  // Calculate center point for map
-  const centerLat = yatraRoute.length > 0
-    ? yatraRoute.reduce((sum, p) => sum + p.latitude, 0) / yatraRoute.length
-    : 19.8;
-  const centerLng = yatraRoute.length > 0
-    ? yatraRoute.reduce((sum, p) => sum + p.longitude, 0) / yatraRoute.length
-    : 75.8;
 
   if (loading) {
     return (
@@ -172,11 +188,12 @@ const Share = () => {
         {/* Map Section */}
         <div className="h-[50vh] lg:h-auto lg:flex-1 relative">
           <MapContainer
-            center={[centerLat, centerLng]}
+            center={[19.8, 75.8]}
             zoom={11}
             style={{ width: "100%", height: "100%" }}
             zoomControl={true}
           >
+            <MapBoundsFitter points={yatraRoute} />
             <TileLayer
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
               url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"

@@ -78,13 +78,18 @@ function MapBoundsFitter({ temples, selectedTempleId }: { temples: Temple[], sel
       const currentIds = temples.map(t => t.id).sort().join(',');
       if (currentIds !== lastTempleIds.current) {
         const validCoords = temples
-          .filter(t => t.latitude && t.longitude)
-          .map(t => [t.latitude, t.longitude] as [number, number]);
+          .filter(t => t.latitude && t.longitude && (Math.abs(t.latitude) > 0.1 || Math.abs(t.longitude) > 0.1))
+          .map(t => [t.latitude!, t.longitude!] as [number, number]);
 
         if (validCoords.length > 0) {
           const bounds = L.latLngBounds(validCoords);
           if (bounds.isValid()) {
-            map.fitBounds(bounds, { padding: [100, 100], maxZoom: 12 });
+            map.fitBounds(bounds, { 
+              padding: [80, 80], 
+              maxZoom: 14,
+              animate: true,
+              duration: 1.5
+            });
             lastTempleIds.current = currentIds;
           }
         }

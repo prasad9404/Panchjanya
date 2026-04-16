@@ -203,12 +203,20 @@ function MapEffect({
 }) {
   const map = useMap();
   useEffect(() => {
-    if (temples.length > 0) {
-      const bounds = L.latLngBounds(
-        temples.map((t) => [t.latitude || 0, t.longitude || 0]),
-      );
+    // Filter valid coordinates and avoid [0,0] which stretches map to Africa
+    const validCoords = temples
+      .filter((t) => t.latitude && t.longitude && (Math.abs(t.latitude) > 0.1 || Math.abs(t.longitude) > 0.1))
+      .map((t) => [t.latitude!, t.longitude!] as [number, number]);
+
+    if (validCoords.length > 0) {
+      const bounds = L.latLngBounds(validCoords);
       if (bounds.isValid()) {
-        map.fitBounds(bounds, { padding: [50, 50] });
+        map.fitBounds(bounds, { 
+          padding: [80, 80], 
+          maxZoom: 12,
+          animate: true,
+          duration: 1.5
+        });
       }
     }
   }, [temples, map, resetTrigger]);
