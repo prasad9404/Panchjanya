@@ -2,6 +2,8 @@ import { MapContainer, TileLayer, Marker, useMap, Tooltip } from "react-leaflet"
 import L from "leaflet";
 import { useEffect, useRef, useMemo } from "react";
 import type { Temple } from "@/types";
+import { useLanguage } from "@/shared/contexts/LanguageContext";
+import { getTranslatedValue, getLangCode } from "@/shared/utils/translationUtils";
 
 // Spiritual Marker Generator
 // Spiritual Marker Generator - Memoized for performance
@@ -101,6 +103,9 @@ function MapBoundsFitter({ temples, selectedTempleId }: { temples: Temple[], sel
 }
 
 export default function MapWithMarkers({ temples, onTempleClick, selectedTempleId }: MapWithMarkersProps) {
+  const { language } = useLanguage();
+  const langCode = getLangCode(language);
+
   const defaultCenter: [number, number] = [20.5937, 78.9629]; // India Center
 
   // Process temples to add offset to overlapping coordinates
@@ -186,9 +191,9 @@ export default function MapWithMarkers({ temples, onTempleClick, selectedTempleI
               className="rounded-lg shadow-xl border-none p-0 overflow-hidden"
             >
               <div className="px-3 py-2 bg-white/95 backdrop-blur-sm border-l-4 border-primary">
-                <p className="font-heading text-primary font-bold text-sm">{temple.name}</p>
+                <p className="font-heading text-primary font-bold text-sm">{getTranslatedValue(temple.name, langCode)}</p>
                 <p className="text-[10px] text-muted-foreground uppercase tracking-widest leading-none mt-1">
-                  {temple.district} District
+                  {getTranslatedValue(temple.district, langCode)} District
                 </p>
               </div>
             </Tooltip>
