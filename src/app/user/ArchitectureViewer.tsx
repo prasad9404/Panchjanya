@@ -65,7 +65,7 @@ export default function ArchitectureViewer() {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
   const [abbreviationItems, setAbbreviationItems] = useState<AbbreviationItem[]>([]);
-  const [activeSection, setActiveSection] = useState<string>("");
+  const [activeSection, setActiveSection] = useState<string>(t('temple.sthanDescription'));
 
   const handleSelectHotspot = (id: string | null, source: 'image' | 'list' | 'dropdown' | null) => {
     setSelectedHotspotId(id);
@@ -111,7 +111,7 @@ export default function ArchitectureViewer() {
       { 
         root: sthanaListRef.current,
         threshold: 0,
-        rootMargin: "-10% 0px -80% 0px" 
+        rootMargin: "0px 0px -90% 0px" 
       }
     );
 
@@ -571,14 +571,14 @@ export default function ArchitectureViewer() {
           >
             {/* 1. Base Layer (Centering & Transforms) */}
             <div
-              className={cn("absolute inset-0 w-full h-full flex items-center justify-center", imageUrl ? "cursor-move" : "cursor-default")}
-              onMouseDown={imageUrl ? handleMouseDown : undefined}
-              onMouseMove={imageUrl ? handleMouseMove : undefined}
-              onMouseUp={imageUrl ? handleMouseUp : undefined}
-              onMouseLeave={imageUrl ? handleMouseUp : undefined}
-              onTouchStart={imageUrl ? handleTouchStart : undefined}
-              onTouchMove={imageUrl ? handleTouchMove : undefined}
-              onTouchEnd={imageUrl ? handleTouchEnd : undefined}
+              className={cn("absolute inset-0 w-full h-full flex items-center justify-center", (imageUrl && isFullScreen) ? "cursor-move" : "cursor-default")}
+              onMouseDown={(imageUrl && isFullScreen) ? handleMouseDown : undefined}
+              onMouseMove={(imageUrl && isFullScreen) ? handleMouseMove : undefined}
+              onMouseUp={(imageUrl && isFullScreen) ? handleMouseUp : undefined}
+              onMouseLeave={(imageUrl && isFullScreen) ? handleMouseUp : undefined}
+              onTouchStart={(imageUrl && isFullScreen) ? handleTouchStart : undefined}
+              onTouchMove={(imageUrl && isFullScreen) ? handleTouchMove : undefined}
+              onTouchEnd={(imageUrl && isFullScreen) ? handleTouchEnd : undefined}
             >
               <div
                 style={{
@@ -1035,14 +1035,12 @@ export default function ArchitectureViewer() {
                               }`}>
                               {getTranslatedValue(d.title, langCode)}
                             </span>
-                            {d.pinType && d.pinType !== 'ARCHITECTURE_LINKED' && (
+                            {d.pinType && !['ARCHITECTURE_LINKED', 'ARCHITECTURE_UNAVAILABLE'].includes(d.pinType) && (
                               <span className={cn(
                                 "shrink-0 text-[9px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-full hidden sm:inline-block",
-                                d.pinType === 'ARCHITECTURE_UNAVAILABLE' && "bg-amber-100 text-amber-700",
                                 d.pinType === 'ARCHITECTURE_INDEPENDENT' && "bg-emerald-100 text-emerald-700",
                                 d.pinType === 'INFO_ONLY' && "bg-slate-100 text-slate-500",
                               )}>
-                                {d.pinType === 'ARCHITECTURE_UNAVAILABLE' && 'Unavailable'}
                                 {d.pinType === 'ARCHITECTURE_INDEPENDENT' && 'Independent'}
                                 {d.pinType === 'INFO_ONLY' && 'Info'}
                               </span>
