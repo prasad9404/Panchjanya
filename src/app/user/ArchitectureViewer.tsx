@@ -65,6 +65,7 @@ export default function ArchitectureViewer() {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
   const [abbreviationItems, setAbbreviationItems] = useState<AbbreviationItem[]>([]);
+  const [activeSection, setActiveSection] = useState<string>("");
 
   const handleSelectHotspot = (id: string | null, source: 'image' | 'list' | 'dropdown' | null) => {
     setSelectedHotspotId(id);
@@ -91,7 +92,33 @@ export default function ArchitectureViewer() {
   const sthanaListRef = useRef<HTMLDivElement>(null);
   const cardRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
 
+  useEffect(() => {
+    if (!sthanaListRef.current) return;
+    const sections = sthanaListRef.current.querySelectorAll("[data-section]");
+    if (!sections.length) return;
 
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            const sectionName = entry.target.getAttribute('data-section');
+            if (sectionName) {
+              setActiveSection(sectionName);
+            }
+          }
+        });
+      },
+      { 
+        root: sthanaListRef.current,
+        threshold: 0,
+        rootMargin: "-10% 0px -80% 0px" 
+      }
+    );
+
+    sections.forEach((section) => observer.observe(section));
+
+    return () => observer.disconnect();
+  }, [temple, langCode, imageType]);
 
   // Drag state
   const [isDragging, setIsDragging] = useState(false);
@@ -304,7 +331,6 @@ export default function ArchitectureViewer() {
     return unique.sort((a, b) => (a.number || 0) - (b.number || 0));
   })();
 
-  // NEW: Support for dynamic details array
   const displayDetails = (() => {
     if (temple?.details && temple.details.length > 0) {
       return temple.details.map((d, index) => {
@@ -324,6 +350,39 @@ export default function ArchitectureViewer() {
       hasMapMarker: true
     }));
   })();
+
+  const groupedDetailSections = (() => {
+    const sections = temple?.detailsSections?.length ? temple.detailsSections : [
+      { id: 'default_linked', title: { en: "", hi: "", mr: "" }, type: 'linked' as const, isVisible: true },
+      { id: 'default_unlinked', title: { en: "Unavailable Sthan", hi: "अनुपलब्ध स्थान", mr: "अनुपलब्ध स्थान" }, type: 'unlinked' as const, isVisible: true },
+    ];
+
+    return sections
+      .filter(s => s.isVisible !== false)
+      .map(section => {
+        let cards: typeof displayDetails = [];
+        if (section.type === 'linked') {
+          // Primary: pinType === ARCHITECTURE_LINKED. Fallback: has a map marker
+          cards = displayDetails.filter(d =>
+            d.pinType ? d.pinType === 'ARCHITECTURE_LINKED' : d.hasMapMarker
+          );
+        } else if (section.type === 'unlinked') {
+          // Primary: pinType === ARCHITECTURE_UNAVAILABLE. Fallback: no map marker
+          cards = displayDetails.filter(d =>
+            d.pinType ? d.pinType === 'ARCHITECTURE_UNAVAILABLE' : !d.hasMapMarker
+          );
+        } else if (section.type === 'independent') {
+          cards = displayDetails.filter(d => d.pinType === 'ARCHITECTURE_INDEPENDENT');
+        } else if (section.type === 'info') {
+          cards = displayDetails.filter(d => d.pinType === 'INFO_ONLY');
+        } else if (section.type === 'custom') {
+          cards = displayDetails.filter(d => section.sthanIds?.includes(d.id));
+        }
+        return { section, cards };
+      })
+      .filter(group => group.cards.length > 0);
+  })();
+
 
   const handleZoomIn = () => setZoom(prev => Math.min(prev + 0.2, 3));
   const handleZoomOut = () => setZoom(prev => Math.max(prev - 0.2, 0.5));
@@ -557,7 +616,15 @@ export default function ArchitectureViewer() {
                                 return { ...source, ...ph, isPresent: true };
                               });
 
-                          return activeHotspots.map((hotspot) => {
+                          // Hide image pins whose linked SthanDetail is INFO_ONLY
+                          const imagePins = activeHotspots.filter(hotspot => {
+                            const linkedDetail = temple?.details?.find(
+                              d => d.hotspotId === hotspot.id || d.id === hotspot.id
+                            );
+                            return linkedDetail?.pinType !== 'INFO_ONLY';
+                          });
+
+                          return imagePins.map((hotspot) => {
                             const isSelected = selectedHotspotId === hotspot.id || (hotspot.sthanaId && selectedHotspotId === hotspot.sthanaId);
                             const isHovered = hoveredHotspotId === hotspot.id || (hotspot.sthanaId && hoveredHotspotId === hotspot.sthanaId);
                             const isActive = isHovered || (isSelected && (selectionSource !== 'dropdown' || isPothiOpen));
@@ -865,9 +932,11 @@ export default function ArchitectureViewer() {
 
           {/* Sthans Overview & List - Combined Scrollable Area */}
           <div className="space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="w-1 h-6 bg-amber-600"></div>
-              <h3 className="font-heading text-xl font-bold text-blue-900">{t('temple.sthanDescription')}</h3>
+            <div className="flex items-center gap-3 sticky top-0 z-10 py-2 border-b border-transparent">
+              <div className="w-1 h-6 bg-amber-600 shrink-0"></div>
+              <h3 key={activeSection || t('temple.sthanDescription')} className="font-heading text-xl font-bold text-blue-900 animate-in fade-in slide-in-from-bottom-1 duration-300">
+                {activeSection || t('temple.sthanDescription')}
+              </h3>
             </div>
 
             <div
@@ -875,50 +944,64 @@ export default function ArchitectureViewer() {
               className="h-[500px] overflow-y-auto scroll-smooth pr-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
             >
               <div className="space-y-4 pb-[450px]">
-                {/* Description Card */}
-                <div className="bg-white p-3 md:p-4 rounded-2xl shadow-sm border border-slate-100/50 text-base text-slate-600 leading-relaxed">
-                  <SafeHTML html={getTranslatedValue(temple.architectureDescription, langCode) || t('temple.noArchDescription')} />
+                {/* Initial Description Blocks Group */}
+                <div data-section={t('temple.sthanDescription')} className="space-y-4">
+                  {/* Description Card */}
+                  <div className="bg-white p-3 md:p-4 rounded-2xl shadow-sm border border-slate-100/50 text-base text-slate-600 leading-relaxed">
+                    <SafeHTML html={getTranslatedValue(temple.architectureDescription, langCode) || t('temple.noArchDescription')} />
+                  </div>
+
+                  {/* Additional Content Blocks (Step 1 & 2 Filtered) */}
+                  {(temple.descriptionSections?.some(s => (s.page_type || 'page1') === 'page2') || 
+                    temple.customBlocks?.some(b => (b.page_type || 'page2') === 'page2')) && (
+                    <div className="space-y-5">
+                      {temple.descriptionSections
+                        ?.filter(section => (section.page_type || 'page1') === 'page2' && getTranslatedValue(section.content, langCode).trim() !== "")
+                        .sort((a, b) => (a.order || 0) - (b.order || 0))
+                        .map((section) => (
+                          <div key={section.id} className="space-y-2">
+                            <h4 className="font-heading font-bold text-blue-900 border-l-4 border-amber-600 pl-3 leading-none">
+                              {getTranslatedValue(section.title, langCode)}
+                            </h4>
+                            <div className="bg-white p-3 md:p-4 rounded-2xl border border-slate-100/50 shadow-sm">
+                              <SafeHTML html={getTranslatedValue(section.content, langCode)} />
+                            </div>
+                          </div>
+                        ))
+                      }
+                      {temple.customBlocks
+                        ?.filter(block => (block.page_type || 'page2') === 'page2' && getTranslatedValue(block.content, langCode).trim() !== "")
+                        .sort((a, b) => (a.order || 0) - (b.order || 0))
+                        .map((block) => (
+                          <div key={block.id} className="space-y-2">
+                            <h4 className="font-heading font-bold text-blue-900 border-l-4 border-amber-600 pl-3 leading-none">
+                              {getTranslatedValue(block.title, langCode)}
+                            </h4>
+                            <div className="bg-white p-3 md:p-4 rounded-2xl border border-slate-100/50 shadow-sm">
+                              <SafeHTML html={getTranslatedValue(block.content, langCode)} />
+                            </div>
+                          </div>
+                        ))
+                      }
+                    </div>
+                  )}
                 </div>
 
-                {/* Additional Content Blocks (Step 1 & 2 Filtered) */}
-                {(temple.descriptionSections?.some(s => (s.page_type || 'page1') === 'page2') || 
-                  temple.customBlocks?.some(b => (b.page_type || 'page2') === 'page2')) && (
-                  <div className="space-y-5">
-                    {temple.descriptionSections
-                      ?.filter(section => (section.page_type || 'page1') === 'page2' && getTranslatedValue(section.content, langCode).trim() !== "")
-                      .sort((a, b) => (a.order || 0) - (b.order || 0))
-                      .map((section) => (
-                        <div key={section.id} className="space-y-2">
-                          <h4 className="font-heading font-bold text-blue-900 border-l-4 border-amber-600 pl-3 leading-none">
-                            {getTranslatedValue(section.title, langCode)}
-                          </h4>
-                          <div className="bg-white p-3 md:p-4 rounded-2xl border border-slate-100/50 shadow-sm">
-                            <SafeHTML html={getTranslatedValue(section.content, langCode)} />
-                          </div>
-                        </div>
-                      ))
-                    }
-                    {temple.customBlocks
-                      ?.filter(block => (block.page_type || 'page2') === 'page2' && getTranslatedValue(block.content, langCode).trim() !== "")
-                      .sort((a, b) => (a.order || 0) - (b.order || 0))
-                      .map((block) => (
-                        <div key={block.id} className="space-y-2">
-                          <h4 className="font-heading font-bold text-blue-900 border-l-4 border-amber-600 pl-3 leading-none">
-                            {getTranslatedValue(block.title, langCode)}
-                          </h4>
-                          <div className="bg-white p-3 md:p-4 rounded-2xl border border-slate-100/50 shadow-sm">
-                            <SafeHTML html={getTranslatedValue(block.content, langCode)} />
-                          </div>
-                        </div>
-                      ))
-                    }
-                  </div>
-                )}
-
-                {/* Sthana List Heading & List */}
-                {displayDetails.length > 0 && (
-                  <div className="flex flex-col gap-2 md:gap-4">
-                    {displayDetails.map((d) => {
+                {/* Sthana List Headings & Groups */}
+                {groupedDetailSections.map((group, groupIndex) => (
+                  <div 
+                    key={group.section.id || groupIndex} 
+                    data-section={getTranslatedValue(group.section.title, langCode) || t('temple.sthanDescription')}
+                    className="flex flex-col gap-2 md:gap-4 pt-2"
+                  >
+                    {getTranslatedValue(group.section.title, langCode).trim() && (
+                       <div className="flex items-center gap-3 mb-2">
+                         <div className="w-1 h-6 bg-amber-600"></div>
+                         <h3 className="font-heading text-xl font-bold text-blue-900">{getTranslatedValue(group.section.title, langCode)}</h3>
+                       </div>
+                    )}
+                    
+                    {group.cards.map((d) => {
                       const isSelected = selectedHotspotId === d.targetId || 
                                       selectedHotspotId === d.id || 
                                       presentHotspots.some(ph => ph.id === selectedHotspotId && ph.sthanaId === d.targetId);
@@ -952,6 +1035,18 @@ export default function ArchitectureViewer() {
                               }`}>
                               {getTranslatedValue(d.title, langCode)}
                             </span>
+                            {d.pinType && d.pinType !== 'ARCHITECTURE_LINKED' && (
+                              <span className={cn(
+                                "shrink-0 text-[9px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-full hidden sm:inline-block",
+                                d.pinType === 'ARCHITECTURE_UNAVAILABLE' && "bg-amber-100 text-amber-700",
+                                d.pinType === 'ARCHITECTURE_INDEPENDENT' && "bg-emerald-100 text-emerald-700",
+                                d.pinType === 'INFO_ONLY' && "bg-slate-100 text-slate-500",
+                              )}>
+                                {d.pinType === 'ARCHITECTURE_UNAVAILABLE' && 'Unavailable'}
+                                {d.pinType === 'ARCHITECTURE_INDEPENDENT' && 'Independent'}
+                                {d.pinType === 'INFO_ONLY' && 'Info'}
+                              </span>
+                            )}
                           </div>
                           <div
                             className={`flex items-center justify-center w-12 md:w-16 h-full transition-all duration-300 rounded-r-2xl ${isSelected ? 'bg-amber-50/50' : 'hover:bg-slate-50'}`}
@@ -969,7 +1064,7 @@ export default function ArchitectureViewer() {
                       );
                     })}
                   </div>
-                )}
+                ))}
 
                 {/* Back to Top Button */}
                 <div className="flex flex-col items-center gap-2 pt-8">

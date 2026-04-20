@@ -261,6 +261,7 @@ export default function TempleArchitectureAdmin({
   const [sthana_info_title, setSthanaInfoTitle] = useState<MultilingualString>({ en: "Sthan Description", hi: "स्थान विवरण", mr: "स्थान वर्णन" });
   const [sthana_info_text, setSthanaInfoText] = useState<MultilingualString>({ en: "", hi: "", mr: "" });
   const [descriptionSections, setDescriptionSections] = useState<DescriptionSection[]>([]);
+  const [detailsSections, setDetailsSections] = useState<any[]>([]);
   const [glanceItems, setGlanceItems] = useState<GlanceItem[]>([]);
   const [abbreviationItems, setAbbreviationItems] = useState<AbbreviationItem[]>([]);
   const [customBlocks, setCustomBlocks] = useState<CustomBlock[]>([]);
@@ -517,6 +518,10 @@ export default function TempleArchitectureAdmin({
             ...s,
             title: ensureMultilingual(s.title),
             content: ensureMultilingual(s.content)
+          })));
+          setDetailsSections((data.detailsSections || []).map((s: any) => ({
+            ...s,
+            title: ensureMultilingual(s.title)
           })));
           setGlanceItems((data.glanceItems || []).map((g: any) => ({
             ...g,
@@ -818,6 +823,7 @@ export default function TempleArchitectureAdmin({
       sthana_info_title: safeML(sthana_info_title, originalTempleData?.sthana_info_title),
       sthana_info_text: safeML(sthana_info_text, originalTempleData?.sthana_info_text),
       descriptionSections,
+      detailsSections,
       glanceItems,
       abbreviationItems,
       customBlocks,
@@ -1401,6 +1407,36 @@ export default function TempleArchitectureAdmin({
     setDetails([...details, newDetail]);
     setSelectedHotspot(newDetail as any); // Use editor for new detail
     setCurrentStep('sthana-details');
+  };
+
+  const addDetailsSection = () => {
+    const newSection = {
+      id: uuidv4(),
+      title: { en: "New Section", hi: "", mr: "" },
+      type: 'custom',
+      sthanIds: [],
+      isVisible: true,
+      order: detailsSections.length
+    };
+    setDetailsSections([...detailsSections, newSection]);
+  };
+
+  const updateDetailsSection = (sId: string, payload: any) => {
+    setDetailsSections(detailsSections.map(s => s.id === sId ? { ...s, ...payload } : s));
+  };
+  
+  const removeDetailsSection = (sId: string) => {
+    if(confirm("Remove this section?")) {
+      setDetailsSections(detailsSections.filter(s => s.id !== sId));
+    }
+  };
+
+  const moveDetailsSection = (index: number, direction: 'up' | 'down') => {
+    const newSections = [...detailsSections];
+    const targetIndex = direction === 'up' ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= newSections.length) return;
+    [newSections[index], newSections[targetIndex]] = [newSections[targetIndex], newSections[index]];
+    setDetailsSections(newSections);
   };
 
   const updateDetail = (dId: string, updates: Partial<SthanDetail>) => {
@@ -2912,6 +2948,85 @@ export default function TempleArchitectureAdmin({
                   </div>
                 </div>
 
+                {/* Details Sections Manager */}
+                <Card className="border-slate-200 shadow-sm rounded-3xl overflow-hidden mb-8">
+                  <CardHeader className="bg-slate-50 border-b border-slate-100 flex flex-row items-center justify-between py-4">
+                    <div>
+                      <CardTitle className="text-lg font-bold">Groups & Headings</CardTitle>
+                      <p className="text-xs text-slate-500 mt-1">Group your sthan details into sections on the user app.</p>
+                    </div>
+                    <Button onClick={addDetailsSection} size="sm" variant="outline" className="h-8 gap-2 rounded-xl">
+                       <Plus className="w-3.5 h-3.5"/> Add Custom Section
+                    </Button>
+                  </CardHeader>
+                  <CardContent className="p-0">
+                    {detailsSections.length === 0 ? (
+                      <div className="p-6 text-center text-slate-500 text-sm italic">
+                        No custom sections configured. Automatically grouping into Linked and Independent Lists...
+                        <br/>
+                        <Button variant="link" onClick={() => {
+                          setDetailsSections([
+                            { id: uuidv4(), title: { en: "Sthan Description", hi: "स्थान विवरण", mr: "स्थान वर्णन" }, type: 'linked', isVisible: true },
+                            { id: uuidv4(), title: { en: "Unavailable Sthan", hi: "अनुपलब्ध स्थान", mr: "अनुपलब्ध स्थान" }, type: 'unlinked', isVisible: true }
+                          ]);
+                        }}>Configure explicit default sections</Button>
+                      </div>
+                    ) : (
+                      <div className="divide-y divide-slate-100">
+                        {detailsSections.map((section, idx) => (
+                           <div key={section.id} className="p-4 flex flex-col md:flex-row gap-4 items-start md:items-center">
+                             <div className="flex flex-col gap-2 flex-1 w-full">
+                               <div className="flex flex-col md:flex-row gap-2">
+                                 <Input 
+                                   value={getLang(section.title, activeLang)}
+                                   onChange={e => updateDetailsSection(section.id, { title: { ...section.title, [activeLang]: e.target.value } })}
+                                   placeholder="Section Heading"
+                                   className="h-10 w-full md:w-64 font-bold border-slate-200"
+                                 />
+                                 <Select value={section.type} onValueChange={v => updateDetailsSection(section.id, { type: v })}>
+                                   <SelectTrigger className="w-full md:w-[160px] h-10 border-slate-200"><SelectValue /></SelectTrigger>
+                                   <SelectContent>
+                                     <SelectItem value="linked">Auto: Linked (Main Architecture)</SelectItem>
+                                     <SelectItem value="unlinked">Auto: Unavailable Sthan</SelectItem>
+                                     <SelectItem value="independent">Auto: Independent Sthan</SelectItem>
+                                     <SelectItem value="info">Auto: Info Only</SelectItem>
+                                     <SelectItem value="custom">Custom Manual Group</SelectItem>
+                                   </SelectContent>
+                                 </Select>
+                               </div>
+                               {section.type === 'custom' && (
+                                 <div className="w-full relative z-10">
+                                   <ReactSelect
+                                     isMulti
+                                     options={details.map(d => ({ value: d.id, label: getLang(d.title, activeLang) || "Untitled Sthan" }))}
+                                     value={(section.sthanIds || []).map((id:string) => {
+                                        const d = details.find(dt => dt.id === id);
+                                        return { value: id, label: d ? (getLang(d.title, activeLang) || "Untitled Sthan") : id };
+                                     })}
+                                     onChange={(selected: any) => updateDetailsSection(section.id, { sthanIds: selected.map((s:any) => s.value) })}
+                                     className="text-sm"
+                                     placeholder="Assign specific sthan details to this group..."
+                                     styles={{ control: base => ({ ...base, borderRadius: '0.5rem', borderColor: '#e2e8f0' }) }}
+                                   />
+                                 </div>
+                               )}
+                             </div>
+                             <div className="flex items-center gap-1 shrink-0 self-start md:self-center">
+                               <div className="flex items-center gap-2 mr-3 bg-slate-50 px-2 py-1 rounded-lg">
+                                 <Switch checked={section.isVisible !== false} onCheckedChange={c => updateDetailsSection(section.id, { isVisible: c })} className="scale-75" />
+                                 <Label className="text-[10px] uppercase font-bold text-slate-500 cursor-pointer">Vis</Label>
+                               </div>
+                               <Button variant="ghost" size="icon" onClick={() => moveDetailsSection(idx, 'up')} disabled={idx === 0} className="h-8 w-8 text-slate-400 hover:text-blue-600"><ArrowUp className="w-4 h-4"/></Button>
+                               <Button variant="ghost" size="icon" onClick={() => moveDetailsSection(idx, 'down')} disabled={idx === detailsSections.length - 1} className="h-8 w-8 text-slate-400 hover:text-blue-600"><ArrowDown className="w-4 h-4"/></Button>
+                               <Button variant="ghost" size="icon" onClick={() => removeDetailsSection(section.id)} className="h-8 w-8 text-slate-300 hover:text-red-500 hover:bg-red-50"><Trash2 className="w-4 h-4"/></Button>
+                             </div>
+                           </div>
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
                 {/* Filters */}
                 <div className="flex items-center gap-2">
                   {['all', 'linked', 'independent'].map((f) => (
@@ -3165,6 +3280,53 @@ export default function TempleArchitectureAdmin({
                                 This entry is independent and will appear in the general information section of the Sthan page.
                               </div>
                             )}
+
+                            {/* Sthan Pin Type */}
+                            <div className="space-y-2 border-t border-blue-100 pt-4">
+                              <Label className="text-xs font-black uppercase tracking-widest text-slate-500">Sthan Pin Type</Label>
+                              <Select
+                                value={selectedHotspot.pinType || (selectedHotspot.hotspotId ? 'ARCHITECTURE_LINKED' : 'INFO_ONLY')}
+                                onValueChange={(v) => setSelectedHotspot({ ...selectedHotspot, pinType: v as any })}
+                              >
+                                <SelectTrigger className="h-12 rounded-2xl border-slate-200 bg-white">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="ARCHITECTURE_LINKED">
+                                    <div className="flex items-center gap-2">
+                                      <span className="w-2 h-2 rounded-full bg-blue-600 shrink-0"></span>
+                                      Main Architecture (Linked)
+                                    </div>
+                                  </SelectItem>
+                                  <SelectItem value="ARCHITECTURE_UNAVAILABLE">
+                                    <div className="flex items-center gap-2">
+                                      <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0"></span>
+                                      Marked but Unavailable
+                                    </div>
+                                  </SelectItem>
+                                  <SelectItem value="ARCHITECTURE_INDEPENDENT">
+                                    <div className="flex items-center gap-2">
+                                      <span className="w-2 h-2 rounded-full bg-emerald-600 shrink-0"></span>
+                                      Independent Marker
+                                    </div>
+                                  </SelectItem>
+                                  <SelectItem value="INFO_ONLY">
+                                    <div className="flex items-center gap-2">
+                                      <span className="w-2 h-2 rounded-full bg-slate-400 shrink-0"></span>
+                                      Info Only (No Image Pin)
+                                    </div>
+                                  </SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <p className="text-[10px] text-slate-400 font-medium pl-1">
+                                {({
+                                  'ARCHITECTURE_LINKED': '✅ Shown on image · Listed under Sthan Description',
+                                  'ARCHITECTURE_UNAVAILABLE': '✅ Shown on image · Listed under Unavailable Sthan',
+                                  'ARCHITECTURE_INDEPENDENT': '✅ Shown on image · Listed under Independent Sthan',
+                                  'INFO_ONLY': '❌ Hidden from image · Shows in Info Section only',
+                                } as any)[selectedHotspot.pinType || (selectedHotspot.hotspotId ? 'ARCHITECTURE_LINKED' : 'INFO_ONLY')]}
+                              </p>
+                            </div>
                           </div>
 
                         </div>

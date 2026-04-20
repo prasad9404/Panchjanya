@@ -15,6 +15,17 @@ export interface Leela {
 
 export type HotspotType = 'structure' | 'asset' | 'entry' | 'special' | 'zone';
 
+/**
+ * PinType classifies each SthanDetail item, controlling:
+ * - Whether it appears as an image pin on the architecture map
+ * - Which section/heading it falls under in the user-facing list
+ */
+export type PinType =
+  | 'ARCHITECTURE_LINKED'      // Normal mapped hotspot, shown on image & linked section
+  | 'ARCHITECTURE_UNAVAILABLE' // Shown on image but listed under Unavailable Sthan
+  | 'ARCHITECTURE_INDEPENDENT' // Shown on image, independent marker (custom section)
+  | 'INFO_ONLY';               // Not on image, only shows in list (info section)
+
 export interface Hotspot {
     id: string;
     x: number;
@@ -69,6 +80,22 @@ export interface CustomBlock {
 export interface RelatedAvatar {
     avatar: string;
     subtype: string[];
+}
+
+export interface TempleSection {
+    id: string;
+    title: MultilingualString;
+    /**
+     * 'linked'    → ARCHITECTURE_LINKED items (auto)
+     * 'unlinked'  → ARCHITECTURE_UNAVAILABLE items (auto)
+     * 'independent' → ARCHITECTURE_INDEPENDENT items (auto)
+     * 'info'      → INFO_ONLY items (auto)
+     * 'custom'    → Manual sthanIds assignment
+     */
+    type: 'linked' | 'unlinked' | 'independent' | 'info' | 'custom';
+    sthanIds?: string[]; // Used only for 'custom' type
+    isVisible?: boolean;
+    order?: number;
 }
 
 export type SthanaStatus = "DRAFT" | "IN_PROGRESS" | "COMPLETE" | "VERIFIED" | "PUBLISHED";
@@ -146,6 +173,7 @@ export interface Temple {
     sthanPothiDescription?: MultilingualString;  // Global pothi (for standalone)
     sthanPothiTitle?: MultilingualString;        // Global pothi title (for standalone)
     details?: SthanDetail[]; // New: Unified dynamic details array
+    detailsSections?: TempleSection[]; // Groupings for Sthan Details
 }
 
 export interface SthanDetail {
@@ -159,7 +187,10 @@ export interface SthanDetail {
   generalDescriptionTitle?: MultilingualString;
   hotspotId?: string | null; // Optional link to a map marker
   type?: string; // e.g. 'Structure', 'Tree', 'Ghat'
-  fitMode?: 'cover' | 'contain'; // New: Image fit preference
+  fitMode?: 'cover' | 'contain';
+  /** Controls rendering on map and section grouping */
+  pinType?: PinType;
+  number?: number; // Display order number
 }
 
 export interface YatraPlace {
