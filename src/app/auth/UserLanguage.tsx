@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { AuthBackground } from "./components/AuthBackground";
 import { GradientButton } from "./components/GradientButton";
 import { Globe, Check, Shield } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 
 const LANGUAGES = [
@@ -14,10 +15,13 @@ const LANGUAGES = [
 
 export default function UserLanguage() {
   const navigate = useNavigate();
+  const { i18n } = useTranslation();
   const [selectedLang, setSelectedLang] = useState<string>("mr");
 
   const handleContinue = () => {
+    localStorage.setItem("i18nextLng", selectedLang); // Native i18next key
     localStorage.setItem("panchajanya_lang", selectedLang);
+    i18n.changeLanguage(selectedLang);
     navigate("/auth/welcome");
   };
 
@@ -96,14 +100,38 @@ export default function UserLanguage() {
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.6 }}
-          className="w-full mt-auto mb-10 pt-14"
+          className="w-full mt-auto mb-10 pt-10 sm:pt-14"
         >
           <GradientButton
             onClick={handleContinue}
-            className="w-full h-16 shadow-[0_15px_35px_rgba(30,58,138,0.1)]"
+            className="w-full h-16 shadow-[0_15px_35px_rgba(30,58,138,0.1)] mb-8"
           >
             Continue Initiation
           </GradientButton>
+
+          <div className="text-center space-y-4">
+            <p className="text-slate-400 font-bold tracking-wide text-sm sm:text-base">
+              Already a devotee?{" "}
+              <button 
+                onClick={() => navigate("/auth/login")}
+                className="text-blue-900 font-black uppercase tracking-widest hover:underline decoration-2 underline-offset-8 transition-all hover:scale-105 active:scale-95 px-4"
+              >
+                Sign In
+              </button>
+            </p>
+            <p className="text-slate-300 font-medium tracking-widest text-[10px] uppercase">
+              OR
+            </p>
+            <p className="text-slate-400 font-bold tracking-wide text-sm sm:text-base">
+              New here?{" "}
+              <button 
+                onClick={() => navigate("/auth/register")}
+                className="text-amber-600 font-black uppercase tracking-widest hover:underline decoration-2 underline-offset-8 transition-all hover:scale-105 active:scale-95 px-4"
+              >
+                Sign Up
+              </button>
+            </p>
+          </div>
         </motion.div>
       </div>
     </AuthBackground>
