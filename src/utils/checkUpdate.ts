@@ -7,11 +7,18 @@ export const checkForUpdate = async (retries = 3) => {
   const currentVersion = import.meta.env.VITE_APP_VERSION;
   const storeUrl = "https://play.google.com/store/apps/details?id=com.panchajanya.app";
 
+  // Skip update check in development mode to avoid CORS/404 errors on localhost
+  if (import.meta.env.DEV) {
+    console.log("[Version Check] Skipping in Development mode");
+    return true;
+  }
+
   console.log(`[Version Check] Local: ${currentVersion}`);
 
   for (let i = 0; i < retries; i++) {
     try {
       const response = await fetch(`${versionUrl}?t=${Date.now()}`);
+
       if (!response.ok) throw new Error("Fetch failed");
       
       const data = await response.json();

@@ -66,6 +66,13 @@ const MultiStepFormDemo = lazy(() => import("@/app/demo/MultiStepFormDemo"));
 const DashboardDemo = lazy(() => import("@/app/demo/DashboardDemo"));
 const FormLayoutDemo = lazy(() => import("@/app/demo/FormLayoutDemo"));
 
+// User Auth Flow (Frontend Only)
+const UserSplash = lazy(() => import("@/app/auth/UserSplash"));
+const UserLanguage = lazy(() => import("@/app/auth/UserLanguage"));
+const UserAuthWelcome = lazy(() => import("@/app/auth/UserAuthWelcome"));
+const UserLogin = lazy(() => import("@/app/auth/UserLogin"));
+const UserRegister = lazy(() => import("@/app/auth/UserRegister"));
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -130,6 +137,13 @@ const App = () => {
                   <Suspense fallback={<PageLoader />}>
                     <SthanTypesProvider>
                     <Routes>
+                      {/* ---------------------- USER AUTH (FRONTEND ONLY DEMO) ---------------------- */}
+                      <Route path="/auth/splash" element={<UserSplash />} />
+                      <Route path="/auth/language" element={<UserLanguage />} />
+                      <Route path="/auth/welcome" element={<UserAuthWelcome />} />
+                      <Route path="/auth/login" element={<UserLogin />} />
+                      <Route path="/auth/register" element={<UserRegister />} />
+
                       {/* ---------------------- ADMIN AUTH ---------------------- */}
                       <Route path="/admin/login" element={<AdminLogin />} />
 

@@ -58,7 +58,7 @@ const Profile = () => {
   const handleLogout = () => {
     // Implement logout logic
     console.log("Logging out...");
-    navigate("/");
+    navigate("/auth/splash");
   };
 
   return (
