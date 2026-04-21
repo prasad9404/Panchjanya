@@ -7,7 +7,7 @@ export default function UserSplash() {
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      navigate("/auth/welcome");
+      navigate("/auth/language");
     }, 3500);
     return () => clearTimeout(timer);
   }, [navigate]);

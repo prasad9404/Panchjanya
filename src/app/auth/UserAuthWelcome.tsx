@@ -2,9 +2,37 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { AuthBackground } from "./components/AuthBackground";
 import { GradientButton } from "./components/GradientButton";
+import { useTranslation } from "react-i18next";
+
+const TRANSLATIONS: Record<string, any> = {
+  mr: {
+    welcome: "पंचजन्ये मध्ये आपले स्वागत आहे",
+    desc: "पवित्र मंदिर शोधासाठी सर्वात प्रीमियम अभयारण्यात सुरक्षितपणे प्रवेश करा.",
+    signIn: "साइन इन करा",
+    register: "नोंदणी सुरू करा",
+    legacy: "एक संपूर्ण वारसा"
+  },
+  hi: {
+    welcome: "पंचजन्य में आपका स्वागत है",
+    desc: "पवित्र मंदिरों की खोज के लिए सबसे प्रीमियम स्थान में सुरक्षित रूप से प्रवेश करें।",
+    signIn: "साइन इन करें",
+    register: "पंजीकरण शुरू करें",
+    legacy: "एक पूर्ण विरासत"
+  },
+  en: {
+    welcome: "Welcome to Panchajanya",
+    desc: "Securely enter the most premium sanctuary for sacred temple discovery.",
+    signIn: "Sign In",
+    register: "Start Registration",
+    legacy: "An Absolute Legacy"
+  }
+};
 
 export default function UserAuthWelcome() {
   const navigate = useNavigate();
+  const { i18n } = useTranslation();
+  const lang = i18n.language || localStorage.getItem("panchajanya_lang") || "mr";
+  const t = TRANSLATIONS[lang] || TRANSLATIONS.en;
 
   return (
     <AuthBackground>
@@ -23,7 +51,6 @@ export default function UserAuthWelcome() {
               className="absolute inset-0 bg-gradient-to-tr from-amber-200 to-blue-200 rounded-[2.5rem] blur-2xl opacity-40"
             />
             <div className="relative w-full h-full bg-white/70 backdrop-blur-3xl rounded-[2.5rem] flex items-center justify-center shadow-[0_15px_40px_rgba(0,0,0,0.05)] p-6 border border-white overflow-hidden group">
-               {/* Shine effect on card */}
                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/80 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
                
                <img 
@@ -35,13 +62,18 @@ export default function UserAuthWelcome() {
           </div>
           
           <div className="space-y-4 mb-10 sm:mb-14">
-            <h1 className="text-3xl sm:text-5xl font-black text-blue-950 font-serif leading-tight tracking-tight">
-              Welcome to <br/> 
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-900 via-blue-700 to-blue-950 italic drop-shadow-sm">Panchajanya</span>
+            <h1 className="text-3xl sm:text-5xl font-black text-blue-950 font-serif leading-tight tracking-tight uppercase">
+              {t.welcome.split("Panchajanya")[0]}
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-900 via-blue-700 to-blue-950 italic drop-shadow-sm">
+                {lang === 'hi' || lang === 'mr' ? (t.welcome.includes("पंचजन्ये") ? "पंचजन्ये" : "पंचजन्य") : "Panchajanya"}
+              </span>
+              {t.welcome.split("Panchajanya")[1]}
+              {t.welcome.split("पंचजन्ये")[1]}
+              {t.welcome.split("पंचजन्य")[1]}
             </h1>
             
             <p className="text-slate-500 text-base sm:text-lg font-medium px-4 leading-relaxed tracking-wide">
-              Securely enter the most premium sanctuary <br className="hidden sm:block"/> for sacred temple discovery.
+              {t.desc}
             </p>
           </div>
 
@@ -50,7 +82,7 @@ export default function UserAuthWelcome() {
               onClick={() => navigate("/auth/login")}
               className="w-full h-16"
             >
-              Sign In
+              {t.signIn}
             </GradientButton>
             
             <GradientButton 
@@ -58,7 +90,7 @@ export default function UserAuthWelcome() {
               onClick={() => navigate("/auth/register")}
               className="w-full h-16 border-slate-200/60"
             >
-              Start Registration
+              {t.register}
             </GradientButton>
           </div>
         </motion.div>
@@ -73,7 +105,7 @@ export default function UserAuthWelcome() {
           <div className="flex items-center justify-center gap-4 mb-3">
              <div className="h-[0.5px] w-8 bg-slate-200" />
              <p className="text-[10px] text-slate-400 font-extrabold tracking-[0.5em] uppercase">
-                An Absolute Legacy
+                {t.legacy}
              </p>
              <div className="h-[0.5px] w-8 bg-slate-200" />
           </div>
