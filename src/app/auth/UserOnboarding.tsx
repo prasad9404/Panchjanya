@@ -365,7 +365,7 @@ export default function UserOnboarding() {
                        </button>
                     </div>
 
-                    <AuthInputField topLabel="Name" label="P. Pu. ..." value={formData.guruvaryaName} onChange={e => setFormData({...formData, guruvaryaName: e.target.value})} />
+                    <AuthInputField topLabel="Guruvarya Name" label="P. Pu. ..." value={formData.guruvaryaName} onChange={e => setFormData({...formData, guruvaryaName: e.target.value})} />
                     
                     <div className="grid grid-cols-2 gap-4">
                        <AuthInputField topLabel="City/Village" label="Location" value={formData.guruvaryaCity} onChange={e => setFormData({...formData, guruvaryaCity: e.target.value})} />
@@ -427,7 +427,7 @@ export default function UserOnboarding() {
                   {/* Diksha Guruvarya */}
                   <div className="p-6 bg-white border border-slate-100 rounded-[2.5rem] space-y-6 shadow-sm">
                     <h3 className="text-blue-950 font-serif font-black text-lg uppercase tracking-widest text-center border-b border-slate-50 pb-4">Diksha Guruvarya</h3>
-                    <AuthInputField topLabel="Name" label="P. Pu. ..." value={formData.dikshaGuruvaryaName} onChange={e => setFormData({...formData, dikshaGuruvaryaName: e.target.value})} />
+                    <AuthInputField topLabel="Guruvarya Name" label="P. Pu. ..." value={formData.dikshaGuruvaryaName} onChange={e => setFormData({...formData, dikshaGuruvaryaName: e.target.value})} />
                     <div className="grid grid-cols-2 gap-4">
                        <AuthInputField topLabel="Place" label="Location" value={formData.dikshaGuruvaryaPlace} onChange={e => setFormData({...formData, dikshaGuruvaryaPlace: e.target.value})} />
                        <AuthInputField topLabel="Year" label="Year" type="number" value={formData.dikshaGuruvaryaYear} onChange={e => setFormData({...formData, dikshaGuruvaryaYear: e.target.value})} />
@@ -437,7 +437,7 @@ export default function UserOnboarding() {
                   {/* Vidya Guruvarya */}
                   <div className="p-6 bg-white border border-slate-100 rounded-[2.5rem] space-y-6 shadow-sm">
                     <h3 className="text-blue-950 font-serif font-black text-lg uppercase tracking-widest text-center border-b border-slate-50 pb-4">Vidya Guruvarya</h3>
-                    <AuthInputField topLabel="Name" label="P. Pu. ..." value={formData.vidyaGuruvaryaName} onChange={e => setFormData({...formData, vidyaGuruvaryaName: e.target.value})} />
+                    <AuthInputField topLabel="Guruvarya Name" label="P. Pu. ..." value={formData.vidyaGuruvaryaName} onChange={e => setFormData({...formData, vidyaGuruvaryaName: e.target.value})} />
                     <div className="grid grid-cols-2 gap-4">
                        <AuthInputField topLabel="Place" label="Location" value={formData.vidyaGuruvaryaPlace} onChange={e => setFormData({...formData, vidyaGuruvaryaPlace: e.target.value})} />
                        <AuthInputField topLabel="Year" label="Year" type="number" value={formData.vidyaGuruvaryaYear} onChange={e => setFormData({...formData, vidyaGuruvaryaYear: e.target.value})} />
