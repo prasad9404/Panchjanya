@@ -3,56 +3,55 @@ import { HTMLMotionProps, motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 
 interface GradientButtonProps extends Omit<HTMLMotionProps<"button">, "ref"> {
-  variant?: "primary" | "secondary" | "outline" | "amber-primary";
+  variant?: "primary" | "secondary" | "outline" | "amber";
   children?: React.ReactNode;
   isPill?: boolean;
+  isLoading?: boolean;
 }
 
 export const GradientButton = React.forwardRef<HTMLButtonElement, GradientButtonProps>(
-  ({ variant = "primary", children, className, isPill = false, ...props }, ref) => {
+  ({ variant = "primary", children, className, isPill = false, isLoading = false, disabled, ...props }, ref) => {
     
-    // Premium Color System
+    // Platform-Aligned Design System
     const variants = {
-      primary: "bg-gradient-to-r from-[#1E3A8A] via-[#1D4ED8] to-[#1E3A8A] text-white shadow-[0_10px_25px_rgba(30,58,138,0.2)] border border-white/10",
-      "amber-primary": "bg-gradient-to-r from-[#F59E0B] to-[#D97706] text-white shadow-[0_10px_25px_rgba(245,158,11,0.2)] border border-white/20",
-      secondary: "bg-gradient-to-r from-[#144c8a] to-[#F59E0B] text-white shadow-[0_4px_15px_rgba(20,76,138,0.2)] border border-white/10",
-      outline: "border-2 border-[#1E3A8A]/30 text-[#1E3A8A] bg-white/5 backdrop-blur-md hover:bg-[#1E3A8A]/5 transition-colors",
+      primary: "bg-landing-primary text-white shadow-[0_12px_30px_rgba(14,74,129,0.15)] border-t border-white/10",
+      amber: "bg-primary text-white shadow-[0_12px_30px_rgba(245,130,31,0.15)] border-t border-white/20",
+      secondary: "bg-blue-900/5 text-blue-950 border border-slate-200/60 hover:bg-white hover:border-amber-300",
+      outline: "border border-slate-200 bg-white text-blue-950 hover:bg-slate-50 shadow-sm",
     };
 
     return (
       <motion.button
         ref={ref}
-        whileHover={{ scale: 1.02, boxShadow: "0 15px 35px rgba(30,58,138,0.2)" }}
-        whileTap={{ scale: 0.98 }}
+        whileHover={!(disabled || isLoading) ? { y: -2, scale: 1.01 } : {}}
+        whileTap={!(disabled || isLoading) ? { scale: 0.98 } : {}}
+        disabled={disabled || isLoading}
         className={cn(
-          "relative h-15 font-black text-xs uppercase tracking-[0.2em] transition-all duration-500 flex items-center justify-center gap-2 px-10 overflow-hidden group",
+          "relative h-15 font-black text-[11px] sm:text-xs uppercase tracking-[0.3em] transition-all duration-500 flex items-center justify-center gap-2 px-10 overflow-hidden group disabled:opacity-70 disabled:cursor-not-allowed",
           isPill ? "rounded-full" : "rounded-2xl",
           variants[variant],
           className
         )}
         {...props}
       >
-        {/* ✨ Inner Shine Effect */}
-        {variant !== "outline" && (
+        {/* ✨ Senior Shimmer Effect */}
+        {(variant === "primary" || variant === "amber") && !isLoading && (
           <motion.div 
-            initial={{ x: "-100%" }}
-            whileHover={{ x: "100%" }}
-            transition={{ duration: 0.6, ease: "easeInOut" }}
-            className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent pointer-events-none"
+            initial={{ left: "-100%" }}
+            whileHover={{ left: "100%" }}
+            transition={{ duration: 0.8, ease: "easeInOut" }}
+            className="absolute top-0 bottom-0 w-32 bg-gradient-to-r from-transparent via-white/20 to-transparent skew-x-[-30deg] pointer-events-none"
           />
         )}
         
-        {/* Glow Element */}
-        <div className="absolute inset-0 bg-amber-400 opacity-0 group-hover:opacity-10 transition-opacity blur-xl rounded-full" />
-
-        <span className="relative z-10 flex items-center gap-2 drop-shadow-sm">
-          {children}
+        <span className="relative z-10 flex items-center gap-2">
+          {isLoading ? (
+            <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+          ) : children}
         </span>
         
-        {/* Inner Shadow for Depth */}
-        {variant !== "outline" && (
-          <div className="absolute inset-[1px] rounded-2xl border-t border-white/20 pointer-events-none opacity-50" />
-        )}
+        {/* Subtle Decorative Aura */}
+        <div className="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
       </motion.button>
     );
   }

@@ -7,7 +7,7 @@ export default function UserSplash() {
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      navigate("/auth/language");
+      navigate("/auth/welcome");
     }, 3500);
     return () => clearTimeout(timer);
   }, [navigate]);
@@ -70,23 +70,6 @@ export default function UserSplash() {
           </motion.div>
         </div>
         
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 1.2, duration: 1.2 }}
-          className="text-center mt-10 sm:mt-14 px-4"
-        >
-          <h1 className="text-4xl sm:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-b from-blue-900 via-blue-800 to-blue-950 font-serif tracking-[0.15em] sm:tracking-[0.2em] drop-shadow-sm uppercase">
-            Panchajanya
-          </h1>
-          <div className="flex items-center justify-center gap-3 sm:gap-4 mt-4 sm:mt-6">
-             <div className="h-[1px] w-10 sm:w-14 bg-gradient-to-l from-amber-500/40 to-transparent" />
-             <p className="text-blue-900/40 tracking-[0.3em] sm:tracking-[0.4em] text-[10px] sm:text-xs uppercase font-black" >
-                Sanctuary of Light
-             </p>
-             <div className="h-[1px] w-10 sm:w-14 bg-gradient-to-r from-amber-500/40 to-transparent" />
-          </div>
-        </motion.div>
       </motion.div>
 
       {/* Cloud-like Depth Layer at Bottom */}

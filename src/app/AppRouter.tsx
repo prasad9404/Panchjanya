@@ -72,6 +72,7 @@ const UserLanguage = lazy(() => import("@/app/auth/UserLanguage"));
 const UserAuthWelcome = lazy(() => import("@/app/auth/UserAuthWelcome"));
 const UserLogin = lazy(() => import("@/app/auth/UserLogin"));
 const UserRegister = lazy(() => import("@/app/auth/UserRegister"));
+const UserOnboarding = lazy(() => import("@/app/auth/UserOnboarding"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -143,6 +144,7 @@ const App = () => {
                       <Route path="/auth/welcome" element={<UserAuthWelcome />} />
                       <Route path="/auth/login" element={<UserLogin />} />
                       <Route path="/auth/register" element={<UserRegister />} />
+                      <Route path="/auth/onboarding" element={<UserOnboarding />} />
 
                       {/* ---------------------- ADMIN AUTH ---------------------- */}
                       <Route path="/admin/login" element={<AdminLogin />} />
