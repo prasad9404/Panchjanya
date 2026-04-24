@@ -3,7 +3,7 @@ import { motion, useMotionValue, useTransform } from "framer-motion";
 import { AuthBackground } from "./components/AuthBackground";
 import { GradientButton } from "./components/GradientButton";
 import { useTranslation } from "react-i18next";
-import { Sparkles, ArrowRight, ShieldCheck, Flower2 } from "lucide-react";
+import { Sparkles, ArrowRight, Flower2 } from "lucide-react";
 
 export default function UserAuthWelcome() {
   const navigate = useNavigate();
@@ -78,15 +78,6 @@ export default function UserAuthWelcome() {
           transition={{ duration: 1.2, ease: "easeOut" }}
           className="text-center z-10 w-full max-w-lg"
         >
-          {/* 🛡️ Branding Context */}
-          <motion.div 
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-50/50 backdrop-blur-md border border-blue-100/50 text-blue-900/50 text-[10px] font-black uppercase tracking-[0.3em] mb-12"
-          >
-             <ShieldCheck className="w-3.5 h-3.5" />
-             Personalized Sanctuary
-          </motion.div>
 
           {/* 💎 3D Interactive Logo Card */}
           <div className="perspective-1000 mb-16 h-40">
@@ -138,12 +129,6 @@ export default function UserAuthWelcome() {
             </GradientButton>
           </div>
 
-          {/* 🕊️ Footer Credential */}
-          <div className="mt-20 flex items-center justify-center gap-4 opacity-30">
-             <div className="h-[1px] w-12 bg-slate-400" />
-             <span className="text-[10px] font-black uppercase tracking-[0.4em]">Divine Legacy</span>
-             <div className="h-[1px] w-12 bg-slate-400" />
-          </div>
         </motion.div>
       </div>
     </AuthBackground>
