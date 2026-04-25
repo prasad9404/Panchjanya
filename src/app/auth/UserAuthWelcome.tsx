@@ -46,33 +46,33 @@ export default function UserAuthWelcome() {
 
   return (
     <AuthBackground>
-      <div 
+      <div
         className="flex-1 flex flex-col items-center justify-center px-6 relative overflow-hidden"
         onMouseMove={handleMouse}
       >
         {/* ✨ Floating Divine Particles */}
         <div className="absolute inset-0 pointer-events-none">
-           {[...Array(6)].map((_, i) => (
-             <motion.div
-               key={i}
-               animate={{ 
-                 y: [0, -40, 0], 
-                 x: [0, i % 2 === 0 ? 20 : -20, 0],
-                 opacity: [0.1, 0.3, 0.1] 
-               }}
-               transition={{ duration: 10 + i * 2, repeat: Infinity }}
-               className="absolute text-amber-500/10"
-               style={{ 
-                 left: `${15 + i * 15}%`, 
-                 top: `${20 + (i % 3) * 20}%` 
-               }}
-             >
-               <Flower2 className="w-12 h-12" />
-             </motion.div>
-           ))}
+          {[...Array(6)].map((_, i) => (
+            <motion.div
+              key={i}
+              animate={{
+                y: [0, -40, 0],
+                x: [0, i % 2 === 0 ? 20 : -20, 0],
+                opacity: [0.1, 0.3, 0.1]
+              }}
+              transition={{ duration: 10 + i * 2, repeat: Infinity }}
+              className="absolute text-amber-500/10"
+              style={{
+                left: `${15 + i * 15}%`,
+                top: `${20 + (i % 3) * 20}%`
+              }}
+            >
+              <Flower2 className="w-12 h-12" />
+            </motion.div>
+          ))}
         </div>
 
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1.2, ease: "easeOut" }}
@@ -80,53 +80,87 @@ export default function UserAuthWelcome() {
         >
 
           {/* 💎 3D Interactive Logo Card */}
-          <div className="perspective-1000 mb-16 h-40">
-            <motion.div 
+          <div className="perspective-1000 mb-12 h-40">
+            <motion.div
               style={{ rotateX, rotateY }}
-              className="relative mx-auto w-40 h-40 group"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="relative mx-auto w-40 h-40 group cursor-pointer"
             >
-              <div className="absolute inset-[-20px] bg-gradient-to-tr from-amber-200/40 to-blue-200/40 rounded-[3rem] blur-3xl opacity-50 group-hover:opacity-80 transition-opacity" />
-              <div className="relative w-full h-full bg-white/80 backdrop-blur-3xl rounded-[2.8rem] flex items-center justify-center shadow-[0_20px_50px_rgba(0,0,0,0.06)] p-7 border border-white overflow-hidden">
-                 <img 
-                   src="/icons/Main logo.svg" 
-                   alt="Logo" 
-                   className="w-full h-full object-contain drop-shadow-md group-hover:scale-110 transition-transform duration-700"
-                 />
+              <div className="absolute inset-[-20px] bg-gradient-to-tr from-amber-300/40 via-amber-200/20 to-blue-200/40 rounded-[3rem] blur-3xl opacity-40 group-hover:opacity-100 transition-opacity duration-500" />
+              <div className="relative w-full h-full bg-white/90 backdrop-blur-3xl rounded-[2.8rem] flex items-center justify-center shadow-[0_20px_50px_rgba(217,119,6,0.08)] p-7 border border-white/60 overflow-hidden group-hover:border-amber-500/50 group-hover:shadow-[0_20px_60px_rgba(217,119,6,0.15)] transition-all duration-500">
+                <img
+                  src="/icons/Main logo.svg"
+                  alt="Logo"
+                  className="w-full h-full object-contain drop-shadow-md group-hover:scale-110 transition-transform duration-700"
+                />
               </div>
             </motion.div>
           </div>
 
           {/* 📜 App Name & Tagline */}
-          <div className="mb-16 space-y-4">
-            <h1 className="text-4xl sm:text-6xl font-black text-blue-950 font-serif leading-tight tracking-tight uppercase">
-                Panchjanya
-            </h1>
-            
-            <p className="text-slate-400 text-base sm:text-lg font-medium px-8 leading-relaxed max-w-sm mx-auto">
+          <div className="mb-12 space-y-4">
+            <motion.h1
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.8 }}
+              className="text-5xl sm:text-7xl font-black font-serif leading-tight tracking-tighter uppercase bg-clip-text text-transparent bg-gradient-to-b from-blue-950 via-blue-900 to-blue-800"
+            >
+              Panchjanya
+            </motion.h1>
+
+            <motion.p
+              initial={{ opacity: 0, y: 10 }}
+              animate={{
+                opacity: 1,
+                y: 0,
+                textShadow: [
+                  "0 0 0px rgba(217, 119, 6, 0)",
+                  "0 0 12px rgba(217, 119, 6, 0.3)",
+                  "0 0 0px rgba(217, 119, 6, 0)"
+                ]
+              }}
+              transition={{
+                opacity: { delay: 0.4, duration: 0.8 },
+                y: { delay: 0.4, duration: 0.8 },
+                textShadow: { duration: 3, repeat: Infinity, ease: "easeInOut" }
+              }}
+              className="text-amber-600/90 text-base sm:text-xl font-semibold px-8 leading-relaxed max-w-sm mx-auto tracking-wide italic"
+            >
               {t.tagline}
-            </p>
+            </motion.p>
           </div>
 
           {/* ⚡ Action Hub */}
-          <div className="space-y-5 w-full px-8">
-            <GradientButton 
-              onClick={() => navigate("/auth/onboarding")}
-              className="w-full h-16 bg-landing-primary shadow-xl shadow-blue-900/10"
+          <div className="space-y-4 w-full px-8 sm:px-12">
+            <motion.div
+              whileHover={{ y: -2 }}
+              whileTap={{ scale: 0.98 }}
             >
-              <div className="flex items-center gap-3">
-                 {t.getStarted} <Sparkles className="w-5 h-5 fill-white/20" />
-              </div>
-            </GradientButton>
-            
-            <GradientButton 
-              variant="secondary"
-              onClick={() => navigate("/auth/login")}
-              className="w-full h-16"
+              <GradientButton
+                onClick={() => navigate("/auth/onboarding")}
+                className="w-full h-16 bg-landing-primary shadow-xl shadow-blue-900/10 hover:shadow-amber-600 transition-all duration-300"
+              >
+                <div className="flex items-center gap-3 font-bold text-lg">
+                  {t.getStarted} <Sparkles className="w-5 h-5 fill-white/20" />
+                </div>
+              </GradientButton>
+            </motion.div>
+
+            <motion.div
+              whileHover={{ y: -2 }}
+              whileTap={{ scale: 0.98 }}
             >
-              <div className="flex items-center gap-3 text-blue-900">
-                 {t.login} <ArrowRight className="w-5 h-5" />
-              </div>
-            </GradientButton>
+              <GradientButton
+                variant="secondary"
+                onClick={() => navigate("/auth/login")}
+                className="w-full h-16 border-white/60 bg-white/40 backdrop-blur-sm"
+              >
+                <div className="flex items-center gap-3 text-blue-900 font-bold text-lg">
+                  {t.login} <ArrowRight className="w-5 h-5" />
+                </div>
+              </GradientButton>
+            </motion.div>
           </div>
 
         </motion.div>
