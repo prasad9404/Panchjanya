@@ -133,34 +133,24 @@ export default function UserAuthWelcome() {
 
           {/* ⚡ Action Hub */}
           <div className="space-y-4 w-full px-8 sm:px-12">
-            <motion.div
-              whileHover={{ y: -2 }}
-              whileTap={{ scale: 0.98 }}
+            <GradientButton
+              onClick={() => navigate("/auth/onboarding")}
+              className="w-full h-16 bg-landing-primary shadow-xl shadow-blue-900/10 hover:shadow-[0_20px_50px_rgba(10,42,77,0.3)] hover:scale-[1.02] transition-all duration-500"
             >
-              <GradientButton
-                onClick={() => navigate("/auth/onboarding")}
-                className="w-full h-16 bg-landing-primary shadow-xl shadow-blue-900/10 hover:shadow-amber-600 transition-all duration-300"
-              >
-                <div className="flex items-center gap-3 font-bold text-lg">
-                  {t.getStarted} <Sparkles className="w-5 h-5 fill-white/20" />
-                </div>
-              </GradientButton>
-            </motion.div>
+              <div className="flex items-center gap-3 font-bold text-lg">
+                {t.getStarted} <Sparkles className="w-5 h-5 fill-white/20" />
+              </div>
+            </GradientButton>
 
-            <motion.div
-              whileHover={{ y: -2 }}
-              whileTap={{ scale: 0.98 }}
+            <GradientButton
+              variant="secondary"
+              onClick={() => navigate("/auth/login")}
+              className="w-full h-16 border-white/60 bg-white/40 backdrop-blur-sm hover:bg-white hover:border-amber-300 hover:shadow-[0_10px_30px_rgba(217,119,6,0.1)] hover:scale-[1.02] transition-all duration-500"
             >
-              <GradientButton
-                variant="secondary"
-                onClick={() => navigate("/auth/login")}
-                className="w-full h-16 border-white/60 bg-white/40 backdrop-blur-sm"
-              >
-                <div className="flex items-center gap-3 text-blue-900 font-bold text-lg">
-                  {t.login} <ArrowRight className="w-5 h-5" />
-                </div>
-              </GradientButton>
-            </motion.div>
+              <div className="flex items-center gap-3 text-blue-900 font-bold text-lg">
+                {t.login} <ArrowRight className="w-5 h-5" />
+              </div>
+            </GradientButton>
           </div>
 
         </motion.div>

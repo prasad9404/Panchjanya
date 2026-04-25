@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-type OnboardingStep = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
+type OnboardingStep = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
 
 export default function UserOnboarding() {
   const navigate = useNavigate();
@@ -36,6 +36,7 @@ export default function UserOnboarding() {
     district: "",
     taluka: "",
     city: "",
+    language: "mr",
     mobileVerified: false,
     emailVerified: false,
     // Step 4 & 5: Community & Status
@@ -58,7 +59,7 @@ export default function UserOnboarding() {
     agreedToTerms: false
   });
 
-  const nextStep = () => setStep((p) => Math.min(p + 1, 8) as OnboardingStep);
+  const nextStep = () => setStep((p) => Math.min(p + 1, 9) as OnboardingStep);
   const prevStep = () => setStep((p) => Math.max(p - 1, 1) as OnboardingStep);
 
   const handleRegister = (e: React.FormEvent) => {
@@ -83,20 +84,20 @@ export default function UserOnboarding() {
       <div className="flex-1 flex flex-col z-10 w-full max-w-xl mx-auto px-6 pt-12 pb-20 overflow-y-auto no-scrollbar">
 
         {/* 📊 Progress Indicator */}
-        {step < 8 && (
+        {step < 9 && (
           <div className="mb-10">
             <div className="flex items-center justify-between mb-3 px-1">
               <span className="text-[10px] font-black text-blue-900/40 uppercase tracking-[0.2em]">
-                Sacred Initiation — Step {step} of 7
+                Sacred Initiation — Step {step} of 8
               </span>
               <span className="text-[10px] font-black text-blue-900 uppercase tracking-widest">
-                {Math.round((step / 7) * 100)}%
+                {Math.round((step / 8) * 100)}%
               </span>
             </div>
             <div className="h-1.5 w-full bg-blue-900/5 rounded-full overflow-hidden">
               <motion.div
                 initial={{ width: 0 }}
-                animate={{ width: `${(step / 7) * 100}%` }}
+                animate={{ width: `${(step / 8) * 100}%` }}
                 className="h-full bg-gradient-to-r from-blue-900 to-blue-700 rounded-full"
               />
             </div>
@@ -202,6 +203,63 @@ export default function UserOnboarding() {
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
+              className="space-y-10"
+            >
+              <div className="text-center">
+                <div className="w-20 h-20 bg-amber-50 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <Heart className="w-10 h-10 text-amber-600" />
+                </div>
+                <h2 className="text-3xl font-black text-blue-950 font-serif mb-2">Choose Language</h2>
+                <p className="text-slate-400 font-medium">Select your preferred language for the journey</p>
+              </div>
+
+              <div className="space-y-4">
+                {[
+                  { id: "mr", label: "मराठी", sub: "Marathi" },
+                  { id: "hi", label: "हिन्दी", sub: "Hindi" },
+                  { id: "en", label: "English", sub: "English" }
+                ].map(lang => (
+                  <button
+                    key={lang.id}
+                    onClick={() => setFormData({ ...formData, language: lang.id })}
+                    className={cn(
+                      "w-full p-6 rounded-3xl border-2 flex items-center justify-between group transition-all duration-500",
+                      formData.language === lang.id
+                        ? "border-amber-400 bg-amber-50 shadow-md scale-[1.02]"
+                        : "border-slate-50 bg-white hover:border-slate-200"
+                    )}
+                  >
+                    <div className="flex flex-col items-start text-left">
+                       <span className={cn(
+                         "text-xl font-black transition-colors",
+                         formData.language === lang.id ? "text-blue-950" : "text-slate-400 group-hover:text-blue-900"
+                       )}>{lang.label}</span>
+                       <span className="text-[10px] font-black uppercase tracking-widest text-slate-300">{lang.sub}</span>
+                    </div>
+                    <div className={cn(
+                      "w-8 h-8 rounded-full border-2 flex items-center justify-center transition-all",
+                      formData.language === lang.id ? "border-amber-400 bg-amber-400 text-white rotate-[360deg]" : "border-slate-100 text-transparent"
+                    )}>
+                      <CheckCircle2 className="w-5 h-5" />
+                    </div>
+                  </button>
+                ))}
+              </div>
+
+              <div className="pt-6">
+                <GradientButton onClick={nextStep} className="w-full h-16">
+                  Continue <ChevronRight className="ml-2 w-5 h-5" />
+                </GradientButton>
+              </div>
+            </motion.div>
+          )}
+
+          {step === 4 && (
+            <motion.div
+              key="step4"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
               className="space-y-8"
             >
               <div>
@@ -282,9 +340,9 @@ export default function UserOnboarding() {
             </motion.div>
           )}
 
-          {step === 4 && (
+          {step === 5 && (
             <motion.div
-              key="step4"
+              key="step5"
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
@@ -307,9 +365,9 @@ export default function UserOnboarding() {
             </motion.div>
           )}
 
-          {step === 5 && (
+          {step === 6 && (
             <motion.div
-              key="step5"
+              key="step6"
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
@@ -325,10 +383,10 @@ export default function UserOnboarding() {
                     key={status}
                     onClick={() => setFormData({ ...formData, status: status as any })}
                     className={cn(
-                      "w-full p-6 rounded-3xl border-2 flex items-center justify-between group transition-all duration-500",
+                      "w-full p-6 rounded-3xl border-2 flex items-center justify-between group transition-all duration-500 hover:-translate-y-1",
                       formData.status === status
-                        ? "border-accent bg-accent/5 shadow-[0_0_30px_rgba(245,158,11,0.1)]"
-                        : "border-slate-50 bg-white hover:border-slate-200"
+                        ? "border-accent bg-accent/5 shadow-[0_15px_30px_rgba(245,158,11,0.15)]"
+                        : "border-slate-50 bg-white hover:border-amber-200 hover:shadow-[0_10px_25px_rgba(245,158,11,0.08)]"
                     )}
                   >
                     <div className="flex flex-col items-start text-left">
@@ -355,9 +413,9 @@ export default function UserOnboarding() {
             </motion.div>
           )}
 
-          {step === 6 && (
+          {step === 7 && (
             <motion.div
-              key="step6"
+              key="step7"
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
@@ -497,9 +555,9 @@ export default function UserOnboarding() {
             </motion.div>
           )}
 
-          {step === 7 && (
+          {step === 8 && (
             <motion.div
-              key="step7"
+              key="step8"
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
@@ -557,9 +615,9 @@ export default function UserOnboarding() {
             </motion.div>
           )}
 
-          {step === 8 && (
+          {step === 9 && (
             <motion.div
-              key="step8"
+              key="step9"
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               className="flex-1 flex flex-col items-center justify-center text-center space-y-8 py-10"
@@ -594,7 +652,7 @@ export default function UserOnboarding() {
         </AnimatePresence>
 
         {/* 🔙 Back Button for Early Steps */}
-        {step > 1 && step < 8 && (
+        {step > 1 && step < 9 && (
           <button
             onClick={prevStep}
             className="mt-10 mx-auto flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-300 hover:text-blue-900 transition-all font-serif"
