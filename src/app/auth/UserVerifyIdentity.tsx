@@ -56,7 +56,7 @@ export default function UserVerifyIdentity() {
               id={`otp-${i}`}
               type="text"
               maxLength={1}
-              className="w-14 h-16 bg-white border-2 border-slate-100 rounded-2xl text-center text-2xl font-black text-blue-950 focus:border-amber-400 outline-none transition-all shadow-sm"
+              className="w-14 h-16 bg-white border-2 border-slate-100 rounded-2xl text-center text-2xl font-black text-blue-950 focus:border-amber-600 outline-none transition-all shadow-sm"
               value={digit}
               onChange={(e) => handleOtpChange(i, e.target.value)}
               onKeyDown={(e) => {

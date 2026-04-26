@@ -54,7 +54,7 @@ export default function UserRegister() {
         <motion.div
            initial={{ opacity: 0, scale: 0.9 }}
            animate={{ opacity: 1, scale: 1 }}
-           className="w-32 h-32 rounded-full border border-amber-100 flex items-center justify-center mb-6 bg-white shadow-sm p-6"
+           className="w-32 h-32 rounded-full border border-amber-600/20 flex items-center justify-center mb-6 bg-white shadow-sm p-6"
         >
            <img src="/icons/Main logo.svg" alt="Logo" className="w-full h-full object-contain" />
         </motion.div>
@@ -100,7 +100,7 @@ export default function UserRegister() {
                   onClick={() => setFormData({ ...formData, gender: g })}
                   className={cn(
                     "flex-1 h-12 rounded-2xl border-2 font-bold text-sm transition-all",
-                    formData.gender === g ? "border-amber-400 bg-amber-50 text-amber-900" : "border-slate-100 bg-white text-slate-500"
+                    formData.gender === g ? "border-amber-600 bg-amber-50 text-amber-900" : "border-slate-100 bg-white text-slate-500"
                   )}
                 >
                   {g}

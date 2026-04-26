@@ -35,7 +35,7 @@ export default function UserLanguage() {
           <motion.span 
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="text-[10px] uppercase tracking-[0.4em] text-[#E6A23C] font-black mb-4 block"
+            className="text-[10px] uppercase tracking-[0.4em] text-[#d97706] font-black mb-4 block"
           >
             Divine Communication
           </motion.span>
@@ -74,14 +74,14 @@ export default function UserLanguage() {
                 className={cn(
                   "w-full flex items-center gap-5 p-5 rounded-[1.5rem] border-2 transition-all duration-300 text-left",
                   isSelected 
-                    ? "border-[#E6A23C] bg-[#E6A23C]/5 shadow-md" 
+                    ? "border-[#d97706] bg-[#d97706]/5 shadow-md" 
                     : "border-white bg-white shadow-sm hover:border-slate-100"
                 )}
               >
                 {/* Abbreviation Icon */}
                 <div className={cn(
                   "w-12 h-12 flex items-center justify-center rounded-full font-serif font-bold text-lg transition-colors",
-                  isSelected ? "bg-[#E6A23C] text-white" : "bg-slate-50 text-slate-400"
+                  isSelected ? "bg-[#d97706] text-white" : "bg-slate-50 text-slate-400"
                 )}>
                   {lang.icon}
                 </div>
@@ -100,7 +100,7 @@ export default function UserLanguage() {
                 {/* Radio Indicator */}
                 <div className={cn(
                   "w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all",
-                  isSelected ? "border-[#E6A23C] bg-[#E6A23C]" : "border-slate-200"
+                  isSelected ? "border-[#d97706] bg-[#d97706]" : "border-slate-200"
                 )}>
                   <AnimatePresence>
                     {isSelected && (
@@ -121,10 +121,10 @@ export default function UserLanguage() {
 
         {/* 🚀 Fixed Bottom Button */}
         <div className="p-8 pb-10 max-w-md mx-auto w-full">
-           <GradientButton
-             onClick={handleContinue}
-             className="w-full h-16 bg-[#1E3A5F] hover:bg-[#152943] text-white shadow-[0_8px_20px_rgba(30,58,95,0.2)] rounded-2xl font-bold tracking-widest uppercase text-sm"
-           >
+            <GradientButton
+              onClick={handleContinue}
+              className="w-full h-16 bg-[#d97706] hover:bg-[#b45309] text-white shadow-[0_8px_20px_rgba(217,119,6,0.2)] rounded-2xl font-bold tracking-widest uppercase text-sm"
+            >
              Continue
            </GradientButton>
         </div>

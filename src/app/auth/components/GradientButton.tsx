@@ -15,8 +15,8 @@ export const GradientButton = React.forwardRef<HTMLButtonElement, GradientButton
     // Platform-Aligned Design System
     const variants = {
       primary: "bg-landing-primary text-white shadow-[0_12px_30px_rgba(14,74,129,0.15)] border-t border-white/10",
-      amber: "bg-primary text-white shadow-[0_12px_30px_rgba(245,130,31,0.15)] border-t border-white/20",
-      secondary: "bg-blue-900/5 text-blue-950 border border-slate-200/60 hover:bg-white hover:border-amber-300",
+      amber: "bg-primary text-white shadow-[0_12px_30px_rgba(217,119,6,0.15)] border-t border-white/20",
+      secondary: "bg-blue-900/5 text-blue-950 border border-slate-200/60 hover:bg-white hover:border-amber-600",
       outline: "border border-slate-200 bg-white text-blue-950 hover:bg-slate-50 shadow-sm",
     };
 

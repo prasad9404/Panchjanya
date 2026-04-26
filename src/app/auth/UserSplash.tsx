@@ -31,7 +31,7 @@ export default function UserSplash() {
             repeat: Infinity,
             delay: i * 1,
           }}
-          className="absolute w-1.5 h-1.5 bg-amber-400 rounded-full blur-[2px] pointer-events-none"
+          className="absolute w-1.5 h-1.5 bg-amber-600 rounded-full blur-[2px] pointer-events-none"
           style={{
             left: `${5 + i * 12}%`,
             top: `${90 - i * 8}%`,

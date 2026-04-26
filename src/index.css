@@ -17,7 +17,7 @@ All colors MUST be HSL.
     --popover: 34 40% 98%;
     --popover-foreground: 20 20% 15%;
 
-    --primary: 32 90% 50%;
+    --primary: 32 95% 44%;
     --primary-foreground: 0 0% 100%;
 
     --secondary: 0 60% 25%;
@@ -34,13 +34,13 @@ All colors MUST be HSL.
 
     --border: 34 20% 85%;
     --input: 34 20% 88%;
-    --ring: 32 90% 50%;
+    --ring: 32 95% 44%;
 
     --radius: 0.75rem;
 
     --sidebar-background: 0 60% 15%;
     --sidebar-foreground: 34 40% 95%;
-    --sidebar-primary: 32 90% 50%;
+    --sidebar-primary: 32 95% 44%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 0 60% 20%;
     --sidebar-accent-foreground: 34 40% 95%;
@@ -48,7 +48,7 @@ All colors MUST be HSL.
     --sidebar-ring: 43 85% 50%;
 
     --map-bg: 34 30% 90%;
-    --temple-accent: 32 90% 50%;
+    --temple-accent: 32 95% 44%;
 
     --landing-primary: 216 82% 28%;
   }
@@ -63,7 +63,7 @@ All colors MUST be HSL.
     --popover: 20 20% 5%;
     --popover-foreground: 34 40% 95%;
 
-    --primary: 32 90% 60%;
+    --primary: 32 95% 55%;
     --primary-foreground: 0 0% 100%;
 
     --secondary: 0 60% 20%;
@@ -80,11 +80,11 @@ All colors MUST be HSL.
 
     --border: 20 20% 15%;
     --input: 20 20% 15%;
-    --ring: 32 90% 60%;
+    --ring: 32 95% 55%;
     
     --sidebar-background: 20 20% 3%;
     --sidebar-foreground: 34 40% 95%;
-    --sidebar-primary: 32 90% 60%;
+    --sidebar-primary: 32 95% 55%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 20 20% 10%;
     --sidebar-accent-foreground: 34 40% 95%;
@@ -92,7 +92,7 @@ All colors MUST be HSL.
     --sidebar-ring: 43 85% 55%;
 
     --map-bg: 20 20% 10%;
-    --temple-accent: 32 90% 60%;
+    --temple-accent: 32 95% 55%;
     
     --landing-primary: 216 82% 60%;
   }

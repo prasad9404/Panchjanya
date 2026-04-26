@@ -99,7 +99,7 @@ export default function UserOnboarding() {
                       className={cn(
                         "w-full p-6 rounded-[1.5rem] border-2 flex items-center justify-between group transition-all duration-500",
                         formData.status === status
-                          ? "border-amber-400 bg-amber-50 shadow-md scale-[1.02]"
+                          ? "border-amber-600 bg-amber-50 shadow-md scale-[1.02]"
                           : "border-slate-50 bg-white hover:border-slate-200"
                       )}
                     >
@@ -109,7 +109,7 @@ export default function UserOnboarding() {
                       )}>{status}</span>
                       <div className={cn(
                         "w-8 h-8 rounded-full border-2 flex items-center justify-center transition-all",
-                        formData.status === status ? "border-amber-400 bg-amber-400 text-white" : "border-slate-100 text-transparent"
+                        formData.status === status ? "border-amber-600 bg-amber-600 text-white" : "border-slate-100 text-transparent"
                       )}>
                         <CheckCircle2 className="w-5 h-5" />
                       </div>
@@ -147,7 +147,7 @@ export default function UserOnboarding() {
                       <span className="font-bold text-sm text-blue-950">Taken Naam Mantra?</span>
                       <button
                         onClick={() => setFormData({ ...formData, naamMantra: !formData.naamMantra })}
-                        className={cn("w-12 h-7 rounded-full p-1 transition-all", formData.naamMantra ? "bg-amber-400" : "bg-slate-200")}
+                        className={cn("w-12 h-7 rounded-full p-1 transition-all", formData.naamMantra ? "bg-amber-600" : "bg-slate-200")}
                       >
                         <div className={cn("w-5 h-5 rounded-full bg-white transition-all shadow-sm", formData.naamMantra ? "ml-5" : "ml-0")} />
                       </button>
@@ -198,8 +198,8 @@ export default function UserOnboarding() {
               </div>
 
               <div className="flex flex-col items-center">
-                <div className="w-48 h-48 rounded-[3rem] border-4 border-dashed border-slate-200 bg-white flex items-center justify-center relative overflow-hidden group hover:border-amber-400 transition-all cursor-pointer">
-                  <Camera className="w-12 h-12 text-slate-300 group-hover:text-amber-400 transition-all" />
+                <div className="w-48 h-48 rounded-[3rem] border-4 border-dashed border-slate-200 bg-white flex items-center justify-center relative overflow-hidden group hover:border-amber-600 transition-all cursor-pointer">
+                  <Camera className="w-12 h-12 text-slate-300 group-hover:text-amber-600 transition-all" />
                 </div>
               </div>
 
@@ -239,7 +239,7 @@ export default function UserOnboarding() {
               animate={{ opacity: 1, scale: 1 }}
               className="flex-1 flex flex-col items-center justify-center text-center space-y-8 py-10"
             >
-              <div className="w-32 h-32 bg-amber-400 rounded-full flex items-center justify-center shadow-xl">
+              <div className="w-32 h-32 bg-amber-600 rounded-full flex items-center justify-center shadow-xl">
                 <CheckCircle2 className="w-16 h-16 text-white" />
               </div>
               <div>
