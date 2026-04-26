@@ -19,11 +19,16 @@ export default function UserOnboarding() {
   const [step, setStep] = useState<OnboardingStep>(1);
   const [isLoading, setIsLoading] = useState(false);
 
+  // Inline OTP State
+  const [showMobileOtp, setShowMobileOtp] = useState(false);
+  const [mobileOtp, setMobileOtp] = useState(["", "", "", ""]);
+  const [isVerifyingMobile, setIsVerifyingMobile] = useState(false);
+
   // Form State
   const [formData, setFormData] = useState({
     // Step 1: Registration
     fullName: "",
-    emailOrMobile: "",
+    email: "",
     password: "",
     // Step 2: OTP
     otp: ["", "", "", ""],
@@ -36,6 +41,9 @@ export default function UserOnboarding() {
     district: "",
     taluka: "",
     city: "",
+    mobileNumber: "",
+    whatsappNumber: "",
+    isWhatsappSameAsMobile: false,
     language: "mr",
     mobileVerified: false,
     emailVerified: false,
@@ -77,6 +85,26 @@ export default function UserOnboarding() {
       setIsLoading(false);
       nextStep();
     }, 1000);
+  };
+
+  const handleMobileOtpChange = (index: number, value: string) => {
+    const newOtp = [...mobileOtp];
+    newOtp[index] = value;
+    setMobileOtp(newOtp);
+    
+    if (value && document.getElementById(`mob-otp-${index + 1}`)) {
+      document.getElementById(`mob-otp-${index + 1}`)?.focus();
+    }
+    
+    if (index === 3 && value) {
+      setIsVerifyingMobile(true);
+      setTimeout(() => {
+        setIsVerifyingMobile(false);
+        setFormData(prev => ({ ...prev, mobileVerified: true }));
+        setShowMobileOtp(false);
+        nextStep(); // Auto-proceed immediately after OTP is verified
+      }, 1000);
+    }
   };
 
   return (
@@ -127,11 +155,12 @@ export default function UserOnboarding() {
                   onChange={e => setFormData({ ...formData, fullName: e.target.value })}
                 />
                 <AuthInputField
-                  topLabel="Email or Mobile"
+                  topLabel="Email"
                   label="name@heritage.com"
                   icon={<Mail />}
-                  value={formData.emailOrMobile}
-                  onChange={e => setFormData({ ...formData, emailOrMobile: e.target.value })}
+                  type="email"
+                  value={formData.email}
+                  onChange={e => setFormData({ ...formData, email: e.target.value })}
                 />
                 <AuthInputField
                   topLabel="Password"
@@ -230,11 +259,11 @@ export default function UserOnboarding() {
                     )}
                   >
                     <div className="flex flex-col items-start text-left">
-                       <span className={cn(
-                         "text-xl font-black transition-colors",
-                         formData.language === lang.id ? "text-blue-950" : "text-slate-400 group-hover:text-blue-900"
-                       )}>{lang.label}</span>
-                       <span className="text-[10px] font-black uppercase tracking-widest text-slate-300">{lang.sub}</span>
+                      <span className={cn(
+                        "text-xl font-black transition-colors",
+                        formData.language === lang.id ? "text-blue-950" : "text-slate-400 group-hover:text-blue-900"
+                      )}>{lang.label}</span>
+                      <span className="text-[10px] font-black uppercase tracking-widest text-slate-300">{lang.sub}</span>
                     </div>
                     <div className={cn(
                       "w-8 h-8 rounded-full border-2 flex items-center justify-center transition-all",
@@ -332,6 +361,106 @@ export default function UserOnboarding() {
                 />
               </div>
 
+              <div className="space-y-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-4">
+                    <AuthInputField
+                      topLabel="Mobile Number"
+                      label="+91 - XXXXXXXXXX"
+                      type="tel"
+                      value={formData.mobileNumber}
+                      disabled={formData.mobileVerified}
+                      onChange={e => {
+                        const val = e.target.value;
+                        setFormData(prev => ({
+                          ...prev,
+                          mobileNumber: val,
+                          whatsappNumber: prev.isWhatsappSameAsMobile ? val : prev.whatsappNumber
+                        }));
+                      }}
+                      rightElement={
+                        formData.mobileVerified ? (
+                          <div className="flex items-center gap-1 text-green-600 bg-green-50 px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest">
+                            <CheckCircle2 className="w-3 h-3" /> Verified
+                          </div>
+                        ) : formData.mobileNumber.length >= 10 && !showMobileOtp ? (
+                          <button
+                            onClick={() => setShowMobileOtp(true)}
+                            className="text-[10px] font-black uppercase tracking-widest text-blue-600 hover:text-amber-600 underline decoration-blue-600/30 hover:decoration-amber-600 transition-colors"
+                          >
+                            Verify Now
+                          </button>
+                        ) : null
+                      }
+                    />
+
+                    {/* Inline OTP Block */}
+                    <AnimatePresence>
+                      {showMobileOtp && !formData.mobileVerified && (
+                        <motion.div
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: "auto" }}
+                          exit={{ opacity: 0, height: 0 }}
+                          className="overflow-hidden"
+                        >
+                          <div className="p-4 bg-amber-50/50 border border-amber-100 rounded-2xl space-y-3">
+                            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1">
+                              <label className="text-[10px] font-black uppercase tracking-widest text-amber-900/60">Enter OTP</label>
+                              <span className="text-[10px] font-bold text-amber-600/60 truncate" title={`Sent to ${formData.mobileNumber}`}>Sent to {formData.mobileNumber}</span>
+                            </div>
+                            <div className="grid grid-cols-4 gap-2">
+                              {mobileOtp.map((digit, i) => (
+                                <input
+                                  key={i}
+                                  id={`mob-otp-${i}`}
+                                  type="text"
+                                  maxLength={1}
+                                  className={cn(
+                                    "w-full min-w-0 h-12 bg-white border border-amber-200/60 rounded-xl text-center text-lg font-black text-amber-950 focus:border-amber-400 focus:shadow-[0_0_15px_rgba(245,158,11,0.15)] outline-none transition-all",
+                                    isVerifyingMobile && "opacity-50 pointer-events-none"
+                                  )}
+                                  value={digit}
+                                  onChange={(e) => handleMobileOtpChange(i, e.target.value)}
+                                />
+                              ))}
+                            </div>
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                  <div className="space-y-2">
+                    <AuthInputField
+                      topLabel="Whatsapp Number"
+                      label="+91 - XXXXXXXXXX"
+                      type="tel"
+                      disabled={formData.isWhatsappSameAsMobile}
+                      value={formData.isWhatsappSameAsMobile ? formData.mobileNumber : formData.whatsappNumber}
+                      onChange={e => setFormData({ ...formData, whatsappNumber: e.target.value })}
+                    />
+                    <div className="flex items-center gap-2 ml-4">
+                      <button
+                        onClick={() => {
+                          const nextSame = !formData.isWhatsappSameAsMobile;
+                          setFormData(prev => ({
+                            ...prev,
+                            isWhatsappSameAsMobile: nextSame,
+                            whatsappNumber: nextSame ? prev.mobileNumber : prev.whatsappNumber
+                          }));
+                        }}
+                        className={cn(
+                          "w-4 h-4 rounded border flex items-center justify-center transition-all",
+                          formData.isWhatsappSameAsMobile ? "bg-blue-900 border-blue-900 text-white" : "border-slate-200 bg-white"
+                        )}
+                      >
+                        {formData.isWhatsappSameAsMobile && <CheckCircle2 className="w-3 h-3" />}
+                      </button>
+                      <span className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Same as above</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               <div className="pt-6">
                 <GradientButton onClick={nextStep} className="w-full h-16">
                   Continue <ChevronRight className="ml-2 w-5 h-5" />
@@ -390,10 +519,10 @@ export default function UserOnboarding() {
                     )}
                   >
                     <div className="flex flex-col items-start text-left">
-                       <span className={cn(
-                         "text-lg font-black font-serif transition-colors",
-                         formData.status === status ? "text-blue-950" : "text-slate-400 group-hover:text-blue-900"
-                       )}>{status}</span>
+                      <span className={cn(
+                        "text-lg font-black font-serif transition-colors",
+                        formData.status === status ? "text-blue-950" : "text-slate-400 group-hover:text-blue-900"
+                      )}>{status}</span>
                     </div>
                     <div className={cn(
                       "w-8 h-8 rounded-full border-2 flex items-center justify-center transition-all duration-500",
