@@ -1,0 +1,47 @@
+name: Expo OTA Update
+
+on:
+  push:
+    branches:
+      - main
+      - dev
+      - staging
+    paths:
+      - 'src/**'
+      - 'app.json'
+      - 'package.json'
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📦 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: ⚙️ Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: 📦 Install dependencies
+        run: npm ci
+
+      - name: 🚀 Setup EAS CLI
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: 🚀 Publish OTA Update
+        run: |
+          if [ "${GITHUB_REF##*/}" = "main" ]; then
+            npx expo eas update --branch production --message "Auto update from main: ${{ github.event.head_commit.message }}"
+          elif [ "${GITHUB_REF##*/}" = "dev" ]; then
+            npx expo eas update --branch dev --message "Auto update from dev: ${{ github.event.head_commit.message }}"
+          elif [ "${GITHUB_REF##*/}" = "staging" ]; then
+            npx expo eas update --branch staging --message "Auto update from staging: ${{ github.event.head_commit.message }}"
+          fi
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}

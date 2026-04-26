@@ -11,7 +11,10 @@
     "preview": "vite preview",
     "fetch-temples": "node scripts/fetchTemples.js",
     "set-admin": "node scripts/setAdminRole.js",
-    "diagnose": "node scripts/diagnoseFirestore.js"
+    "diagnose": "node scripts/diagnoseFirestore.js",
+    "update:prod": "eas update --branch production",
+    "update:staging": "eas update --branch staging",
+    "update:dev": "eas update --branch dev"
   },
   "dependencies": {
     "@capacitor/android": "^8.0.0",

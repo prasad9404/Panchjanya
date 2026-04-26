@@ -1,5 +1,10 @@
 {
   "expo": {
+    "updates": {
+      "url": "https://u.expo.dev/a28ffefe-0586-402e-b5a7-c253babed88a",
+      "checkAutomatically": "ON_LOAD",
+      "fallbackToCacheTimeout": 0
+    },
     "extra": {
       "eas": {
         "projectId": "a28ffefe-0586-402e-b5a7-c253babed88a"
