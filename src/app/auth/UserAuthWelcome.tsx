@@ -132,23 +132,29 @@ export default function UserAuthWelcome() {
           </div>
 
           {/* ⚡ Action Hub */}
-          <div className="space-y-4 w-full px-8 sm:px-12">
+          <div className="space-y-4 w-full px-8 sm:px-12 max-w-[24rem] mx-auto">
             <GradientButton
               onClick={() => navigate("/auth/onboarding")}
-              className="w-full h-16 bg-landing-primary shadow-xl shadow-blue-900/10 hover:shadow-[0_20px_50px_rgba(10,42,77,0.3)] hover:scale-[1.02] transition-all duration-500"
+              className="w-full h-[56px] sm:h-[60px] px-0 bg-[#133E7C] shadow-[0_15px_30px_rgba(19,62,124,0.15)] hover:shadow-[0_20px_40px_rgba(19,62,124,0.25)] hover:scale-[1.02] transition-all duration-500 rounded-2xl border-none"
             >
-              <div className="flex items-center gap-3 font-bold text-lg">
-                {t.getStarted} <Sparkles className="w-5 h-5 fill-white/20" />
+              <div className="flex items-center justify-center gap-2.5 sm:gap-3 w-full">
+                <span className="font-bold text-[12px] sm:text-[13px] tracking-[0.15em] sm:tracking-[0.2em] uppercase text-white whitespace-nowrap">
+                  {t.getStarted}
+                </span>
+                <Sparkles className="w-[18px] h-[18px] sm:w-[20px] sm:h-[20px] text-white" strokeWidth={2} />
               </div>
             </GradientButton>
 
             <GradientButton
               variant="secondary"
               onClick={() => navigate("/auth/login")}
-              className="w-full h-16 border-white/60 bg-white/40 backdrop-blur-sm hover:bg-white hover:border-amber-300 hover:shadow-[0_10px_30px_rgba(217,119,6,0.1)] hover:scale-[1.02] transition-all duration-500"
+              className="w-full h-[56px] sm:h-[60px] px-0 border border-white/60 bg-white/40 backdrop-blur-md shadow-[0_8px_20px_rgba(0,0,0,0.02)] hover:bg-white/60 hover:shadow-[0_12px_25px_rgba(0,0,0,0.05)] hover:scale-[1.02] transition-all duration-500 rounded-2xl"
             >
-              <div className="flex items-center gap-3 text-blue-900 font-bold text-lg">
-                {t.login} <ArrowRight className="w-5 h-5" />
+              <div className="flex items-center justify-center gap-2.5 sm:gap-3 w-full">
+                <span className="font-bold text-[12px] sm:text-[13px] tracking-[0.15em] sm:tracking-[0.2em] uppercase text-[#133E7C] whitespace-nowrap">
+                  {t.login}
+                </span>
+                <ArrowRight className="w-[18px] h-[18px] sm:w-[20px] sm:h-[20px] text-[#133E7C]" strokeWidth={2.5} />
               </div>
             </GradientButton>
           </div>
