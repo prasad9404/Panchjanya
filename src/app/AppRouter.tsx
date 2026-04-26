@@ -139,6 +139,7 @@ const App = () => {
                     <SthanTypesProvider>
                     <Routes>
                       {/* ---------------------- USER AUTH (FRONTEND ONLY DEMO) ---------------------- */}
+                      <Route path="/" element={<UserSplash />} />
                       <Route path="/auth/splash" element={<UserSplash />} />
                       <Route path="/auth/language" element={<UserLanguage />} />
                       <Route path="/auth/welcome" element={<UserAuthWelcome />} />
@@ -255,7 +256,6 @@ const App = () => {
 
                       {/* ---------------------- USER ROUTES WITH LAYOUT ---------------------- */}
                       <Route element={<Layout />}>
-                        <Route path="/" element={<Dashboard />} />
                         <Route path="/dashboard" element={<Dashboard />} />
                         <Route path="/dashboard/sthana-vandan" element={<SthanaVandan />} />
                         <Route path="/raj-viharan" element={<SwamiYatra />} />
