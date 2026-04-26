@@ -57,7 +57,7 @@ export default function UserSplash() {
             initial={{ y: 30, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.6, duration: 1.2 }}
-            className="w-40 h-40 md:w-56 md:h-56 bg-white/60 backdrop-blur-3xl rounded-[3rem] shadow-[0_20px_60px_rgba(30,58,138,0.1)] flex items-center justify-center p-8 border border-white relative overflow-hidden group"
+            className="w-56 h-56 md:w-72 md:h-72 bg-white/60 backdrop-blur-3xl rounded-[4rem] shadow-[0_20px_60px_rgba(30,58,138,0.1)] flex items-center justify-center p-8 border border-white relative overflow-hidden group"
           >
              {/* Subtle Surface Shine */}
              <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/40 to-transparent pointer-events-none" />

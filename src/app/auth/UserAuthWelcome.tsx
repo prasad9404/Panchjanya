@@ -80,15 +80,15 @@ export default function UserAuthWelcome() {
         >
 
           {/* 💎 3D Interactive Logo Card */}
-          <div className="perspective-1000 mb-12 h-40">
+          <div className="perspective-1000 mb-12 h-56 sm:h-64">
             <motion.div
               style={{ rotateX, rotateY }}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              className="relative mx-auto w-40 h-40 group cursor-pointer"
+              className="relative mx-auto w-56 h-56 sm:w-64 sm:h-64 group cursor-pointer"
             >
-              <div className="absolute inset-[-20px] bg-gradient-to-tr from-amber-300/40 via-amber-200/20 to-blue-200/40 rounded-[3rem] blur-3xl opacity-40 group-hover:opacity-100 transition-opacity duration-500" />
-              <div className="relative w-full h-full bg-white/90 backdrop-blur-3xl rounded-[2.8rem] flex items-center justify-center shadow-[0_20px_50px_rgba(217,119,6,0.08)] p-7 border border-white/60 overflow-hidden group-hover:border-amber-500/50 group-hover:shadow-[0_20px_60px_rgba(217,119,6,0.15)] transition-all duration-500">
+              <div className="absolute inset-[-20px] bg-gradient-to-tr from-amber-300/40 via-amber-200/20 to-blue-200/40 rounded-[4rem] blur-3xl opacity-40 group-hover:opacity-100 transition-opacity duration-500" />
+              <div className="relative w-full h-full bg-white/90 backdrop-blur-3xl rounded-[4rem] flex items-center justify-center shadow-[0_20px_50px_rgba(217,119,6,0.08)] p-8 border border-white/60 overflow-hidden group-hover:border-amber-500/50 group-hover:shadow-[0_20px_60px_rgba(217,119,6,0.15)] transition-all duration-500">
                 <img
                   src="/icons/Main logo.svg"
                   alt="Logo"
@@ -104,7 +104,7 @@ export default function UserAuthWelcome() {
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.8 }}
-              className="text-5xl sm:text-7xl font-black font-serif leading-tight tracking-tighter uppercase bg-clip-text text-transparent bg-gradient-to-b from-blue-950 via-blue-900 to-blue-800"
+              className="text-4xl min-[380px]:text-5xl sm:text-6xl md:text-7xl font-black font-serif leading-tight tracking-tighter uppercase bg-clip-text text-transparent bg-gradient-to-b from-blue-950 via-blue-900 to-blue-800"
             >
               Panchjanya
             </motion.h1>
@@ -132,29 +132,29 @@ export default function UserAuthWelcome() {
           </div>
 
           {/* ⚡ Action Hub */}
-          <div className="space-y-4 w-full px-8 sm:px-12 max-w-[24rem] mx-auto">
+          <div className="space-y-5 w-full px-8 sm:px-12 max-w-[24rem] mx-auto">
             <GradientButton
               onClick={() => navigate("/auth/onboarding")}
-              className="w-full h-[56px] sm:h-[60px] px-0 bg-[#133E7C] shadow-[0_15px_30px_rgba(19,62,124,0.15)] hover:shadow-[0_20px_40px_rgba(19,62,124,0.25)] hover:scale-[1.02] transition-all duration-500 rounded-2xl border-none"
+              className="w-full h-14 sm:h-16 px-0 bg-gradient-to-r from-blue-900 to-[#133E7C] shadow-[0_10px_30px_rgba(19,62,124,0.2)] hover:shadow-[0_15px_40px_rgba(19,62,124,0.3)] hover:-translate-y-0.5 transition-all duration-500 border border-white/10 rounded-[1.5rem]"
             >
-              <div className="flex items-center justify-center gap-2.5 sm:gap-3 w-full">
-                <span className="font-bold text-[12px] sm:text-[13px] tracking-[0.15em] sm:tracking-[0.2em] uppercase text-white whitespace-nowrap">
+              <div className="flex items-center justify-center gap-3 w-full">
+                <span className="font-bold text-[13px] sm:text-[14px] tracking-[0.2em] uppercase text-white whitespace-nowrap">
                   {t.getStarted}
                 </span>
-                <Sparkles className="w-[18px] h-[18px] sm:w-[20px] sm:h-[20px] text-white" strokeWidth={2} />
+                <Sparkles className="w-5 h-5 text-amber-300" strokeWidth={2} />
               </div>
             </GradientButton>
 
             <GradientButton
               variant="secondary"
               onClick={() => navigate("/auth/login")}
-              className="w-full h-[56px] sm:h-[60px] px-0 border border-white/60 bg-white/40 backdrop-blur-md shadow-[0_8px_20px_rgba(0,0,0,0.02)] hover:bg-white/60 hover:shadow-[0_12px_25px_rgba(0,0,0,0.05)] hover:scale-[1.02] transition-all duration-500 rounded-2xl"
+              className="w-full h-14 sm:h-16 px-0 border border-white/80 bg-white/80 backdrop-blur-xl shadow-[0_8px_20px_rgba(0,0,0,0.04)] hover:bg-white hover:shadow-[0_12px_25px_rgba(0,0,0,0.08)] hover:-translate-y-0.5 transition-all duration-500 rounded-[1.5rem]"
             >
-              <div className="flex items-center justify-center gap-2.5 sm:gap-3 w-full">
-                <span className="font-bold text-[12px] sm:text-[13px] tracking-[0.15em] sm:tracking-[0.2em] uppercase text-[#133E7C] whitespace-nowrap">
+              <div className="flex items-center justify-center gap-3 w-full">
+                <span className="font-bold text-[13px] sm:text-[14px] tracking-[0.2em] uppercase text-[#133E7C] whitespace-nowrap">
                   {t.login}
                 </span>
-                <ArrowRight className="w-[18px] h-[18px] sm:w-[20px] sm:h-[20px] text-[#133E7C]" strokeWidth={2.5} />
+                <ArrowRight className="w-5 h-5 text-[#133E7C]" strokeWidth={2.5} />
               </div>
             </GradientButton>
           </div>
