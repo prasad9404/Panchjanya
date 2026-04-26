@@ -26,7 +26,7 @@ export default function UserLogin() {
     setIsLoading(true);
     setTimeout(() => {
       setIsLoading(false);
-      navigate("/auth/language"); 
+      navigate("/dashboard"); 
     }, 1500);
   };
 

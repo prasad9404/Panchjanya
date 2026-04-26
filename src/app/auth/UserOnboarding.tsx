@@ -772,7 +772,7 @@ export default function UserOnboarding() {
               </div>
 
               <div className="w-full max-w-xs pt-10">
-                <GradientButton onClick={() => navigate("/")} className="w-full h-16">
+                <GradientButton onClick={() => navigate("/dashboard")} className="w-full h-16">
                   Go to Homepage <ArrowRight className="ml-2 w-5 h-5" />
                 </GradientButton>
               </div>
