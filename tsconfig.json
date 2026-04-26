@@ -24,5 +24,6 @@
     "types": [
       "@vercel/node"
     ]
-  }
+  },
+  "extends": "expo/tsconfig.base"
 }
