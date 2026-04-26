@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { AuthBackground } from "./components/AuthBackground";
 import { GradientButton } from "./components/GradientButton";
 import { AuthInputField } from "./components/AuthInputField";
-import { ArrowLeft, User, Lock, Eye, EyeOff, Church, Flower2 } from "lucide-react";
+import { ArrowLeft, User, Lock, Eye, EyeOff, Church, Flower2, Phone } from "lucide-react";
 
 export default function UserLogin() {
   const navigate = useNavigate();
@@ -61,13 +61,14 @@ export default function UserLogin() {
         {/* 🥛 Auth Form */}
         <form onSubmit={handleLogin} className="w-full space-y-7 max-w-md">
           <AuthInputField
-            topLabel="Email or Mobile"
-            label="Email / Number"
-            icon={<User />}
+            topLabel="Mobile Number"
+            label="+91 XXXXX XXXXX"
+            icon={<Phone />}
+            type="tel"
             value={formData.identifier}
             onChange={(e) => setFormData({ ...formData, identifier: e.target.value })}
             error={errors.identifier}
-            autoComplete="username"
+            autoComplete="tel"
           />
 
           <AuthInputField
@@ -94,7 +95,7 @@ export default function UserLogin() {
             <GradientButton
               type="submit"
               disabled={isLoading}
-              className="w-full h-16 bg-landing-primary hover:opacity-90 shadow-xl rounded-2xl"
+              className="w-full h-16 bg-landing-primary hover:opacity-90 shadow-xl rounded-[1.5rem]"
               variant="primary"
             >
               {isLoading ? (
@@ -114,7 +115,7 @@ export default function UserLogin() {
         <p className="mt-8 py-8 text-slate-400 font-medium text-sm text-center">
             New initiate?{" "}
             <button 
-              onClick={() => navigate("/auth/onboarding")}
+              onClick={() => navigate("/auth/register")}
               className="text-primary font-black uppercase tracking-widest hover:underline underline-offset-8 decoration-2"
             >
               Register

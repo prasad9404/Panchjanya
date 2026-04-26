@@ -22,7 +22,7 @@ export default function UserLanguage() {
     localStorage.setItem("i18nextLng", selectedLang);
     localStorage.setItem("panchajanya_lang", selectedLang);
     i18n.changeLanguage(selectedLang);
-    navigate("/profile");
+    navigate("/auth/onboarding");
   };
 
   return (

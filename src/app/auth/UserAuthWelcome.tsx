@@ -134,7 +134,7 @@ export default function UserAuthWelcome() {
           {/* ⚡ Action Hub */}
           <div className="space-y-5 w-full px-8 sm:px-12 max-w-[24rem] mx-auto">
             <GradientButton
-              onClick={() => navigate("/auth/onboarding")}
+              onClick={() => navigate("/auth/register")}
               className="w-full h-14 sm:h-16 px-0 bg-gradient-to-r from-blue-900 to-[#133E7C] shadow-[0_10px_30px_rgba(19,62,124,0.2)] hover:shadow-[0_15px_40px_rgba(19,62,124,0.3)] hover:-translate-y-0.5 transition-all duration-500 border border-white/10 rounded-[1.5rem]"
             >
               <div className="flex items-center justify-center gap-3 w-full">
