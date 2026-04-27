@@ -1,13 +1,13 @@
 import { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-    appId: 'com.panchajanya.app',
-    appName: 'Panchajanya',
+    appId: 'com.panchjanyaa.app',
+    appName: 'Panchjanya',
     webDir: 'dist',
     server: {
-        url: 'https://panchajanya.vercel.app',
-        cleartext: false,
-        androidScheme: 'https'
+        url: "https://panchjanyaa.vercel.app",
+        cleartext: true,
+        allowNavigation: ["panchjanyaa.vercel.app"]
     }
 };
 

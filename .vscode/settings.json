@@ -12,5 +12,6 @@
             "cn\\(([^)]*)\\)",
             "(?:'|\"|`)([^']*)(?:'|\"|`)"
         ]
-    ]
+    ],
+    "java.configuration.updateBuildConfiguration": "interactive"
 }
