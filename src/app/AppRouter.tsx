@@ -13,6 +13,14 @@ import { SthanTypesProvider } from "../shared/contexts/SthanTypesContext";
 import { checkForUpdate } from "@/utils/checkUpdate";
 import { WifiOff, RefreshCw } from "lucide-react";
 import { Button } from "@/shared/components/ui/button";
+import { useCapacitorApp } from "@/hooks/useCapacitorApp";
+import { Network } from '@capacitor/network';
+
+const CapacitorHandler = () => {
+
+  useCapacitorApp();
+  return null;
+};
 
 import PrivateRoute from "@/shared/components/auth/PrivateRoute";
 
@@ -89,11 +97,24 @@ const App = () => {
   const [isOffline, setIsOffline] = useState(!window.navigator.onLine);
 
   useEffect(() => {
+    // Web fallback listeners
     const handleOnline = () => setIsOffline(false);
     const handleOffline = () => setIsOffline(true);
 
     window.addEventListener("online", handleOnline);
     window.addEventListener("offline", handleOffline);
+
+    // Capacitor Network listener
+    let networkListener: any = null;
+    const setupNetwork = async () => {
+      const status = await Network.getStatus();
+      setIsOffline(!status.connected);
+
+      networkListener = await Network.addListener('networkStatusChange', status => {
+        setIsOffline(!status.connected);
+      });
+    };
+    setupNetwork();
 
     // Initial check
     checkForUpdate();
@@ -101,6 +122,9 @@ const App = () => {
     return () => {
       window.removeEventListener("online", handleOnline);
       window.removeEventListener("offline", handleOffline);
+      if (networkListener) {
+        networkListener.remove();
+      }
     };
   }, []);
 
@@ -132,6 +156,8 @@ const App = () => {
         <Sonner />
 
         <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+          <CapacitorHandler />
+
           <ThemeProvider>
             <LanguageProvider>
               <AuthProvider>
