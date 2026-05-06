@@ -47,15 +47,7 @@ export default function UserOnboarding() {
 
         {/* 📊 Progress Indicator */}
         {step < 5 && (
-          <div className="mb-10">
-            <div className="flex items-center justify-between mb-3 px-1">
-              <span className="text-[10px] font-black text-blue-900/40 uppercase tracking-[0.2em]">
-                Sacred Initiation — Step {step} of 4
-              </span>
-              <span className="text-[10px] font-black text-blue-900 uppercase tracking-widest">
-                {Math.round((step / 4) * 100)}%
-              </span>
-            </div>
+          <div className="mb-6">
             <div className="h-1.5 w-full bg-blue-900/5 rounded-full overflow-hidden">
               <motion.div
                 initial={{ width: 0 }}
@@ -66,6 +58,24 @@ export default function UserOnboarding() {
           </div>
         )}
 
+        {/* 🏛️ Consistent Brand Header (Steps 2-4) */}
+        {step > 1 && step < 5 && (
+          <div className="flex flex-col items-center mb-10">
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="relative"
+            >
+              <div className="absolute inset-0 -inset-x-20 bg-amber-100/20 blur-3xl rounded-full scale-150 animate-pulse" />
+              <img 
+                src="/icons/Homepage logo.svg" 
+                alt="Panchjanya Logo" 
+                className="h-12 opacity-80 object-contain relative z-10" 
+              />
+            </motion.div>
+          </div>
+        )}
+
         <AnimatePresence mode="wait">
           {step === 1 && (
             <motion.div
@@ -73,11 +83,43 @@ export default function UserOnboarding() {
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
-              className="space-y-8"
+              className="space-y-10"
             >
+              {/* 1. Brand Welcome at Top */}
               <div className="text-center space-y-6">
-                <h2 className="text-3xl font-black text-blue-950 font-serif">Welcome to Panchjanya</h2>
-                <div className="p-8 bg-blue-50/50 rounded-[2.5rem] border border-blue-100 text-left relative overflow-hidden">
+                <motion.span 
+                  initial={{ opacity: 0, letterSpacing: "0.2em" }}
+                  animate={{ opacity: 1, letterSpacing: "0.5em" }}
+                  transition={{ delay: 0.2, duration: 1 }}
+                  className="block text-amber-700/60 font-black uppercase text-[10px] tracking-[0.5em]"
+                >
+                  Welcome to
+                </motion.span>
+                
+                <motion.div 
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.4 }}
+                  className="flex justify-center"
+                >
+                  <div className="relative group">
+                    <div className="absolute inset-0 -inset-x-20 bg-amber-100/20 blur-3xl rounded-full scale-150 animate-pulse" />
+                    <img 
+                      src="/icons/Homepage logo.svg" 
+                      alt="Panchjanya Logo" 
+                      className="h-20 sm:h-24 object-contain relative z-10" 
+                    />
+                  </div>
+                </motion.div>
+              </div>
+
+              {/* 2. Passage Content Block below Logo */}
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.8 }}
+                className="p-8 bg-white/40 backdrop-blur-md rounded-[2.5rem] border border-white/60 text-left relative overflow-hidden shadow-sm"
+              >
                   <div className="absolute top-0 right-0 p-4 opacity-10">
                     <Sparkles className="w-12 h-12 text-blue-900" />
                   </div>
@@ -88,35 +130,48 @@ export default function UserOnboarding() {
                     of Bramhavidhya. Please cooprate us to answer a Small Quiz. We appreciate
                     your support. Thanking you !
                   </p>
-                </div>
+                </motion.div>
 
                 <div className="space-y-4 pt-4">
-                  <h3 className="text-[10px] font-black text-blue-900/40 uppercase tracking-[0.3em] mb-6">Select Your Spiritual Status</h3>
-                  {["Naam Dharak", "Vasnik", "Bhikshuk"].map(status => (
-                    <button
-                      key={status}
-                      onClick={() => setFormData({ ...formData, status: status as any })}
-                      className={cn(
-                        "w-full p-6 rounded-[1.5rem] border-2 flex items-center justify-between group transition-all duration-500",
-                        formData.status === status
-                          ? "border-amber-600 bg-amber-50 shadow-md scale-[1.02]"
-                          : "border-slate-50 bg-white hover:border-slate-200"
-                      )}
-                    >
-                      <span className={cn(
-                        "text-lg font-black font-serif",
-                        formData.status === status ? "text-blue-950" : "text-slate-400"
-                      )}>{status}</span>
-                      <div className={cn(
-                        "w-8 h-8 rounded-full border-2 flex items-center justify-center transition-all",
-                        formData.status === status ? "border-amber-600 bg-amber-600 text-white" : "border-slate-100 text-transparent"
-                      )}>
-                        <CheckCircle2 className="w-5 h-5" />
-                      </div>
-                    </button>
-                  ))}
+                  <motion.h3 
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 1 }}
+                    className="text-[10px] font-black text-blue-900/40 uppercase tracking-[0.3em] mb-6 text-center"
+                  >
+                    Select Your Spiritual Status
+                  </motion.h3>
+                  <div className="grid gap-4">
+                    {["Naam Dharak", "Vasnik", "Bhikshuk"].map((status, index) => (
+                      <motion.button
+                        key={status}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 1.2 + (index * 0.1) }}
+                        onClick={() => setFormData({ ...formData, status: status as any })}
+                        className={cn(
+                          "w-full p-6 rounded-[1.5rem] border-2 flex items-center justify-between group transition-all duration-500",
+                          formData.status === status
+                            ? "border-amber-600 bg-amber-50 shadow-lg shadow-amber-900/5 scale-[1.02]"
+                            : "border-slate-50 bg-white/50 backdrop-blur-sm hover:border-amber-200 hover:bg-white hover:scale-[1.01] hover:shadow-md"
+                        )}
+                      >
+                        <span className={cn(
+                          "text-lg font-black font-serif transition-colors",
+                          formData.status === status ? "text-blue-950" : "text-slate-400 group-hover:text-blue-900"
+                        )}>{status}</span>
+                        <div className={cn(
+                          "w-8 h-8 rounded-full border-2 flex items-center justify-center transition-all duration-500",
+                          formData.status === status 
+                            ? "border-amber-600 bg-amber-600 text-white rotate-0" 
+                            : "border-slate-100 text-transparent -rotate-90 group-hover:border-amber-200"
+                        )}>
+                          <CheckCircle2 className="w-5 h-5" />
+                        </div>
+                      </motion.button>
+                    ))}
+                  </div>
                 </div>
-              </div>
 
               <div className="pt-6">
                 <GradientButton onClick={nextStep} disabled={!formData.status} className="w-full h-16 rounded-[1.5rem]">
@@ -140,9 +195,8 @@ export default function UserOnboarding() {
               </div>
 
               <div className="space-y-6">
-                {(formData.status === "Naam Dharak" || formData.status === "Vasnik") && (
+                {formData.status === "Naam Dharak" && (
                   <div className="p-6 bg-white border border-slate-100 rounded-[2rem] space-y-6 shadow-sm">
-                    <h3 className="text-blue-950 font-serif font-black text-lg uppercase tracking-widest text-center">Respected Guruvarya</h3>
                     <div className="flex items-center justify-between p-4 bg-slate-50/50 rounded-2xl">
                       <span className="font-bold text-sm text-blue-950">Taken Naam Mantra?</span>
                       <button
@@ -152,26 +206,67 @@ export default function UserOnboarding() {
                         <div className={cn("w-5 h-5 rounded-full bg-white transition-all shadow-sm", formData.naamMantra ? "ml-5" : "ml-0")} />
                       </button>
                     </div>
-                    <AuthInputField topLabel="Year" label="YYYY" type="number" value={formData.guruvaryaYear} onChange={e => setFormData({ ...formData, guruvaryaYear: e.target.value })} />
-                    <AuthInputField topLabel="Guruvarya Name" label="P. Pu. ..." value={formData.guruvaryaName} onChange={e => setFormData({ ...formData, guruvaryaName: e.target.value })} />
-                    <AuthInputField topLabel="Place" label="Ashram/Village" value={formData.guruvaryaPlace} onChange={e => setFormData({ ...formData, guruvaryaPlace: e.target.value })} />
+                    <AuthInputField topLabel="In Which Year?" label="Year (YYYY)" type="number" value={formData.guruvaryaYear} onChange={e => setFormData({ ...formData, guruvaryaYear: e.target.value })} />
+                    <AuthInputField topLabel="RESPECTED GURUVARYA NAME" label="P. Pu. ..." value={formData.guruvaryaName} onChange={e => setFormData({ ...formData, guruvaryaName: e.target.value })} />
+                    <AuthInputField topLabel="PLACE" label="Ashram, City/Village, Taluka, District, State" value={formData.guruvaryaPlace} onChange={e => setFormData({ ...formData, guruvaryaPlace: e.target.value })} />
                   </div>
                 )}
 
                 {formData.status === "Vasnik" && (
-                  <div className="p-6 bg-white border border-slate-100 rounded-[2rem] space-y-6 shadow-sm">
-                    <h3 className="text-blue-950 font-serif font-black text-lg uppercase tracking-widest text-center">Vidya Knowledge</h3>
-                    <AuthInputField topLabel="Vidya Guruvarya" label="Name" value={formData.vidyaGuruvaryaName} onChange={e => setFormData({ ...formData, vidyaGuruvaryaName: e.target.value })} />
-                    <AuthInputField topLabel="Place" label="Ashram" value={formData.vidyaGuruvaryaPlace} onChange={e => setFormData({ ...formData, vidyaGuruvaryaPlace: e.target.value })} />
+                  <div className="space-y-6">
+                    <div className="p-6 bg-white border border-slate-100 rounded-[2rem] space-y-6 shadow-sm">
+                      <div className="flex items-center justify-between p-4 bg-slate-50/50 rounded-2xl">
+                        <span className="font-bold text-sm text-blue-950">Taken Naam Mantra?</span>
+                        <button
+                          onClick={() => setFormData({ ...formData, naamMantra: !formData.naamMantra })}
+                          className={cn("w-12 h-7 rounded-full p-1 transition-all", formData.naamMantra ? "bg-amber-600" : "bg-slate-200")}
+                        >
+                          <div className={cn("w-5 h-5 rounded-full bg-white transition-all shadow-sm", formData.naamMantra ? "ml-5" : "ml-0")} />
+                        </button>
+                      </div>
+                      <AuthInputField topLabel="In Which Year?" label="Year (YYYY)" type="number" value={formData.guruvaryaYear} onChange={e => setFormData({ ...formData, guruvaryaYear: e.target.value })} />
+                      <AuthInputField topLabel="RESPECTED GURUVARYA NAME" label="P. Pu. ..." value={formData.guruvaryaName} onChange={e => setFormData({ ...formData, guruvaryaName: e.target.value })} />
+                      <AuthInputField topLabel="PLACE" label="Ashram, City/Village, Taluka, District, State" value={formData.guruvaryaPlace} onChange={e => setFormData({ ...formData, guruvaryaPlace: e.target.value })} />
+                    </div>
+
+                    <div className="p-6 bg-white border border-slate-100 rounded-[2rem] space-y-6 shadow-sm">
+                      <AuthInputField topLabel="KNOWLEDGE OF BRAMHAVIDYA" label="Briefly describe your studies ..." value={formData.vidyaKnowledge} onChange={e => setFormData({ ...formData, vidyaKnowledge: e.target.value })} />
+                      <AuthInputField topLabel="RESPECTED VIDYA GURUVARYA NAME" label="P. Pu. ..." value={formData.vidyaGuruvaryaName} onChange={e => setFormData({ ...formData, vidyaGuruvaryaName: e.target.value })} />
+                      <AuthInputField topLabel="PLACE" label="Ashram, City/Village, Taluka, District, State" value={formData.vidyaGuruvaryaPlace} onChange={e => setFormData({ ...formData, vidyaGuruvaryaPlace: e.target.value })} />
+                      
+                      <div className="flex flex-col gap-4">
+                        <span className="text-[10px] font-black text-blue-900/40 uppercase tracking-[0.2em] px-1">Studied Mode?</span>
+                        <div className="flex gap-3">
+                          {["Observable", "Online"].map((mode) => (
+                            <button
+                              key={mode}
+                              onClick={() => setFormData({ ...formData, vidyaStudiedMode: mode as any })}
+                              className={cn(
+                                "flex-1 py-4 rounded-2xl border-2 font-bold text-sm transition-all",
+                                formData.vidyaStudiedMode === mode 
+                                  ? "border-amber-600 bg-amber-50 text-amber-600" 
+                                  : "border-slate-50 bg-slate-50/50 text-slate-400"
+                              )}
+                            >
+                              {mode}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      <AuthInputField topLabel="Studied Since?" label="Year (YYYY)" type="number" value={formData.vidyaGuruvaryaYear} onChange={e => setFormData({ ...formData, vidyaGuruvaryaYear: e.target.value })} />
+                    </div>
                   </div>
                 )}
 
                 {formData.status === "Bhikshuk" && (
                   <div className="p-6 bg-white border border-slate-100 rounded-[2rem] space-y-6 shadow-sm">
-                    <h3 className="text-blue-950 font-serif font-black text-lg uppercase tracking-widest text-center">Diksha Details</h3>
-                    <AuthInputField topLabel="Diksha Year" label="YYYY" type="number" value={formData.dikshaGuruvaryaYear} onChange={e => setFormData({ ...formData, dikshaGuruvaryaYear: e.target.value })} />
-                    <AuthInputField topLabel="Diksha Guruvarya" label="Name" value={formData.dikshaGuruvaryaName} onChange={e => setFormData({ ...formData, dikshaGuruvaryaName: e.target.value })} />
-                    <AuthInputField topLabel="Place" label="Ashram" value={formData.dikshaGuruvaryaPlace} onChange={e => setFormData({ ...formData, dikshaGuruvaryaPlace: e.target.value })} />
+                    <AuthInputField topLabel="Diksha taken in Year?" label="Year (YYYY)" type="number" value={formData.dikshaGuruvaryaYear} onChange={e => setFormData({ ...formData, dikshaGuruvaryaYear: e.target.value })} />
+                    <AuthInputField topLabel="RESPECTED DIKSHA GURUVARYA NAME" label="P. Pu. ..." value={formData.dikshaGuruvaryaName} onChange={e => setFormData({ ...formData, dikshaGuruvaryaName: e.target.value })} />
+                    <AuthInputField topLabel="PLACE" label="Ashram, City/Village, Taluka, District, State" value={formData.dikshaGuruvaryaPlace} onChange={e => setFormData({ ...formData, dikshaGuruvaryaPlace: e.target.value })} />
+                    
+                    <AuthInputField topLabel="RESPECTED VIDYA GURUVARYA NAME" label="P. Pu. ..." value={formData.vidyaGuruvaryaName} onChange={e => setFormData({ ...formData, vidyaGuruvaryaName: e.target.value })} />
+                    <AuthInputField topLabel="PLACE" label="Ashram, City/Village, Taluka, District, State" value={formData.vidyaGuruvaryaPlace} onChange={e => setFormData({ ...formData, vidyaGuruvaryaPlace: e.target.value })} />
                   </div>
                 )}
               </div>
