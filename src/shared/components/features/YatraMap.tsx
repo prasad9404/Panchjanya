@@ -1,6 +1,6 @@
 import { MapContainer, TileLayer, Marker, Polyline, Tooltip, useMap, useMapEvents } from "react-leaflet";
 import L from "leaflet";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, ReactNode } from "react";
 import "leaflet/dist/leaflet.css";
 
 export interface YatraLocation {
@@ -229,7 +229,7 @@ function RouteVisualization({ locations, highlightedId }: { locations: YatraLoca
     const completedColor = "#10B981"; // Emerald for completed path
 
     // Direction arrows along the road path
-    const arrows: JSX.Element[] = [];
+    const arrows: ReactNode[] = [];
     const desiredPixelGap = zoom > 14 ? 150 : zoom > 12 ? 250 : zoom > 10 ? 500 : 1000;
 
     let lastArrowPixelDist = 0;
