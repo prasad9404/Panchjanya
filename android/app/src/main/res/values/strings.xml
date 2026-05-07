@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">Panchajanya</string>
-    <string name="title_activity_main">Panchajanya</string>
-    <string name="package_name">com.panchajanya.app</string>
-    <string name="custom_url_scheme">com.panchajanya.app</string>
+    <string name="app_name">Panchjanya</string>
+    <string name="title_activity_main">Panchjanya</string>
+    <string name="package_name">com.panchjanyaa.app</string>
+    <string name="custom_url_scheme">com.panchjanyaa.app</string>
 </resources>

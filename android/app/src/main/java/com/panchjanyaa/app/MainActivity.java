@@ -1,4 +1,4 @@
-package com.panchajanya.app;
+package com.panchjanyaa.app;
 
 import com.getcapacitor.BridgeActivity;
 
