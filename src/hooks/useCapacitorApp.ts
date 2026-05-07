@@ -1,68 +1,111 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { App } from '@capacitor/app';
 import { StatusBar, Style } from '@capacitor/status-bar';
 import { SplashScreen } from '@capacitor/splash-screen';
-import { Dialog } from '@capacitor/dialog';
 import { Capacitor } from '@capacitor/core';
 import { Toast } from '@capacitor/toast';
+import { Network } from '@capacitor/network';
+import { Keyboard, KeyboardResize } from '@capacitor/keyboard';
 
 export const useCapacitorApp = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  
+  // Use refs to access the latest state inside the Capacitor listeners
+  // without re-triggering the useEffect and recreating listeners.
+  const locationRef = useRef(location.pathname);
+  const lastBackPressRef = useRef(0);
+
+  // Keep ref synced with current router location
+  useEffect(() => {
+    locationRef.current = location.pathname;
+  }, [location.pathname]);
 
   useEffect(() => {
-    if (Capacitor.isNativePlatform()) {
-      setupNativeApp();
+    // Only run native setup on mobile devices
+    if (!Capacitor.isNativePlatform()) {
+      return;
     }
-  }, []);
 
-  useEffect(() => {
-    if (Capacitor.isNativePlatform()) {
-      const handleBackButton = async () => {
-        const rootPaths = ['/', '/auth/splash', '/auth/welcome', '/dashboard'];
+    const setupNativeUI = async () => {
+      try {
+        // 1. Status Bar Styling
+        await StatusBar.setStyle({ style: Style.Dark });
+        await StatusBar.setBackgroundColor({ color: '#1e3a8a' }); // Theme color
+        await StatusBar.setOverlaysWebView({ overlay: false });
         
-        if (rootPaths.includes(location.pathname)) {
-          const { value } = await Dialog.confirm({
-            title: 'Exit App',
-            message: 'Are you sure you want to exit?',
-            okButtonTitle: 'Exit',
-            cancelButtonTitle: 'Cancel',
-          });
+        // 2. Hide Splash Screen (App is ready)
+        await SplashScreen.hide();
 
-          if (value) {
-            App.exitApp();
-          }
-        } else {
-          // Go back if history exists
-          if (window.history.state && window.history.state.idx > 0) {
-            navigate(-1);
-          } else {
-            navigate('/dashboard');
-          }
+        // 3. Optional: Keyboard configuration
+        if (Capacitor.getPlatform() === 'android') {
+          await Keyboard.setResizeMode({ mode: KeyboardResize.None });
         }
-      };
+      } catch (error) {
+        console.warn('Native plugins not available in this environment:', error);
+      }
+    };
 
-      const listener = App.addListener('backButton', handleBackButton);
+    setupNativeUI();
 
-      return () => {
-        listener.then(l => l.remove());
-      };
-    }
-  }, [location.pathname, navigate]);
+    // 4. Hardware Back Button Handling
+    const backButtonListener = App.addListener('backButton', async ({ canGoBack }) => {
+      // Define routes that act as "root" where pressing back should prompt to exit
+      const rootPaths = ['/', '/auth/splash', '/auth/welcome', '/dashboard'];
+      const currentPath = locationRef.current;
+      
+      const isRoot = rootPaths.includes(currentPath);
 
-  const setupNativeApp = async () => {
-    try {
-      // Configure Status Bar
-      await StatusBar.setStyle({ style: Style.Light });
-      await StatusBar.setOverlaysWebView({ overlay: false });
+      if (isRoot) {
+        const now = Date.now();
+        const timeLimit = 2000; // 2 seconds
 
-      // Hide splash screen after initialization
-      await SplashScreen.hide();
-    } catch (error) {
-      console.warn('Capacitor native setup error:', error);
-    }
-  };
+        if (now - lastBackPressRef.current < timeLimit) {
+          // User pressed back twice within 2 seconds
+          App.exitApp();
+        } else {
+          // First press on root route
+          lastBackPressRef.current = now;
+          await Toast.show({
+            text: 'Press back again to exit',
+            duration: 'short',
+            position: 'bottom',
+          });
+        }
+      } else {
+        // Go back if history exists
+        if (window.history.state && window.history.state.idx > 0) {
+          navigate(-1);
+        } else {
+          navigate('/dashboard');
+        }
+      }
+    });
+
+    // 5. Network / Offline Detection
+    const networkListener = Network.addListener('networkStatusChange', async (status) => {
+      if (!status.connected) {
+        await Toast.show({
+          text: 'You are offline. Please check your connection.',
+          duration: 'long',
+          position: 'top',
+        });
+      } else {
+        await Toast.show({
+          text: 'Connection restored',
+          duration: 'short',
+          position: 'top',
+        });
+      }
+    });
+
+    // Cleanup listeners on unmount
+    return () => {
+      backButtonListener.then(listener => listener.remove());
+      networkListener.then(listener => listener.remove());
+    };
+  }, [navigate]); // Empty dependency array (aside from navigate) is crucial!
 
   const showToast = async (text: string) => {
     if (Capacitor.isNativePlatform()) {

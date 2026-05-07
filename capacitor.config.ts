@@ -11,15 +11,18 @@ const config: CapacitorConfig = {
     },
     plugins: {
         SplashScreen: {
-            launchShowDuration: 2000,
+            launchShowDuration: 3000,
             launchAutoHide: false, // We hide it manually in our hook
-            backgroundColor: "#ffffffff",
+            backgroundColor: "#ffffff",
             androidSplashResourceName: "splash",
             androidScaleType: "CENTER_CROP",
-            showSpinner: false,
+            showSpinner: true,
+            androidSpinnerStyle: "large",
+            iosSpinnerStyle: "small",
+            spinnerColor: "#1e3a8a",
         },
         Keyboard: {
-            resize: "body",
+            resize: "none",
             style: "dark",
             resizeOnFullScreen: true,
         },
