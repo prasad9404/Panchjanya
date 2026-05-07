@@ -2379,7 +2379,7 @@ export default function TempleArchitectureAdmin({
               </CardHeader>
               <CardContent className="p-0 space-y-6">
                 {/* 1. Large Image Editor Area */}
-                <div className="bg-transparent rounded-2xl overflow-hidden border-4 border-slate-200 shadow-2xl relative group aspect-[4/3] w-full flex items-center justify-center">
+                <div className="bg-transparent rounded-2xl overflow-hidden border-4 border-slate-200 shadow-2xl relative group aspect-[4/3] w-full">
                   {/* Navigation Arrows Layer */}
                   <div className="absolute inset-0 pointer-events-none z-20">
                     {displayImages.length > 1 && (
@@ -2402,7 +2402,7 @@ export default function TempleArchitectureAdmin({
 
                   {/* Hotspot Interaction Plane */}
                   <div
-                    className="relative cursor-crosshair transition-all duration-500 ease-out m-auto max-w-full max-h-full overflow-visible"
+                    className="absolute inset-0 flex items-center justify-center cursor-crosshair transition-all duration-500 ease-out overflow-visible"
                     style={{
                       transform: `scale(${zoom})`,
                       filter: loading ? 'blur(10px)' : 'none',

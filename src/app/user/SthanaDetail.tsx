@@ -199,13 +199,15 @@ export default function SthanaDetail() {
 
                     {/* Image Viewer */}
                     <div className="px-2 md:px-0">
-                        <div className="relative aspect-[4/3] w-full max-w-7xl mx-auto rounded-2xl overflow-hidden border-4 border-card bg-muted group flex items-center justify-center">
+                        <div className="relative aspect-[4/3] w-full max-w-7xl mx-auto rounded-2xl overflow-hidden border-4 border-white shadow-xl bg-muted group">
                             <img
                                 src={displayImages[currentImageIndex]}
                                 alt={getTranslatedValue(hotspot.title, langCode)}
                                 className={cn(
-                                    "cursor-pointer transition-all duration-500 object-center mx-auto block",
-                                    hotspot.fitMode === 'cover' ? "w-full h-full object-cover" : "max-w-full max-h-full object-contain"
+                                    "absolute inset-0 w-full h-full cursor-pointer transition-all duration-500",
+                                    hotspot.fitMode === 'cover'
+                                        ? "object-cover object-center"
+                                        : "object-contain object-center"
                                 )}
                                 onClick={() => setIsImageModalOpen(true)}
                             />

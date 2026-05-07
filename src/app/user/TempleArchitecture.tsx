@@ -12,6 +12,7 @@ import { useAuth } from "@/auth/AuthContext";
 import { cn } from "@/shared/lib/utils";
 import { getTranslatedValue, getLangCode } from "@/shared/utils/translationUtils";
 import { getLocationUrl } from "@/shared/utils/locationUtils";
+import { type CarouselApi } from "@/shared/components/ui/carousel";
 import {
     Accordion,
     AccordionContent,
@@ -47,6 +48,7 @@ export default function TempleArchitecture() {
     const [isScrolled, setIsScrolled] = useState(false);
     const [isImageModalOpen, setIsImageModalOpen] = useState(false);
     const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+    const [api, setApi] = useState<CarouselApi>();
     const [abbreviationItems, setAbbreviationItems] = useState<AbbreviationItem[]>([]);
     const { t, language } = useLanguage();
     const langCode = getLangCode(language);
@@ -120,6 +122,19 @@ export default function TempleArchitecture() {
 
         checkIfSaved();
     }, [user, id]);
+
+    useEffect(() => {
+        if (!api) return;
+
+        const onSelect = () => {
+            setSelectedImageIndex(api.selectedScrollSnap());
+        };
+
+        api.on("select", onSelect);
+        return () => {
+            api.off("select", onSelect);
+        };
+    }, [api]);
 
     // Scroll detection for header
     useEffect(() => {
@@ -376,38 +391,57 @@ export default function TempleArchitecture() {
 
                 {/* Image Slider */}
                 <div className="pb-2">
-                    <div className="relative aspect-[4/3] w-full rounded-2xl overflow-hidden bg-transparent group">
-                        <Carousel className="w-full h-full">
-                            <CarouselContent className="h-full">
+                    <div className="relative aspect-[4/3] w-full max-w-7xl mx-auto rounded-2xl overflow-hidden border-4 border-white shadow-xl bg-slate-100 group">
+                        <Carousel setApi={setApi} className="w-full h-full" opts={{ loop: true }}>
+                            <CarouselContent className="h-full ml-0">
                                 {displayImages.map((img, index) => (
-                                    <CarouselItem key={index} className="w-full h-full flex items-center justify-center">
+                                    <CarouselItem key={index} className="w-full h-full relative pl-0 flex items-center justify-center">
                                         <img
                                             src={img}
                                             alt={`${getTranslatedValue(temple.name, langCode)} - ${index + 1}`}
                                             className={cn(
-                                                "cursor-pointer hover:opacity-90 transition-all duration-500 object-center mx-auto block",
-                                                temple.sthanImagesFitMode === 'cover' ? "w-full h-full object-cover" : "max-w-full max-h-full object-contain"
+                                                "cursor-pointer hover:opacity-90 transition-all duration-500",
+                                                temple.sthanImagesFitMode === 'cover'
+                                                    ? "w-full h-full object-cover object-center"
+                                                    : "max-w-full max-h-full object-contain object-center"
                                             )}
-                                            onClick={() => {
-                                                setSelectedImageIndex(index);
-                                                setIsImageModalOpen(true);
-                                            }}
-                                            onError={(e) => {
-                                                (e.target as HTMLImageElement).src = '/placeholder-temple.jpg';
-                                            }}
-                                        />
+                                                onClick={() => {
+                                                    setSelectedImageIndex(index);
+                                                    setIsImageModalOpen(true);
+                                                }}
+                                                onError={(e) => {
+                                                    (e.target as HTMLImageElement).src = '/placeholder-temple.jpg';
+                                                }}
+                                            />
                                     </CarouselItem>
                                 ))}
                             </CarouselContent>
+
+                            {/* Indicator Dots */}
+                            {displayImages.length > 1 && (
+                                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5 z-20">
+                                    {displayImages.map((_, idx) => (
+                                        <div
+                                            key={idx}
+                                            onClick={() => api?.scrollTo(idx)}
+                                            className={cn(
+                                                "w-1.5 h-1.5 rounded-full transition-all duration-300 cursor-pointer",
+                                                idx === selectedImageIndex ? "bg-amber-500 w-4" : "bg-white/60 hover:bg-white/80"
+                                            )}
+                                        />
+                                    ))}
+                                </div>
+                            )}
+
                             <button
                                 onClick={(e) => { e.preventDefault(); const prev = e.currentTarget.parentElement?.querySelector('[data-carousel-prev]') as HTMLButtonElement; prev?.click(); }}
-                                className="absolute left-2 md:left-4 top-1/2 -translate-y-1/2 w-12 h-12 flex items-center justify-center text-white/90 hover:text-white transition-all hover:scale-110 drop-shadow-md"
+                                className="absolute left-2 md:left-4 top-1/2 -translate-y-1/2 w-12 h-12 flex items-center justify-center text-white/90 hover:text-white transition-all hover:scale-110 drop-shadow-md z-20"
                             >
                                 <ChevronLeft className="w-8 h-8 md:w-10 md:h-10" strokeWidth={3} />
                             </button>
                             <button
                                 onClick={(e) => { e.preventDefault(); const next = e.currentTarget.parentElement?.querySelector('[data-carousel-next]') as HTMLButtonElement; next?.click(); }}
-                                className="absolute right-2 md:right-4 top-1/2 -translate-y-1/2 w-12 h-12 flex items-center justify-center text-white/90 hover:text-white transition-all hover:scale-110 drop-shadow-md"
+                                className="absolute right-2 md:right-4 top-1/2 -translate-y-1/2 w-12 h-12 flex items-center justify-center text-white/90 hover:text-white transition-all hover:scale-110 drop-shadow-md z-20"
                             >
                                 <ChevronRight className="w-8 h-8 md:w-10 md:h-10" strokeWidth={3} />
                             </button>

@@ -567,7 +567,7 @@ export default function ArchitectureViewer() {
         <div className="flex justify-center">
           <div
             ref={imageContainerRef}
-            className="relative aspect-[4/3] w-full max-w-7xl mx-auto rounded-2xl overflow-hidden border-4 border-white bg-transparent group touch-none shadow-2xl transition-all duration-500 ease-in-out"
+            className="relative aspect-[4/3] w-full max-w-7xl mx-auto rounded-2xl overflow-hidden border-4 border-white bg-slate-100 group touch-none shadow-2xl transition-all duration-500 ease-in-out"
           >
             {/* 1. Base Layer (Centering & Transforms) */}
             <div
@@ -699,19 +699,19 @@ export default function ArchitectureViewer() {
                       </div>
                     </div>
                   ) : (
-                    <div className="w-full h-full flex flex-col items-center justify-center bg-slate-100/10 text-slate-300 p-4 md:p-8 text-center transition-all duration-500">
-                      <div className="w-12 h-12 md:w-20 md:h-20 mb-4 md:mb-6 rounded-full bg-slate-800 flex items-center justify-center border border-slate-700 shadow-2xl animate-pulse">
-                        <ImageIcon className="w-6 h-6 md:w-10 md:h-10 opacity-40" />
+                    <div className="w-full h-full flex flex-col items-center justify-center bg-slate-100 text-slate-500 p-4 md:p-8 text-center transition-all duration-500">
+                      <div className="w-12 h-12 md:w-20 md:h-20 mb-4 md:mb-6 rounded-full bg-slate-200 flex items-center justify-center border border-slate-300 shadow-md animate-pulse">
+                        <ImageIcon className="w-6 h-6 md:w-10 md:h-10 opacity-50 text-slate-400" />
                       </div>
-                      <h3 className="text-xl md:text-2xl font-bold font-serif mb-2 tracking-wide">
+                      <h3 className="text-xl md:text-2xl font-bold font-serif mb-2 tracking-wide text-slate-700">
                         {imageType === 'architectural' ? t('temple.archSection') : t('temple.presSection')}
                       </h3>
-                      <p className="text-base md:text-lg opacity-60 font-medium">
+                      <p className="text-base md:text-lg opacity-70 font-medium">
                         {imageType === 'architectural'
                           ? t('temple.noArchVisuals')
                           : t('temple.noPresPhotos')}
                       </p>
-                      <p className="text-[10px] md:text-sm mt-4 opacity-40 italic">
+                      <p className="text-[10px] md:text-sm mt-4 opacity-50 italic">
                         {t('temple.updateInProgress')}
                       </p>
                     </div>
