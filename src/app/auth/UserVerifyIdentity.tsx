@@ -33,30 +33,30 @@ export default function UserVerifyIdentity() {
 
   return (
     <AuthBackground showMandala={true}>
-      <div className="flex-1 flex flex-col px-6 pt-12 pb-20 z-10 w-full max-w-xl mx-auto items-center">
+      <div className="flex-1 flex flex-col px-6 pt-10 pb-12 z-10 w-full max-w-lg mx-auto items-center">
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center mb-10 shadow-sm"
+          className="w-16 h-16 bg-blue-50/50 backdrop-blur-sm rounded-full flex items-center justify-center mb-8 shadow-sm border border-white/40"
         >
-          <Fingerprint className="w-10 h-10 text-blue-900" />
+          <Fingerprint className="w-8 h-8 text-blue-900" strokeWidth={1.5} />
         </motion.div>
 
-        <div className="text-center mb-12">
-          <h1 className="text-3xl font-black text-blue-950 font-serif mb-3">Verify Identity</h1>
-          <p className="text-slate-400 font-medium px-8 leading-relaxed">
+        <div className="text-center mb-10">
+          <h1 className="text-2xl sm:text-3xl font-black text-blue-950 font-serif mb-2 bg-clip-text text-transparent bg-gradient-to-b from-blue-950 via-blue-900 to-[#133E7C]">Verify Identity</h1>
+          <p className="text-slate-400 text-xs sm:text-sm font-medium px-4 leading-relaxed max-w-[280px] mx-auto">
             We've sent a 4-digit code to your mobile number. Please enter it below.
           </p>
         </div>
 
-        <div className="flex justify-center gap-4 mb-12">
+        <div className="flex justify-center gap-3 mb-10">
           {otp.map((digit, i) => (
             <input
               key={i}
               id={`otp-${i}`}
               type="text"
               maxLength={1}
-              className="w-14 h-16 bg-white border-2 border-slate-100 rounded-2xl text-center text-2xl font-black text-blue-950 focus:border-amber-600 outline-none transition-all shadow-sm"
+              className="w-12 h-14 bg-white/60 backdrop-blur-md border border-slate-100 rounded-xl text-center text-xl font-black text-blue-950 focus:border-amber-500 outline-none transition-all shadow-[0_4px_12px_rgba(0,0,0,0.02)]"
               value={digit}
               onChange={(e) => handleOtpChange(i, e.target.value)}
               onKeyDown={(e) => {
@@ -68,13 +68,17 @@ export default function UserVerifyIdentity() {
           ))}
         </div>
 
-        <div className="w-full max-w-md space-y-6">
-          <GradientButton onClick={handleVerify} isLoading={isLoading} className="w-full h-16 rounded-[1.5rem]">
-            VERIFY CODE
+        <div className="w-full max-w-[18rem] space-y-5">
+          <GradientButton 
+            onClick={handleVerify} 
+            isLoading={isLoading} 
+            className="w-full h-12 sm:h-14 bg-gradient-to-r from-blue-950 to-[#133E7C] shadow-[0_8px_20px_rgba(19,62,124,0.15)] rounded-[1.2rem]"
+          >
+            <span className="font-bold text-[12px] sm:text-[13px] tracking-[0.15em] uppercase text-white">Verify Code</span>
           </GradientButton>
           
           <div className="text-center">
-            <button className="text-[10px] font-black uppercase tracking-widest text-blue-900/60 hover:text-blue-900 transition-colors">
+            <button className="text-[9px] font-black uppercase tracking-[0.4em] text-blue-900/40 hover:text-blue-900 transition-colors">
               Resend Code in 0:59
             </button>
           </div>
@@ -82,9 +86,9 @@ export default function UserVerifyIdentity() {
 
         <button
           onClick={() => navigate(-1)}
-          className="mt-auto flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-300 hover:text-blue-900 transition-all font-serif"
+          className="mt-auto flex items-center gap-1.5 text-[9px] font-black uppercase tracking-[0.4em] text-slate-300 hover:text-blue-900 transition-all"
         >
-          <ChevronLeft className="w-4 h-4" /> Go Back
+          <ChevronLeft className="w-3.5 h-3.5" /> Go Back
         </button>
       </div>
     </AuthBackground>

@@ -26,16 +26,17 @@ export default function UserLanguage() {
   };
 
   return (
-    <AuthBackground showMandala={false}>
+  return (
+    <AuthBackground showMandala={true}>
       {/* 🌿 Main Container */}
-      <div className="flex-1 flex flex-col bg-[#F8F7F4] min-h-screen">
+      <div className="flex-1 flex flex-col min-h-screen">
         
         {/* 🏛️ Header Section */}
-        <div className="pt-16 pb-8 px-8 text-center">
+        <div className="pt-12 pb-6 px-8 text-center z-10">
           <motion.span 
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="text-[10px] uppercase tracking-[0.4em] text-[#d97706] font-black mb-4 block"
+            className="text-[9px] uppercase tracking-[0.4em] text-amber-600 font-black mb-3 block"
           >
             Divine Communication
           </motion.span>
@@ -44,7 +45,7 @@ export default function UserLanguage() {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="text-3xl sm:text-4xl font-bold text-[#1E3A5F] font-serif mb-3 tracking-tight"
+            className="text-2xl sm:text-3xl font-black text-blue-950 font-serif mb-2 tracking-tight bg-clip-text text-transparent bg-gradient-to-b from-blue-950 via-blue-900 to-[#133E7C]"
           >
             Choose Your Language
           </motion.h1>
@@ -53,14 +54,14 @@ export default function UserLanguage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.2 }}
-            className="text-slate-400 text-sm sm:text-base font-medium"
+            className="text-slate-400 text-xs sm:text-sm font-medium max-w-[240px] mx-auto leading-relaxed"
           >
             Select the language you’d like to continue with
           </motion.p>
         </div>
 
         {/* 📋 Language Selection List */}
-        <div className="flex-1 px-8 space-y-4 max-w-md mx-auto w-full pt-4">
+        <div className="flex-1 px-8 space-y-3.5 max-w-[22rem] mx-auto w-full pt-2 z-10">
           {LANGUAGES.map((lang, index) => {
             const isSelected = selectedLang === lang.code;
             return (
@@ -72,16 +73,16 @@ export default function UserLanguage() {
                 whileTap={{ scale: 0.98 }}
                 onClick={() => setSelectedLang(lang.code)}
                 className={cn(
-                  "w-full flex items-center gap-5 p-5 rounded-[1.5rem] border-2 transition-all duration-300 text-left",
+                  "w-full flex items-center gap-4 p-4 rounded-[1.2rem] border transition-all duration-300 text-left",
                   isSelected 
-                    ? "border-[#d97706] bg-[#d97706]/5 shadow-md" 
-                    : "border-white bg-white shadow-sm hover:border-slate-100"
+                    ? "border-amber-500 bg-amber-50 shadow-sm" 
+                    : "border-slate-100 bg-white/60 backdrop-blur-md shadow-[0_4px_12px_rgba(0,0,0,0.02)] hover:border-slate-200"
                 )}
               >
                 {/* Abbreviation Icon */}
                 <div className={cn(
-                  "w-12 h-12 flex items-center justify-center rounded-full font-serif font-bold text-lg transition-colors",
-                  isSelected ? "bg-[#d97706] text-white" : "bg-slate-50 text-slate-400"
+                  "w-10 h-10 flex items-center justify-center rounded-full font-serif font-bold text-base transition-colors",
+                  isSelected ? "bg-amber-600 text-white" : "bg-slate-50 text-slate-400"
                 )}>
                   {lang.icon}
                 </div>
@@ -89,18 +90,18 @@ export default function UserLanguage() {
                 {/* Labels */}
                 <div className="flex-1">
                   <p className={cn(
-                    "font-bold text-lg leading-tight transition-colors",
-                    isSelected ? "text-[#1E3A5F]" : "text-slate-700"
+                    "font-bold text-base leading-tight transition-colors",
+                    isSelected ? "text-blue-950" : "text-slate-600"
                   )}>
                     {lang.label}
                   </p>
-                  <p className="text-slate-400 text-xs mt-0.5">{lang.subLabel}</p>
+                  <p className="text-slate-400 text-[10px] mt-0.5">{lang.subLabel}</p>
                 </div>
 
                 {/* Radio Indicator */}
                 <div className={cn(
-                  "w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all",
-                  isSelected ? "border-[#d97706] bg-[#d97706]" : "border-slate-200"
+                  "w-5 h-5 rounded-full border flex items-center justify-center transition-all",
+                  isSelected ? "border-amber-600 bg-amber-600" : "border-slate-200"
                 )}>
                   <AnimatePresence>
                     {isSelected && (
@@ -109,7 +110,7 @@ export default function UserLanguage() {
                         animate={{ scale: 1 }}
                         exit={{ scale: 0 }}
                       >
-                        <Check className="w-4 h-4 text-white" strokeWidth={4} />
+                        <Check className="w-3 h-3 text-white" strokeWidth={4} />
                       </motion.div>
                     )}
                   </AnimatePresence>
@@ -119,13 +120,16 @@ export default function UserLanguage() {
           })}
         </div>
 
-        {/* 🚀 Fixed Bottom Button */}
-        <div className="p-8 pb-10 max-w-md mx-auto w-full">
+        {/* 🚀 Bottom Button */}
+        <div className="p-8 pb-10 max-w-[22rem] mx-auto w-full z-10">
             <GradientButton
               onClick={handleContinue}
-              className="w-full h-16 bg-[#d97706] hover:bg-[#b45309] text-white shadow-[0_8px_20px_rgba(217,119,6,0.2)] rounded-2xl font-bold tracking-widest uppercase text-sm"
+              className="w-full h-12 sm:h-14 bg-gradient-to-r from-blue-950 to-[#133E7C] shadow-[0_8px_20px_rgba(19,62,124,0.15)] rounded-[1.2rem]"
             >
-             Continue
+              <div className="flex items-center gap-2">
+                <span className="font-bold text-[12px] sm:text-[13px] tracking-[0.15em] uppercase text-white">Continue</span>
+                <ChevronRight className="w-4 h-4 text-white" />
+              </div>
            </GradientButton>
         </div>
 
