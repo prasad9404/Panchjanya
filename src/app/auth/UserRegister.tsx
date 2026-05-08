@@ -49,29 +49,35 @@ export default function UserRegister() {
   return (
     <AuthBackground showMandala={true}>
 
-      <div className="flex-1 flex flex-col px-6 pt-6 pb-12 z-10 w-full max-w-xl mx-auto items-center">
-        {/* ⚛️ Logo Container */}
+      <div className="flex-1 flex flex-col px-6 pt-6 pb-12 z-10 w-full max-w-lg mx-auto items-center">
+        {/* ⚛️ Logo Container - Consistent with Welcome Page */}
         <motion.div
            initial={{ opacity: 0, scale: 0.9 }}
            animate={{ opacity: 1, scale: 1 }}
-           className="w-32 h-32 rounded-full border border-amber-600/20 flex items-center justify-center mb-6 bg-white shadow-sm p-6"
+           className="relative w-24 h-24 mb-6 group flex items-center justify-center"
         >
-           <img src="/icons/Main logo.svg" alt="Logo" className="w-full h-full object-contain" />
+           <div className="absolute inset-[-10px] bg-gradient-to-tr from-amber-400/30 via-amber-200/10 to-transparent rounded-full blur-xl opacity-40" />
+           <img 
+            src="/icons/Main logo.svg" 
+            alt="Logo" 
+            className="w-full h-full object-contain relative z-10 drop-shadow-md" 
+            style={{ mixBlendMode: 'multiply' }}
+           />
         </motion.div>
 
         {/* 📜 Welcome Text */}
-        <div className="text-center mb-10">
-          <h1 className="text-3xl sm:text-4xl font-black text-blue-950 font-serif mb-2">
+        <div className="text-center mb-8">
+          <h1 className="text-2xl sm:text-3xl font-black text-blue-950 font-serif mb-2 bg-clip-text text-transparent bg-gradient-to-b from-blue-950 via-blue-900 to-[#133E7C]">
             Begin Your Journey
           </h1>
-          <p className="text-slate-400 text-sm sm:text-base font-medium">
+          <p className="text-slate-400 text-xs sm:text-sm font-medium max-w-[240px] mx-auto leading-relaxed">
             Create your profile for a divine experience
           </p>
         </div>
 
         {/* 🥛 Registration Form */}
-        <form onSubmit={handleRegister} className="w-full space-y-6 max-w-md pb-20">
-          <div className="grid grid-cols-2 gap-4">
+        <form onSubmit={handleRegister} className="w-full space-y-5 max-w-[22rem] pb-10">
+          <div className="grid grid-cols-2 gap-3">
             <AuthInputField
               topLabel="FIRST NAME"
               label="Siddharth"
@@ -90,17 +96,19 @@ export default function UserRegister() {
             />
           </div>
 
-          <div className="space-y-3 px-1">
-            <label className="text-[10px] font-black text-blue-900/40 uppercase tracking-widest ml-4">GENDER</label>
-            <div className="flex gap-4">
+          <div className="space-y-2 px-1">
+            <label className="text-[9px] font-black text-blue-900/40 uppercase tracking-widest ml-1">GENDER</label>
+            <div className="flex gap-3">
               {["Male", "Female"].map(g => (
                 <button
                   key={g}
                   type="button"
                   onClick={() => setFormData({ ...formData, gender: g })}
                   className={cn(
-                    "flex-1 h-12 rounded-2xl border-2 font-bold text-sm transition-all",
-                    formData.gender === g ? "border-amber-600 bg-amber-50 text-amber-900" : "border-slate-100 bg-white text-slate-500"
+                    "flex-1 h-11 rounded-xl border font-bold text-xs transition-all",
+                    formData.gender === g 
+                      ? "border-amber-500 bg-amber-50 text-amber-900 shadow-sm" 
+                      : "border-slate-100 bg-white/50 text-slate-400"
                   )}
                 >
                   {g}
@@ -109,7 +117,7 @@ export default function UserRegister() {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-3">
             <AuthInputField
               topLabel="STATE"
               label="Maharashtra"
@@ -128,7 +136,7 @@ export default function UserRegister() {
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-3">
             <AuthInputField
               topLabel="TALUKA"
               label="Paithan"
@@ -167,17 +175,18 @@ export default function UserRegister() {
             error={errors.mobile}
           />
 
-          <div className="pt-6">
+          <div className="pt-4">
             <GradientButton 
               type="submit"
               disabled={isLoading}
-              className="w-full h-16 bg-landing-primary hover:opacity-90 shadow-xl rounded-2xl"
+              className="w-full h-12 sm:h-14 bg-gradient-to-r from-blue-950 to-[#133E7C] shadow-[0_8px_20px_rgba(19,62,124,0.15)] rounded-[1.2rem]"
             >
               {isLoading ? (
-                <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
               ) : (
-                <div className="flex items-center gap-2">
-                  CONTINUE TO VERIFY <ArrowRight className="w-5 h-5" />
+                <div className="flex items-center gap-2.5">
+                  <span className="font-bold text-[12px] sm:text-[13px] tracking-[0.12em] uppercase text-white">CONTINUE TO VERIFY</span>
+                  <ArrowRight className="w-4 h-4 text-white" />
                 </div>
               )}
             </GradientButton>
@@ -185,15 +194,15 @@ export default function UserRegister() {
         </form>
 
         {/* 🌸 Footer Link */}
-        <div className="mt-auto">
-          <p className="text-slate-400 font-medium text-sm text-center">
+        <div className="mt-auto py-4">
+          <p className="text-slate-400 font-medium text-xs text-center">
             Already part of the heritage?
           </p>
           <button 
             onClick={() => navigate("/auth/login")}
-            className="flex items-center gap-2 mx-auto mt-2 text-primary font-black uppercase tracking-widest hover:underline underline-offset-8 decoration-2"
+            className="flex items-center gap-1.5 mx-auto mt-2 text-primary font-black uppercase tracking-widest text-[11px] hover:underline underline-offset-4"
           >
-            Back to Login <ArrowRight className="w-4 h-4" />
+            Back to Login <ArrowRight className="w-3.5 h-3.5" />
           </button>
         </div>
       </div>

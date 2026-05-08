@@ -47,7 +47,7 @@ export default function UserAuthWelcome() {
   return (
     <AuthBackground>
       <div
-        className="flex-1 flex flex-col items-center justify-center px-6 relative overflow-hidden"
+        className="flex-1 flex flex-col items-center justify-center px-6 relative overflow-hidden py-10"
         onMouseMove={handleMouse}
       >
         {/* ✨ Floating Divine Particles */}
@@ -56,18 +56,18 @@ export default function UserAuthWelcome() {
             <motion.div
               key={i}
               animate={{
-                y: [0, -40, 0],
-                x: [0, i % 2 === 0 ? 20 : -20, 0],
-                opacity: [0.1, 0.3, 0.1]
+                y: [0, -30, 0],
+                x: [0, i % 2 === 0 ? 15 : -15, 0],
+                opacity: [0.05, 0.2, 0.05]
               }}
-              transition={{ duration: 10 + i * 2, repeat: Infinity }}
-              className="absolute text-amber-500/10"
+              transition={{ duration: 12 + i * 2, repeat: Infinity }}
+              className="absolute text-amber-600/10"
               style={{
                 left: `${15 + i * 15}%`,
-                top: `${20 + (i % 3) * 20}%`
+                top: `${15 + (i % 3) * 20}%`
               }}
             >
-              <Flower2 className="w-12 h-12" />
+              <Flower2 className="w-10 h-10" />
             </motion.div>
           ))}
         </div>
@@ -76,35 +76,39 @@ export default function UserAuthWelcome() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1.2, ease: "easeOut" }}
-          className="text-center z-10 w-full max-w-lg"
+          className="text-center z-10 w-full max-w-md flex flex-col items-center"
         >
 
-          {/* 💎 3D Interactive Logo Card */}
-          <div className="perspective-1000 mb-12 h-56 sm:h-64">
+          {/* 💎 3D Interactive Logo - Removed white background and scaled down */}
+          <div className="perspective-1000 mb-8 h-44 sm:h-52 flex items-center justify-center">
             <motion.div
               style={{ rotateX, rotateY }}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              className="relative mx-auto w-56 h-56 sm:w-64 sm:h-64 group cursor-pointer"
+              className="relative w-44 h-44 sm:w-52 sm:h-52 group cursor-pointer flex items-center justify-center"
             >
-              <div className="absolute inset-[-20px] bg-gradient-to-tr from-amber-300/40 via-amber-200/20 to-blue-200/40 rounded-[4rem] blur-3xl opacity-40 group-hover:opacity-100 transition-opacity duration-500" />
-              <div className="relative w-full h-full bg-white/90 backdrop-blur-3xl rounded-[4rem] flex items-center justify-center shadow-[0_20px_50px_rgba(217,119,6,0.08)] p-8 border border-white/60 overflow-hidden group-hover:border-amber-500/50 group-hover:shadow-[0_20px_60px_rgba(217,119,6,0.15)] transition-all duration-500">
+              {/* Royal Glow Effect */}
+              <div className="absolute inset-[-15px] bg-gradient-to-tr from-amber-400/30 via-amber-200/10 to-transparent rounded-full blur-2xl opacity-40 group-hover:opacity-100 transition-opacity duration-500" />
+              
+              {/* Logo Container - Transparent Background */}
+              <div className="relative w-full h-full flex items-center justify-center transition-all duration-500">
                 <img
                   src="/icons/Main logo.svg"
                   alt="Logo"
-                  className="w-full h-full object-contain drop-shadow-md group-hover:scale-110 transition-transform duration-700"
+                  className="w-full h-full object-contain drop-shadow-[0_10px_15px_rgba(0,0,0,0.1)] group-hover:scale-110 transition-transform duration-700"
+                  style={{ mixBlendMode: 'multiply' }} // Ensures any residual white background in the image is removed
                 />
               </div>
             </motion.div>
           </div>
 
-          {/* 📜 App Name & Tagline */}
-          <div className="mb-12 space-y-4">
+          {/* 📜 App Name & Tagline - Scaled down for mobile */}
+          <div className="mb-10 space-y-3">
             <motion.h1
-              initial={{ opacity: 0, scale: 0.9 }}
+              initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.8 }}
-              className="text-4xl min-[380px]:text-5xl sm:text-6xl md:text-7xl font-black font-serif leading-tight tracking-tighter uppercase bg-clip-text text-transparent bg-gradient-to-b from-blue-950 via-blue-900 to-blue-800"
+              className="text-3xl min-[380px]:text-4xl sm:text-5xl font-black font-serif leading-tight tracking-tight uppercase bg-clip-text text-transparent bg-gradient-to-b from-blue-950 via-blue-900 to-[#133E7C]"
             >
               Panchjanya
             </motion.h1>
@@ -116,7 +120,7 @@ export default function UserAuthWelcome() {
                 y: 0,
                 textShadow: [
                   "0 0 0px rgba(217, 119, 6, 0)",
-                  "0 0 12px rgba(217, 119, 6, 0.3)",
+                  "0 0 10px rgba(217, 119, 6, 0.2)",
                   "0 0 0px rgba(217, 119, 6, 0)"
                 ]
               }}
@@ -125,36 +129,36 @@ export default function UserAuthWelcome() {
                 y: { delay: 0.4, duration: 0.8 },
                 textShadow: { duration: 3, repeat: Infinity, ease: "easeInOut" }
               }}
-              className="text-amber-600/90 text-base sm:text-xl font-semibold px-8 leading-relaxed max-w-sm mx-auto tracking-wide italic"
+              className="text-amber-700/80 text-sm sm:text-base font-medium px-4 leading-relaxed max-w-[280px] mx-auto tracking-wide italic"
             >
               {t.tagline}
             </motion.p>
           </div>
 
-          {/* ⚡ Action Hub */}
-          <div className="space-y-5 w-full px-8 sm:px-12 max-w-[24rem] mx-auto">
+          {/* ⚡ Action Hub - More compact buttons */}
+          <div className="space-y-4 w-full px-6 sm:px-10 max-w-[20rem] mx-auto">
             <GradientButton
               onClick={() => navigate("/auth/register")}
-              className="w-full h-14 sm:h-16 px-0 bg-gradient-to-r from-blue-900 to-[#133E7C] shadow-[0_10px_30px_rgba(19,62,124,0.2)] hover:shadow-[0_15px_40px_rgba(19,62,124,0.3)] hover:-translate-y-0.5 transition-all duration-500 border border-white/10 rounded-[1.5rem]"
+              className="w-full h-12 sm:h-14 px-0 bg-gradient-to-r from-blue-950 to-[#133E7C] shadow-[0_8px_20px_rgba(19,62,124,0.15)] hover:shadow-[0_12px_30px_rgba(19,62,124,0.25)] hover:-translate-y-0.5 transition-all duration-500 border border-white/10 rounded-[1.2rem]"
             >
-              <div className="flex items-center justify-center gap-3 w-full">
-                <span className="font-bold text-[13px] sm:text-[14px] tracking-[0.2em] uppercase text-white whitespace-nowrap">
+              <div className="flex items-center justify-center gap-2.5 w-full">
+                <span className="font-bold text-[12px] sm:text-[13px] tracking-[0.15em] uppercase text-white whitespace-nowrap">
                   {t.getStarted}
                 </span>
-                <Sparkles className="w-5 h-5 text-amber-300" strokeWidth={2} />
+                <Sparkles className="w-4 h-4 text-amber-300" strokeWidth={2} />
               </div>
             </GradientButton>
 
             <GradientButton
               variant="secondary"
               onClick={() => navigate("/auth/login")}
-              className="w-full h-14 sm:h-16 px-0 border border-white/80 bg-white/80 backdrop-blur-xl shadow-[0_8px_20px_rgba(0,0,0,0.04)] hover:bg-white hover:shadow-[0_12px_25px_rgba(0,0,0,0.08)] hover:-translate-y-0.5 transition-all duration-500 rounded-[1.5rem]"
+              className="w-full h-12 sm:h-14 px-0 border border-blue-900/10 bg-white/60 backdrop-blur-md shadow-[0_4px_12px_rgba(0,0,0,0.03)] hover:bg-white/80 hover:shadow-[0_8px_20px_rgba(0,0,0,0.06)] hover:-translate-y-0.5 transition-all duration-500 rounded-[1.2rem]"
             >
-              <div className="flex items-center justify-center gap-3 w-full">
-                <span className="font-bold text-[13px] sm:text-[14px] tracking-[0.2em] uppercase text-[#133E7C] whitespace-nowrap">
+              <div className="flex items-center justify-center gap-2.5 w-full">
+                <span className="font-bold text-[12px] sm:text-[13px] tracking-[0.15em] uppercase text-[#133E7C] whitespace-nowrap">
                   {t.login}
                 </span>
-                <ArrowRight className="w-5 h-5 text-[#133E7C]" strokeWidth={2.5} />
+                <ArrowRight className="w-4 h-4 text-[#133E7C]" strokeWidth={2.5} />
               </div>
             </GradientButton>
           </div>

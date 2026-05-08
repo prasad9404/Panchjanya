@@ -33,14 +33,20 @@ export default function UserLogin() {
   return (
     <AuthBackground showMandala={true}>
 
-      <div className="flex-1 flex flex-col px-6 pt-10 pb-10 z-10 w-full max-w-xl mx-auto items-center">
-        {/* 🏛️ Logo Container */}
+      <div className="flex-1 flex flex-col px-6 pt-8 pb-10 z-10 w-full max-w-lg mx-auto items-center">
+        {/* 🏛️ Logo Container - Consistent with Welcome Page */}
         <motion.div
            initial={{ opacity: 0, scale: 0.9 }}
            animate={{ opacity: 1, scale: 1 }}
-           className="w-32 h-32 rounded-full bg-white flex items-center justify-center shadow-[0_10px_40px_rgba(0,0,0,0.03)] border border-slate-50 mb-10 overflow-hidden p-6"
+           className="relative w-24 h-24 mb-8 group flex items-center justify-center"
         >
-           <img src="/icons/Main logo.svg" alt="Panchajanya Logo" className="w-full h-full object-contain" />
+           <div className="absolute inset-[-10px] bg-gradient-to-tr from-amber-400/30 via-amber-200/10 to-transparent rounded-full blur-xl opacity-40" />
+           <img 
+            src="/icons/Main logo.svg" 
+            alt="Panchajanya Logo" 
+            className="w-full h-full object-contain relative z-10 drop-shadow-md" 
+            style={{ mixBlendMode: 'multiply' }}
+           />
         </motion.div>
 
         {/* 📜 Branding */}
@@ -48,18 +54,18 @@ export default function UserLogin() {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="text-center mb-12"
+          className="text-center mb-10"
         >
-          <h1 className="text-4xl sm:text-5xl font-black text-blue-950 font-serif mb-3 tracking-tighter uppercase italic">
+          <h1 className="text-3xl sm:text-4xl font-black text-blue-950 font-serif mb-2 tracking-tight uppercase italic bg-clip-text text-transparent bg-gradient-to-b from-blue-950 via-blue-900 to-[#133E7C]">
             Login
           </h1>
-          <p className="text-slate-400 text-sm sm:text-base font-medium tracking-wide">
+          <p className="text-slate-400 text-xs sm:text-sm font-medium tracking-wide max-w-[240px] mx-auto leading-relaxed">
             Welcome back to the sanctuary
           </p>
         </motion.div>
 
         {/* 🥛 Auth Form */}
-        <form onSubmit={handleLogin} className="w-full space-y-7 max-w-md">
+        <form onSubmit={handleLogin} className="w-full space-y-6 max-w-[20rem]">
           <AuthInputField
             topLabel="Mobile Number"
             label="+91 XXXXX XXXXX"
@@ -83,7 +89,7 @@ export default function UserLogin() {
             rightElement={
               <button 
                 type="button" 
-                className="text-[10px] font-black text-blue-900/40 hover:text-blue-900 transition-colors uppercase tracking-widest"
+                className="text-[9px] font-black text-blue-900/40 hover:text-blue-900 transition-colors uppercase tracking-widest"
                 onClick={() => navigate("/auth/recover")}
               >
                 Forgot?
@@ -91,36 +97,37 @@ export default function UserLogin() {
             }
           />
 
-          <div className="pt-6">
+          <div className="pt-4">
             <GradientButton
               type="submit"
               disabled={isLoading}
-              className="w-full h-16 bg-landing-primary hover:opacity-90 shadow-xl rounded-[1.5rem]"
+              className="w-full h-12 sm:h-14 bg-gradient-to-r from-blue-950 to-[#133E7C] hover:opacity-90 shadow-[0_8px_20px_rgba(19,62,124,0.15)] rounded-[1.2rem]"
               variant="primary"
             >
               {isLoading ? (
-                <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
               ) : (
-                <div className="flex items-center gap-2">
-                  Login <Church className="w-5 h-5 fill-current" />
+                <div className="flex items-center gap-2.5">
+                  <span className="font-bold text-[12px] sm:text-[13px] tracking-[0.15em] uppercase text-white">Login</span>
+                  <Church className="w-4 h-4 text-white" />
                 </div>
               )}
             </GradientButton>
           </div>
         </form>
 
-        {/* ... divider and social button ... */}
-
         {/* 🌸 Footer Link */}
-        <p className="mt-8 py-8 text-slate-400 font-medium text-sm text-center">
-            New initiate?{" "}
-            <button 
-              onClick={() => navigate("/auth/register")}
-              className="text-primary font-black uppercase tracking-widest hover:underline underline-offset-8 decoration-2"
-            >
-              Register
-            </button>
-        </p>
+        <div className="mt-8 py-4 text-center">
+          <p className="text-slate-400 font-medium text-xs">
+              New initiate?{" "}
+              <button 
+                onClick={() => navigate("/auth/register")}
+                className="text-primary font-black uppercase tracking-widest hover:underline underline-offset-4 ml-1"
+              >
+                Register
+              </button>
+          </p>
+        </div>
       </div>
     </AuthBackground>
   );

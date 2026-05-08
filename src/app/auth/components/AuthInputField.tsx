@@ -69,9 +69,9 @@ export const AuthInputField: React.FC<AuthInputFieldProps> = ({
             props.onBlur?.(e);
           }}
           className={cn(
-            "w-full h-14 px-5 text-blue-950 font-medium bg-transparent outline-none transition-all placeholder:text-slate-300 text-sm sm:text-base",
-            iconPosition === "left" && "pl-12",
-            iconPosition === "right" && "pr-12",
+            "w-full h-12 px-4 text-blue-950 font-medium bg-transparent outline-none transition-all placeholder:text-slate-300 text-xs sm:text-sm",
+            iconPosition === "left" && "pl-11",
+            iconPosition === "right" && "pr-11",
             className
           )}
           placeholder={label}

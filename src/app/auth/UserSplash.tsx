@@ -46,30 +46,30 @@ export default function UserSplash() {
         className="z-10 flex flex-col items-center"
       >
         <div className="relative">
-          {/* Sacrad Geometry Glow */}
+          {/* Sacred Geometry Glow */}
           <motion.div 
             animate={{ rotate: 360 }}
             transition={{ duration: 40, repeat: Infinity, ease: "linear" }}
-            className="absolute inset-[-60px] opacity-10 border-2 border-dashed border-blue-900 rounded-full"
+            className="absolute inset-[-40px] opacity-10 border border-blue-900 rounded-full"
           />
           
           <motion.div
-            initial={{ y: 30, opacity: 0 }}
+            initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.6, duration: 1.2 }}
-            className="w-56 h-56 md:w-72 md:h-72 bg-white/60 backdrop-blur-3xl rounded-[4rem] shadow-[0_20px_60px_rgba(30,58,138,0.1)] flex items-center justify-center p-8 border border-white relative overflow-hidden group"
+            className="w-44 h-44 md:w-56 md:h-56 flex items-center justify-center p-4 relative group"
           >
-             {/* Subtle Surface Shine */}
-             <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/40 to-transparent pointer-events-none" />
+             {/* Royal Glow behind logo */}
+             <div className="absolute inset-[-10px] bg-gradient-to-tr from-amber-400/20 via-amber-200/5 to-transparent rounded-full blur-2xl opacity-40" />
              
             <img 
               src="/icons/Main logo.svg" 
               alt="Panchajanya Logo" 
-              className="w-full h-full object-contain filter drop-shadow-sm group-hover:scale-105 transition-transform duration-700"
+              className="w-full h-full object-contain filter drop-shadow-md group-hover:scale-105 transition-transform duration-700"
+              style={{ mixBlendMode: 'multiply' }}
             />
           </motion.div>
         </div>
-        
       </motion.div>
 
       {/* Cloud-like Depth Layer at Bottom */}
