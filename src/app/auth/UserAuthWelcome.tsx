@@ -104,15 +104,6 @@ export default function UserAuthWelcome() {
 
           {/* 📜 App Name & Tagline - Scaled down for mobile */}
           <div className="mb-10 space-y-3">
-            <motion.h1
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.8 }}
-              className="text-3xl min-[380px]:text-4xl sm:text-5xl font-black font-serif leading-tight tracking-tight uppercase bg-clip-text text-transparent bg-gradient-to-b from-blue-950 via-blue-900 to-[#133E7C]"
-            >
-              Panchjanya
-            </motion.h1>
-
             <motion.p
               initial={{ opacity: 0, y: 10 }}
               animate={{

@@ -3,7 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/shared/components/ui/button";
 import { ChevronLeft, Share2, Compass, MapPin, GripHorizontal, ChevronRight, ExternalLink, Loader2, Navigation2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import YatraMap, { YatraLocation } from "@/shared/components/features/YatraMap";
+import YatraMapGoogle from "@/shared/components/features/YatraMapGoogle";
+import type { YatraLocation } from "@/shared/components/features/YatraMap";
 import { Card } from "@/shared/components/ui/card";
 import {
     Select,
@@ -20,6 +21,11 @@ import { useYatraPlaces } from "@/shared/hooks/useYatraPlaces";
 import { LazyImage } from "@/shared/components/ui/LazyImage";
 import { cn } from "@/shared/lib/utils";
 import { getLocationUrl } from "@/shared/utils/locationUtils";
+
+import { APIProvider } from "@vis.gl/react-google-maps";
+import { TempleSearch } from "@/shared/components/features/TempleSearch";
+
+const apiKey = import.meta.env.VITE_GOOGLE_MAPS_KEY || import.meta.env.VITE_GOOGLE_MAPS_API_KEY || "";
 
 const ROUTES = [
     {
@@ -48,6 +54,7 @@ const SwamiYatra = () => {
     const [currentIndex, setCurrentIndex] = useState(0);
     const [centerOnFullRoute, setCenterOnFullRoute] = useState(0);
     const [forceFocus, setForceFocus] = useState(0);
+    const [searchedPlace, setSearchedPlace] = useState<any>(null);
 
     const [isFullScreen, setIsFullScreen] = useState(false);
     const [panelHeight, setPanelHeight] = useState(40);
@@ -88,18 +95,48 @@ const SwamiYatra = () => {
     }, [rawPlaces, langCode]);
 
     const filteredPlaces = useMemo(() => {
-        return places.filter(p => {
+        let list = places.filter(p => {
             if (selectedRoute === "swami-complete") {
                 if (selectedSubRoute) return p.subRoute === selectedSubRoute;
                 return !p.route || p.route === "swami-complete";
             }
             return p.route === selectedRoute;
         });
-    }, [places, selectedRoute, selectedSubRoute]);
+
+        if (searchedPlace) {
+            list = [...list, searchedPlace];
+        }
+        return list;
+    }, [places, selectedRoute, selectedSubRoute, searchedPlace]);
 
     useEffect(() => {
-        setCurrentIndex(0);
+        if (!searchedPlace) {
+            setCurrentIndex(0);
+        }
     }, [selectedRoute, selectedSubRoute]);
+
+    const handlePlaceSelect = (place: google.maps.places.PlaceResult) => {
+        if (place.geometry?.location) {
+            const newPlace = {
+                id: place.place_id || Date.now().toString(),
+                name: place.name || "Searched Place",
+                latitude: place.geometry.location.lat(),
+                longitude: place.geometry.location.lng(),
+                sequence: filteredPlaces.length + 1,
+                status: "upcoming",
+                title: place.name || "Searched Place",
+                description: place.formatted_address || "A sacred location found via search.",
+                image: place.photos?.[0]?.getUrl() || "/placeholder-temple.jpg",
+                locationLink: place.url
+            };
+            setSearchedPlace(newPlace);
+            // Move to this place
+            setTimeout(() => {
+                setCurrentIndex(filteredPlaces.length); // It will be added at the end
+                setForceFocus(Date.now());
+            }, 100);
+        }
+    };
 
     // Handle drag to resize panel
     const handleMouseDown = (e: React.MouseEvent) => {
@@ -154,6 +191,7 @@ const SwamiYatra = () => {
     }
 
     return (
+        <APIProvider apiKey={apiKey}>
         <div className="min-h-full flex-1 bg-background font-sans flex flex-col pb-24 lg:pb-0 overflow-hidden">
             {!isFullScreen && (
                 <div className="sticky top-0 z-40 bg-background/80 backdrop-blur-md border-b border-border/50">
@@ -176,7 +214,8 @@ const SwamiYatra = () => {
                         </Button>
                     </div>
 
-                    <div className="px-4 pb-3 flex items-center gap-2">
+                    <div className="px-4 pb-3 flex flex-col gap-3">
+                        <TempleSearch onPlaceSelect={handlePlaceSelect} />
                         <div className="flex-1 relative">
                             <Select
                                 value={selectedSubRoute ? `${selectedRoute}:${selectedSubRoute}` : selectedRoute}
@@ -184,6 +223,7 @@ const SwamiYatra = () => {
                                     const [routeId, subRouteId] = value.split(":");
                                     setSelectedRoute(routeId);
                                     setSelectedSubRoute(subRouteId === "all" || !subRouteId ? null : subRouteId);
+                                    setSearchedPlace(null);
                                 }}
                             >
                                 <SelectTrigger className="w-full h-11 bg-muted/50 border-none shadow-none focus:ring-1 focus:ring-accent-gold/20 text-sm font-semibold text-landing-primary dark:text-primary rounded-2xl pl-4 hover:bg-muted transition-colors">
@@ -209,6 +249,7 @@ const SwamiYatra = () => {
                 </div>
             )}
 
+
             <div
                 className={`relative transition-all ${isDragging ? '' : 'duration-500 cubic-bezier(0.4, 0, 0.2, 1)'} ${isFullScreen
                     ? "fixed inset-0 w-screen h-screen z-[99999] rounded-none bg-slate-100"
@@ -217,7 +258,7 @@ const SwamiYatra = () => {
                 style={!isFullScreen ? { height: `${100 - panelHeight - 15}vh` } : {}}
             >
                 <div className="w-full h-full scale-[1.01]">
-                    <YatraMap
+                    <YatraMapGoogle
                         locations={filteredPlaces}
                         highlightedId={filteredPlaces[currentIndex]?.id}
                         centerOnFullRoute={centerOnFullRoute}
@@ -436,6 +477,7 @@ const SwamiYatra = () => {
                 </div>
             </div>
         </div>
+        </APIProvider>
     );
 };
 

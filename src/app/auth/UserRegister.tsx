@@ -23,7 +23,8 @@ export default function UserRegister() {
     taluka: "",
     city: "",
     whatsapp: "",
-    mobile: ""
+    mobile: "",
+    age: ""
   });
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
@@ -50,11 +51,11 @@ export default function UserRegister() {
     <AuthBackground showMandala={true}>
 
       <div className="flex-1 flex flex-col px-6 pt-6 pb-12 z-10 w-full max-w-lg mx-auto items-center">
-        {/* ⚛️ Logo Container - Consistent with Welcome Page */}
+        {/* ⚛️ Logo Container - Standard Circular Version */}
         <motion.div
            initial={{ opacity: 0, scale: 0.9 }}
            animate={{ opacity: 1, scale: 1 }}
-           className="relative w-24 h-24 mb-6 group flex items-center justify-center"
+           className="relative w-44 h-44 sm:w-56 sm:h-56 mb-8 group flex items-center justify-center"
         >
            <div className="absolute inset-[-10px] bg-gradient-to-tr from-amber-400/30 via-amber-200/10 to-transparent rounded-full blur-xl opacity-40" />
            <img 
@@ -65,15 +66,19 @@ export default function UserRegister() {
            />
         </motion.div>
 
-        {/* 📜 Welcome Text */}
-        <div className="text-center mb-8">
-          <h1 className="text-2xl sm:text-3xl font-black text-blue-950 font-serif mb-2 bg-clip-text text-transparent bg-gradient-to-b from-blue-950 via-blue-900 to-[#133E7C]">
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="text-center mb-10"
+        >
+          <h1 className="text-2xl sm:text-3xl font-black text-blue-950 font-serif mb-2 tracking-tight uppercase italic bg-clip-text text-transparent bg-gradient-to-b from-blue-950 via-blue-900 to-[#133E7C]">
             Begin Your Journey
           </h1>
           <p className="text-slate-400 text-xs sm:text-sm font-medium max-w-[240px] mx-auto leading-relaxed">
             Create your profile for a divine experience
           </p>
-        </div>
+        </motion.div>
 
         {/* 🥛 Registration Form */}
         <form onSubmit={handleRegister} className="w-full space-y-5 max-w-[22rem] pb-10">
@@ -96,25 +101,36 @@ export default function UserRegister() {
             />
           </div>
 
-          <div className="space-y-2 px-1">
-            <label className="text-[9px] font-black text-blue-900/40 uppercase tracking-widest ml-1">GENDER</label>
-            <div className="flex gap-3">
-              {["Male", "Female"].map(g => (
-                <button
-                  key={g}
-                  type="button"
-                  onClick={() => setFormData({ ...formData, gender: g })}
-                  className={cn(
-                    "flex-1 h-11 rounded-xl border font-bold text-xs transition-all",
-                    formData.gender === g 
-                      ? "border-amber-500 bg-amber-50 text-amber-900 shadow-sm" 
-                      : "border-slate-100 bg-white/50 text-slate-400"
-                  )}
-                >
-                  {g}
-                </button>
-              ))}
+          <div className="grid grid-cols-[1.2fr_0.8fr] gap-3">
+            <div className="space-y-2 px-1">
+              <label className="text-[9px] font-black text-blue-900/40 uppercase tracking-widest ml-1">GENDER</label>
+              <div className="flex gap-2">
+                {["Male", "Female"].map(g => (
+                  <button
+                    key={g}
+                    type="button"
+                    onClick={() => setFormData({ ...formData, gender: g })}
+                    className={cn(
+                      "flex-1 h-11 rounded-xl border font-bold text-xs transition-all",
+                      formData.gender === g 
+                        ? "border-amber-500 bg-amber-50 text-amber-900 shadow-sm" 
+                        : "border-slate-100 bg-white/50 text-slate-400"
+                    )}
+                  >
+                    {g}
+                  </button>
+                ))}
+              </div>
             </div>
+
+            <AuthInputField
+              topLabel="AGE"
+              label="24"
+              type="number"
+              value={formData.age}
+              onChange={e => setFormData({...formData, age: e.target.value})}
+              error={errors.age}
+            />
           </div>
 
           <div className="grid grid-cols-2 gap-3">

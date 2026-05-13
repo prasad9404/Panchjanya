@@ -34,11 +34,11 @@ export default function UserLogin() {
     <AuthBackground showMandala={true}>
 
       <div className="flex-1 flex flex-col px-6 pt-8 pb-10 z-10 w-full max-w-lg mx-auto items-center">
-        {/* 🏛️ Logo Container - Consistent with Welcome Page */}
+        {/* ⚛️ Logo Container - Standard Circular Version */}
         <motion.div
            initial={{ opacity: 0, scale: 0.9 }}
            animate={{ opacity: 1, scale: 1 }}
-           className="relative w-24 h-24 mb-8 group flex items-center justify-center"
+           className="relative w-44 h-44 sm:w-56 sm:h-56 mb-10 group flex items-center justify-center"
         >
            <div className="absolute inset-[-10px] bg-gradient-to-tr from-amber-400/30 via-amber-200/10 to-transparent rounded-full blur-xl opacity-40" />
            <img 
@@ -56,7 +56,7 @@ export default function UserLogin() {
           transition={{ delay: 0.2 }}
           className="text-center mb-10"
         >
-          <h1 className="text-3xl sm:text-4xl font-black text-blue-950 font-serif mb-2 tracking-tight uppercase italic bg-clip-text text-transparent bg-gradient-to-b from-blue-950 via-blue-900 to-[#133E7C]">
+          <h1 className="text-2xl sm:text-3xl font-black text-blue-950 font-serif mb-2 tracking-tight uppercase italic bg-clip-text text-transparent bg-gradient-to-b from-blue-950 via-blue-900 to-[#133E7C]">
             Login
           </h1>
           <p className="text-slate-400 text-xs sm:text-sm font-medium tracking-wide max-w-[240px] mx-auto leading-relaxed">

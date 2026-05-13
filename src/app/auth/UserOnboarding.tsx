@@ -8,7 +8,7 @@ import {
   User, Mail, Lock, Phone, MapPin,
   ChevronRight, ChevronLeft, Camera,
   CheckCircle2, AlertCircle, Info,
-  Fingerprint, Heart, ShieldCheck, Sparkles, ArrowRight
+  Fingerprint, Heart, ShieldCheck, Sparkles, ArrowRight, Flower2
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -62,17 +62,20 @@ export default function UserOnboarding() {
         {step > 1 && step < 5 && (
           <div className="flex flex-col items-center mb-8">
             <motion.div
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="relative"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.4 }}
+              className="flex justify-center"
             >
-              <div className="absolute inset-0 -inset-x-12 bg-amber-100/20 blur-2xl rounded-full scale-125" />
-              <img 
-                src="/icons/Homepage logo.svg" 
-                alt="Panchjanya Logo" 
-                className="h-8 opacity-90 object-contain relative z-10" 
-                style={{ mixBlendMode: 'multiply' }}
-              />
+              <div className="relative group">
+                <div className="absolute inset-0 bg-amber-100/20 blur-3xl rounded-full scale-150 animate-pulse" />
+                <img 
+                  src="/icons/Homepage logo.svg" 
+                  alt="Panchjanya Logo" 
+                  className="h-28 sm:h-36 w-auto object-contain relative z-10 drop-shadow-sm" 
+                  style={{ mixBlendMode: 'multiply' }}
+                />
+              </div>
             </motion.div>
           </div>
         )}
@@ -84,31 +87,31 @@ export default function UserOnboarding() {
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
-              className="space-y-8"
+              className="space-y-6"
             >
               {/* 1. Brand Welcome at Top */}
-              <div className="text-center space-y-4">
+              <div className="text-center space-y-1">
                 <motion.span 
                   initial={{ opacity: 0, letterSpacing: "0.2em" }}
                   animate={{ opacity: 1, letterSpacing: "0.4em" }}
                   transition={{ delay: 0.2, duration: 1 }}
-                  className="block text-amber-700/60 font-black uppercase text-[9px] tracking-[0.4em]"
+                  className="block text-amber-700/60 font-black uppercase text-[10px] tracking-[0.35em] mb-2"
                 >
                   Welcome to
                 </motion.span>
                 
                 <motion.div 
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: 0.4 }}
                   className="flex justify-center"
                 >
                   <div className="relative group">
-                    <div className="absolute inset-0 -inset-x-16 bg-amber-100/20 blur-3xl rounded-full scale-150 animate-pulse" />
+                    <div className="absolute inset-0 bg-amber-100/20 blur-3xl rounded-full scale-150 animate-pulse" />
                     <img 
                       src="/icons/Homepage logo.svg" 
                       alt="Panchjanya Logo" 
-                      className="h-16 sm:h-20 object-contain relative z-10" 
+                      className="h-28 sm:h-36 w-auto object-contain relative z-10 drop-shadow-sm" 
                       style={{ mixBlendMode: 'multiply' }}
                     />
                   </div>
@@ -120,12 +123,12 @@ export default function UserOnboarding() {
                 initial={{ opacity: 0, scale: 0.98 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: 0.6 }}
-                className="p-6 bg-white/40 backdrop-blur-md rounded-[2rem] border border-white/60 text-left relative overflow-hidden shadow-sm"
+                className="p-5 sm:p-7 bg-white/40 backdrop-blur-md rounded-[1.5rem] border border-white/60 text-center relative overflow-hidden shadow-sm"
               >
                   <div className="absolute top-0 right-0 p-3 opacity-10">
                     <Sparkles className="w-8 h-8 text-blue-900" />
                   </div>
-                  <p className="text-xs sm:text-sm text-blue-900/80 leading-relaxed font-medium font-serif">
+                  <p className="text-xs sm:text-sm text-blue-900/80 leading-relaxed font-medium font-serif max-w-sm mx-auto">
                     This app is specially made for the followers of the Mahanubhav Panth only.
                     To confirm your participation, please provide the following spiritual details
                     to enable us to serve the level of information according to your knowledge
@@ -151,9 +154,9 @@ export default function UserOnboarding() {
                         transition={{ delay: 1 + (index * 0.1) }}
                         onClick={() => setFormData({ ...formData, status: status as any })}
                         className={cn(
-                          "w-full p-4 rounded-[1.2rem] border flex items-center justify-between group transition-all duration-500",
+                          "w-full h-14 px-5 rounded-[1.2rem] border flex items-center justify-between group transition-all duration-500",
                           formData.status === status
-                            ? "border-amber-500 bg-amber-50 shadow-sm scale-[1.01]"
+                            ? "border-amber-500 bg-amber-50 shadow-[0_4px_12px_rgba(245,158,11,0.1)] scale-[1.02]"
                             : "border-slate-100 bg-white/50 backdrop-blur-sm hover:border-amber-200 hover:bg-white"
                         )}
                       >
@@ -197,21 +200,24 @@ export default function UserOnboarding() {
               exit={{ opacity: 0, x: -20 }}
               className="space-y-6"
             >
-              <div className="text-center">
-                <h2 className="text-2xl font-black text-blue-950 font-serif mb-1">Spiritual Details</h2>
-                <p className="text-slate-400 text-xs font-medium">For {formData.status}</p>
+              <div className="text-center relative">
+                <h2 className="text-3xl font-black text-blue-950 font-serif mb-1 tracking-tight">Spiritual Details</h2>
+                <p className="text-amber-700/60 text-[10px] uppercase tracking-[0.2em] font-black">Sanctuary Entrance • {formData.status}</p>
               </div>
 
               <div className="space-y-5">
                 {formData.status === "Naam Dharak" && (
                   <div className="p-5 bg-white/60 backdrop-blur-md border border-slate-100 rounded-[1.5rem] space-y-5 shadow-sm">
-                    <div className="flex items-center justify-between p-3 bg-slate-50/50 rounded-xl">
-                      <span className="font-bold text-xs text-blue-950 uppercase tracking-tight">Taken Naam Mantra?</span>
+                    <div className="flex items-center justify-between p-4 bg-blue-900/5 rounded-2xl border border-blue-900/5 transition-all group-hover:bg-blue-900/10">
+                      <div className="flex flex-col">
+                        <span className="font-bold text-[11px] text-blue-950 uppercase tracking-wider">Taken Naam Mantra?</span>
+                        <span className="text-[9px] text-slate-400 font-medium">Spiritual Initiation Status</span>
+                      </div>
                       <button
                         onClick={() => setFormData({ ...formData, naamMantra: !formData.naamMantra })}
-                        className={cn("w-10 h-6 rounded-full p-1 transition-all", formData.naamMantra ? "bg-amber-500" : "bg-slate-200")}
+                        className={cn("w-12 h-7 rounded-full p-1 transition-all duration-500", formData.naamMantra ? "bg-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.3)]" : "bg-slate-200")}
                       >
-                        <div className={cn("w-4 h-4 rounded-full bg-white transition-all shadow-sm", formData.naamMantra ? "ml-4" : "ml-0")} />
+                        <div className={cn("w-5 h-5 rounded-full bg-white transition-all duration-500 shadow-md transform", formData.naamMantra ? "translate-x-5" : "translate-x-0")} />
                       </button>
                     </div>
                     <AuthInputField topLabel="In Which Year?" label="Year (YYYY)" type="number" value={formData.guruvaryaYear} onChange={e => setFormData({ ...formData, guruvaryaYear: e.target.value })} />
@@ -301,14 +307,20 @@ export default function UserOnboarding() {
               exit={{ opacity: 0, x: -20 }}
               className="space-y-8"
             >
-              <div className="text-center">
-                <h2 className="text-2xl font-black text-blue-950 font-serif mb-1">Final Verification</h2>
-                <p className="text-slate-400 text-xs font-medium">Upload a photo for your profile</p>
+              <div className="text-center relative">
+                <h2 className="text-3xl font-black text-blue-950 font-serif mb-1 tracking-tight">Final Verification</h2>
+                <p className="text-amber-700/60 text-[10px] uppercase tracking-[0.2em] font-black">Capture your divine identity</p>
               </div>
 
               <div className="flex flex-col items-center">
-                <div className="w-40 h-40 rounded-[2.5rem] border-2 border-dashed border-slate-200 bg-white/50 backdrop-blur-sm flex items-center justify-center relative overflow-hidden group hover:border-amber-500 transition-all cursor-pointer">
-                  <Camera className="w-10 h-10 text-slate-300 group-hover:text-amber-500 transition-all" />
+                <div className="relative group cursor-pointer">
+                  <div className="absolute inset-[-20px] bg-gradient-to-tr from-amber-400/20 via-amber-200/5 to-transparent rounded-full blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
+                  <div className="w-44 h-44 rounded-[2.5rem] border-2 border-dashed border-slate-200 bg-white/50 backdrop-blur-md flex items-center justify-center relative overflow-hidden transition-all duration-500 group-hover:border-amber-400 group-hover:bg-white/80 shadow-sm">
+                    <div className="flex flex-col items-center gap-3">
+                      <Camera className="w-12 h-12 text-slate-300 group-hover:text-amber-500 transition-all duration-500 transform group-hover:scale-110" />
+                      <span className="text-[10px] font-black text-slate-400 group-hover:text-amber-600 uppercase tracking-widest">Click to Capture</span>
+                    </div>
+                  </div>
                 </div>
               </div>
 
@@ -351,8 +363,17 @@ export default function UserOnboarding() {
               animate={{ opacity: 1, scale: 1 }}
               className="flex-1 flex flex-col items-center justify-center text-center space-y-6 py-8"
             >
-              <div className="w-24 h-24 bg-amber-500 rounded-full flex items-center justify-center shadow-lg">
-                <CheckCircle2 className="w-12 h-12 text-white" />
+              <div className="relative">
+                <div className="absolute inset-[-30px] bg-amber-400/20 blur-3xl rounded-full animate-pulse" />
+                <div className="w-28 h-28 bg-gradient-to-tr from-amber-500 to-amber-300 rounded-full flex items-center justify-center shadow-[0_15px_35px_rgba(245,158,11,0.3)] relative z-10">
+                  <motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ delay: 0.3, type: "spring" }}
+                  >
+                    <CheckCircle2 className="w-14 h-14 text-white" strokeWidth={2.5} />
+                  </motion.div>
+                </div>
               </div>
               <div>
                 <h2 className="text-3xl font-black text-blue-950 font-serif mb-2 bg-clip-text text-transparent bg-gradient-to-b from-blue-950 via-blue-900 to-[#133E7C]">Registration Successful!</h2>

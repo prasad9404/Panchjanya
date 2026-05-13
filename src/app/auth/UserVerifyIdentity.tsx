@@ -34,12 +34,27 @@ export default function UserVerifyIdentity() {
   return (
     <AuthBackground showMandala={true}>
       <div className="flex-1 flex flex-col px-6 pt-10 pb-12 z-10 w-full max-w-lg mx-auto items-center">
+        {/* ⚛️ Logo Container - Standard Circular Version */}
+        <motion.div
+           initial={{ opacity: 0, scale: 0.9 }}
+           animate={{ opacity: 1, scale: 1 }}
+           className="relative w-44 h-44 sm:w-56 sm:h-56 mb-8 group flex items-center justify-center"
+        >
+           <div className="absolute inset-[-10px] bg-gradient-to-tr from-amber-400/30 via-amber-200/10 to-transparent rounded-full blur-xl opacity-40" />
+           <img 
+            src="/icons/Main logo.svg" 
+            alt="Logo" 
+            className="w-full h-full object-contain relative z-10 drop-shadow-md" 
+            style={{ mixBlendMode: 'multiply' }}
+           />
+        </motion.div>
+
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="w-16 h-16 bg-blue-50/50 backdrop-blur-sm rounded-full flex items-center justify-center mb-8 shadow-sm border border-white/40"
+          className="w-14 h-14 bg-blue-50/50 backdrop-blur-sm rounded-full flex items-center justify-center mb-8 shadow-sm border border-white/40"
         >
-          <Fingerprint className="w-8 h-8 text-blue-900" strokeWidth={1.5} />
+          <Fingerprint className="w-7 h-7 text-blue-900" strokeWidth={1.5} />
         </motion.div>
 
         <div className="text-center mb-10">

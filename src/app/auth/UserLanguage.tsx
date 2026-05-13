@@ -5,7 +5,7 @@ import { AuthBackground } from "./components/AuthBackground";
 import { GradientButton } from "./components/GradientButton";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
-import { Check } from "lucide-react";
+import { Check, ChevronRight } from "lucide-react";
 
 const LANGUAGES = [
   { code: "mr", label: "मराठी", subLabel: "Marathi", icon: "म" },
@@ -26,17 +26,31 @@ export default function UserLanguage() {
   };
 
   return (
-  return (
     <AuthBackground showMandala={true}>
       {/* 🌿 Main Container */}
       <div className="flex-1 flex flex-col min-h-screen">
         
+        {/* ⚛️ Logo Container - Standard Circular Version */}
+        <motion.div
+           initial={{ opacity: 0, scale: 0.9 }}
+           animate={{ opacity: 1, scale: 1 }}
+           className="relative w-44 h-44 sm:w-56 sm:h-56 mb-8 group flex items-center justify-center mx-auto mt-12"
+        >
+           <div className="absolute inset-[-10px] bg-gradient-to-tr from-amber-400/30 via-amber-200/10 to-transparent rounded-full blur-xl opacity-40" />
+           <img 
+            src="/icons/Main logo.svg" 
+            alt="Logo" 
+            className="w-full h-full object-contain relative z-10 drop-shadow-md" 
+            style={{ mixBlendMode: 'multiply' }}
+           />
+        </motion.div>
+
         {/* 🏛️ Header Section */}
-        <div className="pt-12 pb-6 px-8 text-center z-10">
+        <div className="pb-6 px-8 text-center z-10">
           <motion.span 
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="text-[9px] uppercase tracking-[0.4em] text-amber-600 font-black mb-3 block"
+            className="text-[10px] uppercase tracking-[0.4em] text-amber-700/60 font-black mb-3 block"
           >
             Divine Communication
           </motion.span>
