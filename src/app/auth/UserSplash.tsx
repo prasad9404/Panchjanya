@@ -57,7 +57,7 @@ export default function UserSplash() {
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.6, duration: 1.2 }}
-            className="w-44 h-44 md:w-56 md:h-56 flex items-center justify-center p-4 relative group"
+            className="w-64 h-64 sm:w-80 sm:h-80 flex items-center justify-center p-6 relative group"
           >
              {/* Royal Glow behind logo */}
              <div className="absolute inset-[-10px] bg-gradient-to-tr from-amber-400/20 via-amber-200/5 to-transparent rounded-full blur-2xl opacity-40" />
