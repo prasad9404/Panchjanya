@@ -4,8 +4,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { AuthBackground } from "./components/AuthBackground";
 import { GradientButton } from "./components/GradientButton";
 import { AuthInputField } from "./components/AuthInputField";
-import { 
-  ArrowLeft, User, Lock, Mail, Sparkles, 
+import {
+  ArrowLeft, User, Lock, Mail, Sparkles,
   Info, Compass, ChevronRight, ArrowRight,
   MapPin, Phone
 } from "lucide-react";
@@ -35,7 +35,7 @@ export default function UserRegister() {
     if (!formData.firstName) newErrors.firstName = "Required";
     if (!formData.lastName) newErrors.lastName = "Required";
     if (!formData.mobile) newErrors.mobile = "Required";
-    
+
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
       return;
@@ -43,7 +43,7 @@ export default function UserRegister() {
     setIsLoading(true);
     setTimeout(() => {
       setIsLoading(false);
-      navigate("/auth/verify-identity"); 
+      navigate("/auth/verify-identity");
     }, 1500);
   };
 
@@ -53,24 +53,24 @@ export default function UserRegister() {
       <div className="flex-1 flex flex-col px-6 pt-6 pb-12 z-10 w-full max-w-lg mx-auto items-center">
         {/* ⚛️ Logo Container - Standard Circular Version */}
         <motion.div
-           initial={{ opacity: 0, scale: 0.9 }}
-           animate={{ opacity: 1, scale: 1 }}
-           className="relative w-44 h-44 sm:w-56 sm:h-56 mb-8 group flex items-center justify-center"
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="relative w-44 h-44 sm:w-56 sm:h-56 mb-8 group flex items-center justify-center"
         >
-           <div className="absolute inset-[-10px] bg-gradient-to-tr from-amber-400/30 via-amber-200/10 to-transparent rounded-full blur-xl opacity-40" />
-           <img 
-            src="/icons/Main logo.svg" 
-            alt="Logo" 
-            className="w-full h-full object-contain relative z-10 drop-shadow-md" 
+          <div className="absolute inset-[-10px] bg-gradient-to-tr from-amber-400/30 via-amber-200/10 to-transparent rounded-full blur-xl opacity-40" />
+          <img
+            src="/icons/Main logo.svg"
+            alt="Logo"
+            className="w-full h-full object-contain relative z-10 drop-shadow-md"
             style={{ mixBlendMode: 'multiply' }}
-           />
+          />
         </motion.div>
 
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="text-center mb-10"
+          className="text-center mb-7"
         >
           <h1 className="text-2xl sm:text-3xl font-black text-blue-950 font-serif mb-2 tracking-tight uppercase italic bg-clip-text text-transparent bg-gradient-to-b from-blue-950 via-blue-900 to-[#133E7C]">
             Begin Your Journey
@@ -88,7 +88,7 @@ export default function UserRegister() {
               label="Siddharth"
               icon={<User />}
               value={formData.firstName}
-              onChange={e => setFormData({...formData, firstName: e.target.value})}
+              onChange={e => setFormData({ ...formData, firstName: e.target.value })}
               error={errors.firstName}
             />
             <AuthInputField
@@ -96,14 +96,14 @@ export default function UserRegister() {
               label="Sharma"
               icon={<User />}
               value={formData.lastName}
-              onChange={e => setFormData({...formData, lastName: e.target.value})}
+              onChange={e => setFormData({ ...formData, lastName: e.target.value })}
               error={errors.lastName}
             />
           </div>
 
           <div className="grid grid-cols-[1.2fr_0.8fr] gap-3">
             <div className="space-y-2 px-1">
-              <label className="text-[9px] font-black text-blue-900/40 uppercase tracking-widest ml-1">GENDER</label>
+              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-900/60 ml-1">GENDER</label>
               <div className="flex gap-2">
                 {["Male", "Female"].map(g => (
                   <button
@@ -111,10 +111,10 @@ export default function UserRegister() {
                     type="button"
                     onClick={() => setFormData({ ...formData, gender: g })}
                     className={cn(
-                      "flex-1 h-11 rounded-xl border font-bold text-xs transition-all",
-                      formData.gender === g 
-                        ? "border-amber-500 bg-amber-50 text-amber-900 shadow-sm" 
-                        : "border-slate-100 bg-white/50 text-slate-400"
+                      "flex-1 h-12 rounded-xl border font-bold text-xs transition-all duration-300",
+                      formData.gender === g
+                        ? "border-amber-500 bg-amber-50/50 text-amber-900 shadow-[0_2px_10px_rgba(245,158,11,0.1)]"
+                        : "border-slate-200/60 bg-white text-slate-400 hover:border-slate-300"
                     )}
                   >
                     {g}
@@ -128,7 +128,7 @@ export default function UserRegister() {
               label="24"
               type="number"
               value={formData.age}
-              onChange={e => setFormData({...formData, age: e.target.value})}
+              onChange={e => setFormData({ ...formData, age: e.target.value })}
               error={errors.age}
             />
           </div>
@@ -139,7 +139,7 @@ export default function UserRegister() {
               label="Maharashtra"
               icon={<MapPin className="w-4 h-4" />}
               value={formData.state}
-              onChange={e => setFormData({...formData, state: e.target.value})}
+              onChange={e => setFormData({ ...formData, state: e.target.value })}
               error={errors.state}
             />
             <AuthInputField
@@ -147,7 +147,7 @@ export default function UserRegister() {
               label="Sambhajinagar"
               icon={<MapPin className="w-4 h-4" />}
               value={formData.district}
-              onChange={e => setFormData({...formData, district: e.target.value})}
+              onChange={e => setFormData({ ...formData, district: e.target.value })}
               error={errors.district}
             />
           </div>
@@ -158,7 +158,7 @@ export default function UserRegister() {
               label="Paithan"
               icon={<MapPin className="w-4 h-4" />}
               value={formData.taluka}
-              onChange={e => setFormData({...formData, taluka: e.target.value})}
+              onChange={e => setFormData({ ...formData, taluka: e.target.value })}
               error={errors.taluka}
             />
             <AuthInputField
@@ -166,7 +166,7 @@ export default function UserRegister() {
               label="Paithan"
               icon={<MapPin className="w-4 h-4" />}
               value={formData.city}
-              onChange={e => setFormData({...formData, city: e.target.value})}
+              onChange={e => setFormData({ ...formData, city: e.target.value })}
               error={errors.city}
             />
           </div>
@@ -177,7 +177,7 @@ export default function UserRegister() {
             icon={<Phone />}
             type="tel"
             value={formData.whatsapp}
-            onChange={e => setFormData({...formData, whatsapp: e.target.value})}
+            onChange={e => setFormData({ ...formData, whatsapp: e.target.value })}
             error={errors.whatsapp}
           />
 
@@ -187,12 +187,12 @@ export default function UserRegister() {
             icon={<Phone />}
             type="tel"
             value={formData.mobile}
-            onChange={e => setFormData({...formData, mobile: e.target.value})}
+            onChange={e => setFormData({ ...formData, mobile: e.target.value })}
             error={errors.mobile}
           />
 
           <div className="pt-4">
-            <GradientButton 
+            <GradientButton
               type="submit"
               disabled={isLoading}
               className="w-full h-12 sm:h-14 bg-gradient-to-r from-blue-950 to-[#133E7C] shadow-[0_8px_20px_rgba(19,62,124,0.15)] rounded-[1.2rem]"
@@ -214,7 +214,7 @@ export default function UserRegister() {
           <p className="text-slate-400 font-medium text-xs text-center">
             Already part of the heritage?
           </p>
-          <button 
+          <button
             onClick={() => navigate("/auth/login")}
             className="flex items-center gap-1.5 mx-auto mt-2 text-primary font-black uppercase tracking-widest text-[11px] hover:underline underline-offset-4"
           >
