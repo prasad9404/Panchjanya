@@ -21,7 +21,7 @@ const Dashboard = () => {
 
     return (
         <div className="w-full min-h-full flex-1 ">
-            <div className="max-w-md mx-auto lg:max-w-4xl xl:max-w-6xl 2xl:max-w-7xl px-4 lg:px-6 space-y-6 lg:space-y-10 animate-in fade-in duration-500 pb-24">
+            <div className="max-w-md mx-auto lg:max-w-4xl xl:max-w-6xl 2xl:max-w-7xl px-4 lg:px-6 space-y-5 lg:space-y-8 animate-in fade-in duration-500 pb-32">
 
                 {/* Top Bar - Homepage Logo Header */}
                 <div className="flex flex-col items-center justify-center pt-2 pb-0 w-full cursor-default overflow-hidden">
