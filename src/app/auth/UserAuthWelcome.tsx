@@ -80,12 +80,12 @@ export default function UserAuthWelcome() {
         >
 
           {/* 💎 3D Interactive Logo - Standardized Size */}
-          <div className="perspective-1000 mb-8 h-44 sm:h-56 flex items-center justify-center">
+          <div className="perspective-1000 mb-8 h-52 sm:h-64 flex items-center justify-center">
             <motion.div
               style={{ rotateX, rotateY }}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              className="relative w-44 h-44 sm:w-56 sm:h-56 group cursor-pointer flex items-center justify-center"
+              className="relative w-52 h-52 sm:w-64 sm:h-64 group cursor-pointer flex items-center justify-center"
             >
               {/* Royal Glow Effect */}
               <div className="absolute inset-[-15px] bg-gradient-to-tr from-amber-400/30 via-amber-200/10 to-transparent rounded-full blur-2xl opacity-40 group-hover:opacity-100 transition-opacity duration-500" />

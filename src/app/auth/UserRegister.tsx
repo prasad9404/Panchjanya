@@ -55,7 +55,7 @@ export default function UserRegister() {
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="relative w-44 h-44 sm:w-56 sm:h-56 mb-8 group flex items-center justify-center"
+          className="relative w-52 h-52 sm:w-64 sm:h-64 mb-8 group flex items-center justify-center"
         >
           <div className="absolute inset-[-10px] bg-gradient-to-tr from-amber-400/30 via-amber-200/10 to-transparent rounded-full blur-xl opacity-40" />
           <img
@@ -72,7 +72,7 @@ export default function UserRegister() {
           transition={{ delay: 0.2 }}
           className="text-center mb-7"
         >
-          <h1 className="text-2xl sm:text-3xl font-black text-blue-950 font-serif mb-2 tracking-tight uppercase italic bg-clip-text text-transparent bg-gradient-to-b from-blue-950 via-blue-900 to-[#133E7C]">
+          <h1 className="text-xl sm:text-2xl font-black text-blue-950 font-serif mb-2 tracking-tight uppercase italic bg-clip-text text-transparent bg-gradient-to-b from-blue-950 via-blue-900 to-[#133E7C]">
             Begin Your Journey
           </h1>
           <p className="text-slate-400 text-xs sm:text-sm font-medium max-w-[240px] mx-auto leading-relaxed">
@@ -102,8 +102,10 @@ export default function UserRegister() {
           </div>
 
           <div className="grid grid-cols-[1.2fr_0.8fr] gap-3">
-            <div className="space-y-2 px-1">
-              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-900/60 ml-1">GENDER</label>
+            <div className="space-y-2">
+              <div className="flex justify-between items-center px-1">
+                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-900/60">GENDER</label>
+              </div>
               <div className="flex gap-2">
                 {["Male", "Female"].map(g => (
                   <button

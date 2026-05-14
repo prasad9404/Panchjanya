@@ -72,7 +72,7 @@ export default function UserOnboarding() {
                 <img 
                   src="/icons/Homepage logo.svg" 
                   alt="Panchjanya Logo" 
-                  className="h-28 sm:h-36 w-auto object-contain relative z-10 drop-shadow-sm" 
+                  className="h-36 sm:h-44 w-auto object-contain relative z-10 drop-shadow-sm" 
                   style={{ mixBlendMode: 'multiply' }}
                 />
               </div>
@@ -111,7 +111,7 @@ export default function UserOnboarding() {
                     <img 
                       src="/icons/Homepage logo.svg" 
                       alt="Panchjanya Logo" 
-                      className="h-28 sm:h-36 w-auto object-contain relative z-10 drop-shadow-sm" 
+                      className="h-36 sm:h-44 w-auto object-contain relative z-10 drop-shadow-sm" 
                       style={{ mixBlendMode: 'multiply' }}
                     />
                   </div>
@@ -201,7 +201,7 @@ export default function UserOnboarding() {
               className="space-y-6"
             >
               <div className="text-center relative">
-                <h2 className="text-3xl font-black text-blue-950 font-serif mb-1 tracking-tight">Spiritual Details</h2>
+                <h2 className="text-xl sm:text-2xl font-black text-blue-950 font-serif mb-1 tracking-tight uppercase italic bg-clip-text text-transparent bg-gradient-to-b from-blue-950 via-blue-900 to-[#133E7C]">Spiritual Details</h2>
                 <p className="text-amber-700/60 text-[10px] uppercase tracking-[0.2em] font-black">Sanctuary Entrance • {formData.status}</p>
               </div>
 
@@ -308,7 +308,7 @@ export default function UserOnboarding() {
               className="space-y-8"
             >
               <div className="text-center relative">
-                <h2 className="text-3xl font-black text-blue-950 font-serif mb-1 tracking-tight">Final Verification</h2>
+                <h2 className="text-xl sm:text-2xl font-black text-blue-950 font-serif mb-1 tracking-tight uppercase italic bg-clip-text text-transparent bg-gradient-to-b from-blue-950 via-blue-900 to-[#133E7C]">Final Verification</h2>
                 <p className="text-amber-700/60 text-[10px] uppercase tracking-[0.2em] font-black">Capture your divine identity</p>
               </div>
 
@@ -365,7 +365,7 @@ export default function UserOnboarding() {
             >
               <div className="relative">
                 <div className="absolute inset-[-30px] bg-amber-400/20 blur-3xl rounded-full animate-pulse" />
-                <div className="w-28 h-28 bg-gradient-to-tr from-amber-500 to-amber-300 rounded-full flex items-center justify-center shadow-[0_15px_35px_rgba(245,158,11,0.3)] relative z-10">
+                <div className="w-28 h-28 bg-gradient-to-tr from-amber-600 to-amber-400 rounded-full flex items-center justify-center shadow-[0_15px_35px_rgba(217,119,6,0.3)] relative z-10">
                   <motion.div
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
@@ -376,7 +376,7 @@ export default function UserOnboarding() {
                 </div>
               </div>
               <div>
-                <h2 className="text-3xl font-black text-blue-950 font-serif mb-2 bg-clip-text text-transparent bg-gradient-to-b from-blue-950 via-blue-900 to-[#133E7C]">Registration Successful!</h2>
+                <h2 className="text-xl sm:text-2xl font-black text-blue-950 font-serif mb-2 bg-clip-text text-transparent bg-gradient-to-b from-blue-950 via-blue-900 to-[#133E7C] uppercase italic">Registration Successful!</h2>
                 <p className="text-slate-400 font-medium text-base">Your spiritual profile is ready.</p>
               </div>
               <GradientButton 
