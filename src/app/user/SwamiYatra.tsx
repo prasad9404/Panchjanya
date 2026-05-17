@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/shared/components/ui/button";
 import { ChevronLeft, Share2, Compass, MapPin, GripHorizontal, ChevronRight, ExternalLink, Loader2, Navigation2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import YatraMapGoogle from "@/shared/components/features/YatraMapGoogle";
+import YatraMapMapLibre from "@/shared/components/features/YatraMapMapLibre";
 import type { YatraLocation } from "@/shared/components/features/YatraMap";
 import { Card } from "@/shared/components/ui/card";
 import {
@@ -258,7 +258,7 @@ const SwamiYatra = () => {
                 style={!isFullScreen ? { height: `${100 - panelHeight - 15}vh` } : {}}
             >
                 <div className="w-full h-full scale-[1.01]">
-                    <YatraMapGoogle
+                    <YatraMapMapLibre
                         locations={filteredPlaces}
                         highlightedId={filteredPlaces[currentIndex]?.id}
                         centerOnFullRoute={centerOnFullRoute}
