@@ -41,6 +41,9 @@ import { AVATAR_SAMBANDH_CONFIG, getAvatarColor } from "@/shared/utils/sthanType
 import { getSthanaStatus } from "@/shared/utils/sthanValidation";
 import { SthanaStatus } from "@/types";
 import { useSthanTypes } from "@/shared/contexts/SthanTypesContext";
+import { SthanaCard } from "@/shared/components/features/SthanaCard";
+import { AlphabetSection } from "@/shared/components/features/AlphabetSection";
+import { AlphabetScroller } from "@/shared/components/features/AlphabetScroller";
 
 export default function SthanaDirectory() {
     const [temples, setTemples] = useState<any[]>([]);
@@ -295,6 +298,134 @@ export default function SthanaDirectory() {
 
     const formatDate = (date: Date) => {
         return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    };
+
+    // State to track currently active alphabet letter
+    const [activeLetter, setActiveLetter] = useState<string>("");
+
+    // Responsive state for screen-width based scroller layout
+    const [isMobile, setIsMobile] = useState(false);
+
+    useEffect(() => {
+        const checkMobile = () => {
+            setIsMobile(window.innerWidth < 1024); // Use lg breakpoint (1024px) for robust desktop view
+        };
+        checkMobile();
+        window.addEventListener('resize', checkMobile);
+        return () => window.removeEventListener('resize', checkMobile);
+    }, []);
+
+    // Helper to get English name safely for sorting and grouping
+    const getEnglishName = (temple: any): string => {
+        const nameVal = temple.name;
+        if (!nameVal) return "";
+        if (typeof nameVal === 'string') return nameVal;
+        return nameVal.en || "";
+    };
+
+    // Sort filtered temples alphabetically by English name
+    const sortedFilteredTemples = React.useMemo(() => {
+        return [...filteredTemples].sort((a: any, b: any) => {
+            const nameA = getEnglishName(a).toLowerCase().trim();
+            const nameB = getEnglishName(b).toLowerCase().trim();
+            return nameA.localeCompare(nameB);
+        });
+    }, [filteredTemples]);
+
+    // Group sorted temples by starting letter
+    const groupedTemples = React.useMemo(() => {
+        const groups: Record<string, any[]> = {};
+        sortedFilteredTemples.forEach((temple) => {
+            const nameStr = getEnglishName(temple).trim();
+            const firstLetter = nameStr.charAt(0).toUpperCase();
+            const groupKey = /^[A-Z]$/.test(firstLetter) ? firstLetter : '#';
+            
+            if (!groups[groupKey]) {
+                groups[groupKey] = [];
+            }
+            groups[groupKey].push(temple);
+        });
+        return groups;
+    }, [sortedFilteredTemples]);
+
+    // Set of letters that have at least one sthana in the current filtered list
+    const availableLetters = React.useMemo(() => {
+        const letters = new Set<string>();
+        sortedFilteredTemples.forEach((temple) => {
+            const nameStr = getEnglishName(temple).trim();
+            const firstLetter = nameStr.charAt(0).toUpperCase();
+            if (/^[A-Z]$/.test(firstLetter)) {
+                letters.add(firstLetter);
+            }
+        });
+        return letters;
+    }, [sortedFilteredTemples]);
+
+    // Automatically set initial active letter to the first available one when availableLetters changes
+    useEffect(() => {
+        if (availableLetters.size > 0) {
+            const firstLetter = Array.from(availableLetters).sort()[0];
+            setActiveLetter(firstLetter);
+        } else {
+            setActiveLetter("");
+        }
+    }, [availableLetters]);
+
+    // Performant Scroll Spy using scroll event listener on the scrollable container
+    useEffect(() => {
+        const scrollContainer = document.querySelector('.overflow-y-auto');
+        if (!scrollContainer || availableLetters.size === 0) return;
+
+        const handleScroll = () => {
+            const sections = Array.from(availableLetters).map(letter => {
+                const element = document.getElementById(`section-${letter}`);
+                return { letter, element };
+            }).filter(item => item.element !== null) as { letter: string; element: HTMLElement }[];
+
+            const containerTop = scrollContainer.getBoundingClientRect().top;
+            
+            let currentActive = "";
+            for (let i = 0; i < sections.length; i++) {
+                const section = sections[i];
+                const rect = section.element.getBoundingClientRect();
+                
+                // If section top has scrolled past or is near the top of the container viewport
+                if (rect.top - containerTop <= 140) {
+                    currentActive = section.letter;
+                } else {
+                    break;
+                }
+            }
+
+            if (currentActive) {
+                setActiveLetter(currentActive);
+            }
+        };
+
+        scrollContainer.addEventListener('scroll', handleScroll, { passive: true });
+        // Initial call
+        handleScroll();
+
+        return () => {
+            scrollContainer.removeEventListener('scroll', handleScroll);
+        };
+    }, [availableLetters, sortedFilteredTemples]);
+
+    const handleLetterClick = (letter: string) => {
+        const element = document.getElementById(`section-${letter}`);
+        if (element) {
+            const scrollContainer = element.closest('.overflow-y-auto');
+            if (scrollContainer) {
+                const targetOffset = element.offsetTop - 24; // comfortable top margin
+                scrollContainer.scrollTo({
+                    top: targetOffset,
+                    behavior: "smooth"
+                });
+            } else {
+                element.scrollIntoView({ behavior: "smooth", block: "start" });
+            }
+            setActiveLetter(letter);
+        }
     };
 
     return (
@@ -590,164 +721,79 @@ export default function SthanaDirectory() {
                         </div>
                     </div>
 
-                    {/* Directory List */}
-                    <div className="grid grid-cols-1 gap-6 pb-20">
-                        {loading ? (
-                            <div className="col-span-full flex flex-col items-center justify-center py-32 space-y-4">
-                                <div className="w-12 h-12 border-4 border-blue-900/10 border-t-blue-900 rounded-full animate-spin" />
-                                <p className="text-slate-400 font-black uppercase tracking-[0.2em] text-[10px]">Syncing Sthana Records...</p>
+                    {/* Directory List Layout */}
+                    {loading ? (
+                        <div className="flex flex-col items-center justify-center py-32 space-y-4">
+                            <div className="w-12 h-12 border-4 border-blue-900/10 border-t-blue-900 rounded-full animate-spin" />
+                            <p className="text-slate-400 font-black uppercase tracking-[0.2em] text-[10px]">Syncing Sthana Records...</p>
+                        </div>
+                    ) : sortedFilteredTemples.length === 0 ? (
+                        <div className="text-center py-32 bg-white rounded-[40px] border border-dashed border-slate-200">
+                            <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-6 text-slate-300">
+                                <Search className="w-10 h-10" />
                             </div>
-                        ) : filteredTemples.length === 0 ? (
-                            <div className="col-span-full text-center py-32 bg-white rounded-[40px] border border-dashed border-slate-200">
-                                <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-6 text-slate-300">
-                                    <Search className="w-10 h-10" />
-                                </div>
-                                <h3 className="text-xl font-serif font-bold text-slate-900">No Records Found</h3>
-                                <p className="text-slate-500 font-medium max-w-xs mx-auto mt-2">Adjust your filters or search terms to find the sthana you are looking for.</p>
-                                <Button variant="link" onClick={() => { setSearchTerm(""); setSelectedDistrict("District"); setSelectedTaluka("Taluka"); setSelectedAvatarSambandh("ALL"); setSelectedStatus("Status"); }} className="text-blue-600 font-black mt-4 uppercase tracking-widest text-xs">
-                                    Clear all filters
-                                </Button>
-                            </div>
-                        ) : (
-                            filteredTemples.map((temple) => (
-                                <div
-                                    key={temple.id}
-                                    className="bg-white p-5 sm:p-6 rounded-[32px] border border-slate-200 shadow-sm hover:shadow-xl hover:shadow-blue-900/5 transition-all duration-500 group relative flex flex-col sm:flex-row items-stretch sm:items-center gap-6"
-                                >
-                                    {/* Thumbnail */}
-                                    <div className="w-full sm:w-40 h-56 sm:h-32 rounded-2xl overflow-hidden bg-slate-100 shrink-0 border border-slate-100 shadow-inner group-hover:scale-[1.02] transition-transform duration-500">
-                                        <img
-                                            src={temple.sthanImages?.[0] || temple.images?.[0] || "/placeholder-temple.jpg"}
-                                            alt={getDisp(temple.name)}
-                                            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                                            onError={(e) => {
-                                                (e.target as HTMLImageElement).src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="%23cbd5e1"><rect width="100%" height="100%" fill="%23f1f5f9"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>';
-                                            }}
+                            <h3 className="text-xl font-serif font-bold text-slate-900">No Records Found</h3>
+                            <p className="text-slate-500 font-medium max-w-xs mx-auto mt-2">Adjust your filters or search terms to find the sthana you are looking for.</p>
+                            <Button variant="link" onClick={() => { setSearchTerm(""); setSelectedDistrict("District"); setSelectedTaluka("Taluka"); setSelectedAvatarSambandh("ALL"); setSelectedStatus("Status"); }} className="text-blue-600 font-black mt-4 uppercase tracking-widest text-xs">
+                                Clear all filters
+                            </Button>
+                        </div>
+                    ) : (
+                        <div className="flex flex-col lg:flex-row gap-8 items-start relative w-full">
+                            {/* Directory Listing Column */}
+                            <div className="flex-1 w-full min-w-0 space-y-12">
+                                {/* Mobile Scroller (Horizontal sticky chip bar) - Only rendered on mobile */}
+                                {isMobile && (
+                                    <div className="sticky top-0 z-30 mb-6 bg-[#FDFCFB]/90 backdrop-blur-md py-2">
+                                        <AlphabetScroller 
+                                            activeLetter={activeLetter}
+                                            onLetterClick={handleLetterClick}
+                                            availableLetters={availableLetters}
+                                            variant="horizontal"
                                         />
                                     </div>
+                                )}
 
-                                    {/* Content */}
-                                    <div className="flex-1 min-w-0 space-y-4">
-                                        <div className="space-y-1">
-                                            <div className="flex items-center gap-3 flex-wrap">
-                                                <h3 className="text-2xl font-serif font-black text-slate-900 truncate max-w-[400px]">
-                                                    {getDisp(temple.name)}
-                                                </h3>
-                                                {(() => {
-                                                    const derivedStatus = temple.status || getSthanaStatus(temple);
-                                                    
-                                                    const statusConfigs: Record<string, { label: string, color: string, icon: any }> = {
-                                                        'PUBLISHED': { label: 'Published', color: 'bg-blue-50 text-blue-600 border-blue-100', icon: Globe },
-                                                        'VERIFIED': { label: 'Verified', color: 'bg-amber-50 text-amber-600 border-amber-100', icon: ShieldCheck },
-                                                        'COMPLETE': { label: 'Complete', color: 'bg-emerald-50 text-emerald-600 border-emerald-100', icon: CheckCircle2 },
-                                                        'IN_PROGRESS': { label: 'In Progress', color: 'bg-orange-50 text-orange-600 border-orange-100', icon: FileEdit },
-                                                        'DRAFT': { label: 'Draft', color: 'bg-slate-50 text-slate-500 border-slate-200', icon: Clock }
-                                                    };
+                                {/* Render grouped sections in alphabetical order */}
+                                {Object.keys(groupedTemples)
+                                    .sort((a, b) => {
+                                        if (a === '#') return 1;
+                                        if (b === '#') return -1;
+                                        return a.localeCompare(b);
+                                    })
+                                    .map((letter) => (
+                                        <AlphabetSection key={letter} letter={letter}>
+                                            {groupedTemples[letter].map((temple) => (
+                                                <SthanaCard
+                                                    key={temple.id}
+                                                    temple={temple}
+                                                    sthanTypes={sthanTypes}
+                                                    activeLang={activeLang}
+                                                    getDisp={getDisp}
+                                                    getSthanaStatus={getSthanaStatus}
+                                                    getAvatarColor={getAvatarColor}
+                                                    formatDate={formatDate}
+                                                    handleDelete={handleDelete}
+                                                    onEdit={(id) => navigate(`/admin/temples/${id}/edit`)}
+                                                />
+                                            ))}
+                                        </AlphabetSection>
+                                    ))}
+                            </div>
 
-                                                    const config = statusConfigs[derivedStatus] || statusConfigs['DRAFT'];
-                                                    const Icon = config.icon;
-
-                                                    return (
-                                                        <span className={cn("inline-flex items-center px-3 py-1 rounded-xl text-[10px] font-black uppercase tracking-widest border gap-1.5 shadow-sm", config.color)}>
-                                                            <Icon className="w-3.5 h-3.5" />
-                                                            {config.label}
-                                                        </span>
-                                                    );
-                                                })()}
-                                                
-                                                {(temple.hasArchitecture === false || temple.isStandalone === true) && (
-                                                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-slate-900 text-white text-[10px] font-black uppercase tracking-widest border border-slate-800 shadow-sm">
-                                                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                                                        Standalone
-                                                    </span>
-                                                )}
-                                            </div>
-
-                                            <div className="flex items-center gap-4 text-slate-500 text-sm font-medium">
-                                                <div className="flex items-center gap-1.5">
-                                                    <MapPin className="w-4 h-4 text-blue-600" />
-                                                    <span>{temple.city ? `${getDisp(temple.city)}, ` : ''}{getDisp(temple.district)}</span>
-                                                </div>
-                                                <div className="w-1 h-1 rounded-full bg-slate-200" />
-                                                <span className="text-[10px] uppercase font-black tracking-widest text-slate-400">ID: {temple.id?.slice(-8).toUpperCase()}</span>
-                                            </div>
-                                        </div>
-
-                                        <div className="flex items-center gap-3">
-                                            {/* Sthan Type Badge */}
-                                            {temple.sthan && (
-                                                (() => {
-                                                    const typeInfo = sthanTypes.find(st => st.name === getDisp(temple.sthan));
-                                                    const avatarColor = getAvatarColor(typeInfo?.avatarSambandh);
-                                                    return (
-                                                        <div 
-                                                            className="flex items-center gap-2 px-3 py-1.5 rounded-2xl border bg-white shadow-sm"
-                                                            style={{ borderColor: `${avatarColor}20` }}
-                                                        >
-                                                            <div className="w-2 h-2 rounded-full" style={{ backgroundColor: avatarColor || typeInfo?.color || '#94a3b8' }} />
-                                                            <span className="text-[10px] font-black uppercase tracking-widest text-slate-700">
-                                                                {getDisp(temple.sthan)}
-                                                            </span>
-                                                        </div>
-                                                    );
-                                                })()
-                                            )}
-                                            <div className="h-4 w-px bg-slate-100 mx-1" />
-                                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">
-                                                Added {formatDate(temple.createdAtDate)}
-                                            </p>
-                                        </div>
-                                    </div>
-
-                                    {/* Actions */}
-                                    <div className="flex sm:flex-row items-center gap-2 mt-4 sm:mt-0 pt-4 sm:pt-0 border-t sm:border-t-0 border-slate-100">
-                                        <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            className={cn(
-                                                "h-12 w-12 rounded-2xl transition-all duration-300",
-                                                (temple.hasArchitecture === false || temple.isStandalone === true)
-                                                    ? "bg-slate-50 text-slate-200 cursor-not-allowed opacity-50"
-                                                    : "bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white hover:scale-110 shadow-sm"
-                                            )}
-                                            onClick={() => {
-                                                const isStandalone = temple.hasArchitecture === false || temple.isStandalone === true;
-                                                if (!isStandalone) {
-                                                    window.open(`/temple/${temple.id}/architecture`, '_blank');
-                                                }
-                                            }}
-                                            title={(temple.hasArchitecture === false || temple.isStandalone === true) ? "No architecture page (standalone sthan)" : "View Public Architecture"}
-                                            disabled={temple.hasArchitecture === false || temple.isStandalone === true}
-                                        >
-                                            {(temple.hasArchitecture === false || temple.isStandalone === true)
-                                                ? <EyeOff className="w-5 h-5" />
-                                                : <Eye className="w-5 h-5" />}
-                                        </Button>
-                                        <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            className="h-12 w-12 rounded-2xl bg-slate-50 text-slate-600 hover:bg-slate-900 hover:text-white hover:scale-110 transition-all duration-300 border border-slate-100 shadow-sm"
-                                             onClick={() => {
-                                                 navigate(`/admin/temples/${temple.id}/edit`);
-                                             }}
-                                            title="Edit Sthana Details"
-                                        >
-                                            <Edit className="w-5 h-5" />
-                                        </Button>
-                                        <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            className="h-12 w-12 rounded-2xl bg-red-50 text-red-500 hover:bg-red-600 hover:text-white hover:scale-110 transition-all duration-300 border border-red-100 shadow-sm"
-                                            onClick={() => handleDelete(temple.id, getDisp(temple.name))}
-                                            title="Delete Permanently"
-                                        >
-                                            <Trash2 className="w-5 h-5" />
-                                        </Button>
-                                    </div>
+                            {/* Desktop/Tablet Scroller (Vertical Sticky Sidebar) - right side only */}
+                            {!isMobile && (
+                                <div className="sticky top-8 self-start z-20 shrink-0 pr-2">
+                                    <AlphabetScroller 
+                                        activeLetter={activeLetter}
+                                        onLetterClick={handleLetterClick}
+                                        availableLetters={availableLetters}
+                                        variant="vertical"
+                                    />
                                 </div>
-                            ))
-                        )}
-                    </div>
+                            )}
+                        </div>
+                    )}
 
                 </div>
             </div>
