@@ -244,57 +244,106 @@ export default function YatraMapMapLibre({ locations, highlightedId, centerOnFul
       el.style.width = '0px';
       el.style.height = '0px';
       el.style.position = 'relative';
-      
-      let badgeHtml = '';
-      if (isStart) badgeHtml = `<div style="position: absolute; bottom: -22px; font-weight: 800; color: white; font-size: 10px; background: #0f3c6e; padding: 2px 8px; border-radius: 20px; box-shadow: 0 2px 8px rgba(15,60,110,0.3); z-index: 5; white-space: nowrap; letter-spacing: 0.5px;">START</div>`;
-      if (isEnd) badgeHtml = `<div style="position: absolute; bottom: -22px; font-weight: 800; color: white; font-size: 10px; background: #D4AF37; padding: 2px 8px; border-radius: 20px; box-shadow: 0 2px 8px rgba(212,175,55,0.3); z-index: 5; white-space: nowrap; letter-spacing: 0.5px;">END</div>`;
 
-      let highlightBadge = '';
+      const width = 48;
+      const height = 48;
+
+      // Inner container
+      const container = document.createElement('div');
+      container.style.position = 'absolute';
+      container.style.transform = `translate(-50%, -100%) scale(${isHighlighted ? 1.25 : 1})`;
+      container.style.display = 'flex';
+      container.style.flexDirection = 'column';
+      container.style.alignItems = 'center';
+      container.style.width = `${width}px`;
+      container.style.height = `${height}px`;
+      container.style.justifyContent = 'center';
+      container.style.pointerEvents = 'none';
+      container.style.transition = 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
+
+      // Highlight place name tooltip
       if (isHighlighted) {
-          highlightBadge = `
-            <div class="absolute top-[-50px] px-3 py-1.5 bg-card/90 backdrop-blur-md rounded-xl shadow-xl border border-border/50 flex flex-col items-center min-w-max">
-                <span class="font-bold text-xs text-landing-primary">${loc.name}</span>
-                <div class="w-2 h-2 bg-card/90 border-r border-b border-border/50 rotate-45 absolute -bottom-1"></div>
-            </div>
-          `;
+          const badge = document.createElement('div');
+          badge.className = 'absolute bottom-[52px] left-1/2 -translate-x-1/2 px-3 py-1.5 bg-card/90 backdrop-blur-md rounded-xl shadow-xl border border-border/50 flex flex-col items-center min-w-max';
+          badge.style.transform = 'translateX(-50%)';
+          
+          const nameSpan = document.createElement('span');
+          nameSpan.className = 'font-bold text-xs text-landing-primary';
+          nameSpan.textContent = loc.name;
+          badge.appendChild(nameSpan);
+
+          const arrow = document.createElement('div');
+          arrow.className = 'w-2 h-2 bg-card/90 border-r border-b border-border/50 rotate-45 absolute -bottom-1';
+          badge.appendChild(arrow);
+
+          container.appendChild(badge);
       }
 
-      el.innerHTML = `
-        <div style="
-          position: absolute;
-          transform: translate(-50%, -50%);
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          width: 80px;
-          height: 80px;
-          justify-content: center;
-          pointer-events: none;
-        ">
-          ${highlightBadge}
-          <div style="
-              background: ${isHighlighted ? 'white' : baseColor};
-              width: ${isStart || isEnd ? '36px' : '32px'};
-              height: ${isStart || isEnd ? '36px' : '32px'};
-              border-radius: 50%;
-              border: 3px solid ${isHighlighted ? baseColor : 'white'};
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              color: ${isHighlighted ? baseColor : 'white'};
-              font-weight: 800;
-              font-size: ${isStart || isEnd ? '14px' : '13px'};
-              box-shadow: ${isHighlighted ? '0 0 25px rgba(212,175,55,0.9)' : '0 4px 12px rgba(0,0,0,0.4)'};
-              z-index: 10;
-              transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-              transform: ${isHighlighted ? 'scale(1.2)' : 'scale(1)'};
-              pointer-events: auto;
-          ">
-              ${loc.sequence}
-          </div>
-          ${badgeHtml}
-        </div>
-      `;
+      // Interactive Pin Wrapper
+      const pinWrapper = document.createElement('div');
+      pinWrapper.style.position = 'relative';
+      pinWrapper.style.width = `${width}px`;
+      pinWrapper.style.height = `${height}px`;
+      pinWrapper.style.pointerEvents = 'auto';
+      pinWrapper.style.cursor = 'pointer';
+
+      // Custom Image Pin loading Shri_Chakradhar_Swami_Pin.svg
+      const img = document.createElement('img');
+      img.src = '/icons/pins/5 Shri_Chakradhar_Swami_Pin/Shri_Chakradhar_Swami_Pin.svg';
+      img.style.width = `${width}px`;
+      img.style.height = `${height}px`;
+      img.style.display = 'block';
+      img.style.filter = `drop-shadow(0px 3px 5px rgba(15, 60, 110, 0.15)) ${isHighlighted ? `drop-shadow(0 0 8px rgba(15, 60, 110, 0.4))` : ''}`;
+      img.style.transition = 'all 0.3s ease';
+      pinWrapper.appendChild(img);
+
+      // Sequence Text Overlay centered in the pin
+      const seqDiv = document.createElement('div');
+      seqDiv.style.position = 'absolute';
+      seqDiv.style.top = '40%';
+      seqDiv.style.left = '50%';
+      seqDiv.style.transform = 'translate(-50%, -50%)';
+      seqDiv.style.width = '24px';
+      seqDiv.style.height = '24px';
+      seqDiv.style.display = 'flex';
+      seqDiv.style.alignItems = 'center';
+      seqDiv.style.justifyContent = 'center';
+      seqDiv.style.color = '#0f3c6e'; // Theme primary dark blue
+      seqDiv.style.fontWeight = '800';
+      seqDiv.style.textShadow = '0 0 3px #ffffff, 0 0 3px #ffffff, 0 0 3px #ffffff';
+      seqDiv.style.zIndex = '10';
+      seqDiv.style.pointerEvents = 'none';
+
+      const seqLength = String(loc.sequence).length;
+      seqDiv.style.fontSize = seqLength > 2 ? '9px' : seqLength > 1 ? '11px' : '12px';
+      seqDiv.textContent = String(loc.sequence);
+
+      pinWrapper.appendChild(seqDiv);
+      container.appendChild(pinWrapper);
+
+      // START / END badge below the pin tip
+      if (isStart || isEnd) {
+          const badge = document.createElement('div');
+          badge.style.position = 'absolute';
+          badge.style.top = '50px';
+          badge.style.fontWeight = '800';
+          badge.style.color = 'white';
+          badge.style.fontSize = '10px';
+          badge.style.background = isEnd ? '#D4AF37' : '#0f3c6e';
+          badge.style.padding = '2px 8px';
+          badge.style.borderRadius = '20px';
+          badge.style.boxShadow = isEnd ? '0 2px 8px rgba(212,175,55,0.3)' : '0 2px 8px rgba(15,60,110,0.3)';
+          badge.style.zIndex = '5';
+          badge.style.whiteSpace = 'nowrap';
+          badge.style.letterSpacing = '0.5px';
+          badge.style.left = '50%';
+          badge.style.transform = 'translateX(-50%)';
+          badge.textContent = isEnd ? 'END' : 'START';
+
+          container.appendChild(badge);
+      }
+
+      el.appendChild(container);
 
       const marker = new maplibregl.Marker({ element: el })
         .setLngLat([loc.longitude, loc.latitude])
@@ -318,58 +367,29 @@ export default function YatraMapMapLibre({ locations, highlightedId, centerOnFul
     }
   }, [userLocation, mapLoaded]);
 
-  // Routing with OpenRouteService (Fallback to OSRM if API key missing)
+  // Direct Routing (Straight line between locations)
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !mapLoaded || locations.length < 2) return;
 
-    const fetchRoute = async () => {
-      const sorted = [...locations].sort((a, b) => a.sequence - b.sequence);
-      const coords = sorted.map(l => `${l.longitude},${l.latitude}`);
-      if (userLocation) {
-          coords.unshift(`${userLocation.lng},${userLocation.lat}`);
-      }
+    const sorted = [...locations].sort((a, b) => a.sequence - b.sequence);
+    const coords: [number, number][] = sorted.map(l => [l.longitude, l.latitude]);
+    if (userLocation) {
+        coords.unshift([userLocation.lng, userLocation.lat]);
+    }
 
-      try {
-        const orsKey = import.meta.env.VITE_ORS_API_KEY;
-        let routeGeoJSON;
-
-        if (orsKey) {
-            // OpenRouteService
-            const res = await fetch('https://api.openrouteservice.org/v2/directions/driving-car/geojson', {
-                method: 'POST',
-                headers: {
-                    'Authorization': orsKey,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    coordinates: coords.map(c => c.split(',').map(Number))
-                })
-            });
-            const data = await res.json();
-            if (data.features && data.features.length > 0) {
-                routeGeoJSON = data.features[0].geometry;
-            }
-        } else {
-            // OSRM Fallback
-            const coordsStr = coords.join(';');
-            const res = await fetch(`https://router.project-osrm.org/route/v1/driving/${coordsStr}?overview=full&geometries=geojson`);
-            const data = await res.json();
-            if (data.code === 'Ok' && data.routes && data.routes.length > 0) {
-                routeGeoJSON = data.routes[0].geometry;
-            }
-        }
-
-        if (routeGeoJSON && map.getSource('route')) {
-            (map.getSource('route') as maplibregl.GeoJSONSource).setData(routeGeoJSON);
-        }
-
-      } catch (err) {
-        console.error("Routing error:", err);
+    const routeGeoJSON = {
+      type: 'Feature',
+      properties: {},
+      geometry: {
+        type: 'LineString',
+        coordinates: coords
       }
     };
 
-    fetchRoute();
+    if (map.getSource('route')) {
+        (map.getSource('route') as maplibregl.GeoJSONSource).setData(routeGeoJSON as any);
+    }
   }, [locations, userLocation, mapLoaded]);
 
   return (
