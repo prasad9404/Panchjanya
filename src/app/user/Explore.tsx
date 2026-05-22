@@ -62,6 +62,7 @@ import {
 import { SthanType } from "@/shared/types/sthanType";
 import { getTranslatedValue, getLangCode } from "@/shared/utils/translationUtils";
 import { getLocationUrl } from "@/shared/utils/locationUtils";
+import { MapLegendContent } from "@/shared/components/ui/MapLegendPanel";
 
 // Custom styles for Leaflet popup close button
 const popupStyles = `
@@ -118,6 +119,20 @@ const toCanonicalSthan = (name: string): string | null => {
     if (c.keywords.some((k) => n.includes(k))) return c.label;
   }
   return null;
+};
+
+// Safe helpers using Map to prevent prototype pollution warnings and avoid bracket notation entirely
+const getSafeCount = (map: Map<string, number> | undefined | null, key: string | undefined | null): number => {
+  if (!map || !key) {
+    return 0;
+  }
+  return map.get(key) || 0;
+};
+
+const incrementSafeCount = (map: Map<string, number>, key: string | undefined | null) => {
+  if (key) {
+    map.set(key, (map.get(key) || 0) + 1);
+  }
 };
 
 // Helper function to get icon by sthan type and primary avatar
@@ -805,8 +820,8 @@ const Explore = () => {
   const avatarCounts = useMemo(() => {
     const counts = {
       ALL: allTemplesForOptions.length,
-      byAvatar: {} as Record<string, number>,
-      bySubdivision: {} as Record<string, number>,
+      byAvatar: new Map<string, number>(),
+      bySubdivision: new Map<string, number>(),
     };
 
     allTemplesForOptions.forEach((t) => {
@@ -824,11 +839,10 @@ const Explore = () => {
       }
 
       if (resAvatarS) {
-        counts.byAvatar[resAvatarS] = (counts.byAvatar[resAvatarS] || 0) + 1;
+        incrementSafeCount(counts.byAvatar, resAvatarS);
       }
       if (resAvatarSub) {
-        counts.bySubdivision[resAvatarSub] =
-          (counts.bySubdivision[resAvatarSub] || 0) + 1;
+        incrementSafeCount(counts.bySubdivision, resAvatarSub);
       }
 
       // Legacy fallback if fields are missing
@@ -836,11 +850,9 @@ const Explore = () => {
         const sName = temp.sthan || temp.sthana;
         const sType = sthanTypes.find((st) => st.name === sName);
         if (sType?.avatarSambandh) {
-          counts.byAvatar[sType.avatarSambandh] =
-            (counts.byAvatar[sType.avatarSambandh] || 0) + 1;
+          incrementSafeCount(counts.byAvatar, sType.avatarSambandh);
           if (sType.avatarSubdivision) {
-            counts.bySubdivision[sType.avatarSubdivision] =
-              (counts.bySubdivision[sType.avatarSubdivision] || 0) + 1;
+            incrementSafeCount(counts.bySubdivision, sType.avatarSubdivision);
           }
         }
       }
@@ -996,7 +1008,7 @@ const Explore = () => {
                 size="icon"
                 variant="outline"
                 className="h-9 w-9 rounded-full bg-background/95 backdrop-blur-md border-border/40 shadow-md text-landing-primary dark:text-primary hover:bg-accent/10 shrink-0"
-                title={t("explore.sthanTypesInfo")}
+                title={t("explore.aboutMapPins") || "About Map Pins"}
               >
                 <Info className="w-5 h-5" />
               </Button>
@@ -1005,159 +1017,16 @@ const Explore = () => {
               side="bottom"
               align="end"
               sideOffset={8}
-              className="w-56 rounded-[1.25rem] p-3.5 bg-[#FDFBF7] border-[#E8E2D5] shadow-xl"
+              className="w-72 rounded-[1.25rem] p-3.5 bg-[#FDFBF7] border-[#E8E2D5] shadow-xl"
             >
-              <h3 className="text-lg font-heading font-black text-[#2D2D2D] mb-3 px-1 truncate">
-                {t("explore.sthanTypesInfo")}
+              <h3 className="text-lg font-heading font-black text-[#2D2D2D] mb-1 px-1 truncate">
+                {t("explore.aboutMapPins") || "About Map Pins"}
               </h3>
-              <div className="max-h-[50vh] overflow-y-auto pr-1 custom-scrollbar">
-                <Accordion
-                  type="single"
-                  collapsible
-                  className="w-full space-y-1"
-                >
-                  {AVATAR_SAMBANDH_CONFIG.map((avatar) => {
-                    // Find all sthan types belonging strictly to this avatar (for those w/o subdivisions)
-                    const directSthans = sthanTypes.filter(
-                      (st) =>
-                        st.avatarSambandh === avatar.id &&
-                        (!st.avatarSubdivision || st.avatarSubdivision === ""),
-                    );
-                    // Total sthans includes direct sthans + those inside subdivisions
-                    const hasAnySthans =
-                      directSthans.length > 0 ||
-                      avatar.subdivisions.some((sub) =>
-                        sthanTypes.some(
-                          (st) =>
-                            st.avatarSambandh === avatar.id &&
-                            st.avatarSubdivision === sub.id,
-                        ),
-                      );
-
-                    if (!hasAnySthans) return null;
-
-                    return (
-                      <AccordionItem
-                        value={avatar.id}
-                        key={avatar.id}
-                        className="border-none"
-                      >
-                        <AccordionTrigger className="hover:no-underline py-2 px-2 rounded-lg hover:bg-[#F5F1E8] transition-colors data-[state=open]:bg-[#F5F1E8]">
-                          <div className="flex items-center">
-                            <div
-                              className="w-2 h-2 rounded-full mr-2 shrink-0"
-                              style={{ backgroundColor: avatar.color }}
-                            />
-                            <span className="font-bold text-sm text-[#2D2D2D] truncate">
-                              {t(avatar.labelKey)}
-                            </span>
-                          </div>
-                        </AccordionTrigger>
-                        <AccordionContent className="pb-1 pt-1 px-1">
-                          {avatar.subdivisions.length > 0 ? (
-                            <Accordion
-                              type="single"
-                              collapsible
-                              className="w-full space-y-1 pl-3 border-l-2 ml-1"
-                              style={{ borderColor: `${avatar.color}40` }}
-                            >
-                              {avatar.subdivisions.map((sub) => {
-                                const subSthans = sthanTypes.filter(
-                                  (st) =>
-                                    st.avatarSambandh === avatar.id &&
-                                    st.avatarSubdivision === sub.id,
-                                );
-                                if (subSthans.length === 0) return null;
-
-                                return (
-                                  <AccordionItem
-                                    value={sub.id}
-                                    key={sub.id}
-                                    className="border-none"
-                                  >
-                                    <AccordionTrigger className="hover:no-underline py-1.5 px-2 rounded-md hover:bg-slate-50 transition-colors data-[state=open]:bg-slate-50">
-                                      <span className="font-semibold text-xs text-slate-600 truncate">
-                                        {t(sub.labelKey)}
-                                      </span>
-                                    </AccordionTrigger>
-                                    <AccordionContent className="pb-0 pt-1 space-y-0.5">
-                                      {subSthans.map((st) => {
-                                        const { src, filter, needsFilter } =
-                                          getSthanPinInfo(
-                                            st.color,
-                                            st.pinType,
-                                            avatar.id,
-                                            st.name,
-                                          );
-                                        return (
-                                          <div
-                                            key={st.id}
-                                            className="flex items-center gap-2 group cursor-default p-1.5 rounded-lg hover:bg-white transition-colors"
-                                          >
-                                            <div className="relative w-6 h-6 shrink-0 flex items-center justify-center transition-transform duration-300 group-hover:scale-110">
-                                              <img
-                                                src={src}
-                                                alt={st.name}
-                                                style={
-                                                  needsFilter
-                                                    ? { filter }
-                                                    : undefined
-                                                }
-                                                className="relative z-10 w-5 h-5 object-contain drop-shadow-sm"
-                                              />
-                                            </div>
-                                            <span className="text-xs font-semibold text-[#6B6B6B] truncate leading-tight group-hover:text-[#2D2D2D] transition-colors">
-                                              {st.name}
-                                            </span>
-                                          </div>
-                                        );
-                                      })}
-                                    </AccordionContent>
-                                  </AccordionItem>
-                                );
-                              })}
-                            </Accordion>
-                          ) : (
-                            <div
-                              className="space-y-0.5 pl-3 border-l-2 ml-1"
-                              style={{ borderColor: `${avatar.color}40` }}
-                            >
-                              {directSthans.map((st) => {
-                                const { src, filter, needsFilter } =
-                                  getSthanPinInfo(
-                                    st.color,
-                                    st.pinType,
-                                    avatar.id,
-                                    st.name,
-                                  );
-                                return (
-                                  <div
-                                    key={st.id}
-                                    className="flex items-center gap-2 group cursor-default p-1.5 rounded-lg hover:bg-white transition-colors"
-                                  >
-                                    <div className="relative w-6 h-6 shrink-0 flex items-center justify-center transition-transform duration-300 group-hover:scale-110">
-                                      <img
-                                        src={src}
-                                        alt={st.name}
-                                        style={
-                                          needsFilter ? { filter } : undefined
-                                        }
-                                        className="relative z-10 w-5 h-5 object-contain drop-shadow-sm"
-                                      />
-                                    </div>
-                                    <span className="text-xs font-semibold text-[#6B6B6B] truncate leading-tight group-hover:text-[#2D2D2D] transition-colors">
-                                      {st.name}
-                                    </span>
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          )}
-                        </AccordionContent>
-                      </AccordionItem>
-                    );
-                  })}
-                </Accordion>
+              <p className="text-[10px] font-sans font-semibold text-slate-500 mb-3 px-1 leading-snug">
+                {t("explore.aboutMapPinsSubtitle") || "Understand Sthana types and lineage color indicators."}
+              </p>
+              <div className="max-h-[50vh] overflow-y-auto overflow-x-hidden pr-1 custom-scrollbar">
+                <MapLegendContent sthanTypes={sthanTypes} />
               </div>
             </PopoverContent>
           </Popover>
@@ -1217,7 +1086,7 @@ const Explore = () => {
               {/* Avatar Sambandh Filter */}
               <div className="pt-1">
                 <label className="block text-[11px] font-bold text-muted-foreground mb-1.5 uppercase tracking-wider px-1">
-                  Avatar Sambandh
+                  {t("explore.avatarSambandh") || "Avatar Sambandh"}
                 </label>
                 <DataTableFilter
                   label={t("explore.allAvatars")}
@@ -1228,7 +1097,7 @@ const Explore = () => {
                     },
                     ...AVATAR_SAMBANDH_CONFIG.map((a) => ({
                       value: a.id,
-                      label: `${a.shortLabel} (${avatarCounts.byAvatar[a.id] || 0})`,
+                      label: `${a.shortLabel} (${getSafeCount(avatarCounts.byAvatar, a.id)})`,
                     })),
                   ]}
                   selectedValues={
@@ -1265,9 +1134,8 @@ const Explore = () => {
                       label={t("explore.allSubdivisions")}
                       options={selectedAvatarConfig.subdivisions.map((sub) => ({
                         value: sub.id,
-                        label: `${sub.label} (${avatarCounts.bySubdivision[sub.id] || 0})`,
-                      }))}
-                      selectedValues={
+                        label: `${sub.label} (${getSafeCount(avatarCounts.bySubdivision, sub.id)})`,
+                      }))}                      selectedValues={
                         pendingAvatarSubdivision
                           ? [pendingAvatarSubdivision]
                           : []
@@ -1365,6 +1233,7 @@ const Explore = () => {
               {t("explore.resetZoom")}
             </Button>
         </div>
+
       </div>
     </div>
   );

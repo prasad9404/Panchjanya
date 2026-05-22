@@ -24,7 +24,7 @@ export const AVATAR_SAMBANDH_CONFIG: {
         label: 'Shri Krishan Bhagwan',
         shortLabel: 'Shri Krishan Bhagwan',
         labelKey: 'avatars.krishna',
-        color: '#EC4899', // Pink
+        color: '#BA3745', // Pinkish Red (Exact Pin color)
         count: 5,
         subdivisions: [],
     },
@@ -33,7 +33,7 @@ export const AVATAR_SAMBANDH_CONFIG: {
         label: 'Shri Dattatray Prabhu',
         shortLabel: 'Shri Dattatray Prabhu',
         labelKey: 'avatars.dattatray',
-        color: '#F59E0B', // Yellow/Amber
+        color: '#B97B16', // Yellowish Amber (Exact Pin color)
         count: 12,
         subdivisions: [],
     },
@@ -42,7 +42,7 @@ export const AVATAR_SAMBANDH_CONFIG: {
         label: 'Shri Chakrapani Prabhu',
         shortLabel: 'Shri Chakrapani Prabhu',
         labelKey: 'avatars.chakrapani',
-        color: '#9B1C1C', // Maroon
+        color: '#633458', // Maroon/Plum Purple (Exact Pin color)
         count: 18,
         subdivisions: [],
     },
@@ -51,7 +51,7 @@ export const AVATAR_SAMBANDH_CONFIG: {
         label: 'Shri Govind Prabhu',
         shortLabel: 'Shri Govind Prabhu',
         labelKey: 'avatars.govind',
-        color: '#16A34A', // Green
+        color: '#1D5B58', // Teal-Green (Exact Pin color)
         count: 17,
         subdivisions: [
             { id: 'complete', label: 'Complete', labelKey: 'yatra.routes.swamiComplete', count: 17 },
@@ -64,7 +64,7 @@ export const AVATAR_SAMBANDH_CONFIG: {
         label: 'Shri Chakradhar Swami',
         shortLabel: 'Shri Chakradhar Swami',
         labelKey: 'avatars.chakradhar',
-        color: '#2563EB', // Blue
+        color: '#19325A', // Slate/Navy Blue (Exact Pin color)
         count: 150,
         subdivisions: [
             { id: 'complete', label: 'Complete', labelKey: 'yatra.routes.swamiComplete', count: 150 },
@@ -78,7 +78,7 @@ export const AVATAR_SAMBANDH_CONFIG: {
         label: 'Mandalik Sthan',
         shortLabel: 'Mandalik',
         labelKey: 'avatars.mandalik',
-        color: '#92400E', // Brown
+        color: '#694835', // Brown (Exact Pin color)
         count: 15,
         subdivisions: [],
     },
@@ -93,9 +93,9 @@ export const TOTAL_STHAN_COUNT = AVATAR_SAMBANDH_CONFIG.reduce((sum, a) => sum +
  */
 export const getAvatarColor = (avatarSambandh?: string): string => {
     const canonicalId = normalizeAvatarId(avatarSambandh);
-    if (!canonicalId) return '#94A3B8';
+    if (!canonicalId) return '#613F79'; // Muted Violet/Purple (Unavailable Sthan exact color)
     const cfg = AVATAR_SAMBANDH_CONFIG.find(a => a.id === canonicalId);
-    return cfg?.color ?? '#94A3B8';
+    return cfg?.color ?? '#613F79';
 };
 
 /**
@@ -138,42 +138,42 @@ export const PIN_SERIES = [
         id: '1',
         name: 'Series 1 (Shri Krishan Bhagwan)',
         folder: '/icons/pins/1 Shri_Krishan_Pin',
-        defaultColor: '#EC4899', // Pink
+        defaultColor: '#BA3745', // Pinkish Red (Exact Pin color)
         files: ['1.1.svg', '1.2.svg', '1.3.svg', '1.4.svg', '1.5.svg', 'Shri_Krishan_Pin.svg']
     },
     {
         id: '2',
         name: 'Series 2 (Shri Dattatray Prabhu)',
         folder: '/icons/pins/2 Shri_Dattatray_Prabhu_Pin',
-        defaultColor: '#F59E0B', // Yellow
+        defaultColor: '#B97B16', // Yellowish Amber (Exact Pin color)
         files: ['2.1.svg', '2.2.svg', '2.3.svg', '2.4.svg', '2.5.svg', 'Shri_Dattatray_Prabhu_Pin.svg']
     },
     {
         id: '3',
         name: 'Series 3 (Shri Chakrapani Prabhu)',
         folder: '/icons/pins/3 Shri_Chakrapani_Prabhu_Pin',
-        defaultColor: '#9B1C1C', // Maroon
+        defaultColor: '#633458', // Maroon/Plum Purple (Exact Pin color)
         files: ['3.1.svg', '3.2.svg', '3.3.svg', '3.4.svg', '3.5.svg', 'Shri_Chakrapani_Prabhu_Pin.svg']
     },
     {
         id: '4',
         name: 'Series 4 (Shri Govind Prabhu)',
         folder: '/icons/pins/4 Shri_Govind_Prabhu_Pin',
-        defaultColor: '#16A34A', // Green
+        defaultColor: '#1D5B58', // Teal-Green (Exact Pin color)
         files: ['4.1.svg', '4.2.svg', '4.3.svg', '4.4.svg', '4.5.svg', 'Shri_Govind_Prabhu_Pin.svg']
     },
     {
         id: '5',
         name: 'Series 5 (Shri Chakradhar Swami)',
         folder: '/icons/pins/5 Shri_Chakradhar_Swami_Pin',
-        defaultColor: '#2563EB', // Blue
+        defaultColor: '#19325A', // Slate/Navy Blue (Exact Pin color)
         files: ['5.1.svg', '5.2.svg', '5.3.svg', '5.4.svg', '5.5.svg', 'Shri_Chakradhar_Swami_Pin.svg']
     },
     {
         id: '6',
         name: 'Series 6 (Mandalik Sthan)',
         folder: '/icons/pins/6 Mandalik_Sthan_Pin',
-        defaultColor: '#92400E', // Brown
+        defaultColor: '#694835', // Brown (Exact Pin color)
         files: ['6.1.svg', '6.2.svg', '6.5.svg', 'Mandalik_Sthan_Pin.svg']
     },
     {
@@ -194,7 +194,7 @@ export const PIN_SERIES = [
         id: '9',
         name: 'Series 9',
         folder: '/icons/pins/9',
-        defaultColor: '#F97316',
+        defaultColor: '#613F79', // Muted Violet/Purple (Unavailable Sthan exact color)
         files: ['9.svg', '9.1.svg', '9.2.svg', '9.3.svg', '9.4.svg', '9.5.svg']
     }
 ];

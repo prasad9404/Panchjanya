@@ -108,7 +108,15 @@
     "mahasthan": "महास्थान",
     "avasthan": "अवस्थान",
     "vastiSthan": "वस्ती स्थान",
-    "asanSthan": "आसन स्थान"
+    "asanSthan": "आसन स्थान",
+    "charanchariSthan": "चरणचारी स्थान",
+    "mandalikSthan": "मांडलिक स्थान",
+    "unavailableSthan": "अनुपलब्ध स्थान",
+    "aboutMapPins": "मानचित्र पिन बद्दल",
+    "aboutMapPinsSubtitle": "स्थान प्रकार आणि वंश रंग निर्देशक समजून घ्या.",
+    "sthanaTypes": "स्थान प्रकार",
+    "colourTypes": "रंग प्रकार",
+    "footerOrnament": "पंचजन्य आध्यात्मिक वारसा परंपरा"
   },
   "literature": {
     "title": "साहित्य",
@@ -317,5 +325,14 @@
     "quickSupport": "त्वरित मदत",
     "aboutPanchajanya": "पंचजन्य बद्दल",
     "myAccount": "माझे खाते"
+  },
+  "admin": {
+    "sthanaDirectory": "स्थान निर्देशिका",
+    "allAvatarsAndSthans": "सर्व अवतार आणि स्थाने",
+    "allPrefix": "सर्व",
+    "allStatus": "सर्व स्थिती",
+    "syncingSthanaRecords": "स्थान रेकॉर्ड समक्रमित केले जात आहेत...",
+    "noRecordsFound": "कोणतेही रेकॉर्ड सापडले नाही",
+    "noRecordsDesc": "तुम्ही शोधत असलेले स्थान शोधण्यासाठी तुमचे फिल्टर किंवा शोध शब्द समायोजित करा."
   }
 }

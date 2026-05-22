@@ -108,7 +108,15 @@
     "mahasthan": "Mahasthan",
     "avasthan": "Avasthan",
     "vastiSthan": "Vasti Sthan",
-    "asanSthan": "Asan Sthan"
+    "asanSthan": "Asan Sthan",
+    "charanchariSthan": "Charanchari Sthan",
+    "mandalikSthan": "Mandalik Sthan",
+    "unavailableSthan": "Unavailable Sthan",
+    "aboutMapPins": "About Map Pins",
+    "aboutMapPinsSubtitle": "Understand Sthana types and lineage color indicators.",
+    "sthanaTypes": "Sthana Types",
+    "colourTypes": "Colour Types",
+    "footerOrnament": "Panchjanya Spiritual Heritage Legends"
   },
   "literature": {
     "title": "Literature",
@@ -317,5 +325,14 @@
     "quickSupport": "Quick Support",
     "aboutPanchjanya": "About Panchjanya",
     "myAccount": "My Account"
+  },
+  "admin": {
+    "sthanaDirectory": "Sthana Directory",
+    "allAvatarsAndSthans": "All Avatars & Sthans",
+    "allPrefix": "All",
+    "allStatus": "All Status",
+    "syncingSthanaRecords": "Syncing Sthana Records...",
+    "noRecordsFound": "No Records Found",
+    "noRecordsDesc": "Adjust your filters or search terms to find the sthana you are looking for."
   }
 }

@@ -45,6 +45,19 @@ import { SthanaCard } from "@/shared/components/features/SthanaCard";
 import { AlphabetSection } from "@/shared/components/features/AlphabetSection";
 import { AlphabetScroller } from "@/shared/components/features/AlphabetScroller";
 
+// Helper functions for safe dynamic object property access to satisfy security lint rules
+function getSafeProperty<T>(obj: Record<string, T> | undefined, key: string, fallback: T): T {
+    if (!obj || typeof key !== 'string') return fallback;
+    if (key === '__proto__' || key === 'constructor' || key === 'prototype') return fallback;
+    return Object.prototype.hasOwnProperty.call(obj, key) ? Reflect.get(obj, key) : fallback;
+}
+
+function setSafeProperty<T>(obj: Record<string, T>, key: string, value: T): void {
+    if (!obj || typeof key !== 'string') return;
+    if (key === '__proto__' || key === 'constructor' || key === 'prototype') return;
+    Reflect.set(obj, key, value);
+}
+
 export default function SthanaDirectory() {
     const [temples, setTemples] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
@@ -63,14 +76,14 @@ export default function SthanaDirectory() {
     const { user } = useAuth();
     // Consume global cache – no extra Firestore fetch here
     const { sthanTypes } = useSthanTypes();
-    const { language } = useLanguage();
+    const { language, t } = useLanguage();
     const activeLang: 'en' | 'hi' | 'mr' = language === 'hindi' ? 'hi' : language === 'marathi' ? 'mr' : 'en';
 
     // Helper for safe display
     const getDisp = (val: any) => {
         if (!val) return "";
         if (typeof val === 'string') return val;
-        return val[activeLang] || val.en || "";
+        return getSafeProperty(val, activeLang, "") || getSafeProperty(val, "en", "");
     };
 
     // 1. Data Fetching
@@ -227,58 +240,65 @@ export default function SthanaDirectory() {
             } as Record<string, number>,
         };
 
-        temples.forEach((t: any) => {
+        temples.forEach((temple: any) => {
             // 1) Find the exact Sthan Type to count against (Source of Truth)
             let matchedType: any = null;
-            if (t.sthanTypeId) {
-                matchedType = sthanTypes.find(st => st.id === t.sthanTypeId);
-            } else if (t.sthan) {
+            if (temple.sthanTypeId) {
+                matchedType = sthanTypes.find(st => st.id === temple.sthanTypeId);
+            } else if (temple.sthan) {
                 // Fallback: match by Name AND Avatar AND Subdivision
-                const contextAvatar = t.primaryAvatar || t.avatarSambandh;
-                const contextSub = (t.avatarSubTypes && t.avatarSubTypes.length > 0) ? t.avatarSubTypes[0] : t.avatarSubdivision;
+                const contextAvatar = temple.primaryAvatar || temple.avatarSambandh;
+                const contextSub = (temple.avatarSubTypes && temple.avatarSubTypes.length > 0) ? temple.avatarSubTypes[0] : temple.avatarSubdivision;
                 
                 matchedType = sthanTypes.find(st => 
-                    st.name === t.sthan && 
+                    st.name === temple.sthan && 
                     st.avatarSambandh === contextAvatar && 
                     (st.avatarSubdivision || "") === (contextSub || "")
                 );
                 
                 // Emergency Fallback: just match by name (legacy edge case)
                 if (!matchedType) {
-                    matchedType = sthanTypes.find(st => st.name === (typeof t.sthan === 'string' ? t.sthan : (t.sthan?.en || "")));
+                    matchedType = sthanTypes.find(st => st.name === (typeof temple.sthan === 'string' ? temple.sthan : (temple.sthan?.en || "")));
                 }
             }
 
             // 2) Determine final classification for the aggregate counts
             //    If we have a matched Sthan Type, it IS the source of truth now.
-            const resAvatarS = matchedType ? matchedType.avatarSambandh : (t.primaryAvatar || t.avatarSambandh);
-            const resAvatarSub = matchedType ? (matchedType.avatarSubdivision || "") : ((t.avatarSubTypes && t.avatarSubTypes.length > 0) ? t.avatarSubTypes[0] : (t.avatarSubdivision || ""));
+            const resAvatarS = matchedType ? matchedType.avatarSambandh : (temple.primaryAvatar || temple.avatarSambandh);
+            const resAvatarSub = matchedType ? (matchedType.avatarSubdivision || "") : ((temple.avatarSubTypes && temple.avatarSubTypes.length > 0) ? temple.avatarSubTypes[0] : (temple.avatarSubdivision || ""));
 
             // 3) Record Aggregate counts
             if (resAvatarS) {
-                counts.byAvatar[resAvatarS] = (counts.byAvatar[resAvatarS] || 0) + 1;
+                const currentVal = getSafeProperty(counts.byAvatar, resAvatarS, 0);
+                setSafeProperty(counts.byAvatar, resAvatarS, currentVal + 1);
             }
             if (resAvatarSub) {
                 // Critical fix: Use the scoped ID system for accurate subdivision mapping
                 const combinedSubId = `${resAvatarS}-${resAvatarSub}`;
-                counts.bySubdivision[combinedSubId] = (counts.bySubdivision[combinedSubId] || 0) + 1;
+                const currentVal = getSafeProperty(counts.bySubdivision, combinedSubId, 0);
+                setSafeProperty(counts.bySubdivision, combinedSubId, currentVal + 1);
             }
             
             // 4) Record specific Sthan Type ID counts
             if (matchedType) {
-                counts.bySthan[matchedType.id] = (counts.bySthan[matchedType.id] || 0) + 1;
+                const currentVal = getSafeProperty(counts.bySthan, matchedType.id, 0);
+                setSafeProperty(counts.bySthan, matchedType.id, currentVal + 1);
             }
 
             // 5) Record District & Taluka counts
-            if (t.district) {
-                counts.byDistrict[getDisp(t.district)] = (counts.byDistrict[getDisp(t.district)] || 0) + 1;
+            if (temple.district) {
+                const distDisp = getDisp(temple.district);
+                const currentVal = getSafeProperty(counts.byDistrict, distDisp, 0);
+                setSafeProperty(counts.byDistrict, distDisp, currentVal + 1);
             }
-            if (t.taluka) {
-                counts.byTaluka[getDisp(t.taluka)] = (counts.byTaluka[getDisp(t.taluka)] || 0) + 1;
+            if (temple.taluka) {
+                const talukaDisp = getDisp(temple.taluka);
+                const currentVal = getSafeProperty(counts.byTaluka, talukaDisp, 0);
+                setSafeProperty(counts.byTaluka, talukaDisp, currentVal + 1);
             }
 
             // 6) Record Status counts (Strict 5-tier)
-            const derivedStatus = t.status || getSthanaStatus(t);
+            const derivedStatus = temple.status || getSthanaStatus(temple);
             if (derivedStatus === "PUBLISHED") {
                 counts.byStatus.Published++;
             } else if (derivedStatus === "VERIFIED") {
@@ -302,6 +322,17 @@ export default function SthanaDirectory() {
 
     // State to track currently active alphabet letter
     const [activeLetter, setActiveLetter] = useState<string>("");
+
+    const isManualScrollRef = React.useRef(false);
+    const manualScrollTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
+
+    useEffect(() => {
+        return () => {
+            if (manualScrollTimeoutRef.current) {
+                clearTimeout(manualScrollTimeoutRef.current);
+            }
+        };
+    }, []);
 
     // Responsive state for screen-width based scroller layout
     const [isMobile, setIsMobile] = useState(false);
@@ -340,10 +371,12 @@ export default function SthanaDirectory() {
             const firstLetter = nameStr.charAt(0).toUpperCase();
             const groupKey = /^[A-Z]$/.test(firstLetter) ? firstLetter : '#';
             
-            if (!groups[groupKey]) {
-                groups[groupKey] = [];
+            const groupList = getSafeProperty(groups, groupKey, null);
+            if (!groupList) {
+                setSafeProperty(groups, groupKey, [temple]);
+            } else {
+                groupList.push(temple);
             }
-            groups[groupKey].push(temple);
         });
         return groups;
     }, [sortedFilteredTemples]);
@@ -373,10 +406,13 @@ export default function SthanaDirectory() {
 
     // Performant Scroll Spy using scroll event listener on the scrollable container
     useEffect(() => {
-        const scrollContainer = document.querySelector('.overflow-y-auto');
+        const scrollContainer = document.querySelector('main .overflow-y-auto') || document.querySelector('.overflow-y-auto');
         if (!scrollContainer || availableLetters.size === 0) return;
 
         const handleScroll = () => {
+            // Ignore scroll events during manual scrolling triggered by clicking letters
+            if (isManualScrollRef.current) return;
+
             const sections = Array.from(availableLetters).map(letter => {
                 const element = document.getElementById(`section-${letter}`);
                 return { letter, element };
@@ -384,9 +420,19 @@ export default function SthanaDirectory() {
 
             const containerTop = scrollContainer.getBoundingClientRect().top;
             
+            // Check if we are at the bottom of the container
+            const isAtBottom = scrollContainer.scrollTop + scrollContainer.clientHeight >= scrollContainer.scrollHeight - 50;
+            
+            if (isAtBottom && sections.length > 0) {
+                const lastSection = sections.at(-1);
+                if (lastSection) {
+                    setActiveLetter(lastSection.letter);
+                }
+                return;
+            }
+
             let currentActive = "";
-            for (let i = 0; i < sections.length; i++) {
-                const section = sections[i];
+            for (const section of sections) {
                 const rect = section.element.getBoundingClientRect();
                 
                 // If section top has scrolled past or is near the top of the container viewport
@@ -414,17 +460,36 @@ export default function SthanaDirectory() {
     const handleLetterClick = (letter: string) => {
         const element = document.getElementById(`section-${letter}`);
         if (element) {
-            const scrollContainer = element.closest('.overflow-y-auto');
+            const scrollContainer = document.querySelector('main .overflow-y-auto') || element.closest('.overflow-y-auto');
             if (scrollContainer) {
-                const targetOffset = element.offsetTop - 24; // comfortable top margin
+                // Set manual scroll flag to prevent scroll spy from overriding the active state mid-transition
+                isManualScrollRef.current = true;
+                if (manualScrollTimeoutRef.current) {
+                    clearTimeout(manualScrollTimeoutRef.current);
+                }
+
+                const elementRect = element.getBoundingClientRect();
+                const containerRect = scrollContainer.getBoundingClientRect();
+                const relativeTop = elementRect.top - containerRect.top;
+                
+                // Scroll to element with 24px padding at the top
+                const targetOffset = scrollContainer.scrollTop + relativeTop - 24;
+
                 scrollContainer.scrollTo({
                     top: targetOffset,
                     behavior: "smooth"
                 });
+
+                setActiveLetter(letter);
+
+                // Clear manual scroll flag after smooth scrolling completes (800ms)
+                manualScrollTimeoutRef.current = setTimeout(() => {
+                    isManualScrollRef.current = false;
+                }, 800);
             } else {
                 element.scrollIntoView({ behavior: "smooth", block: "start" });
+                setActiveLetter(letter);
             }
-            setActiveLetter(letter);
         }
     };
 
@@ -451,7 +516,7 @@ export default function SthanaDirectory() {
                                 </span>
                                 <span className="text-slate-200">/</span>
                                 <span className="text-[10px] font-black uppercase tracking-[0.3em] text-blue-600">
-                                    Sthana Directory
+                                    {t("admin.sthanaDirectory")}
                                 </span>
                             </div>
                         </div>
@@ -472,7 +537,7 @@ export default function SthanaDirectory() {
                                 <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center border border-blue-100 shadow-sm">
                                     <MapPin className="w-6 h-6 text-blue-600" />
                                 </div>
-                                <h1 className="text-4xl font-serif font-black text-slate-900 tracking-tightest">Sthana Directory</h1>
+                                <h1 className="text-4xl font-serif font-black text-slate-900 tracking-tightest">{t("admin.sthanaDirectory")}</h1>
                             </div>
                             <p className="text-slate-500 font-medium max-w-lg leading-relaxed">
                                 Centralized management for all heritage sthanas. Curate diagrams, photographs, and historical narratives across the global network.
@@ -524,14 +589,14 @@ export default function SthanaDirectory() {
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent align="end" className="w-[240px] max-h-[400px] overflow-y-auto rounded-2xl p-2 border-2 shadow-2xl">
                                         <DropdownMenuItem onClick={() => setSelectedDistrict("District")} className="font-bold cursor-pointer flex justify-between rounded-xl py-3">
-                                            <span>All Districts</span>
+                                            <span>{t("explore.allDistricts")}</span>
                                             <span className="text-[10px] font-black bg-slate-100 px-2 py-0.5 rounded-lg">{filterCounts.ALL}</span>
                                         </DropdownMenuItem>
                                         <div className="h-px bg-slate-100 my-1" />
                                         {districts.map(d => (
                                             <DropdownMenuItem key={d} onClick={() => setSelectedDistrict(d)} className="cursor-pointer flex justify-between rounded-xl py-3">
                                                 <span>{d}</span>
-                                                <span className="text-[10px] font-black bg-blue-50 text-blue-600 px-2 py-0.5 rounded-lg">{filterCounts.byDistrict[d] || 0}</span>
+                                                <span className="text-[10px] font-black bg-blue-50 text-blue-600 px-2 py-0.5 rounded-lg">{getSafeProperty(filterCounts.byDistrict, d, 0)}</span>
                                             </DropdownMenuItem>
                                         ))}
                                     </DropdownMenuContent>
@@ -547,14 +612,14 @@ export default function SthanaDirectory() {
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent align="end" className="w-[240px] max-h-[400px] overflow-y-auto rounded-2xl p-2 border-2 shadow-2xl">
                                         <DropdownMenuItem onClick={() => setSelectedTaluka("Taluka")} className="font-bold cursor-pointer flex justify-between rounded-xl py-3">
-                                            <span>All Talukas</span>
+                                            <span>{t("explore.allTalukas")}</span>
                                             <span className="text-[10px] font-black bg-slate-100 px-2 py-0.5 rounded-lg">{filterCounts.ALL}</span>
                                         </DropdownMenuItem>
                                         <div className="h-px bg-slate-100 my-1" />
-                                        {talukas.map(t => (
-                                            <DropdownMenuItem key={t} onClick={() => setSelectedTaluka(t)} className="cursor-pointer flex justify-between rounded-xl py-3">
-                                                <span>{t}</span>
-                                                <span className="text-[10px] font-black bg-blue-50 text-blue-600 px-2 py-0.5 rounded-lg">{filterCounts.byTaluka[t] || 0}</span>
+                                        {talukas.map(taluka => (
+                                            <DropdownMenuItem key={taluka} onClick={() => setSelectedTaluka(taluka)} className="cursor-pointer flex justify-between rounded-xl py-3">
+                                                <span>{taluka}</span>
+                                                <span className="text-[10px] font-black bg-blue-50 text-blue-600 px-2 py-0.5 rounded-lg">{getSafeProperty(filterCounts.byTaluka, taluka, 0)}</span>
                                             </DropdownMenuItem>
                                         ))}
                                     </DropdownMenuContent>
@@ -569,7 +634,7 @@ export default function SthanaDirectory() {
                                                      : selectedAvatarSubdivision 
                                                          ? AVATAR_SAMBANDH_CONFIG.find(a => a.id === selectedAvatarSambandh)?.subdivisions.find(s => s.id === selectedAvatarSubdivision)?.label 
                                                          : selectedAvatarSambandh === "ALL" 
-                                                             ? "All Avatars" 
+                                                             ? t("explore.allAvatars") 
                                                              : AVATAR_SAMBANDH_CONFIG.find(a => a.id === selectedAvatarSambandh)?.shortLabel || "Avatar"}
                                                  
                                                  {selectedAvatarSambandh !== "ALL" && selectedSthan === "Sthan Type" && !selectedAvatarSubdivision && (
@@ -584,14 +649,14 @@ export default function SthanaDirectory() {
                                              onClick={() => { setSelectedAvatarSambandh("ALL"); setSelectedAvatarSubdivision(""); setSelectedSthan("Sthan Type"); }} 
                                              className="font-bold cursor-pointer flex justify-between rounded-2xl py-3 px-4 hover:bg-slate-50"
                                          >
-                                             <span className="text-slate-900">All Avatars & Sthans</span>
+                                             <span className="text-slate-900">{t("admin.allAvatarsAndSthans")}</span>
                                              <span className="text-[10px] font-black bg-slate-100 text-slate-600 px-2 py-0.5 rounded-lg shrink-0">{filterCounts.ALL}</span>
                                          </DropdownMenuItem>
                                          
                                          <div className="h-px bg-slate-100 my-2" />
                                          
                                          {AVATAR_SAMBANDH_CONFIG.map(avatar => {
-                                              const avatarCount = filterCounts.byAvatar[avatar.id] || 0;
+                                              const avatarCount = getSafeProperty(filterCounts.byAvatar, avatar.id, 0);
                                  
                                               return (
                                                   <DropdownMenuSub key={avatar.id}>
@@ -610,7 +675,7 @@ export default function SthanaDirectory() {
                                                                   onClick={() => { setSelectedAvatarSambandh(avatar.id); setSelectedAvatarSubdivision(""); setSelectedSthan("Sthan Type"); }}
                                                                   className="font-black cursor-pointer flex justify-between rounded-2xl py-3 px-4 bg-slate-50/50"
                                                               >
-                                                                  <span className="uppercase text-[11px] tracking-widest">All {avatar.shortLabel}</span>
+                                                                  <span className="uppercase text-[11px] tracking-widest">{t("admin.allPrefix")} {avatar.shortLabel}</span>
                                                                   <span className="text-[10px] font-black bg-white shadow-sm border px-2 py-0.5 rounded-lg shrink-0">{avatarCount}</span>
                                                               </DropdownMenuItem>
                                  
@@ -620,7 +685,7 @@ export default function SthanaDirectory() {
                                                                   // No subdivisions, list sthan types
                                                                   sthanTypes
                                                                       .filter(st => st.avatarSambandh === avatar.id)
-                                                                      .sort((a,b) => (filterCounts.bySthan[b.id] || 0) - (filterCounts.bySthan[a.id] || 0))
+                                                                      .sort((a,b) => getSafeProperty(filterCounts.bySthan, b.id, 0) - getSafeProperty(filterCounts.bySthan, a.id, 0))
                                                                       .map(st => (
                                                                           <DropdownMenuItem 
                                                                               key={st.id}
@@ -631,13 +696,13 @@ export default function SthanaDirectory() {
                                                                                   <div className="w-2 h-2 rounded-full mr-3 opacity-50 shrink-0 group-hover:opacity-100 transition-opacity" style={{ backgroundColor: st.color }} />
                                                                                   <span className="truncate pr-2 text-sm font-medium text-slate-600 group-hover:text-slate-900">{st.name}</span>
                                                                               </div>
-                                                                              <span className="text-[10px] font-black bg-blue-50 text-blue-600 px-2 py-0.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity shrink-0">{filterCounts.bySthan[st.id] || 0}</span>
+                                                                              <span className="text-[10px] font-black bg-blue-50 text-blue-600 px-2 py-0.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity shrink-0">{getSafeProperty(filterCounts.bySthan, st.id, 0)}</span>
                                                                           </DropdownMenuItem>
                                                                       ))
                                                               ) : (
                                                                   // Has subdivisions
                                                                   avatar.subdivisions.map(sub => {
-                                                                       const subCount = filterCounts.bySubdivision[`${avatar.id}-${sub.id}`] || 0;
+                                                                       const subCount = getSafeProperty(filterCounts.bySubdivision, `${avatar.id}-${sub.id}`, 0);
                                                                        return (
                                                                            <DropdownMenuSub key={sub.id}>
                                                                                <DropdownMenuSubTrigger className="cursor-pointer rounded-2xl py-2.5 px-4 outline-none focus:bg-slate-50 data-[state=open]:bg-slate-50">
@@ -652,7 +717,7 @@ export default function SthanaDirectory() {
                                                                                            onClick={() => { setSelectedAvatarSambandh(avatar.id); setSelectedAvatarSubdivision(sub.id); setSelectedSthan("Sthan Type"); }}
                                                                                            className="font-bold cursor-pointer flex justify-between rounded-2xl py-3 px-4 bg-slate-50/50"
                                                                                        >
-                                                                                           <span className="text-xs uppercase tracking-wider">All {sub.label}</span>
+                                                                                           <span className="text-xs uppercase tracking-wider">{t("admin.allPrefix")} {sub.label}</span>
                                                                                            <span className="text-[10px] font-black bg-white shadow-sm border px-2 py-0.5 rounded-lg shrink-0">{subCount}</span>
                                                                                        </DropdownMenuItem>
                                                                                        
@@ -660,7 +725,7 @@ export default function SthanaDirectory() {
         
                                                                                        {sthanTypes
                                                                                            .filter(st => st.avatarSambandh === avatar.id && st.avatarSubdivision === sub.id)
-                                                                                           .sort((a,b) => (filterCounts.bySthan[b.id] || 0) - (filterCounts.bySthan[a.id] || 0))
+                                                                                           .sort((a,b) => getSafeProperty(filterCounts.bySthan, b.id, 0) - getSafeProperty(filterCounts.bySthan, a.id, 0))
                                                                                            .map(st => (
                                                                                                <DropdownMenuItem 
                                                                                                    key={st.id}
@@ -671,7 +736,7 @@ export default function SthanaDirectory() {
                                                                                                        <div className="w-2 h-2 rounded-full mr-3 opacity-50 shrink-0 group-hover:opacity-100 transition-opacity" style={{ backgroundColor: st.color }} />
                                                                                                        <span className="truncate pr-2 text-sm font-medium text-slate-600 group-hover:text-slate-900">{st.name}</span>
                                                                                                    </div>
-                                                                                                   <span className="text-[10px] font-black bg-blue-50 text-blue-600 px-2 py-0.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity shrink-0">{filterCounts.bySthan[st.id] || 0}</span>
+                                                                                                   <span className="text-[10px] font-black bg-blue-50 text-blue-600 px-2 py-0.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity shrink-0">{getSafeProperty(filterCounts.bySthan, st.id, 0)}</span>
                                                                                                </DropdownMenuItem>
                                                                                            ))}
                                                                                    </DropdownMenuSubContent>
@@ -699,7 +764,7 @@ export default function SthanaDirectory() {
                                      </DropdownMenuTrigger>
                                      <DropdownMenuContent align="end" className="w-[200px] rounded-2xl p-2 border-2 shadow-2xl">
                                          <DropdownMenuItem onClick={() => setSelectedStatus("Status")} className="font-bold cursor-pointer flex justify-between rounded-xl py-3 px-4">
-                                             <span>All Status</span>
+                                             <span>{t("admin.allStatus")}</span>
                                              <span className="text-[10px] font-black bg-slate-100 px-2 py-0.5 rounded-lg">{filterCounts.ALL}</span>
                                          </DropdownMenuItem>
                                          <div className="h-px bg-slate-100 my-1" />
@@ -725,17 +790,17 @@ export default function SthanaDirectory() {
                     {loading ? (
                         <div className="flex flex-col items-center justify-center py-32 space-y-4">
                             <div className="w-12 h-12 border-4 border-blue-900/10 border-t-blue-900 rounded-full animate-spin" />
-                            <p className="text-slate-400 font-black uppercase tracking-[0.2em] text-[10px]">Syncing Sthana Records...</p>
+                            <p className="text-slate-400 font-black uppercase tracking-[0.2em] text-[10px]">{t("admin.syncingSthanaRecords")}</p>
                         </div>
                     ) : sortedFilteredTemples.length === 0 ? (
                         <div className="text-center py-32 bg-white rounded-[40px] border border-dashed border-slate-200">
                             <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-6 text-slate-300">
                                 <Search className="w-10 h-10" />
                             </div>
-                            <h3 className="text-xl font-serif font-bold text-slate-900">No Records Found</h3>
-                            <p className="text-slate-500 font-medium max-w-xs mx-auto mt-2">Adjust your filters or search terms to find the sthana you are looking for.</p>
+                            <h3 className="text-xl font-serif font-bold text-slate-900">{t("admin.noRecordsFound")}</h3>
+                            <p className="text-slate-500 font-medium max-w-xs mx-auto mt-2">{t("admin.noRecordsDesc")}</p>
                             <Button variant="link" onClick={() => { setSearchTerm(""); setSelectedDistrict("District"); setSelectedTaluka("Taluka"); setSelectedAvatarSambandh("ALL"); setSelectedStatus("Status"); }} className="text-blue-600 font-black mt-4 uppercase tracking-widest text-xs">
-                                Clear all filters
+                                {t("explore.clearAll")}
                             </Button>
                         </div>
                     ) : (
@@ -763,7 +828,7 @@ export default function SthanaDirectory() {
                                     })
                                     .map((letter) => (
                                         <AlphabetSection key={letter} letter={letter}>
-                                            {groupedTemples[letter].map((temple) => (
+                                            {getSafeProperty(groupedTemples, letter, []).map((temple) => (
                                                 <SthanaCard
                                                     key={temple.id}
                                                     temple={temple}
