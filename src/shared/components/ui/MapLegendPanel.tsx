@@ -45,9 +45,7 @@ export const PinTypeIcon: React.FC<PinTypeIconProps> = ({ type, isGrayscale = fa
       break;
     case "charanchari":
     case "charanchari sthan":
-      src = "/icons/Sthan_pin.svg";
-      // Custom footprint styling or golden aura
-      filterStyle = "drop-shadow(0 0 5px rgba(212, 175, 55, 0.9)) sepia(0.3) saturate(1.2) hue-rotate(5deg)";
+      src = "/icons/pins/2 Shri_Dattatray_Prabhu_Pin/2.6.svg";
       break;
     case "mandalik":
     case "mandalik sthan":
