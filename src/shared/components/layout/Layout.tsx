@@ -16,13 +16,18 @@ function LayoutContent() {
     window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
   }, [location.pathname]);
 
+  const isMapPage = location.pathname.includes("/raj-viharan") || location.pathname.includes("/explore");
+
   return (
     <div className="flex bg-[#F8F9FA] flex-col overflow-hidden w-full relative min-h-screen">
       {/* Main content */}
       <main
         ref={mainRef}
         className={cn(
-          "flex-1 flex flex-col overflow-y-auto pb-main-mobile lg:pb-0 transition-all duration-300 ease-in-out scrollbar-hide scroll-smooth"
+          "flex-1 flex flex-col transition-all duration-300 ease-in-out",
+          isMapPage 
+            ? "overflow-hidden pb-0" 
+            : "overflow-y-auto pb-main-mobile lg:pb-0 scrollbar-hide scroll-smooth"
         )}
       >
         <Outlet />  {/* Renders nested routes */}
