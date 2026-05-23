@@ -17,7 +17,7 @@ export default function YatraMapMapLibre({ locations, highlightedId, centerOnFul
   const mapRef = useRef<maplibregl.Map | null>(null);
   const markersRef = useRef<maplibregl.Marker[]>([]);
   const userMarkerRef = useRef<maplibregl.Marker | null>(null);
-  const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
+  const [userLocation, setUserLocation] = useState<{ lat: number, lng: number } | null>(null);
   const { language } = useLanguage();
   const [mapLoaded, setMapLoaded] = useState(false);
   const [maptilerStyle, setMaptilerStyle] = useState<any>(null);
@@ -48,9 +48,9 @@ export default function YatraMapMapLibre({ locations, highlightedId, centerOnFul
           }
           // Remove unwanted POIs/clutter
           const unwantedLayers = [
-            'shopping', 'food', 'tourism', 'transport', 'bus stop', 'parking', 
-            'parking space special', 'parking special', 'commercial', 'industrial', 
-            'hospital', 'school', 'public', 'subway station', 'railway station', 
+            'shopping', 'food', 'tourism', 'transport', 'bus stop', 'parking',
+            'parking space special', 'parking special', 'commercial', 'industrial',
+            'hospital', 'school', 'public', 'subway station', 'railway station',
             'aerialway station'
           ];
           if (unwantedLayers.some(ul => layer.id.toLowerCase().includes(ul))) {
@@ -79,13 +79,13 @@ export default function YatraMapMapLibre({ locations, highlightedId, centerOnFul
 
     map.on('load', () => {
       setMapLoaded(true);
-      
+
       // Add route source and layer
       map.addSource('route', {
         type: 'geojson',
         data: { type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates: [] } }
       });
-      
+
       // Glow layer
       map.addLayer({
         id: 'route-glow',
@@ -125,7 +125,7 @@ export default function YatraMapMapLibre({ locations, highlightedId, centerOnFul
   useEffect(() => {
     if (!mapLoaded || !mapRef.current) return;
     const map = mapRef.current;
-    
+
     // Ensure the map style is fully loaded
     const style = map.getStyle();
     if (!style || !style.layers) return;
@@ -140,7 +140,7 @@ export default function YatraMapMapLibre({ locations, highlightedId, centerOnFul
     } else {
       textFieldExpression = ["coalesce", ["get", "name:en"], ["get", "name"]];
     }
-    
+
     console.log(`[YatraMapMapLibre] Applying language expression for: ${language}`);
 
     style.layers.forEach((layer) => {
@@ -148,7 +148,7 @@ export default function YatraMapMapLibre({ locations, highlightedId, centerOnFul
         const textFieldStr = JSON.stringify(layer.layout['text-field']);
         // If it references "name" in any way (template "{name}" or expression ["get", "name"])
         const isNameField = textFieldStr.toLowerCase().includes('name') || textFieldStr.toLowerCase().includes('{name}');
-        
+
         if (isNameField) {
           try {
             map.setLayoutProperty(layer.id, 'text-field', textFieldExpression);
@@ -170,25 +170,25 @@ export default function YatraMapMapLibre({ locations, highlightedId, centerOnFul
           const req = await Geolocation.requestPermissions();
           if (req.location !== 'granted') return;
         }
-        
+
         const pos = await Geolocation.getCurrentPosition();
         setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
 
         watchId = await Geolocation.watchPosition({ enableHighAccuracy: true }, (pos, err) => {
-            if (pos) {
-                setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
-            }
+          if (pos) {
+            setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+          }
         });
       } catch (e) {
         console.log("Geolocation error", e);
       }
     };
     startTracking();
-    
+
     return () => {
-        if (watchId) {
-            Geolocation.clearWatch({ id: watchId });
-        }
+      if (watchId) {
+        Geolocation.clearWatch({ id: watchId });
+      }
     }
   }, []);
 
@@ -201,15 +201,15 @@ export default function YatraMapMapLibre({ locations, highlightedId, centerOnFul
       map.flyTo({ center: [userLocation.lng, userLocation.lat], zoom: 16 });
       return;
     }
-    
+
     if (locations.length === 0) return;
-    
+
     if (centerOnFullRoute) {
       const bounds = new maplibregl.LngLatBounds();
       locations.forEach(loc => bounds.extend([loc.longitude, loc.latitude]));
       if (userLocation) bounds.extend([userLocation.lng, userLocation.lat]);
       if (!bounds.isEmpty()) {
-          map.fitBounds(bounds, { padding: 80, duration: 1000 });
+        map.fitBounds(bounds, { padding: 80, duration: 1000 });
       }
       return;
     }
@@ -235,7 +235,7 @@ export default function YatraMapMapLibre({ locations, highlightedId, centerOnFul
       const isStart = idx === 0;
       const isEnd = idx === locations.length - 1;
       const isHighlighted = loc.id === highlightedId;
-      const landingPrimary = '#0f3c6e'; 
+      const landingPrimary = '#0f3c6e';
       const goldAccent = '#D4AF37';
       const baseColor = isEnd ? goldAccent : landingPrimary;
 
@@ -263,20 +263,20 @@ export default function YatraMapMapLibre({ locations, highlightedId, centerOnFul
 
       // Highlight place name tooltip
       if (isHighlighted) {
-          const badge = document.createElement('div');
-          badge.className = 'absolute bottom-[52px] left-1/2 -translate-x-1/2 px-3 py-1.5 bg-card/90 backdrop-blur-md rounded-xl shadow-xl border border-border/50 flex flex-col items-center min-w-max';
-          badge.style.transform = 'translateX(-50%)';
-          
-          const nameSpan = document.createElement('span');
-          nameSpan.className = 'font-bold text-xs text-landing-primary';
-          nameSpan.textContent = loc.name;
-          badge.appendChild(nameSpan);
+        const badge = document.createElement('div');
+        badge.className = 'absolute bottom-[52px] left-1/2 -translate-x-1/2 px-3 py-1.5 bg-card/90 backdrop-blur-md rounded-xl shadow-xl border border-border/50 flex flex-col items-center min-w-max';
+        badge.style.transform = 'translateX(-50%)';
 
-          const arrow = document.createElement('div');
-          arrow.className = 'w-2 h-2 bg-card/90 border-r border-b border-border/50 rotate-45 absolute -bottom-1';
-          badge.appendChild(arrow);
+        const nameSpan = document.createElement('span');
+        nameSpan.className = 'font-bold text-xs text-landing-primary';
+        nameSpan.textContent = loc.name;
+        badge.appendChild(nameSpan);
 
-          container.appendChild(badge);
+        const arrow = document.createElement('div');
+        arrow.className = 'w-2 h-2 bg-card/90 border-r border-b border-border/50 rotate-45 absolute -bottom-1';
+        badge.appendChild(arrow);
+
+        container.appendChild(badge);
       }
 
       // Interactive Pin Wrapper
@@ -323,24 +323,24 @@ export default function YatraMapMapLibre({ locations, highlightedId, centerOnFul
 
       // START / END badge below the pin tip
       if (isStart || isEnd) {
-          const badge = document.createElement('div');
-          badge.style.position = 'absolute';
-          badge.style.top = '50px';
-          badge.style.fontWeight = '800';
-          badge.style.color = 'white';
-          badge.style.fontSize = '10px';
-          badge.style.background = isEnd ? '#D4AF37' : '#0f3c6e';
-          badge.style.padding = '2px 8px';
-          badge.style.borderRadius = '20px';
-          badge.style.boxShadow = isEnd ? '0 2px 8px rgba(212,175,55,0.3)' : '0 2px 8px rgba(15,60,110,0.3)';
-          badge.style.zIndex = '5';
-          badge.style.whiteSpace = 'nowrap';
-          badge.style.letterSpacing = '0.5px';
-          badge.style.left = '50%';
-          badge.style.transform = 'translateX(-50%)';
-          badge.textContent = isEnd ? 'END' : 'START';
+        const badge = document.createElement('div');
+        badge.style.position = 'absolute';
+        badge.style.top = '50px';
+        badge.style.fontWeight = '800';
+        badge.style.color = 'white';
+        badge.style.fontSize = '10px';
+        badge.style.background = isEnd ? '#D4AF37' : '#0f3c6e';
+        badge.style.padding = '2px 8px';
+        badge.style.borderRadius = '20px';
+        badge.style.boxShadow = isEnd ? '0 2px 8px rgba(212,175,55,0.3)' : '0 2px 8px rgba(15,60,110,0.3)';
+        badge.style.zIndex = '5';
+        badge.style.whiteSpace = 'nowrap';
+        badge.style.letterSpacing = '0.5px';
+        badge.style.left = '50%';
+        badge.style.transform = 'translateX(-50%)';
+        badge.textContent = isEnd ? 'END' : 'START';
 
-          container.appendChild(badge);
+        container.appendChild(badge);
       }
 
       el.appendChild(container);
@@ -348,7 +348,7 @@ export default function YatraMapMapLibre({ locations, highlightedId, centerOnFul
       const marker = new maplibregl.Marker({ element: el })
         .setLngLat([loc.longitude, loc.latitude])
         .addTo(map);
-      
+
       markersRef.current.push(marker);
     });
   }, [locations, highlightedId, mapLoaded]);
@@ -359,11 +359,11 @@ export default function YatraMapMapLibre({ locations, highlightedId, centerOnFul
     if (!map || !mapLoaded || !userLocation) return;
 
     if (!userMarkerRef.current) {
-        const el = document.createElement('div');
-        el.className = 'user-location-marker';
-        userMarkerRef.current = new maplibregl.Marker({ element: el }).setLngLat([userLocation.lng, userLocation.lat]).addTo(map);
+      const el = document.createElement('div');
+      el.className = 'user-location-marker';
+      userMarkerRef.current = new maplibregl.Marker({ element: el }).setLngLat([userLocation.lng, userLocation.lat]).addTo(map);
     } else {
-        userMarkerRef.current.setLngLat([userLocation.lng, userLocation.lat]);
+      userMarkerRef.current.setLngLat([userLocation.lng, userLocation.lat]);
     }
   }, [userLocation, mapLoaded]);
 
@@ -375,7 +375,7 @@ export default function YatraMapMapLibre({ locations, highlightedId, centerOnFul
     const sorted = [...locations].sort((a, b) => a.sequence - b.sequence);
     const coords: [number, number][] = sorted.map(l => [l.longitude, l.latitude]);
     if (userLocation) {
-        coords.unshift([userLocation.lng, userLocation.lat]);
+      coords.unshift([userLocation.lng, userLocation.lat]);
     }
 
     const routeGeoJSON = {
@@ -388,7 +388,7 @@ export default function YatraMapMapLibre({ locations, highlightedId, centerOnFul
     };
 
     if (map.getSource('route')) {
-        (map.getSource('route') as maplibregl.GeoJSONSource).setData(routeGeoJSON as any);
+      (map.getSource('route') as maplibregl.GeoJSONSource).setData(routeGeoJSON as any);
     }
   }, [locations, userLocation, mapLoaded]);
 

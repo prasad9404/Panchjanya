@@ -169,7 +169,7 @@ export function SthanTypeManager() {
         setDeleteDialogOpen(true);
 
         const usage = await checkSthanTypeUsage(type.id);
-        setUsageCheck({ count: usage.count, names: usage.sthanaNames });
+        setUsageCheck({ count: usage.count, names: usage.sthanNames });
         setCheckingUsage(false);
     };
 

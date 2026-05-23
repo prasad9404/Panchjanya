@@ -27,33 +27,33 @@ export const PinTypeIcon: React.FC<PinTypeIconProps> = ({ type, isGrayscale = fa
 
   switch (type.toLowerCase()) {
     case "mahasthan":
-      src = "/icons/pins/2 Shri_Dattatray_Prabhu_Pin/2.2.png";
+      src = "/icons/pins/5 Shri_Chakradhar_Swami_Pin/5.2.svg";
       // Golden aura drop shadow
       filterStyle = "drop-shadow(0 0 4px rgba(212, 175, 55, 0.7))";
       break;
     case "avasthan":
     case "avasthan sthan":
-      src = "/icons/pins/2 Shri_Dattatray_Prabhu_Pin/2.1.png";
+      src = "/icons/pins/5 Shri_Chakradhar_Swami_Pin/5.1.svg";
       break;
     case "vasti":
     case "vasti sthan":
-      src = "/icons/pins/2 Shri_Dattatray_Prabhu_Pin/2.3.png";
+      src = "/icons/pins/5 Shri_Chakradhar_Swami_Pin/5.3.svg";
       break;
     case "aasan":
     case "aasan sthan":
-      src = "/icons/pins/2 Shri_Dattatray_Prabhu_Pin/2.4.png";
+      src = "/icons/pins/5 Shri_Chakradhar_Swami_Pin/5.4.svg";
       break;
     case "charanchari":
     case "charanchari sthan":
-      src = "/icons/pins/2 Shri_Dattatray_Prabhu_Pin/2.6.svg";
+      src = "/icons/pins/5 Shri_Chakradhar_Swami_Pin/5.6.svg";
       break;
     case "mandalik":
     case "mandalik sthan":
-      src = "/icons/pins/2 Shri_Dattatray_Prabhu_Pin/2.5.png";
+      src = "/icons/pins/6 Mandalik_Sthan_Pin/6.5.svg";
       break;
     case "unavailable":
     case "unavailable sthan":
-      src = "/icons/pins/2 Shri_Dattatray_Prabhu_Pin/Shri_Dattatray_Prabhu_Pin.png";
+      src = "/icons/pins/9/9.svg";
       break;
   }
 
@@ -278,9 +278,9 @@ export const MapLegendContent: React.FC<MapLegendContentProps> = ({ sthanTypes }
     },
     {
       id: "shri-chakrapani",
-      label: "Shri Changdev/Chakrapani Prabhu Sthan",
+      label: "Shri Chakrapani Prabhu Sthan",
       color: "#633458",
-      tooltip: "Spiritual lineage traces of Shri Changdev / Chakrapani Prabhu (Plum Purple indicator)",
+      tooltip: "Spiritual lineage traces of Shri Chakrapani Prabhu (Plum Purple indicator)",
     },
     {
       id: "shri-govind",

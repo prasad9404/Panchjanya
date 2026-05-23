@@ -73,15 +73,6 @@ export const AVATAR_SAMBANDH_CONFIG: {
             { id: 'uttarardh', label: 'Uttarardh', labelKey: 'yatra.routes.uttarardh', count: 40 },
         ],
     },
-    {
-        id: 'mandalik',
-        label: 'Mandalik Sthan',
-        shortLabel: 'Mandalik',
-        labelKey: 'avatars.mandalik',
-        color: '#694835', // Brown (Exact Pin color)
-        count: 15,
-        subdivisions: [],
-    },
 ];
 
 /** Total sthan count across all avatars */
@@ -419,7 +410,7 @@ export const validateSthanType = (
 };
 
 /**
- * Check how many Sthanas reference a given Sthan Type ID.
+ * Check how many Sthans reference a given Sthan Type ID.
  * Used to guard against deletion of types that are in use.
  *
  * Requires a Firestore index on: temples → sthanTypeId (ASC)
@@ -431,16 +422,16 @@ export const checkSthanTypeUsage = async (sthanTypeId: string): Promise<SthanTyp
             where('sthanTypeId', '==', sthanTypeId),
         );
         const snap = await getDocs(q);
-        const sthanaNames: string[] = [];
-        const sthanaIds: string[] = [];
+        const sthanNames: string[] = [];
+        const sthanIds: string[] = [];
         snap.forEach(d => {
-            sthanaIds.push(d.id);
-            sthanaNames.push(d.data().name || d.id);
+            sthanIds.push(d.id);
+            sthanNames.push(d.data().name || d.id);
         });
-        return { count: snap.size, sthanaNames, sthanaIds };
+        return { count: snap.size, sthanNames, sthanIds };
     } catch (error) {
         console.error('Error checking sthan type usage:', error);
-        return { count: 0, sthanaNames: [], sthanaIds: [] };
+        return { count: 0, sthanNames: [], sthanIds: [] };
     }
 };
 
@@ -554,11 +545,11 @@ export const getSthanIndex = (name: string): string => {
     const n = name.toLowerCase();
     
     // 2. Specific style keywords
-    if (n.includes('mahasthan')) return '1';
-    if (n.includes('shikhara') || n.includes('mandalik')) return '2';
-    if (n.includes('avasthan') || n.includes('mandir')) return '3';
+    if (n.includes('mahasthan')) return '2';
+    if (n.includes('shikhara') || n.includes('mandalik')) return '5';
+    if (n.includes('avasthan') || n.includes('mandir')) return '1';
     if (n.includes('asan')) return '4';
-    if (n.includes('vasti') || n.includes('vishti') || n.includes('dot')) return '5';
+    if (n.includes('vasti') || n.includes('vishti') || n.includes('dot')) return '3';
     if (n.includes('charanchari')) return '6';
     
     return '';
@@ -680,11 +671,11 @@ export const generateSthanPinSVG = (color: string, pinType?: string): string => 
  */
 export const seedSthanTypes = async (): Promise<void> => {
     const defaultTypes: CreateSthanTypeInput[] = [
-        { name: 'Mahasthan', color: '#B22222', order: 1, pinType: '/icons/pins/5 Shri_Chakradhar_Swami_Pin/5.1.svg', avatarSambandh: '', avatarSubdivision: null },
-        { name: 'Avasthan', color: '#D4AF37', order: 2, pinType: '/icons/pins/5 Shri_Chakradhar_Swami_Pin/5.3.svg', avatarSambandh: '', avatarSubdivision: null },
+        { name: 'Mahasthan', color: '#B22222', order: 1, pinType: '/icons/pins/5 Shri_Chakradhar_Swami_Pin/5.2.svg', avatarSambandh: '', avatarSubdivision: null },
+        { name: 'Avasthan', color: '#D4AF37', order: 2, pinType: '/icons/pins/5 Shri_Chakradhar_Swami_Pin/5.1.svg', avatarSambandh: '', avatarSubdivision: null },
         { name: 'Asan', color: '#0E3C6F', order: 3, pinType: '/icons/pins/5 Shri_Chakradhar_Swami_Pin/5.4.svg', avatarSambandh: '', avatarSubdivision: null },
-        { name: 'Vasti', color: '#228B22', order: 4, pinType: '/icons/pins/5 Shri_Chakradhar_Swami_Pin/5.5.svg', avatarSambandh: '', avatarSubdivision: null },
-        { name: 'Mandalik', color: '#6A0DAD', order: 5, pinType: '/icons/pins/6 Mandalik_Sthan_Pin/6.5.svg', avatarSambandh: 'mandalik', avatarSubdivision: null },
+        { name: 'Vasti', color: '#228B22', order: 4, pinType: '/icons/pins/5 Shri_Chakradhar_Swami_Pin/5.3.svg', avatarSambandh: '', avatarSubdivision: null },
+        { name: 'Mandalik', color: '#6A0DAD', order: 5, pinType: '/icons/pins/6 Mandalik_Sthan_Pin/6.5.svg', avatarSambandh: '', avatarSubdivision: null },
     ];
 
     try {

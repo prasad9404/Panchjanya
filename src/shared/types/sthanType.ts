@@ -69,6 +69,6 @@ export interface SthanTypeValidationResult {
  */
 export interface SthanTypeUsageResult {
     count: number;
-    sthanaNames: string[];
-    sthanaIds: string[];
+    sthanNames: string[];
+    sthanIds: string[];
 }

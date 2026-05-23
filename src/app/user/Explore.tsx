@@ -110,6 +110,9 @@ const CANONICAL_STHAN_TYPES: { label: string; keywords: string[] }[] = [
   { label: "Avasthan", keywords: ["avasthan"] },
   { label: "Vasti Sthan", keywords: ["vasti", "vishti"] },
   { label: "Asan Sthan", keywords: ["asan"] },
+  { label: "Mandalik Sthan", keywords: ["mandalik"] },
+  { label: "Charanchari Sthan", keywords: ["charanchari"] },
+  { label: "Unavailable Sthan", keywords: ["unavailable"] },
 ];
 
 // Maps a raw sthan name from DB to one of the 4 canonical labels, or null if no match
@@ -804,9 +807,16 @@ const Explore = () => {
       const matchingDbType = scopedTypes.find(
         (st) => toCanonicalSthan(st.name) === c.label,
       );
+      // Convert space separated label to camelCase (e.g. "Vasti Sthan" -> "vastiSthan")
+      const getTranslationKey = (label: string): string => {
+        const parts = label.split(" ");
+        if (parts.length === 1) return label.toLowerCase();
+        return parts[0].toLowerCase() + parts.slice(1).map(p => p.charAt(0).toUpperCase() + p.slice(1).toLowerCase()).join("");
+      };
+
       return {
         value: matchingDbType?.name ?? c.label,
-        label: `${t("explore." + c.label.toLowerCase().replace(" ", ""))} (${count})`,
+        label: `${t("explore." + getTranslationKey(c.label))} (${count})`,
       };
     });
   }, [

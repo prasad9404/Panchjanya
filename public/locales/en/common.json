@@ -2,7 +2,7 @@
   "nav": {
     "home": "Home",
     "dashboard": "Dashboard",
-    "exploreSthanas": "Explore Sthanas",
+    "exploreSthanas": "Explore Sthans",
     "rajViharan": "Raj Viharan",
     "aboutPanchjanya": "About Panchjanya",
     "sthan": "Sthan",
@@ -97,7 +97,7 @@
     "subdivision": "Subdivision",
     "allSubdivisions": "All Subdivisions",
     "sthanaCategory": "Sthan Category",
-    "allSthanaTypes": "All Sthana Types",
+    "allSthanaTypes": "All Sthan Types",
     "clearAll": "Clear All",
     "applyFilters": "Apply Filters",
     "showing": "SHOWING",
@@ -113,8 +113,8 @@
     "mandalikSthan": "Mandalik Sthan",
     "unavailableSthan": "Unavailable Sthan",
     "aboutMapPins": "About Map Pins",
-    "aboutMapPinsSubtitle": "Understand Sthana types and lineage color indicators.",
-    "sthanaTypes": "Sthana Types",
+    "aboutMapPinsSubtitle": "Understand Sthan types and lineage color indicators.",
+    "sthanaTypes": "Sthan Types",
     "colourTypes": "Colour Types",
     "footerOrnament": "Panchjanya Spiritual Heritage Legends"
   },
@@ -140,10 +140,10 @@
     "title": "Member Profile",
     "verified": "Verified",
     "explorerSince": "Panchjanya Explorer since",
-    "sthanas": "Sthanas",
+    "sthanas": "Sthans",
     "yatras": "Yatras",
     "spiritualJourney": "Spiritual Journey",
-    "mySavedSthanas": "My Saved Sthanas",
+    "mySavedSthanas": "My Saved Sthans",
     "placesBookmarked": "sacred places bookmarked",
     "completedYatras": "Completed Yatras",
     "completed": "completed",
@@ -186,7 +186,7 @@
     "pothiEmptyInfo": "Historical data not yet cataloged.",
     "hideHotspots": "Hide Hotspots",
     "showHotspots": "Show Hotspots",
-    "noSthanFound": "Sthana not found",
+    "noSthanFound": "Sthan not found",
     "viewArchitecture": "View Architecture",
     "archArchive": "Architectural Archive",
     "noArchRecords": "No architectural records found.",
@@ -279,7 +279,7 @@
     "xpTo": "XP to"
   },
   "saved": {
-    "title": "My Saved Sthanas",
+    "title": "My Saved Sthans",
     "noSavedTemples": "No Saved Temples",
     "startExploring": "Start exploring and save your favorite temples",
     "exploreTemples": "Explore Temples",
@@ -327,12 +327,12 @@
     "myAccount": "My Account"
   },
   "admin": {
-    "sthanaDirectory": "Sthana Directory",
+    "sthanaDirectory": "Sthan Directory",
     "allAvatarsAndSthans": "All Avatars & Sthans",
     "allPrefix": "All",
     "allStatus": "All Status",
-    "syncingSthanaRecords": "Syncing Sthana Records...",
+    "syncingSthanaRecords": "Syncing Sthan Records...",
     "noRecordsFound": "No Records Found",
-    "noRecordsDesc": "Adjust your filters or search terms to find the sthana you are looking for."
+    "noRecordsDesc": "Adjust your filters or search terms to find the sthan you are looking for."
   }
 }
