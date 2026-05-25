@@ -110,8 +110,8 @@ const CANONICAL_STHAN_TYPES: { label: string; keywords: string[] }[] = [
   { label: "Avasthan", keywords: ["avasthan"] },
   { label: "Vasti Sthan", keywords: ["vasti", "vishti"] },
   { label: "Asan Sthan", keywords: ["asan"] },
-  { label: "Mandalik Sthan", keywords: ["mandalik"] },
   { label: "Charanchari Sthan", keywords: ["charanchari"] },
+  { label: "Mandalik Sthan", keywords: ["mandalik"] },
   { label: "Unavailable Sthan", keywords: ["unavailable"] },
 ];
 
@@ -229,8 +229,8 @@ function MapEffect({
     if (validCoords.length > 0) {
       const bounds = L.latLngBounds(validCoords);
       if (bounds.isValid()) {
-        map.fitBounds(bounds, { 
-          padding: [80, 80], 
+        map.fitBounds(bounds, {
+          padding: [80, 80],
           maxZoom: 12,
           animate: true,
           duration: 1.5
@@ -385,12 +385,12 @@ function TempleMarker({
 
           {/* Row 3: Action Buttons (Details + Direction + Saved) */}
           <div className="flex items-center gap-2 pt-1">
-              <Button
-                className="flex-1 bg-landing-primary hover:bg-landing-primary/90 text-white h-8 md:h-9 rounded-lg shadow-sm text-xs md:text-xs font-bold px-0"
-                onClick={() => navigate(`/temple/${temple.id}/architecture`)}
-              >
-                {t("explore.details")}
-              </Button>
+            <Button
+              className="flex-1 bg-landing-primary hover:bg-landing-primary/90 text-white h-8 md:h-9 rounded-lg shadow-sm text-xs md:text-xs font-bold px-0"
+              onClick={() => navigate(`/temple/${temple.id}/architecture`)}
+            >
+              {t("explore.details")}
+            </Button>
             <button
               className="h-8 w-8 md:h-9 md:w-9 rounded-full border border-slate-200 bg-white transition-all duration-300 hover:bg-slate-50 text-blue-900 flex items-center justify-center shrink-0 shadow-sm"
               title={t("explore.navigate")}
@@ -680,13 +680,13 @@ const Explore = () => {
   )
     .sort()
     .map((tVal) => {
-      const firstT = allTemplesForOptions.find(curr => 
-        getTranslatedValue(curr.taluka, 'en') === tVal && 
+      const firstT = allTemplesForOptions.find(curr =>
+        getTranslatedValue(curr.taluka, 'en') === tVal &&
         (!pendingDistrict || getTranslatedValue(curr.district, 'en') === pendingDistrict)
       );
       const translatedLabel = getTranslatedValue(firstT?.taluka, langCode);
-      const count = allTemplesForOptions.filter((curr) => 
-        getTranslatedValue(curr.taluka, 'en') === tVal && 
+      const count = allTemplesForOptions.filter((curr) =>
+        getTranslatedValue(curr.taluka, 'en') === tVal &&
         (!pendingDistrict || getTranslatedValue(curr.district, 'en') === pendingDistrict)
       ).length;
       return {
@@ -1145,7 +1145,7 @@ const Explore = () => {
                       options={selectedAvatarConfig.subdivisions.map((sub) => ({
                         value: sub.id,
                         label: `${sub.label} (${getSafeCount(avatarCounts.bySubdivision, sub.id)})`,
-                      }))}                      selectedValues={
+                      }))} selectedValues={
                         pendingAvatarSubdivision
                           ? [pendingAvatarSubdivision]
                           : []
@@ -1234,14 +1234,14 @@ const Explore = () => {
 
         {/* Reset Zoom Button */}
         <div className="absolute bottom-24 right-4 z-[400] pointer-events-auto">
-            <Button
-              onClick={() => setResetTrigger((prev) => prev + 1)}
-              className="h-10 px-4 rounded-full bg-background/95 backdrop-blur-md border border-border/40 text-landing-primary dark:text-primary shadow-lg hover:bg-accent/10 flex items-center gap-2 font-bold text-xs transition-all active:scale-95"
-              title={t("explore.resetZoom")}
-            >
-              <Compass className="w-4 h-4" />
-              {t("explore.resetZoom")}
-            </Button>
+          <Button
+            onClick={() => setResetTrigger((prev) => prev + 1)}
+            className="h-10 px-4 rounded-full bg-background/95 backdrop-blur-md border border-border/40 text-landing-primary dark:text-primary shadow-lg hover:bg-accent/10 flex items-center gap-2 font-bold text-xs transition-all active:scale-95"
+            title={t("explore.resetZoom")}
+          >
+            <Compass className="w-4 h-4" />
+            {t("explore.resetZoom")}
+          </Button>
         </div>
 
       </div>

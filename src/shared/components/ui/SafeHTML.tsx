@@ -38,7 +38,7 @@ const processLinks = (html: string): string => {
   // 1. Auto-linkify plain URLs first
   // Improved regex to avoid matching URLs inside attributes or tags
   const urlRegex = /(?<!href="|src="|">)(https?:\/\/[^\s<]+)/g;
-  let processed = html.replace(urlRegex, (url) => {
+  const processed = html.replace(urlRegex, (url) => {
     // Sanitize components before template literal interpolation to prevent XSS
     const safeUrl = DOMPurify.sanitize(url);
     const safeLabel = DOMPurify.sanitize((url.includes('maps.google') || url.includes('maps.app.goo.gl')) ? "Open in Maps" : url);
