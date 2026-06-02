@@ -331,7 +331,7 @@ export default function SthanaVerification({ isSuperAdmin = false }: { isSuperAd
 
         {/* --- FULL DATA READ-ONLY REVIEW DIALOG --- */}
         <Dialog open={!!selectedSthana} onOpenChange={(open) => !open && (setSelectedSthana(null), setNewComment(""))}>
-          <DialogContent className="max-w-[95vw] w-[1400px] h-[95vh] p-0 overflow-hidden rounded-[2.5rem] border-none shadow-2xl">
+          <DialogContent className="max-w-[95vw] w-[1400px] h-[95vh] p-0 overflow-hidden rounded-[2.5rem] border-none shadow-2xl" aria-describedby={undefined}>
             {selectedSthana && (
               <div className="flex flex-col lg:flex-row h-full bg-white overflow-hidden scroll-smooth">
                 {/* --- LEFT PANEL: STHANA DETAILS --- */}

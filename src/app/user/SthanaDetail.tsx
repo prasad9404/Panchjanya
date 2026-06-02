@@ -14,7 +14,8 @@ import { SafeHTML } from "@/shared/components/ui/SafeHTML";
 import { getTranslatedValue, getLangCode } from "@/shared/utils/translationUtils";
 
 export default function SthanaDetail() {
-    const { id, sthanaId } = useParams<{ id: string; sthanaId: string }>();
+    const { id, sthanaId, archiveId } = useParams<{ id: string; sthanaId: string; archiveId?: string }>();
+    const isArchiveMode = !!archiveId;
     const navigate = useNavigate();
     const { t, i18n } = useTranslation();
     const langCode = getLangCode(i18n.language || 'en');
@@ -35,7 +36,9 @@ export default function SthanaDetail() {
             if (!id || !sthanaId) return;
             try {
                 setLoading(true);
-                const templeSnap = await getDoc(doc(db, "temples", id));
+                // Archive mode: fetch from architecture_entries; normal: from temples
+                const firestoreCollection = isArchiveMode ? "architecture_entries" : "temples";
+                const templeSnap = await getDoc(doc(db, firestoreCollection, id));
                 if (!templeSnap.exists()) return;
                 const templeData = templeSnap.data() as Temple;
 
@@ -101,7 +104,7 @@ export default function SthanaDetail() {
             }
         };
         fetchTemple();
-    }, [id, sthanaId, viewParam]);
+    }, [id, sthanaId, viewParam, archiveId, isArchiveMode]);
 
     // Derived State for Images
     const presentImages = hotspot?.images || (hotspot?.image ? [hotspot.image] : []) || [];
@@ -136,7 +139,12 @@ export default function SthanaDetail() {
             >
                 {/* Mobile: All in one row */}
                 <div className="md:hidden flex items-center gap-3 w-full">
-                    <Button variant="ghost" size="icon" onClick={() => navigate(`/temple/${id}/architecture-view?view=${viewParam}`, { replace: true })} className="-ml-2 hover:bg-accent/10 shrink-0 bg-accent/5 h-9 w-9 rounded-full">
+                    <Button variant="ghost" size="icon" onClick={() => {
+                        const backUrl = isArchiveMode
+                            ? `/architectural-archive/${archiveId}/${id}/architecture-view?view=${viewParam}`
+                            : `/temple/${id}/architecture-view?view=${viewParam}`;
+                        navigate(backUrl, { replace: true });
+                    }} className="-ml-2 hover:bg-accent/10 shrink-0 bg-accent/5 h-9 w-9 rounded-full">
                         <ChevronLeft className="w-7 h-7 text-landing-primary dark:text-foreground" />
                     </Button>
                     <div className="flex w-7 h-7 rounded-full bg-amber-600 text-white border border-amber-200 font-bold items-center justify-center text-sm shrink-0">
@@ -151,7 +159,12 @@ export default function SthanaDetail() {
                 {/* Desktop: Existing layout */}
                 <div className="hidden md:flex items-center justify-center relative">
                     <div className="absolute left-6 flex items-center gap-4">
-                        <Button variant="ghost" size="icon" onClick={() => navigate(`/temple/${id}/architecture-view?view=${viewParam}`, { replace: true })} className="-ml-2 hover:bg-accent/10 shrink-0 bg-accent/5 h-10 w-10 rounded-full">
+                        <Button variant="ghost" size="icon" onClick={() => {
+                            const backUrl = isArchiveMode
+                                ? `/architectural-archive/${archiveId}/${id}/architecture-view?view=${viewParam}`
+                                : `/temple/${id}/architecture-view?view=${viewParam}`;
+                            navigate(backUrl, { replace: true });
+                        }} className="-ml-2 hover:bg-accent/10 shrink-0 bg-accent/5 h-10 w-10 rounded-full">
                             <ChevronLeft className="w-7 h-7 text-landing-primary dark:text-foreground" />
                         </Button>
                         <div className="w-10 h-10 rounded-full bg-amber-500/10 text-amber-600 border border-amber-200 font-bold flex items-center justify-center text-lg">
@@ -171,7 +184,14 @@ export default function SthanaDetail() {
                     {/* Sthana Navigation Pagination (Refined Theme) */}
                     <div className="flex items-center justify-between max-w-sm mx-auto px-4 w-full mt-2 mb-2">
                         <button
-                            onClick={() => prevSthana && navigate(`/temple/${id}/architecture/sthana/${prevSthana.id}?view=${viewParam}`, { replace: true })}
+                            onClick={() => {
+                                if (prevSthana) {
+                                    const base = isArchiveMode
+                                        ? `/architectural-archive/${archiveId}/${id}/architecture/sthana`
+                                        : `/temple/${id}/architecture/sthana`;
+                                    navigate(`${base}/${prevSthana.id}?view=${viewParam}`, { replace: true });
+                                }
+                            }}
                             disabled={!prevSthana}
                             className={`w-28 h-10 border rounded-full duration-150 transition-all flex items-center justify-center font-bold text-sm ${!prevSthana
                                 ? 'border-border text-muted-foreground cursor-not-allowed opacity-50'
@@ -186,7 +206,14 @@ export default function SthanaDetail() {
                         </div>
 
                         <button
-                            onClick={() => nextSthana && navigate(`/temple/${id}/architecture/sthana/${nextSthana.id}?view=${viewParam}`, { replace: true })}
+                            onClick={() => {
+                                if (nextSthana) {
+                                    const base = isArchiveMode
+                                        ? `/architectural-archive/${archiveId}/${id}/architecture/sthana`
+                                        : `/temple/${id}/architecture/sthana`;
+                                    navigate(`${base}/${nextSthana.id}?view=${viewParam}`, { replace: true });
+                                }
+                            }}
                             disabled={!nextSthana}
                             className={`w-28 h-10 border rounded-full duration-150 transition-all flex items-center justify-center font-bold text-sm ${!nextSthana
                                 ? 'border-border text-muted-foreground cursor-not-allowed opacity-50'

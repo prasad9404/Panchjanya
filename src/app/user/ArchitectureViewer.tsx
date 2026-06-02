@@ -37,7 +37,9 @@ import {
 
 
 export default function ArchitectureViewer() {
-  const { id } = useParams<{ id: string }>();
+  // archiveId present when route is /architectural-archive/:archiveId/:id/...
+  const { id, archiveId } = useParams<{ id: string; archiveId?: string }>();
+  const isArchiveMode = !!archiveId;
   const navigate = useNavigate();
   const { t, language } = useLanguage();
   const langCode = getLangCode(language);
@@ -207,7 +209,8 @@ export default function ArchitectureViewer() {
     const fetchTempleData = async () => {
       try {
         setLoading(true);
-        const snap = await getDoc(doc(db, "temples", id));
+        const firestoreCollection = isArchiveMode ? "architecture_entries" : "temples";
+        const snap = await getDoc(doc(db, firestoreCollection, id));
 
         if (!snap.exists()) {
           console.error("Temple not found");
@@ -264,7 +267,7 @@ export default function ArchitectureViewer() {
     };
 
     fetchTempleData();
-  }, [id, navigate]);
+  }, [id, archiveId, isArchiveMode, navigate]);
 
   // Fetch global abbreviations
   useEffect(() => {
@@ -459,7 +462,11 @@ export default function ArchitectureViewer() {
 
   // Navigate to Detail Page
   const handleNavigationToDetail = (hotspot: Hotspot) => {
-    navigate(`/temple/${id}/architecture/sthana/${hotspot.id}?view=${imageType}`);
+    if (isArchiveMode) {
+      navigate(`/architectural-archive/${archiveId}/${id}/architecture/sthana/${hotspot.id}?view=${imageType}`);
+    } else {
+      navigate(`/temple/${id}/architecture/sthana/${hotspot.id}?view=${imageType}`);
+    }
   };
 
   if (loading) {
@@ -500,7 +507,11 @@ export default function ArchitectureViewer() {
               setZoom(1);
               setPan({ x: 0, y: 0 });
               setSelectedHotspotId(null);
-              navigate(`/temple/${id}/architecture`);
+              if (isArchiveMode) {
+                navigate(`/architectural-archive/${archiveId}/${id}/architecture`);
+              } else {
+                navigate(`/temple/${id}/architecture`);
+              }
             }}
           >
             <ChevronLeft className="w-7 h-7 text-[#0f3c6e]" />

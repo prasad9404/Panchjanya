@@ -211,5 +211,18 @@ service firebase.storage {
             update: if isOwner(uid) && isValidImage();
       allow delete: if isOwner(uid) || isAdmin();
     }
+
+    // ═══════════════════════════════════════════════════════════════
+    //  ARCHIVES
+    //  Path: archives/{fileName}
+    // ═══════════════════════════════════════════════════════════════
+
+    match /archives/{fileName} {
+      allow read: if true;
+      allow create,
+            update: if isSignedIn() && isValidImage();
+      allow delete: if isAdmin();
+    }
   }
 }
+

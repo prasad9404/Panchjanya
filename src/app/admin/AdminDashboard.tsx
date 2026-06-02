@@ -199,6 +199,16 @@ export default function AdminDashboard() {
               onClick={() => navigate("/admin/sthana-directory")}
             />
             <ModuleCard 
+              title="Architectural Archives"
+              description="Manage special multi-architecture collections like Domegram, Verul, and Ajanta."
+              icon={Landmark}
+              stat="Collections"
+              statLabel="Archive Management"
+              activity="Organize nested architecture entries."
+              buttonLabel="Manage Archives"
+              onClick={() => navigate("/admin/architectural-archives")}
+            />
+            <ModuleCard 
               title="Literature Hub"
               description="Manage multimedia content, podcast episodes, and video discourses."
               icon={PlayCircle}

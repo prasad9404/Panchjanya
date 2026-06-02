@@ -45,6 +45,7 @@ import { getSthanaStatus } from "@/shared/utils/sthanValidation";
 import { SthanType } from "@/shared/types/sthanType";
 import { cn } from "@/shared/lib/utils";
 import { useToast } from "@/shared/hooks/use-toast";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "@/auth/AuthContext";
 import { ImageUpload } from "@/shared/components/admin/ImageUpload";
 import ReactSelect from "react-select";
@@ -217,19 +218,48 @@ const HotspotMarker = ({
   );
 };
 
+
+// --- SECURECODER REMEDIATION HELPERS ---
+function safeUpdateMultilingual(
+  state: MultilingualString, 
+  lang: string, 
+  value: string
+): MultilingualString {
+  const allowed = new Set(['en', 'hi', 'mr']);
+  if (!allowed.has(lang)) return state;
+  return { ...state, [lang as 'en' | 'hi' | 'mr']: value };
+}
+
+function safeUpdateField<T extends object>(
+  state: T, 
+  field: string, 
+  value: any, 
+  allowedFields: Set<string>
+): T {
+  if (!allowedFields.has(field)) return state;
+  return { ...state, [field as keyof T]: value };
+}
+// ----------------------------------------
+
 export interface TempleArchitectureAdminProps {
   initialStep?: 'sthan-info' | 'architecture-view' | 'sthana-details';
   isEmbedded?: boolean;
   onStepChange?: (step: 'sthan-info' | 'architecture-view' | 'sthana-details') => void;
+  /** Firestore collection to read/write from. Defaults to 'temples'. Use 'architecture_entries' for archive entries. */
+  collection?: string;
 }
 
 export default function TempleArchitectureAdmin({
   initialStep,
   isEmbedded = false,
-  onStepChange
+  onStepChange,
+  collection: firestoreCollection = "temples",
 }: TempleArchitectureAdminProps) {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  // docEndpoint is derived from the collection prop — enables reuse for architecture_entries
+  const docEndpoint = `/api/admin/data?collection=${firestoreCollection}&id=${id}`;
+  const { t } = useTranslation();
   const { toast } = useToast();
   const { user } = useAuth();
   const imageRef = useRef<HTMLImageElement>(null);
@@ -256,9 +286,9 @@ export default function TempleArchitectureAdmin({
   const [locationLink, setLocationLink] = useState("");
   const [latitude, setLatitude] = useState("");
   const [longitude, setLongitude] = useState("");
-  const [description_title, setDescriptionTitle] = useState<MultilingualString>({ en: "Sthan At Glance", hi: "एक नज़र में स्थान", mr: "एका दृष्टीक्षेपात स्थान" });
+  const [description_title, setDescriptionTitle] = useState<MultilingualString>({ en: t("admin.sthanAtGlance"), hi: "एक नज़र में स्थान", mr: "एका दृष्टीक्षेपात स्थान" });
   const [description_text, setDescriptionText] = useState<MultilingualString>({ en: "", hi: "", mr: "" });
-  const [sthana_info_title, setSthanaInfoTitle] = useState<MultilingualString>({ en: "Sthan Description", hi: "स्थान विवरण", mr: "स्थान वर्णन" });
+  const [sthana_info_title, setSthanaInfoTitle] = useState<MultilingualString>({ en: t("admin.sthanDescription"), hi: "स्थान विवरण", mr: "स्थान वर्णन" });
   const [sthana_info_text, setSthanaInfoText] = useState<MultilingualString>({ en: "", hi: "", mr: "" });
   const [descriptionSections, setDescriptionSections] = useState<DescriptionSection[]>([]);
   const [detailsSections, setDetailsSections] = useState<any[]>([]);
@@ -384,7 +414,7 @@ export default function TempleArchitectureAdmin({
   const updateHotspotTitle = async (hotspotId: string, newTitle: string) => {
     // 1. Update Hotspot Array
     const updatedHotspots = archHotspots.map(h =>
-      h.id === hotspotId ? { ...h, title: { ...(h.title || { en: "", hi: "", mr: "" }), [activeLang]: newTitle } } : h
+      h.id === hotspotId ? { ...h, title: safeUpdateMultilingual(h.title || { en: "", hi: "", mr: "" }, activeLang, newTitle) } : h
     );
     setArchHotspots(updatedHotspots);
     setEditingTitleId(null);
@@ -416,7 +446,7 @@ export default function TempleArchitectureAdmin({
     // Persist to main doc
     try {
       const token = await user?.getIdToken();
-      fetch(`/api/admin/data?collection=temples&id=${id}`, {
+      fetch(docEndpoint, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
         body: JSON.stringify({ hotspots: sanitizeData(updatedHotspots), details: sanitizeData(updatedDetails) })
@@ -446,7 +476,7 @@ export default function TempleArchitectureAdmin({
         // 1. Try Fetching via API
         try {
           const token = await user?.getIdToken();
-          const templeRes = await fetch(`/api/admin/data?collection=temples&id=${id}`, {
+          const templeRes = await fetch(docEndpoint, {
             headers: token ? { "Authorization": `Bearer ${token}` } : {}
           });
           const contentType = templeRes.headers.get("content-type");
@@ -461,7 +491,7 @@ export default function TempleArchitectureAdmin({
 
             // Also check subcollection for legacy data
             try {
-              const hotspotsRes = await fetch(`/api/admin/data?collection=temples&id=${id}&subcollection=present_hotspots`, {
+              const hotspotsRes = await fetch(`/api/admin/data?collection=${firestoreCollection}&id=${id}&subcollection=present_hotspots`, {
                 headers: token ? { "Authorization": `Bearer ${token}` } : {}
               });
               if (hotspotsRes.ok) {
@@ -506,11 +536,11 @@ export default function TempleArchitectureAdmin({
           setLocationLink(data.locationLink || "");
           setLatitude(data.latitude || "");
           setLongitude(data.longitude || "");
-          setDescriptionTitle(ensureMultilingual(data.description_title || "Sthan At Glance"));
+          setDescriptionTitle(ensureMultilingual(data.description_title || t("admin.sthanAtGlance")));
           setDescriptionText(ensureMultilingual(
             data.description_text || data.description || data.architectureDescription
           ));
-          setSthanaInfoTitle(ensureMultilingual(data.sthana_info_title || "Sthan Description"));
+          setSthanaInfoTitle(ensureMultilingual(data.sthana_info_title || t("admin.sthanDescription")));
           setSthanaInfoText(ensureMultilingual(
             data.sthana_info_text || data.sthana || data.sthanPothiDescription || data.details?.[0]?.sthanPothiDescription
           ));
@@ -743,7 +773,7 @@ export default function TempleArchitectureAdmin({
       const collectionParam = viewType === 'architectural' ? 'architecture_hotspots' : 'present_hotspots';
 
       // Update specific hotspot in its subcollection
-      fetch(`/api/admin/data?collection=temples&id=${id}&subcollection=${collectionParam}&subId=${hotspot.id}`, {
+      fetch(`/api/admin/data?collection=${firestoreCollection}&id=${id}&subcollection=${collectionParam}&subId=${hotspot.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -754,7 +784,7 @@ export default function TempleArchitectureAdmin({
 
       // Also sync the main array for architectural view (legacy support)
       if (viewType === 'architectural') {
-        fetch(`/api/admin/data?collection=temples&id=${id}`, {
+        fetch(docEndpoint, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
@@ -763,7 +793,7 @@ export default function TempleArchitectureAdmin({
           body: JSON.stringify({ hotspots: sanitizeData(allHotspots) })
         });
       } else {
-        fetch(`/api/admin/data?collection=temples&id=${id}`, {
+        fetch(docEndpoint, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
@@ -862,7 +892,7 @@ export default function TempleArchitectureAdmin({
 
     try {
       const token = await user?.getIdToken();
-      const res = await fetch(`/api/admin/data?collection=temples&id=${id}`, {
+      const res = await fetch(docEndpoint, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -902,7 +932,7 @@ export default function TempleArchitectureAdmin({
 
     try {
       const token = await user?.getIdToken();
-      await fetch(`/api/admin/data?collection=temples&id=${id}`, {
+      await fetch(docEndpoint, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -951,7 +981,7 @@ export default function TempleArchitectureAdmin({
     if (field === 'icon') {
       setGlanceItems(glanceItems.map(g => g.id === gId ? { ...g, icon: value } : g));
     } else {
-      setGlanceItems(glanceItems.map(g => g.id === gId ? { ...g, description: { ...(g.description || { en: "", hi: "", mr: "" }), [activeLang]: value } } : g));
+      setGlanceItems(glanceItems.map(g => g.id === gId ? { ...g, description: safeUpdateMultilingual(g.description || { en: "", hi: "", mr: "" }, activeLang, value) } : g));
     }
   };
 
@@ -1003,7 +1033,7 @@ export default function TempleArchitectureAdmin({
     if (field === 'icon') {
       setAbbreviationItems(abbreviationItems.map(g => g.id === gId ? { ...g, icon: value } : g));
     } else {
-      setAbbreviationItems(abbreviationItems.map(g => g.id === gId ? { ...g, description: { ...(g.description || { en: "", hi: "", mr: "" }), [activeLang]: value } } : g));
+      setAbbreviationItems(abbreviationItems.map(g => g.id === gId ? { ...g, description: safeUpdateMultilingual(g.description || { en: "", hi: "", mr: "" }, activeLang, value) } : g));
     }
   };
 
@@ -1032,7 +1062,7 @@ export default function TempleArchitectureAdmin({
         setPresentHotspots(newPresent);
 
         const token = await user?.getIdToken();
-        const res = await fetch(`/api/admin/data?collection=temples&id=${id}`, {
+        const res = await fetch(docEndpoint, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
@@ -1060,7 +1090,7 @@ export default function TempleArchitectureAdmin({
         setDetails(newDetails);
 
         const token = await user?.getIdToken();
-        const res = await fetch(`/api/admin/data?collection=temples&id=${id}`, {
+        const res = await fetch(docEndpoint, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
@@ -1104,7 +1134,7 @@ export default function TempleArchitectureAdmin({
       });
 
       const updatedPresent = presentHotspots.filter(h => h.id !== hotspotId);
-      await fetch(`/api/admin/data?collection=temples&id=${id}`, {
+      await fetch(docEndpoint, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -1129,7 +1159,7 @@ export default function TempleArchitectureAdmin({
       const updatedImages = [...currentImages, url];
 
       const token = await user?.getIdToken();
-      const res = await fetch(`/api/admin/data?collection=temples&id=${id}`, {
+      const res = await fetch(docEndpoint, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -1168,7 +1198,7 @@ export default function TempleArchitectureAdmin({
           : "presentImagesFitMode";
 
       const token = await user?.getIdToken();
-      await fetch(`/api/admin/data?collection=temples&id=${id}`, {
+      await fetch(docEndpoint, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -1207,7 +1237,7 @@ export default function TempleArchitectureAdmin({
       const updatedImages = currentImages.filter(img => img !== url);
 
       const token = await user?.getIdToken();
-      await fetch(`/api/admin/data?collection=temples&id=${id}`, {
+      await fetch(docEndpoint, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -1286,7 +1316,7 @@ export default function TempleArchitectureAdmin({
 
       if (viewType === 'architectural') {
         const token = await user?.getIdToken();
-        await fetch(`/api/admin/data?collection=temples&id=${id}`, {
+        await fetch(docEndpoint, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
@@ -1314,7 +1344,7 @@ export default function TempleArchitectureAdmin({
           });
 
         const token = await user?.getIdToken();
-        await fetch(`/api/admin/data?collection=temples&id=${id}`, {
+        await fetch(docEndpoint, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
@@ -1379,7 +1409,7 @@ export default function TempleArchitectureAdmin({
     setSelectedHotspot({
       ...selectedHotspot,
       leelas: (selectedHotspot.leelas as any[]).map((l: any) =>
-        typeof l === 'string' ? l : (l.id === id ? { ...l, description: { ...(l.description || { en: "", hi: "", mr: "" }), [activeLang]: description } } : l)
+        typeof l === 'string' ? l : (l.id === id ? { ...l, description: safeUpdateMultilingual(l.description || { en: "", hi: "", mr: "" }, activeLang, description) } : l)
       ) as Leela[]
     });
   };
@@ -1462,7 +1492,7 @@ export default function TempleArchitectureAdmin({
       <div className="flex items-center justify-center h-screen">
         <div className="text-center">
           <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-lg">Loading...</p>
+          <p className="text-lg">{t("admin.loading")}</p>
         </div>
       </div>
     );
@@ -1491,8 +1521,8 @@ export default function TempleArchitectureAdmin({
                 <ArrowLeft className="w-4 h-4 text-slate-400 group-hover:text-blue-600 group-hover:-translate-x-0.5 transition-all" />
               </Button>
               <div className="space-y-0.5">
-                <p className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-400">Panchjanya Admin</p>
-                <h1 className="text-sm font-black text-slate-900 uppercase tracking-tight">Manage Architecture</h1>
+                <p className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-400">{t("admin.panchjanyaAdmin")}</p>
+                <h1 className="text-sm font-black text-slate-900 uppercase tracking-tight">{t("admin.manageArchitecture")}</h1>
               </div>
             </div>
 
@@ -1540,14 +1570,14 @@ export default function TempleArchitectureAdmin({
                 <div className="p-1.5 bg-blue-50 rounded-lg">
                   <Languages className="w-4 h-4 text-blue-600" />
                 </div>
-                <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Content Language</span>
+                <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">{t("admin.contentLanguage")}</span>
               </div>
 
               <Tabs value={activeLang} onValueChange={(v) => setActiveLang(v as any)} className="w-fit">
                 <TabsList className="bg-slate-100 p-1 h-10 rounded-xl border border-slate-200">
-                  <TabsTrigger value="en" className="rounded-lg px-4 text-[11px] font-bold data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-sm transition-all">English</TabsTrigger>
-                  <TabsTrigger value="hi" className="rounded-lg px-4 text-[11px] font-bold data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-sm transition-all">हिंदी</TabsTrigger>
-                  <TabsTrigger value="mr" className="rounded-lg px-4 text-[11px] font-bold data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-sm transition-all">मराठी</TabsTrigger>
+                  <TabsTrigger value="en" className="rounded-lg px-4 text-[11px] font-bold data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-sm transition-all">{t("admin.english")}</TabsTrigger>
+                  <TabsTrigger value="hi" className="rounded-lg px-4 text-[11px] font-bold data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-sm transition-all">{t("admin.hindi")}</TabsTrigger>
+                  <TabsTrigger value="mr" className="rounded-lg px-4 text-[11px] font-bold data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-sm transition-all">{t("admin.marathi")}</TabsTrigger>
                 </TabsList>
               </Tabs>
 
@@ -1608,7 +1638,7 @@ export default function TempleArchitectureAdmin({
               {/* 1. Essential Identity */}
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
                 <div>
-                  <h2 className="text-xl font-bold text-slate-900">Essential Identity</h2>
+                  <h2 className="text-xl font-bold text-slate-900">{t("admin.essentialIdentity")}</h2>
                   <p className="mt-2 text-sm leading-relaxed text-slate-500 font-medium">
                     Basic information that identifies this sacred location on the platform.
                   </p>
@@ -1619,8 +1649,8 @@ export default function TempleArchitectureAdmin({
                       <Label className="text-sm font-semibold text-slate-700">Temple Name * ({activeLang.toUpperCase()})</Label>
                       <Input
                         value={templeName[activeLang]}
-                        onChange={(e) => setTempleName({ ...templeName, [activeLang]: e.target.value })}
-                        placeholder="e.g. Shri Chakradhar Swami Temple"
+                        onChange={(e) => setTempleName(safeUpdateMultilingual(templeName, activeLang, e.target.value))}
+                        placeholder={t("admin.egTempleName")}
                         className="h-12 rounded-xl border-slate-200 focus:border-blue-500 focus:ring-blue-500 font-medium"
                         required
                       />
@@ -1629,16 +1659,16 @@ export default function TempleArchitectureAdmin({
                       <div className="flex items-center gap-2">
                         <Input
                           value={todaysNameTitle[activeLang]}
-                          onChange={(e) => setTodaysNameTitle({ ...todaysNameTitle, [activeLang]: e.target.value })}
+                          onChange={(e) => setTodaysNameTitle(safeUpdateMultilingual(todaysNameTitle, activeLang, e.target.value))}
                           className="h-8 p-0 px-2 w-fit min-w-[120px] text-sm font-semibold text-slate-700 border-transparent hover:border-slate-200 focus:border-blue-500 rounded-md transition-all"
-                          placeholder="Label Name"
+                          placeholder={t("admin.labelName")}
                         />
-                        <span className="text-slate-400 font-normal text-sm">(Optional)</span>
+                        <span className="text-slate-400 font-normal text-sm">{t("admin.optional")}</span>
                       </div>
                       <Input
                         value={todaysName[activeLang]}
-                        onChange={(e) => setTodaysName({ ...todaysName, [activeLang]: e.target.value })}
-                        placeholder="e.g. Patan, Gujarat"
+                        onChange={(e) => setTodaysName(safeUpdateMultilingual(todaysName, activeLang, e.target.value))}
+                        placeholder={t("admin.egPatanGujarat")}
                         className="h-12 rounded-xl border-slate-200 focus:border-blue-500 focus:ring-blue-500"
                       />
                     </div>
@@ -1647,8 +1677,8 @@ export default function TempleArchitectureAdmin({
                     <Label className="text-sm font-semibold text-slate-700">Address ({activeLang.toUpperCase()})</Label>
                     <Textarea
                       value={address[activeLang]}
-                      onChange={(e) => setAddress({ ...address, [activeLang]: e.target.value })}
-                      placeholder="Enter the complete address..."
+                      onChange={(e) => setAddress(safeUpdateMultilingual(address, activeLang, e.target.value))}
+                      placeholder={t("admin.enterCompleteAddress")}
                       rows={3}
                       className="rounded-xl border-slate-200 focus:border-blue-500 focus:ring-blue-500"
                     />
@@ -1658,8 +1688,8 @@ export default function TempleArchitectureAdmin({
                       <Label className="text-sm font-semibold text-slate-700">Taluka ({activeLang.toUpperCase()})</Label>
                       <Input
                         value={taluka[activeLang]}
-                        onChange={(e) => setTaluka({ ...taluka, [activeLang]: e.target.value })}
-                        placeholder="e.g. Sidhpur"
+                        onChange={(e) => setTaluka(safeUpdateMultilingual(taluka, activeLang, e.target.value))}
+                        placeholder={t("admin.egSidhpur")}
                         className="h-12 rounded-xl border-slate-200 focus:border-blue-500 focus:ring-blue-500"
                       />
                     </div>
@@ -1667,15 +1697,15 @@ export default function TempleArchitectureAdmin({
                       <Label className="text-sm font-semibold text-slate-700">District ({activeLang.toUpperCase()})</Label>
                       <Input
                         value={district[activeLang]}
-                        onChange={(e) => setDistrict({ ...district, [activeLang]: e.target.value })}
-                        placeholder="e.g. Patan"
+                        onChange={(e) => setDistrict(safeUpdateMultilingual(district, activeLang, e.target.value))}
+                        placeholder={t("admin.egPatan")}
                         className="h-12 rounded-xl border-slate-200 focus:border-blue-500 focus:ring-blue-500"
                       />
                     </div>
                   </div>
                   <div className="space-y-6">
                     <div className="space-y-2">
-                      <Label className="text-sm font-semibold text-slate-700">Primary Avatar *</Label>
+                      <Label className="text-sm font-semibold text-slate-700">{t("admin.primaryAvatarReq")}</Label>
                       <Select
                         value={primaryAvatar}
                         onValueChange={(v) => {
@@ -1685,7 +1715,7 @@ export default function TempleArchitectureAdmin({
                         required
                       >
                         <SelectTrigger className="h-12 rounded-xl border-slate-200 bg-white">
-                          <SelectValue placeholder="Select Primary Avatar">
+                          <SelectValue placeholder={t("admin.selectPrimaryAvatar")}>
                             {primaryAvatar ? (() => {
                               const cfg = AVATAR_SAMBANDH_CONFIG.find(a => a.id === primaryAvatar);
                               return cfg ? (
@@ -1712,7 +1742,7 @@ export default function TempleArchitectureAdmin({
 
                     {((AVATAR_SAMBANDH_CONFIG.find(a => a.id === primaryAvatar)?.subdivisions.length || 0) > 0) && (
                       <div className="space-y-2 animate-in fade-in duration-300">
-                        <Label className="text-sm font-semibold text-slate-700">Avatar Sub Type(s)</Label>
+                        <Label className="text-sm font-semibold text-slate-700">{t("admin.avatarSubTypes")}</Label>
                         <ReactSelect
                           isMulti
                           options={AVATAR_SAMBANDH_CONFIG.find(a => a.id === primaryAvatar)?.subdivisions.filter(s => s.id !== 'complete').map(s => ({ value: s.id, label: s.label }))}
@@ -1720,7 +1750,7 @@ export default function TempleArchitectureAdmin({
                             .filter(s => primarySubtype.includes(s.id))
                             .map(s => ({ value: s.id, label: s.label }))}
                           onChange={(selected) => setPrimarySubtype(selected ? selected.map((s: any) => s.value) : [])}
-                          placeholder="Select Sub Types..."
+                          placeholder={t("admin.selectSubTypes")}
                           className="react-select-container text-sm"
                           classNamePrefix="react-select"
                           styles={{
@@ -1738,7 +1768,7 @@ export default function TempleArchitectureAdmin({
                     )}
 
                     <div className="space-y-2">
-                      <Label className="text-sm font-semibold text-slate-700">Sthan Type *</Label>
+                      <Label className="text-sm font-semibold text-slate-700">{t("admin.sthanTypeReq")}</Label>
                       <Select
                         value={sthanTypeId || (typeof sthan === 'object' ? (sthan[activeLang] || "") : (sthan || ""))}
                         onValueChange={(v) => {
@@ -1750,13 +1780,13 @@ export default function TempleArchitectureAdmin({
                               setPinIcon(typeObj.pinType);
                             }
                           } else {
-                            setSthan({ ...sthan, [activeLang]: v });
+                            setSthan(safeUpdateMultilingual(sthan, activeLang, v));
                             setSthanTypeId("");
                           }
                         }}
                       >
                         <SelectTrigger className="h-12 rounded-xl border-slate-200 bg-white">
-                          <SelectValue placeholder="Select Sthan Type" />
+                          <SelectValue placeholder={t("admin.selectSthanType")} />
                         </SelectTrigger>
                         <SelectContent>
                           {getValidSthanTypes(primaryAvatar, sthanTypes).map(st => (
@@ -1785,7 +1815,7 @@ export default function TempleArchitectureAdmin({
                           })()}
                         </SelectContent>
                       </Select>
-                      <p className="text-xs text-slate-400">Defines the default map pin icon.</p>
+                      <p className="text-xs text-slate-400">{t("admin.definesMapPin")}</p>
                     </div>
 
                     <RelatedAvatarsSelect
@@ -1802,7 +1832,7 @@ export default function TempleArchitectureAdmin({
               {/* 2. Navigation & Access */}
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
                 <div>
-                  <h2 className="text-xl font-bold text-slate-900">Navigation & Access</h2>
+                  <h2 className="text-xl font-bold text-slate-900">{t("admin.navigationAccess")}</h2>
                   <p className="mt-2 text-sm leading-relaxed text-slate-500 font-medium">
                     Help pilgrims find their way to this sacred site.
                   </p>
@@ -1812,66 +1842,66 @@ export default function TempleArchitectureAdmin({
                     <Label className="text-sm font-semibold text-slate-700">Detailed Directions ({activeLang.toUpperCase()})</Label>
                     <RichTextEditor
                       value={directions_text[activeLang]}
-                      onChange={(val) => setDirectionsText({ ...directions_text, [activeLang]: val })}
+                      onChange={(val) => setDirectionsText(safeUpdateMultilingual(directions_text, activeLang, val))}
                     />
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
-                      <Label className="text-sm font-semibold text-slate-700">Contact Person <span className="text-slate-400 font-normal">(Optional)</span></Label>
+                      <Label className="text-sm font-semibold text-slate-700">{t("admin.contactPerson")}<span className="text-slate-400 font-normal">{t("admin.optional")}</span></Label>
                       <Input
                         value={contactName}
                         onChange={(e) => setContactName(e.target.value)}
-                        placeholder="e.g. Mahant Shri..."
+                        placeholder={t("admin.egMahant")}
                         className="rounded-xl border-slate-200 focus:border-blue-500 focus:ring-blue-500"
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label className="text-sm font-semibold text-slate-700">Contact Number <span className="text-slate-400 font-normal">(Optional)</span></Label>
+                      <Label className="text-sm font-semibold text-slate-700">{t("admin.contactNumber")}<span className="text-slate-400 font-normal">{t("admin.optional")}</span></Label>
                       <Input
                         value={contactNumber}
                         onChange={(e) => setContactNumber(e.target.value)}
-                        placeholder="e.g. +91 99XXXXXXXX"
+                        placeholder={t("admin.egContact")}
                         className="rounded-xl border-slate-200 focus:border-blue-500 focus:ring-blue-500"
                       />
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-sm font-semibold text-slate-700">Note <span className="text-slate-400 font-normal">(Optional)</span></Label>
+                    <Label className="text-sm font-semibold text-slate-700">{t("admin.note")}<span className="text-slate-400 font-normal">{t("admin.optional")}</span></Label>
                     <Textarea
                       value={contactDetails[activeLang] || ""}
-                      onChange={(e) => setContactDetails({ ...contactDetails, [activeLang]: e.target.value })}
-                      placeholder="Extra information, timings, etc..."
+                      onChange={(e) => setContactDetails(safeUpdateMultilingual(contactDetails, activeLang, e.target.value))}
+                      placeholder={t("admin.extraInformation")}
                       rows={2}
                       className="rounded-xl border-slate-200 focus:border-blue-500 focus:ring-blue-500"
                     />
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
-                      <Label className="text-sm font-semibold text-slate-700">Latitude</Label>
+                      <Label className="text-sm font-semibold text-slate-700">{t("admin.latitude")}</Label>
                       <Input
                         value={latitude}
                         onChange={(e) => setLatitude(e.target.value)}
-                        placeholder="e.g. 23.8506"
+                        placeholder={t("admin.egLatitude")}
                         className="h-12 rounded-xl border-slate-200 focus:border-blue-500 focus:ring-blue-500"
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label className="text-sm font-semibold text-slate-700">Longitude</Label>
+                      <Label className="text-sm font-semibold text-slate-700">{t("admin.longitude")}</Label>
                       <Input
                         value={longitude}
                         onChange={(e) => setLongitude(e.target.value)}
-                        placeholder="e.g. 72.1154"
+                        placeholder={t("admin.egLongitude")}
                         className="h-12 rounded-xl border-slate-200 focus:border-blue-500 focus:ring-blue-500"
                       />
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-sm font-semibold text-slate-700">Google Maps Integration (URL)</Label>
+                    <Label className="text-sm font-semibold text-slate-700">{t("admin.googleMapsUrl")}</Label>
                     <div className="relative group">
                       <Input
                         value={locationLink}
                         onChange={(e) => setLocationLink(e.target.value)}
-                        placeholder="https://goo.gl/maps/..."
+                        placeholder={t("admin.egGmap")}
                         className="h-12 pl-10 rounded-xl border-slate-200 focus:border-blue-500 focus:ring-blue-500"
                       />
                       <ExternalLink className="absolute left-3.5 top-3.5 w-4 h-4 text-slate-400 group-focus-within:text-blue-500 transition-colors" />
@@ -1885,7 +1915,7 @@ export default function TempleArchitectureAdmin({
               {/* Temple Gallery */}
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 <div>
-                  <h2 className="text-xl font-bold text-slate-900">Sthan Gallery</h2>
+                  <h2 className="text-xl font-bold text-slate-900">{t("admin.sthanGallery")}</h2>
                   <p className="mt-1.5 text-xs font-medium leading-relaxed text-slate-500">
                     Upload photos of the temple entrance, surroundings, and views.
                   </p>
@@ -1942,8 +1972,8 @@ export default function TempleArchitectureAdmin({
                       {sthanImages.length === 0 && (
                         <div className="md:col-span-3 lg:col-span-4 p-12 border-2 border-dashed border-slate-100 rounded-3xl bg-slate-50/30 flex flex-col items-center justify-center text-center">
                           <ImageIcon className="w-12 h-12 text-slate-200 mb-4" />
-                          <p className="text-sm font-bold text-slate-400">No photos in gallery yet.</p>
-                          <p className="text-[10px] text-slate-300 uppercase tracking-widest mt-1">Uploaded images will appear here</p>
+                          <p className="text-sm font-bold text-slate-400">{t("admin.noPhotosInGallery")}</p>
+                          <p className="text-[10px] text-slate-300 uppercase tracking-widest mt-1">{t("admin.uploadedImagesAppear")}</p>
                         </div>
                       )}
                     </div>
@@ -1957,7 +1987,7 @@ export default function TempleArchitectureAdmin({
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-10 text-slate-900">
                 <div>
                   <div className="flex items-center justify-between lg:block">
-                    <h2 className="text-xl font-bold">Descriptive Content</h2>
+                    <h2 className="text-xl font-bold">{t("admin.descriptiveContent")}</h2>
                     <Button
                       variant="outline"
                       size="sm"
@@ -1978,13 +2008,13 @@ export default function TempleArchitectureAdmin({
                     <div className="p-6 bg-amber-50/30 rounded-3xl border border-amber-100 shadow-sm space-y-6">
                       <div className="space-y-2">
                         <div className="flex items-center gap-2">
-                          <span className="text-[10px] font-black text-amber-600 uppercase tracking-[0.2em]">Block Title</span>
+                          <span className="text-[10px] font-black text-amber-600 uppercase tracking-[0.2em]">{t("admin.blockTitle")}</span>
                           <div className="h-px flex-1 bg-amber-100/50" />
                         </div>
                         <Input
                           value={description_title[activeLang]}
-                          onChange={(e) => setDescriptionTitle({ ...description_title, [activeLang]: e.target.value })}
-                          placeholder="Sthan At Glance"
+                          onChange={(e) => setDescriptionTitle(safeUpdateMultilingual(description_title, activeLang, e.target.value))}
+                          placeholder={t("admin.sthanAtGlance")}
                           className="h-12 border-none bg-white rounded-xl font-bold text-lg focus:ring-2 focus:ring-amber-200 transition-all px-4"
                         />
                       </div>
@@ -1992,7 +2022,7 @@ export default function TempleArchitectureAdmin({
                       <div className="space-y-4">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
-                            <span className="text-[10px] font-black text-amber-600 uppercase tracking-[0.2em]">Iconic Details</span>
+                            <span className="text-[10px] font-black text-amber-600 uppercase tracking-[0.2em]">{t("admin.iconicDetails")}</span>
                             <div className="h-px w-20 bg-amber-100/50" />
                           </div>
                           <Button
@@ -2053,7 +2083,7 @@ export default function TempleArchitectureAdmin({
                                     </PopoverTrigger>
                                     <PopoverContent className="w-[360px] max-h-[420px] overflow-y-auto p-4 space-y-4 shadow-xl border-slate-200">
                                       <div className="space-y-3">
-                                        <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">Select Custom Icon</Label>
+                                        <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">{t("admin.selectCustomIcon")}</Label>
                                         <div className="grid grid-cols-4 gap-3">
                                           {CUSTOM_ICONS.map(icon => (
                                             <button
@@ -2072,10 +2102,10 @@ export default function TempleArchitectureAdmin({
                                       </div>
                                       <Separator className="bg-slate-200" />
                                       <div className="space-y-2">
-                                        <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">Or Enter Custom URL</Label>
+                                        <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">{t("admin.orEnterCustomUrl")}</Label>
                                         <div className="flex gap-2">
                                           <Input
-                                            placeholder="https://..."
+                                            placeholder={t("admin.egUrl")}
                                             value={item.icon.startsWith('http') ? item.icon : ''}
                                             onChange={(e) => updateGlanceItem(item.id, 'icon', e.target.value)}
                                             className="h-8 text-xs rounded-lg"
@@ -2094,7 +2124,7 @@ export default function TempleArchitectureAdmin({
                                   <Input
                                     value={getLang(item.description, activeLang)}
                                     onChange={(e) => updateGlanceItem(item.id, 'description', e.target.value)}
-                                    placeholder="Brief description..."
+                                    placeholder={t("admin.briefDescription")}
                                     className="h-10 rounded-xl border-amber-100 bg-white text-sm"
                                   />
                                 </div>
@@ -2121,25 +2151,25 @@ export default function TempleArchitectureAdmin({
                     <div className="p-6 bg-blue-50/30 rounded-3xl border border-blue-100 shadow-sm space-y-6">
                       <div className="space-y-2">
                         <div className="flex items-center gap-2">
-                          <span className="text-[10px] font-black text-blue-600 uppercase tracking-[0.2em]">Block Title</span>
+                          <span className="text-[10px] font-black text-blue-600 uppercase tracking-[0.2em]">{t("admin.blockTitle")}</span>
                           <div className="h-px flex-1 bg-blue-100/50" />
                         </div>
                         <Input
                           value={sthana_info_title[activeLang]}
-                          onChange={(e) => setSthanaInfoTitle({ ...sthana_info_title, [activeLang]: e.target.value })}
-                          placeholder="Sthan Description"
+                          onChange={(e) => setSthanaInfoTitle(safeUpdateMultilingual(sthana_info_title, activeLang, e.target.value))}
+                          placeholder={t("admin.sthanDescription")}
                           className="h-12 border-none bg-white rounded-xl font-bold text-lg focus:ring-2 focus:ring-blue-200 transition-all px-4"
                         />
                       </div>
                       <div className="space-y-2">
                         <div className="flex items-center gap-2">
-                          <span className="text-[10px] font-black text-blue-600 uppercase tracking-[0.2em]">Detailed Narrative</span>
+                          <span className="text-[10px] font-black text-blue-600 uppercase tracking-[0.2em]">{t("admin.detailedNarrative")}</span>
                           <div className="h-px flex-1 bg-blue-100/50" />
                         </div>
                         <RichTextEditor
                           value={sthana_info_text[activeLang]}
-                          onChange={(val) => setSthanaInfoText({ ...sthana_info_text, [activeLang]: val })}
-                          placeholder="Detailed sthan description..."
+                          onChange={(val) => setSthanaInfoText(safeUpdateMultilingual(sthana_info_text, activeLang, val))}
+                          placeholder={t("admin.detailedSthanDescription")}
                           className="border-none"
                         />
                       </div>
@@ -2148,16 +2178,14 @@ export default function TempleArchitectureAdmin({
 
                   <div className="flex items-center gap-4 py-4">
                     <Separator className="flex-1 opacity-50" />
-                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] whitespace-nowrap">Additional Custom Blocks</span>
+                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] whitespace-nowrap">{t("admin.additionalCustomBlocks")}</span>
                     <Separator className="flex-1 opacity-50" />
                   </div>
 
                   {descriptionSections.length === 0 ? (
                     <div className="p-10 border-2 border-dashed border-slate-200 rounded-3xl text-center bg-slate-50/50">
-                      <p className="text-slate-400 font-medium">No additional descriptive blocks added yet.</p>
-                      <Button variant="link" onClick={addDescriptionSection} className="text-blue-600 font-black mt-2">
-                        Click here to add one
-                      </Button>
+                      <p className="text-slate-400 font-medium">{t("admin.noAdditionalBlocks")}</p>
+                      <Button variant="link" onClick={addDescriptionSection} className="text-blue-600 font-black mt-2">{t("admin.clickToAdd")}</Button>
                     </div>
                   ) : (
                     <div className="space-y-6">
@@ -2174,25 +2202,25 @@ export default function TempleArchitectureAdmin({
                           <div className="grid grid-cols-1 gap-6">
                             <div className="space-y-2">
                               <div className="flex items-center gap-2">
-                                <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Block Title</span>
+                                <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">{t("admin.blockTitle")}</span>
                                 <div className="h-px flex-1 bg-slate-100" />
                               </div>
                               <Input
                                 value={getLang(s.title, activeLang)}
                                 onChange={(e) => updateDescriptionSection(s.id, 'title', e.target.value)}
-                                placeholder="e.g. History"
+                                placeholder={t("admin.egHistory")}
                                 className="h-12 border-none bg-slate-50/80 rounded-xl font-bold text-lg focus:ring-2 focus:ring-blue-100 transition-all px-4"
                               />
                             </div>
                             <div className="space-y-2">
                               <div className="flex items-center gap-2">
-                                <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Detailed Narrative</span>
+                                <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">{t("admin.detailedNarrative")}</span>
                                 <div className="h-px flex-1 bg-slate-100" />
                               </div>
                               <RichTextEditor
                                 value={getLang(s.content, activeLang)}
                                 onChange={(val) => updateDescriptionSection(s.id, 'content', val)}
-                                placeholder="Add custom content here..."
+                                placeholder={t("admin.addCustomContent")}
                                 className="border-none"
                               />
                             </div>
@@ -2208,8 +2236,8 @@ export default function TempleArchitectureAdmin({
             <div className="flex items-center justify-between pt-20 pb-10">
               <div className="flex items-center gap-4 bg-white px-6 py-4 rounded-3xl border border-slate-200 shadow-sm">
                 <div className="space-y-0.5">
-                  <Label className="text-sm font-bold text-slate-900 leading-none">Architecture View</Label>
-                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Toggle Mapping Step</p>
+                  <Label className="text-sm font-bold text-slate-900 leading-none">{t("admin.architectureView")}</Label>
+                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{t("admin.toggleMappingStep")}</p>
                 </div>
                 <Switch
                   checked={hasArchitecture}
@@ -2263,7 +2291,7 @@ export default function TempleArchitectureAdmin({
                   <ImageIcon className="w-5 h-5 text-amber-600" />
                 </div>
                 <div className="space-y-1">
-                  <h4 className="text-sm font-bold text-amber-900">Gallery Management</h4>
+                  <h4 className="text-sm font-bold text-amber-900">{t("admin.galleryManagement")}</h4>
                   <p className="text-xs text-amber-700/70 leading-relaxed font-medium">
                     Add supplemental views using the "Add Photo" card in the gallery strip below.
                   </p>
@@ -2287,7 +2315,7 @@ export default function TempleArchitectureAdmin({
 
                 <div>
                   <h2 className="text-2xl font-serif font-bold text-slate-800">{templeName[activeLang]}</h2>
-                  <p className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground/80 mt-1">Architecture Management</p>
+                  <p className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground/80 mt-1">{t("admin.architectureManagement")}</p>
                 </div>
               </div>
 
@@ -2321,9 +2349,7 @@ export default function TempleArchitectureAdmin({
                     : 'text-slate-400 hover:text-slate-600 hover:bg-white/50'
                     }`}
                 >
-                  <LucideIcons.Layout className="w-4 h-4" />
-                  Architecture View
-                </button>
+                  <LucideIcons.Layout className="w-4 h-4" />{t("admin.architectureView")}</button>
 
                 <button
                   onClick={() => {
@@ -2373,7 +2399,7 @@ export default function TempleArchitectureAdmin({
                     )}
                   >
                     <Plus className="w-4 h-4 group-hover:rotate-90 transition-transform" />
-                    <span>Add New Hotspot</span>
+                    <span>{t("admin.addNewHotspot")}</span>
                   </Button>
                 )}
               </CardHeader>
@@ -2464,8 +2490,8 @@ export default function TempleArchitectureAdmin({
                     ) : (
                       <div className="text-white text-center p-20 border-4 border-dashed border-white/10 rounded-3xl backdrop-blur-sm">
                         <Upload className="w-16 h-16 mx-auto mb-4 text-slate-500" />
-                        <p className="text-xl font-medium text-slate-300">No images available</p>
-                        <p className="text-slate-500 mt-2">Upload a main or supplemental image to begin</p>
+                        <p className="text-xl font-medium text-slate-300">{t("admin.noImagesAvailable")}</p>
+                        <p className="text-slate-500 mt-2">{t("admin.uploadMainSupplemental")}</p>
                       </div>
                     )}
                   </div>
@@ -2547,7 +2573,7 @@ export default function TempleArchitectureAdmin({
                       <ChevronDown className="w-4 h-4" />
                       Photo Gallery ({displayImages.length})
                     </h3>
-                    <p className="text-xs text-slate-500">Pick an image to manage its hotspots</p>
+                    <p className="text-xs text-slate-500">{t("admin.pickImageManageHotspots")}</p>
                   </div>
                   <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide snap-x">
                     {displayImages.map((url, idx) => (
@@ -2592,7 +2618,7 @@ export default function TempleArchitectureAdmin({
                             <div className="w-10 h-10 rounded-full bg-slate-100 group-hover:bg-primary/10 flex items-center justify-center transition-colors">
                               <Plus className="w-6 h-6 text-slate-400 group-hover:text-primary" />
                             </div>
-                            <span className="text-xs font-bold text-slate-400 group-hover:text-primary uppercase tracking-tighter">Add Photo</span>
+                            <span className="text-xs font-bold text-slate-400 group-hover:text-primary uppercase tracking-tighter">{t("admin.addPhoto")}</span>
                           </button>
                         </PopoverTrigger>
                         <PopoverContent className="w-80 p-0 overflow-hidden border-2 shadow-xl" align="end">
@@ -2708,7 +2734,7 @@ export default function TempleArchitectureAdmin({
                                 />
                               ) : (
                                 <h4 className="flex-1 font-bold text-sm text-slate-900 truncate group-hover:text-primary transition-colors">
-                                  {getLang(hotspot.title, activeLang) || <span className="text-slate-400 italic">Untitled</span>}
+                                  {getLang(hotspot.title, activeLang) || <span className="text-slate-400 italic">{t("admin.untitled")}</span>}
                                 </h4>
                               )}
 
@@ -2770,7 +2796,7 @@ export default function TempleArchitectureAdmin({
                       <div className="col-span-1 md:col-span-2 lg:col-span-3">
                         <div className="border border-dashed border-slate-300 bg-slate-50/50 rounded-2xl p-8 flex flex-col items-center justify-center text-center gap-2">
                           <MousePointer2 className="w-8 h-8 text-slate-300 mb-2" />
-                          <h4 className="font-bold text-slate-700">No Hotspots Yet</h4>
+                          <h4 className="font-bold text-slate-700">{t("admin.noHotspotsYet")}</h4>
                           <p className="text-sm text-slate-500 max-w-sm">
                             {viewType === 'architectural'
                               ? "Click anywhere on the architecture image above to place your first hotspot."
@@ -2791,14 +2817,14 @@ export default function TempleArchitectureAdmin({
               <CardHeader className="bg-slate-50 border-b border-slate-100 pb-3">
                 <div className="flex items-center gap-2">
                   <FileText className="w-5 h-5 text-slate-500" />
-                  <CardTitle className="text-lg font-bold text-slate-900">Sthan's Description</CardTitle>
+                  <CardTitle className="text-lg font-bold text-slate-900">{t("admin.sthansDescription")}</CardTitle>
                 </div>
               </CardHeader>
               <CardContent className="p-6">
                 <RichTextEditor
-                  placeholder="Provide a detailed architectural description of the temple complex..."
+                  placeholder={t("admin.provideDetailedArch")}
                   value={architectureDescription[activeLang]}
-                  onChange={(val) => setArchitectureDescription({ ...architectureDescription, [activeLang]: val })}
+                  onChange={(val) => setArchitectureDescription(safeUpdateMultilingual(architectureDescription, activeLang, val))}
                 />
                 <p className="mt-2 text-xs text-slate-500">
                   This description will appear in the Architecture View section of the public site.
@@ -2812,7 +2838,7 @@ export default function TempleArchitectureAdmin({
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <FileText className="w-5 h-5 text-slate-500" />
-                    <CardTitle className="text-lg font-bold text-slate-900">Additional Custom Blocks</CardTitle>
+                    <CardTitle className="text-lg font-bold text-slate-900">{t("admin.additionalCustomBlocks")}</CardTitle>
                   </div>
                   <Button
                     onClick={addCustomBlock}
@@ -2823,7 +2849,7 @@ export default function TempleArchitectureAdmin({
                     <Plus className="w-4 h-4 mr-2" /> Add Custom Block
                   </Button>
                 </div>
-                <p className="text-xs text-slate-500 mt-2">Add custom descriptive sections to display on the public architecture page</p>
+                <p className="text-xs text-slate-500 mt-2">{t("admin.addCustomDescriptive")}</p>
               </CardHeader>
               <CardContent className="p-6">
                 {customBlocks.length === 0 ? (
@@ -2831,9 +2857,8 @@ export default function TempleArchitectureAdmin({
                     onClick={addCustomBlock}
                     className="p-8 text-center border-2 border-dashed border-slate-200 rounded-2xl cursor-pointer hover:border-blue-300 hover:bg-blue-50/30 transition-all"
                   >
-                    <p className="text-slate-400 text-sm">
-                      No additional descriptive blocks added yet.<br />
-                      <span className="text-blue-600 font-medium">Click here to add one</span>
+                    <p className="text-slate-400 text-sm">{t("admin.noAdditionalBlocks")}<br />
+                      <span className="text-blue-600 font-medium">{t("admin.clickToAdd")}</span>
                     </p>
                   </div>
                 ) : (
@@ -2866,13 +2891,13 @@ export default function TempleArchitectureAdmin({
                             <Input
                               value={getLang(block.title, activeLang)}
                               onChange={(e) => updateCustomBlock(block.id, 'title', e.target.value)}
-                              placeholder="Block Title"
+                              placeholder={t("admin.blockTitle")}
                               className="font-bold rounded-xl"
                             />
                             <RichTextEditor
                               value={getLang(block.content, activeLang)}
                               onChange={(val) => updateCustomBlock(block.id, 'content', val)}
-                              placeholder="Block content..."
+                              placeholder={t("admin.blockContent")}
                             />
                           </div>
 
@@ -2929,14 +2954,14 @@ export default function TempleArchitectureAdmin({
               <div className="space-y-8">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h1 className="text-3xl font-serif font-bold text-primary tracking-tight">Sthana Details</h1>
-                    <p className="text-sm text-slate-500 font-medium">Manage sacred points, divine stories, and site content.</p>
+                    <h1 className="text-3xl font-serif font-bold text-primary tracking-tight">{t("admin.sthanaDetails")}</h1>
+                    <p className="text-sm text-slate-500 font-medium">{t("admin.manageSacredPoints")}</p>
                   </div>
                   <div className="flex items-center gap-4">
                     <div className="relative">
                       <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                       <Input
-                        placeholder="Search details..."
+                        placeholder={t("admin.searchDetails")}
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         className="pl-10 w-64 rounded-xl border-slate-200"
@@ -2952,8 +2977,8 @@ export default function TempleArchitectureAdmin({
                 <Card className="border-slate-200 shadow-sm rounded-3xl overflow-hidden mb-8">
                   <CardHeader className="bg-slate-50 border-b border-slate-100 flex flex-row items-center justify-between py-4">
                     <div>
-                      <CardTitle className="text-lg font-bold">Groups & Headings</CardTitle>
-                      <p className="text-xs text-slate-500 mt-1">Group your sthan details into sections on the user app.</p>
+                      <CardTitle className="text-lg font-bold">{t("admin.groupsHeadings")}</CardTitle>
+                      <p className="text-xs text-slate-500 mt-1">{t("admin.groupSthanDetails")}</p>
                     </div>
                     <Button onClick={addDetailsSection} size="sm" variant="outline" className="h-8 gap-2 rounded-xl">
                        <Plus className="w-3.5 h-3.5"/> Add Custom Section
@@ -2966,10 +2991,10 @@ export default function TempleArchitectureAdmin({
                         <br/>
                         <Button variant="link" onClick={() => {
                           setDetailsSections([
-                            { id: uuidv4(), title: { en: "Sthan Description", hi: "स्थान विवरण", mr: "स्थान वर्णन" }, type: 'linked', isVisible: true },
+                            { id: uuidv4(), title: { en: t("admin.sthanDescription"), hi: "स्थान विवरण", mr: "स्थान वर्णन" }, type: 'linked', isVisible: true },
                             { id: uuidv4(), title: { en: "Unavailable Sthan", hi: "अनुपलब्ध स्थान", mr: "अनुपलब्ध स्थान" }, type: 'unlinked', isVisible: true }
                           ]);
-                        }}>Configure explicit default sections</Button>
+                        }}>{t("admin.configureDefaultSections")}</Button>
                       </div>
                     ) : (
                       <div className="divide-y divide-slate-100">
@@ -2979,18 +3004,18 @@ export default function TempleArchitectureAdmin({
                                <div className="flex flex-col md:flex-row gap-2">
                                  <Input 
                                    value={getLang(section.title, activeLang)}
-                                   onChange={e => updateDetailsSection(section.id, { title: { ...section.title, [activeLang]: e.target.value } })}
-                                   placeholder="Section Heading"
+                                   onChange={e => updateDetailsSection(section.id, { title: safeUpdateMultilingual(section.title, activeLang, e.target.value) })}
+                                   placeholder={t("admin.sectionHeading")}
                                    className="h-10 w-full md:w-64 font-bold border-slate-200"
                                  />
                                  <Select value={section.type} onValueChange={v => updateDetailsSection(section.id, { type: v })}>
                                    <SelectTrigger className="w-full md:w-[160px] h-10 border-slate-200"><SelectValue /></SelectTrigger>
                                    <SelectContent>
-                                     <SelectItem value="linked">Auto: Linked (Main Architecture)</SelectItem>
-                                     <SelectItem value="unlinked">Auto: Unavailable Sthan</SelectItem>
-                                     <SelectItem value="independent">Auto: Independent Sthan</SelectItem>
-                                     <SelectItem value="info">Auto: Info Only</SelectItem>
-                                     <SelectItem value="custom">Custom Manual Group</SelectItem>
+                                     <SelectItem value="linked">{t("admin.autoLinkedMain")}</SelectItem>
+                                     <SelectItem value="unlinked">{t("admin.autoUnavailable")}</SelectItem>
+                                     <SelectItem value="independent">{t("admin.autoIndependentSthan")}</SelectItem>
+                                     <SelectItem value="info">{t("admin.autoInfoOnly")}</SelectItem>
+                                     <SelectItem value="custom">{t("admin.customManualGroup")}</SelectItem>
                                    </SelectContent>
                                  </Select>
                                </div>
@@ -3005,7 +3030,7 @@ export default function TempleArchitectureAdmin({
                                      })}
                                      onChange={(selected: any) => updateDetailsSection(section.id, { sthanIds: selected.map((s:any) => s.value) })}
                                      className="text-sm"
-                                     placeholder="Assign specific sthan details to this group..."
+                                     placeholder={t("admin.assignSpecificSthan")}
                                      styles={{ control: base => ({ ...base, borderRadius: '0.5rem', borderColor: '#e2e8f0' }) }}
                                    />
                                  </div>
@@ -3014,7 +3039,7 @@ export default function TempleArchitectureAdmin({
                              <div className="flex items-center gap-1 shrink-0 self-start md:self-center">
                                <div className="flex items-center gap-2 mr-3 bg-slate-50 px-2 py-1 rounded-lg">
                                  <Switch checked={section.isVisible !== false} onCheckedChange={c => updateDetailsSection(section.id, { isVisible: c })} className="scale-75" />
-                                 <Label className="text-[10px] uppercase font-bold text-slate-500 cursor-pointer">Vis</Label>
+                                 <Label className="text-[10px] uppercase font-bold text-slate-500 cursor-pointer">{t("admin.vis")}</Label>
                                </div>
                                <Button variant="ghost" size="icon" onClick={() => moveDetailsSection(idx, 'up')} disabled={idx === 0} className="h-8 w-8 text-slate-400 hover:text-blue-600"><ArrowUp className="w-4 h-4"/></Button>
                                <Button variant="ghost" size="icon" onClick={() => moveDetailsSection(idx, 'down')} disabled={idx === detailsSections.length - 1} className="h-8 w-8 text-slate-400 hover:text-blue-600"><ArrowDown className="w-4 h-4"/></Button>
@@ -3083,7 +3108,7 @@ export default function TempleArchitectureAdmin({
                               ) : (
                                 <div className="flex flex-col items-center gap-2">
                                   <ImageIcon className="w-12 h-12 text-slate-300" />
-                                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">No Image</span>
+                                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t("admin.noImage")}</span>
                                 </div>
                               )}
                               {linkedHotspot && (
@@ -3179,11 +3204,11 @@ export default function TempleArchitectureAdmin({
                         className="h-10 px-4 rounded-xl hover:bg-slate-50 text-slate-500 font-bold gap-2 shrink-0 group transition-all"
                       >
                         <LucideIcons.ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
-                        <span>Back to List</span>
+                        <span>{t("admin.backToList")}</span>
                       </Button>
                       <div className="w-px h-8 bg-slate-100 hidden md:block" />
                       <div className="flex items-center gap-3">
-                        <p className="text-xs font-black text-slate-400 uppercase tracking-widest leading-none">Selected:</p>
+                        <p className="text-xs font-black text-slate-400 uppercase tracking-widest leading-none">{t("admin.selected")}</p>
                         <h2 className="text-xl font-serif font-bold text-primary truncate max-w-xs transition-all">
                           {getLang(selectedHotspot.title, activeLang) || `Edit Sthan Detail`}
                         </h2>
@@ -3221,7 +3246,7 @@ export default function TempleArchitectureAdmin({
                       <CardHeader className="bg-blue-100/50 border-b border-blue-200 py-4 flex flex-row items-center justify-between">
                         <div className="flex items-center gap-3">
                           <LucideIcons.MapPin className="w-5 h-5 text-blue-600" />
-                          <CardTitle className="text-lg font-bold text-blue-900">Map Integration</CardTitle>
+                          <CardTitle className="text-lg font-bold text-blue-900">{t("admin.mapIntegration")}</CardTitle>
                         </div>
                         <Badge
                           className={cn(
@@ -3254,7 +3279,7 @@ export default function TempleArchitectureAdmin({
 
                             {selectedHotspot.hotspotId && (
                               <div className="animate-in slide-in-from-top-2 duration-300 space-y-3">
-                                <Label className="text-xs font-black uppercase tracking-widest text-slate-400 pl-1">Target Hotspot</Label>
+                                <Label className="text-xs font-black uppercase tracking-widest text-slate-400 pl-1">{t("admin.targetHotspot")}</Label>
                                 <div className="relative group">
                                   <LucideIcons.ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-hover:text-blue-500 transition-colors" />
                                   <select
@@ -3283,7 +3308,7 @@ export default function TempleArchitectureAdmin({
 
                             {/* Sthan Pin Type */}
                             <div className="space-y-2 border-t border-blue-100 pt-4">
-                              <Label className="text-xs font-black uppercase tracking-widest text-slate-500">Sthan Pin Type</Label>
+                              <Label className="text-xs font-black uppercase tracking-widest text-slate-500">{t("admin.sthanPinType")}</Label>
                               <Select
                                 value={selectedHotspot.pinType || (selectedHotspot.hotspotId ? 'ARCHITECTURE_LINKED' : 'INFO_ONLY')}
                                 onValueChange={(v) => setSelectedHotspot({ ...selectedHotspot, pinType: v as any })}
@@ -3334,26 +3359,26 @@ export default function TempleArchitectureAdmin({
                     </Card>
                     <Card className="border-slate-200 shadow-sm rounded-3xl overflow-hidden h-full">
                       <CardHeader className="bg-slate-50 border-b border-slate-100 pb-3">
-                        <CardTitle className="text-lg font-bold">General Description</CardTitle>
+                        <CardTitle className="text-lg font-bold">{t("admin.generalDescription")}</CardTitle>
                       </CardHeader>
                       <CardContent className="space-y-6 pt-6">
                         <div className="space-y-2">
-                          <Label className="text-xs font-black uppercase tracking-widest text-slate-400">Sthan Name</Label>
+                          <Label className="text-xs font-black uppercase tracking-widest text-slate-400">{t("admin.sthanName")}</Label>
                           <Input
                             value={getLang(selectedHotspot.title, activeLang) || ""}
-                            onChange={(e) => setSelectedHotspot({ ...selectedHotspot, title: { ...(selectedHotspot.title || { en: "", hi: "", mr: "" }), [activeLang]: e.target.value } })}
-                            placeholder="e.g. Garbhagriha"
+                            onChange={(e) => setSelectedHotspot({ ...selectedHotspot, title: safeUpdateMultilingual(selectedHotspot.title || { en: "", hi: "", mr: "" }, activeLang, e.target.value) })}
+                            placeholder={t("admin.egGarbhagriha")}
                             className="h-12 rounded-2xl border-slate-200 focus:border-blue-500"
                           />
                         </div>
                         <div className="space-y-2">
-                          <Label className="text-xs font-black uppercase tracking-widest text-slate-400">General Description</Label>
+                          <Label className="text-xs font-black uppercase tracking-widest text-slate-400">{t("admin.generalDescription")}</Label>
                         </div>
                         <div className="space-y-2">
                           <RichTextEditor
                             value={getLang(selectedHotspot.description, activeLang)}
-                            onChange={(val) => setSelectedHotspot({ ...selectedHotspot, description: { ...(selectedHotspot.description || { en: "", hi: "", mr: "" }), [activeLang]: val } })}
-                            placeholder="Main architectural overview..."
+                            onChange={(val) => setSelectedHotspot({ ...selectedHotspot, description: safeUpdateMultilingual(selectedHotspot.description || { en: "", hi: "", mr: "" }, activeLang, val) })}
+                            placeholder={t("admin.mainArchitecturalOverview")}
                           />
                         </div>
                       </CardContent>
@@ -3361,17 +3386,17 @@ export default function TempleArchitectureAdmin({
 
                     <Card className="border-slate-200 shadow-sm rounded-3xl overflow-hidden h-full">
                       <CardHeader className="bg-slate-50 border-b border-slate-100 pb-3">
-                        <CardTitle className="text-lg font-bold">Sthan Pothi Details</CardTitle>
+                        <CardTitle className="text-lg font-bold">{t("admin.sthanPothiDetails")}</CardTitle>
                       </CardHeader>
                       <CardContent className="space-y-6 pt-6">
                         <div className="space-y-2">
-                          <Label className="text-xs font-black uppercase tracking-widest text-slate-400">Sthan Pothi Details</Label>
+                          <Label className="text-xs font-black uppercase tracking-widest text-slate-400">{t("admin.sthanPothiDetails")}</Label>
                         </div>
                         <div className="space-y-2">
                           <RichTextEditor
                             value={getLang(selectedHotspot.sthanPothiDescription, activeLang) || ""}
-                            onChange={(val) => setSelectedHotspot({ ...selectedHotspot, sthanPothiDescription: { ...(selectedHotspot.sthanPothiDescription || { en: "", hi: "", mr: "" }), [activeLang]: val } })}
-                            placeholder="Details from scripture..."
+                            onChange={(val) => setSelectedHotspot({ ...selectedHotspot, sthanPothiDescription: safeUpdateMultilingual(selectedHotspot.sthanPothiDescription || { en: "", hi: "", mr: "" }, activeLang, val) })}
+                            placeholder={t("admin.detailsFromScripture")}
                           />
                         </div>
                       </CardContent>
@@ -3381,7 +3406,7 @@ export default function TempleArchitectureAdmin({
                   {/* Leelas Section */}
                   <Card className="border-slate-200 shadow-sm rounded-3xl overflow-hidden">
                     <CardHeader className="bg-slate-50 border-b border-slate-100 flex flex-row items-center justify-between pb-3">
-                      <CardTitle className="text-lg font-bold">Divine Leelas</CardTitle>
+                      <CardTitle className="text-lg font-bold">{t("admin.divineLeelas")}</CardTitle>
                       <Button variant="outline" size="sm" onClick={addLeela} className="rounded-xl h-10 border-blue-200 text-blue-600 bg-white">
                         <Plus className="w-4 h-4 mr-2" /> Add Story
                       </Button>
@@ -3402,23 +3427,23 @@ export default function TempleArchitectureAdmin({
                                   {idx + 1}
                                 </div>
                                 <Input
-                                  placeholder="Leela Title"
+                                  placeholder={t("admin.leelaTitle")}
                                   value={getLang(leela.title, activeLang) || ""}
                                   className="bg-white rounded-xl font-bold h-10"
                                   onChange={(e) => {
                                     const updatedLeelas = (selectedHotspot.leelas as any[]).map((l: any) =>
-                                      l.id === leela.id ? { ...l, title: { ...(l.title || { en: "", hi: "", mr: "" }), [activeLang]: e.target.value } } : l
+                                      l.id === leela.id ? { ...l, title: safeUpdateMultilingual(l.title || { en: "", hi: "", mr: "" }, activeLang, e.target.value) } : l
                                     );
                                     setSelectedHotspot({ ...selectedHotspot, leelas: updatedLeelas as Leela[] });
                                   }}
                                 />
                               </div>
                               <RichTextEditor
-                                placeholder="Describe the divine leela..."
+                                placeholder={t("admin.describeDivineLeela")}
                                 value={getLang(leela.description, activeLang)}
                                 onChange={(val) => {
                                   const updatedLeelas = (selectedHotspot.leelas as any[]).map((l: any) =>
-                                    l.id === leela.id ? { ...l, description: { ...(l.description || { en: "", hi: "", mr: "" }), [activeLang]: val } } : l
+                                    l.id === leela.id ? { ...l, description: safeUpdateMultilingual(l.description || { en: "", hi: "", mr: "" }, activeLang, val) } : l
                                   );
                                   setSelectedHotspot({ ...selectedHotspot, leelas: updatedLeelas as Leela[] });
                                 }}
@@ -3429,7 +3454,7 @@ export default function TempleArchitectureAdmin({
                       ) : (
                         <div className="py-12 flex flex-col items-center text-slate-300 border-2 border-dashed border-slate-200 rounded-3xl">
                           <LucideIcons.BookOpen className="w-12 h-12 mb-3 opacity-20" />
-                          <p className="font-bold text-slate-400">No divine stories added to this sthana yet.</p>
+                          <p className="font-bold text-slate-400">{t("admin.noDivineStories")}</p>
                           <Button variant="link" onClick={addLeela} className="text-blue-600 text-sm font-black mt-2">
                             Add the first Leela
                           </Button>
@@ -3443,7 +3468,7 @@ export default function TempleArchitectureAdmin({
                     <CardHeader className="bg-slate-50 border-b border-slate-100 flex flex-row items-center justify-between pb-3">
                       <div className="flex items-center gap-3">
                         <ImageIcon className="w-5 h-5 text-blue-600" />
-                        <CardTitle className="text-lg font-bold">Image & Media Gallery</CardTitle>
+                        <CardTitle className="text-lg font-bold">{t("admin.imageMediaGallery")}</CardTitle>
                       </div>
                       <Badge variant="outline" className="bg-white text-slate-400 font-black text-[10px] uppercase tracking-widest px-4 py-1.5 rounded-full border-slate-200">
                         {selectedHotspot.images?.length || 0} Photos Attached
@@ -3456,7 +3481,7 @@ export default function TempleArchitectureAdmin({
                           <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-900/60 flex items-center gap-2">
                             <ImageIcon className="w-3 h-3" /> Image Fit Mode
                           </Label>
-                          <p className="text-[11px] text-slate-500 font-medium">Choose how images should fit in the container</p>
+                          <p className="text-[11px] text-slate-500 font-medium">{t("admin.chooseImageFit")}</p>
                         </div>
                         <div className="flex bg-white/80 backdrop-blur-sm p-1.5 rounded-2xl border border-blue-100 shadow-sm self-stretch sm:self-auto">
                           <button
@@ -3532,9 +3557,9 @@ export default function TempleArchitectureAdmin({
 
         {/* Pick Hotspot Mapping Dialog */}
         <Dialog open={!!pendingClickPosition} onOpenChange={(open) => !open && setPendingClickPosition(null)}>
-          <DialogContent className="max-w-md rounded-2xl">
+          <DialogContent className="max-w-md rounded-2xl" aria-describedby={undefined}>
             <DialogHeader>
-              <DialogTitle className="text-xl font-bold">Map Architectural Sthana</DialogTitle>
+              <DialogTitle className="text-xl font-bold">{t("admin.mapArchitecturalSthana")}</DialogTitle>
               <DialogDescription className="text-sm text-slate-500 font-medium pt-2">
                 Select an existing Sthana from the Architecture View to map to this location:
               </DialogDescription>
@@ -3587,7 +3612,7 @@ export default function TempleArchitectureAdmin({
                     </button>
                   ))}
                 {archHotspots.filter(ah => !presentHotspots.some(ph => ph.sthanaId === ah.id || ph.id === ah.id)).length === 0 && (
-                  <p className="text-center py-8 text-slate-400 italic">No unmapped Sthanas available.</p>
+                  <p className="text-center py-8 text-slate-400 italic">{t("admin.noUnmappedSthanas")}</p>
                 )}
               </div>
             </div>
@@ -3610,3 +3635,4 @@ export default function TempleArchitectureAdmin({
     </div>
   );
 }
+

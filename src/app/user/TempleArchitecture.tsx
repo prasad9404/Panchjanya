@@ -11,6 +11,7 @@ import { useLanguage } from "@/shared/contexts/LanguageContext";
 import { useAuth } from "@/auth/AuthContext";
 import { cn } from "@/shared/lib/utils";
 import { getTranslatedValue, getLangCode } from "@/shared/utils/translationUtils";
+// Archive support — detect if rendered under /architectural-archive/:archiveId/:id/...
 import { getLocationUrl } from "@/shared/utils/locationUtils";
 import { type CarouselApi } from "@/shared/components/ui/carousel";
 import {
@@ -37,7 +38,9 @@ import { SafeHTML } from "@/shared/components/ui/SafeHTML";
 
 
 export default function TempleArchitecture() {
-    const { id } = useParams<{ id: string }>();
+    // archiveId is present when route is /architectural-archive/:archiveId/:id/...
+    const { id, archiveId } = useParams<{ id: string; archiveId?: string }>();
+    const isArchiveMode = !!archiveId;
     const navigate = useNavigate();
     const { user } = useAuth();
 
@@ -66,10 +69,12 @@ export default function TempleArchitecture() {
         const fetchTempleData = async () => {
             try {
                 setLoading(true);
-                const snap = await getDoc(doc(db, "temples", id));
+                // Archive mode: fetch from architecture_entries; normal: from temples
+                const firestoreCollection = isArchiveMode ? "architecture_entries" : "temples";
+                const snap = await getDoc(doc(db, firestoreCollection, id));
 
                 if (!snap.exists()) {
-                    console.error("Temple not found");
+                    console.error("Record not found");
                     navigate(-1);
                     return;
                 }
@@ -77,14 +82,14 @@ export default function TempleArchitecture() {
                 const data = snap.data() as Temple;
                 setTemple(data);
             } catch (error) {
-                console.error("Error fetching temple:", error);
+                console.error("Error fetching data:", error);
             } finally {
                 setLoading(false);
             }
         };
 
         fetchTempleData();
-    }, [id, navigate]);
+    }, [id, archiveId, isArchiveMode, navigate]);
 
     // Fetch global abbreviations
     useEffect(() => {
@@ -217,7 +222,11 @@ export default function TempleArchitecture() {
     };
 
     const handleArchitectureView = () => {
-        navigate(`/temple/${id}/architecture-view`);
+        if (isArchiveMode) {
+            navigate(`/architectural-archive/${archiveId}/${id}/architecture-view`);
+        } else {
+            navigate(`/temple/${id}/architecture-view`);
+        }
     };
 
     if (loading) {
@@ -248,7 +257,18 @@ export default function TempleArchitecture() {
             >
                 {/* Header Content Block */}
                 <div className="flex items-center gap-3">
-                    <Button variant="ghost" size="icon" className="-ml-2 hover:bg-black/5 shrink-0 bg-white/80" onClick={() => navigate('/explore')}>
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="-ml-2 hover:bg-black/5 shrink-0 bg-white/80"
+                        onClick={() => {
+                            if (isArchiveMode) {
+                                navigate(`/architectural-archive/${archiveId}`);
+                            } else {
+                                navigate('/explore');
+                            }
+                        }}
+                    >
                         <ChevronLeft className="w-7 h-7 text-blue-900" />
                     </Button>
 

@@ -43,6 +43,9 @@ const Profile = lazy(() => import("@/app/user/Profile"));
 const Saved = lazy(() => import("@/app/user/Saved"));
 const Literature = lazy(() => import("@/app/user/Literature"));
 const SthanaDetail = lazy(() => import("@/app/user/SthanaDetail"));
+const ArchivalArchiveLanding = lazy(() => import("@/app/user/ArchivalArchiveLanding"));
+const ArchiveDetail = lazy(() => import("@/app/user/ArchiveDetail"));
+
 const AudioPlayer = lazy(() => import("@/app/user/AudioPlayer"));
 const VideoPlayer = lazy(() => import("@/app/user/VideoPlayer"));
 const VandanHistory = lazy(() => import("@/app/user/VandanHistory"));
@@ -62,6 +65,9 @@ const AdminAddTemple = lazy(() => import("@/app/admin/AdminAddTemple"));
 const AdminCsvImport = lazy(() => import("@/app/admin/AdminCsvImport"));
 const AdminCsvUpload = lazy(() => import("./admin/AdminCsvUpload"));
 const TempleArchitectureAdmin = lazy(() => import("@/app/admin/TempleArchitectureAdmin"));
+const ArchivalArchiveAdmin = lazy(() => import("@/app/admin/ArchivalArchiveAdmin"));
+const ArchiveEntryAdmin = lazy(() => import("@/app/admin/ArchiveEntryAdmin"));
+const ArchiveEntryEdit = lazy(() => import("@/app/admin/ArchiveEntryEdit"));
 const ManageYatra = lazy(() => import("@/app/admin/ManageYatra"));
 const RajViharanAdmin = lazy(() => import("@/app/admin/RajViharanAdmin"));
 const AbbreviationsManager = lazy(() => import("@/app/admin/AbbreviationsManager"));
@@ -202,6 +208,27 @@ const App = () => {
                       }
                       />
 
+                      <Route path="/admin/architectural-archives" element={
+                        <PrivateRoute adminRequired={true} >
+                          <ArchivalArchiveAdmin />
+                        </PrivateRoute>
+                      }
+                      />
+
+                      <Route path="/admin/architectural-archives/:archiveId" element={
+                        <PrivateRoute adminRequired={true} >
+                          <ArchiveEntryAdmin />
+                        </PrivateRoute>
+                      }
+                      />
+
+                      <Route path="/admin/architecture-entry/:id/edit" element={
+                        <PrivateRoute adminRequired={true} >
+                          <ArchiveEntryEdit />
+                        </PrivateRoute>
+                      }
+                      />
+
                       <Route path="/admin/sthana-verification" element={
                         <PrivateRoute adminRequired={true} >
                           <SthanaVerification />
@@ -304,6 +331,13 @@ const App = () => {
                       {/* ---------------------- MEDIA PLAYERS (FULLSCREEN) ---------------------- */}
                       <Route path="/audio/:id" element={<AudioPlayer />} />
                       <Route path="/video/:id" element={<VideoPlayer />} />
+
+                      
+                      {/* ---------------------- ARCHIVAL ARCHIVES (USER) ---------------------- */}
+                      <Route path="/architectural-archives" element={<ArchivalArchiveLanding />} />
+                      <Route path="/architectural-archive/:id" element={<ArchiveDetail />} />
+                      <Route path="/architectural-archive/:archiveId/:id/architecture" element={<TempleArchitecture />} />
+                      <Route path="/architectural-archive/:archiveId/:id/architecture-view" element={<ArchitectureViewer />} />
 
                       {/* ---------------------- TEMPLE ARCHITECTURE (USER) ---------------------- */}
                       <Route path="/temple/:id/architecture" element={<TempleArchitecture />} />

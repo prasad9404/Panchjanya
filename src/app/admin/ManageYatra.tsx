@@ -276,7 +276,7 @@ export default function ManageYatra() {
                                 Add Place
                             </Button>
                         </DialogTrigger>
-                        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto" aria-describedby={undefined}>
                             <DialogHeader>
                                 <DialogTitle>{editingPlace ? "Edit" : "Add"} Yatra Place</DialogTitle>
                                 <DialogDescription>

@@ -221,3 +221,83 @@ export interface TempleSubmission {
     created_at: any;
     reviewed_at?: any;
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ARCHITECTURAL ARCHIVE SYSTEM
+// Two-layer model: parent Archive → individual ArchitectureEntry (Temple-like)
+// Collections: architectural_archives / architecture_entries
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Parent container for a multi-architecture site (e.g. Verul, Domegram, Ajanta).
+ * Stored in Firestore: architectural_archives/{id}
+ */
+export interface ArchitecturalArchive {
+    id: string;
+    title: MultilingualString;
+    subtitle?: MultilingualString;
+    description?: MultilingualString;
+    thumbnail?: string;
+    enabled?: boolean;
+    featured?: boolean;
+    /** Ordered array of ArchitectureEntry IDs belonging to this archive */
+    architectures: string[];
+    createdAt?: any;
+    updatedAt?: any;
+}
+
+/**
+ * Individual architecture entry inside an ArchitecturalArchive.
+ * Data shape mirrors Temple architecture fields so TempleArchitecture,
+ * ArchitectureViewer and SthanaDetail can consume it without transformation.
+ * Stored in Firestore: architecture_entries/{id}
+ */
+export interface ArchitectureEntry {
+    id: string;
+    /** Foreign key back to the parent ArchitecturalArchive */
+    archiveId: string;
+    title: MultilingualString;
+    subtitle?: MultilingualString;
+    description?: MultilingualString;
+    thumbnail?: string;
+
+    // ── Info Page fields (mirrors Temple) ──
+    todaysName?: MultilingualString;
+    todaysNameTitle?: MultilingualString;
+    address?: MultilingualString;
+    sthana_info_title?: MultilingualString;
+    sthana_info_text?: MultilingualString;
+    descriptionSections?: DescriptionSection[];
+    customBlocks?: CustomBlock[];
+    glanceItems?: GlanceItem[];
+
+    // ── Images (mirrors Temple) ──
+    sthanImages?: string[];
+    sthanImagesFitMode?: 'cover' | 'contain';
+    architectureImages?: string[];
+    architectureImagesFitMode?: 'cover' | 'contain';
+    presentImages?: string[];
+    presentImagesFitMode?: 'cover' | 'contain';
+    /** @deprecated use architectureImages */
+    architectureImage?: string;
+    /** @deprecated use presentImages */
+    presentImage?: string;
+
+    // ── Map/Hotspot data (mirrors Temple) ──
+    hotspots?: Hotspot[];
+    present_hotspots?: Hotspot[];
+    presentHotspots?: Hotspot[];
+
+    // ── Sthan Details (mirrors Temple) ──
+    details?: SthanDetail[];
+    detailsSections?: TempleSection[];
+
+    // ── Leelas / Pothi (mirrors Temple) ──
+    leelas?: Leela[];
+    sthanPothiDescription?: MultilingualString;
+    sthanPothiTitle?: MultilingualString;
+
+    enabled?: boolean;
+    createdAt?: any;
+    updatedAt?: any;
+}
