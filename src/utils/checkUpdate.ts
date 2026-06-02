@@ -3,7 +3,7 @@
  * Implements retry logic for robustness.
  */
 export const checkForUpdate = async (retries = 3) => {
-  const versionUrl = 'https://panchajanya.vercel.app/version.json';
+  const versionUrl = '/version.json';
   const currentVersion = import.meta.env.VITE_APP_VERSION;
   const storeUrl = "https://play.google.com/store/apps/details?id=com.panchajanya.app";
 
