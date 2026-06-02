@@ -28,6 +28,15 @@ service cloud.firestore {
       }
     }
 
+    match /architectural_archives/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /architecture_entries/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
     match /sthan_types/{id} {
       allow read: if true;
       allow write: if isAdmin();
