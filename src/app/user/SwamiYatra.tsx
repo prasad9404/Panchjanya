@@ -214,11 +214,8 @@ const SwamiYatra = () => {
                         </Button>
                     </div>
 
-                    <div className="px-4 pb-2.5 sm:pb-3.5 flex flex-col sm:flex-row gap-2.5 sm:gap-3">
-                        <div className="flex-1">
-                            <TempleSearch onPlaceSelect={handlePlaceSelect} />
-                        </div>
-                        <div className="w-full sm:w-72 relative">
+                    <div className="px-4 pb-2.5 sm:pb-3.5 flex flex-row gap-2 sm:gap-3 items-center w-full relative">
+                        <div className="flex-1 min-w-0 relative">
                             <Select
                                 value={selectedSubRoute ? `${selectedRoute}:${selectedSubRoute}` : selectedRoute}
                                 onValueChange={(value) => {
@@ -228,9 +225,9 @@ const SwamiYatra = () => {
                                     setSearchedPlace(null);
                                 }}
                             >
-                                <SelectTrigger className="w-full h-10 sm:h-11 bg-muted/50 border-none shadow-none focus:ring-1 focus:ring-accent-gold/20 text-sm font-semibold text-landing-primary dark:text-primary rounded-2xl pl-4 hover:bg-muted transition-colors">
-                                    <div className="flex items-center gap-2 truncate">
-                                        <Compass className="w-4 h-4 text-accent-gold" />
+                                <SelectTrigger className="w-full h-12 bg-muted/50 border-none shadow-none focus:ring-1 focus:ring-accent-gold/20 text-sm font-semibold text-landing-primary dark:text-primary rounded-2xl pl-3 sm:pl-4 hover:bg-muted transition-colors">
+                                    <div className="flex items-center gap-1.5 sm:gap-2 truncate">
+                                        <Compass className="w-4 h-4 text-accent-gold shrink-0" />
                                         <SelectValue placeholder={t('yatra.selectRoute')} />
                                     </div>
                                 </SelectTrigger>
@@ -246,6 +243,9 @@ const SwamiYatra = () => {
                                     <SelectItem value="krishna" className="font-bold py-2 text-sm focus:bg-accent/5">{t('yatra.routes.krishna')}</SelectItem>
                                 </SelectContent>
                             </Select>
+                        </div>
+                        <div className="flex-shrink-0 relative z-50">
+                            <TempleSearch onPlaceSelect={handlePlaceSelect} />
                         </div>
                     </div>
                 </div>

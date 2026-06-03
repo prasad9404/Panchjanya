@@ -387,7 +387,13 @@ function TempleMarker({
           <div className="flex items-center gap-2 pt-1">
             <Button
               className="flex-1 bg-landing-primary hover:bg-landing-primary/90 text-white h-8 md:h-9 rounded-lg shadow-sm text-xs md:text-xs font-bold px-0"
-              onClick={() => navigate(`/temple/${temple.id}/architecture`)}
+              onClick={() => {
+                if ((temple as any).isArchitectureEntry && (temple as any).archiveId) {
+                  navigate(`/architectural-archive/${(temple as any).archiveId}/${temple.id}/architecture`);
+                } else {
+                  navigate(`/temple/${temple.id}/architecture`);
+                }
+              }}
             >
               {t("explore.details")}
             </Button>
@@ -498,68 +504,65 @@ const Explore = () => {
     loadSthanTypes();
   }, []);
 
+  // Internal state for merging
+  const [rawTemplesOptions, setRawTemplesOptions] = useState<Temple[]>([]);
+  const [rawArchOptions, setRawArchOptions] = useState<Temple[]>([]);
+  const [rawFilteredTemples, setRawFilteredTemples] = useState<Temple[]>([]);
+  const [rawFilteredArch, setRawFilteredArch] = useState<Temple[]>([]);
+
+  useEffect(() => {
+    setAllTemplesForOptions([...rawTemplesOptions, ...rawArchOptions]);
+  }, [rawTemplesOptions, rawArchOptions]);
+
   // 1. Fetch all temples ONCE to populate filter options (Districts/Talukas)
   useEffect(() => {
-    const unsubscribe = onSnapshot(collection(db, "temples"), (snapshot) => {
-      const data = snapshot.docs.map((doc) => {
+    const processData = (docs: any[], isArch: boolean) => {
+      return docs.map((doc) => {
         const t = doc.data() as any;
-        // Robust coordinate extraction for filters - check extensive list of possibilities
         let lat, lng;
 
-        // 1. Try top-level numeric or string fields
-        const rawLat = [
-          t.latitude,
-          t.lat,
-          t.location?.latitude,
-          t.location?.lat,
-        ].find((v) => v !== undefined && v !== null && v !== "");
-        const rawLng = [
-          t.longitude,
-          t.lng,
-          t.location?.longitude,
-          t.location?.lng,
-        ].find((v) => v !== undefined && v !== null && v !== "");
+        const rawLat = [t.latitude, t.lat, t.location?.latitude, t.location?.lat].find((v) => v !== undefined && v !== null && v !== "");
+        const rawLng = [t.longitude, t.lng, t.location?.longitude, t.location?.lng].find((v) => v !== undefined && v !== null && v !== "");
 
         if (rawLat !== undefined) lat = Number(rawLat);
         if (rawLng !== undefined) lng = Number(rawLng);
 
-        // 2. Fallback: Check if 'location' is a map with 'lat'/'lng' (common in user example)
-        if (
-          lat === undefined &&
-          typeof t.location === "object" &&
-          t.location !== null
-        ) {
+        if (lat === undefined && typeof t.location === "object" && t.location !== null) {
           if (t.location.lat !== undefined) lat = Number(t.location.lat);
           if (t.location.lng !== undefined) lng = Number(t.location.lng);
         }
-
-        // 3. Last Resort: Handle the specific weird case if needed (e.g. location as string, though unlikely for coords)
 
         return {
           ...t,
           id: doc.id,
           latitude: lat,
           longitude: lng,
+          name: isArch ? (t.title || t.name) : t.name,
+          isArchitectureEntry: isArch
         };
       }) as Temple[];
+    };
 
-      // Debug logs
-      data.forEach((t) => {
-        if (!t.latitude || !t.longitude) {
-          const rawData = t as any;
-          // Only warn if it's truly missing, sometimes we just have partial data
-        }
-      });
-
-      setAllTemplesForOptions(data);
+    const unsubTemples = onSnapshot(collection(db, "temples"), (snapshot) => {
+      setRawTemplesOptions(processData(snapshot.docs, false));
     });
-    return () => unsubscribe();
+
+    const unsubArch = onSnapshot(collection(db, "architecture_entries"), (snapshot) => {
+      setRawArchOptions(processData(snapshot.docs, true));
+    });
+
+    return () => {
+      unsubTemples();
+      unsubArch();
+    };
   }, []);
 
   // 2. Main Temple Listener - Querying Firestore based on Applied Filters
   useEffect(() => {
     const templesRef = collection(db, "temples");
-    let q = query(templesRef);
+    const archRef = collection(db, "architecture_entries");
+    let qT = query(templesRef);
+    let qA = query(archRef);
 
     const conditions = [];
     if (appliedDistrict) {
@@ -570,90 +573,62 @@ const Explore = () => {
     }
 
     if (conditions.length > 0) {
-      console.log(
-        "🔍 Fetching temples with database filters:",
-        conditions.length,
-      );
-      q = query(templesRef, ...conditions);
-    } else {
-      console.log("📜 Fetching all temples (no database filters)");
+      qT = query(templesRef, ...conditions);
+      qA = query(archRef, ...conditions);
     }
 
-    const unsubscribe = onSnapshot(
-      q,
-      (snapshot) => {
-        const data = snapshot.docs.map((doc) => {
-          const t = doc.data() as any;
-          // Robust coordinate extraction for filters - check extensive list of possibilities
-          let lat, lng;
+    const processData = (docs: any[], isArch: boolean) => {
+      return docs.map((doc) => {
+        const t = doc.data() as any;
+        let lat, lng;
 
-          // 1. Try top-level numeric or string fields
-          const rawLat = [
-            t.latitude,
-            t.lat,
-            t.location?.latitude,
-            t.location?.lat,
-          ].find((v) => v !== undefined && v !== null && v !== "");
-          const rawLng = [
-            t.longitude,
-            t.lng,
-            t.location?.longitude,
-            t.location?.lng,
-          ].find((v) => v !== undefined && v !== null && v !== "");
+        const rawLat = [t.latitude, t.lat, t.location?.latitude, t.location?.lat].find((v) => v !== undefined && v !== null && v !== "");
+        const rawLng = [t.longitude, t.lng, t.location?.longitude, t.location?.lng].find((v) => v !== undefined && v !== null && v !== "");
 
-          if (rawLat !== undefined) lat = Number(rawLat);
-          if (rawLng !== undefined) lng = Number(rawLng);
+        if (rawLat !== undefined) lat = Number(rawLat);
+        if (rawLng !== undefined) lng = Number(rawLng);
 
-          // 2. Fallback: Check if 'location' is a map with 'lat'/'lng' (common in user example)
-          if (
-            lat === undefined &&
-            typeof t.location === "object" &&
-            t.location !== null
-          ) {
-            if (t.location.lat !== undefined) lat = Number(t.location.lat);
-            if (t.location.lng !== undefined) lng = Number(t.location.lng);
-          }
-
-          // 3. Last Resort: Handle the specific weird case if needed (e.g. location as string, though unlikely for coords)
-
-          return {
-            ...t,
-            id: doc.id,
-            latitude: lat,
-            longitude: lng,
-          };
-        }) as Temple[];
-
-        console.log(`✅ Loaded ${data.length} temples from database`);
-        // Debug logs to verify coordinates
-        data.forEach((t) => {
-          if (!t.latitude || !t.longitude) {
-            const rawData = t as any;
-            console.warn(
-              `⚠️ Temple "${t.name}" (ID: ${t.id}) is missing valid coordinates! Raw Lat: ${rawData.latitude}, LocationObj: ${JSON.stringify(rawData.location)}`,
-            );
-          } else {
-            console.log(
-              `📍 Temple "${t.name}" at [${t.latitude}, ${t.longitude}]`,
-            );
-          }
-        });
-        setTemples(data);
-
-        if (data.length > 0 && !selectedTemple) {
-          const hampi = data.find((t) =>
-            getTranslatedValue(t.name, "en").toLowerCase().includes("hampi"),
-          );
-          setSelectedTemple(hampi || data[0]);
+        if (lat === undefined && typeof t.location === "object" && t.location !== null) {
+          if (t.location.lat !== undefined) lat = Number(t.location.lat);
+          if (t.location.lng !== undefined) lng = Number(t.location.lng);
         }
-      },
-      (error) => {
-        console.error("❌ Firestore query error:", error);
-      },
-    );
 
-    return () => unsubscribe();
+        return {
+          ...t,
+          id: doc.id,
+          latitude: lat,
+          longitude: lng,
+          name: isArch ? (t.title || t.name) : t.name,
+          isArchitectureEntry: isArch
+        };
+      }) as Temple[];
+    };
+
+    const unsubTemples = onSnapshot(qT, (snapshot) => {
+      setRawFilteredTemples(processData(snapshot.docs, false));
+    });
+
+    const unsubArch = onSnapshot(qA, (snapshot) => {
+      setRawFilteredArch(processData(snapshot.docs, true));
+    });
+
+    return () => {
+      unsubTemples();
+      unsubArch();
+    };
   }, [appliedDistrict, appliedTaluka]);
+
+  useEffect(() => {
+    const combined = [...rawFilteredTemples, ...rawFilteredArch];
+    setTemples(combined);
+
+    if (combined.length > 0 && !selectedTemple) {
+      const hampi = combined.find((t) =>
+        getTranslatedValue(t.name, "en").toLowerCase().includes("hampi"),
+      );
+      setSelectedTemple(hampi || combined[0]);
+    }
+  }, [rawFilteredTemples, rawFilteredArch]);
 
   // 3. Derived Filter Options with Counts from Database
   const districts = Array.from(

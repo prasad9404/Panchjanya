@@ -111,6 +111,27 @@ export default function YatraMapMapLibre({ locations, highlightedId, centerOnFul
           'line-width': 4,
         }
       });
+
+      // Direction Arrows
+      map.addLayer({
+        id: 'route-arrows',
+        type: 'symbol',
+        source: 'route',
+        layout: {
+          'symbol-placement': 'line',
+          'text-field': '▶',
+          'text-size': 18,
+          'symbol-spacing': 80,
+          'text-keep-upright': false,
+          'text-allow-overlap': true,
+          'text-ignore-placement': true
+        },
+        paint: {
+          'text-color': '#d4af37', // Gold accent
+          'text-halo-color': '#ffffff',
+          'text-halo-width': 1.5
+        }
+      });
     });
 
     mapRef.current = map;
