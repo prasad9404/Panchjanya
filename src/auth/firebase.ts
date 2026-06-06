@@ -24,8 +24,6 @@ const app = initializeApp(firebaseConfig);
 
 export const db = initializeFirestore(app, {
   experimentalForceLongPolling: true,
-  // Disable fetch streams so ad blockers don't block the connection
-  useFetchStreams: false,
 });
 export const auth = getAuth(app);
 export const storage = getStorage(app);
