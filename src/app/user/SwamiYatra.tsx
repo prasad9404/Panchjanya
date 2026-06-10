@@ -195,40 +195,60 @@ const SwamiYatra = () => {
                         centerOnFullRoute={centerFullRouteTimestamp}
                         forceFocus={forceFocusTimestamp}
                         langCode={langCode}
+                        onMarkerClick={(id) => {
+                            const index = filteredPlaces.findIndex(p => p.id === id);
+                            if (index !== -1) {
+                                setCurrentIndex(index);
+                                setIsMobileSheetOpen(true);
+                            }
+                        }}
                     />
                 </div>
 
-                {/* DESKTOP FLOATING UI */}
+                {/* TOP RIGHT FLOATING UI */}
+                <div className="absolute top-4 right-4 z-10 flex gap-2 pointer-events-none hidden md:flex">
+                    <Button variant="secondary" className="pointer-events-auto bg-white hover:bg-slate-50 text-[#1E3A8A] font-medium text-xs px-4 h-10 rounded-full shadow-lg border border-slate-100">
+                        <Globe className="w-4 h-4 mr-2" />
+                        भाषा / Language
+                    </Button>
+                    <Button variant="secondary" className="pointer-events-auto bg-white hover:bg-slate-50 text-[#1E3A8A] font-medium text-xs px-4 h-10 rounded-full shadow-lg border border-slate-100">
+                        <Layers className="w-4 h-4 mr-2" />
+                        लेयर / Layers
+                    </Button>
+                </div>
+
+                {/* DESKTOP/TABLET SIDE PANEL */}
                 <AnimatePresence initial={false}>
                     <motion.div 
                         initial={{ x: -400, opacity: 0 }}
                         animate={{ x: 0, opacity: 1 }}
                         exit={{ x: -400, opacity: 0 }}
                         transition={{ type: "spring", stiffness: 200, damping: 25 }}
-                        className="hidden lg:flex absolute top-4 left-4 h-[calc(100vh-32px)] w-[400px] flex-col z-20 pointer-events-none"
+                        className="hidden md:flex absolute top-4 left-4 h-[calc(100vh-32px)] w-[360px] lg:w-[400px] flex-col z-20 pointer-events-none"
                     >
-                        {/* Google Maps Style Floating Search Bar */}
-                        <div className="bg-white rounded-full shadow-lg h-14 flex items-center px-4 pointer-events-auto shrink-0 border border-slate-100/50 flex-none z-30">
-                            <Button variant="ghost" size="icon" className="rounded-full hover:bg-slate-100 -ml-2" onClick={() => navigate(-1)}>
-                                <ChevronLeft className="w-6 h-6 text-[#1E3A8A]" />
-                            </Button>
-                            <div className="flex-1 mx-2" onClick={() => setIsMobileSheetOpen(true)}>
-                                <TempleSearch onPlaceSelect={handlePlaceSelect} />
+                        {/* Unified Side Panel */}
+                        <div className="bg-white rounded-3xl shadow-2xl flex-1 overflow-hidden flex flex-col pointer-events-auto border border-slate-200">
+                            
+                            {/* Search Bar Section */}
+                            <div className="px-3 py-3 flex items-center border-b border-slate-100 bg-white shrink-0 z-10">
+                                <Button variant="ghost" size="icon" className="rounded-full hover:bg-slate-100 shrink-0 mr-1" onClick={() => navigate(-1)}>
+                                    <ChevronLeft className="w-6 h-6 text-[#1E3A8A]" />
+                                </Button>
+                                <div className="flex-1">
+                                    <TempleSearch onPlaceSelect={handlePlaceSelect} />
+                                </div>
+                                <div className="h-6 w-px bg-slate-200 mx-2" />
+                                <Button variant="ghost" size="icon" className="rounded-full hover:bg-slate-100 text-[#1E3A8A] shrink-0" onClick={() => triggerForceFocus()}>
+                                    <Navigation2 className="w-5 h-5" />
+                                </Button>
                             </div>
-                            <div className="h-6 w-px bg-slate-200 mx-1" />
-                            <Button variant="ghost" size="icon" className="rounded-full hover:bg-slate-100 text-[#1E3A8A]">
-                                <Navigation2 className="w-5 h-5" />
-                            </Button>
-                        </div>
 
-                        {/* Route Selector & Itinerary Panel */}
-                        <div className="mt-4 bg-white rounded-3xl shadow-xl flex-1 overflow-hidden flex flex-col pointer-events-auto border border-slate-100 flex-none pb-2">
                             {/* Header */}
-                            <div className="px-5 py-4 flex items-center justify-between border-b border-slate-100">
+                            <div className="px-5 py-4 flex items-center justify-between border-b border-slate-100 bg-slate-50/50 shrink-0">
                                 <h1 className="text-lg font-bold text-[#1E3A8A] font-serif tracking-tight">
                                     {t('yatra.title')}
                                 </h1>
-                                <Button variant="ghost" size="icon" className="rounded-full hover:bg-slate-100 h-8 w-8">
+                                <Button variant="ghost" size="icon" className="rounded-full hover:bg-slate-200 h-8 w-8 shrink-0">
                                     <Share2 className="w-4 h-4 text-[#1E3A8A]" />
                                 </Button>
                             </div>
@@ -313,58 +333,22 @@ const SwamiYatra = () => {
                 </motion.div>
             </AnimatePresence>
                 
-                {/* MOBILE TOP SEARCH BAR */}
-                <div className="lg:hidden absolute top-4 left-4 right-4 z-10 flex flex-col gap-2 pointer-events-none">
-                    <div className="flex items-center gap-2 pointer-events-auto">
-                        <Button variant="secondary" size="icon" className="rounded-full shadow-lg h-12 w-12 bg-white hover:bg-slate-50" onClick={() => navigate(-1)}>
-                            <ChevronLeft className="w-6 h-6 text-[#1E3A8A]" />
-                        </Button>
-                        <div className="flex-1 bg-white rounded-full shadow-lg h-12 flex items-center px-4 gap-2">
-                            <Search className="w-5 h-5 text-muted-foreground" />
-                            <div className="flex-1" onClick={() => setIsMobileSheetOpen(true)}>
-                                <TempleSearch onPlaceSelect={handlePlaceSelect} />
-                            </div>
+                {/* MOBILE TOP HEADER */}
+                <div className="md:hidden absolute top-2 left-2 right-2 z-10 pointer-events-none">
+                    <div className="bg-white/95 backdrop-blur-xl rounded-2xl shadow-lg pointer-events-auto border border-slate-100 flex flex-col overflow-hidden">
+                        
+                        {/* Title and Back Button Row */}
+                        <div className="flex items-center gap-2 px-2 py-2 border-b border-slate-100/60 bg-white">
+                            <Button variant="ghost" size="icon" className="rounded-full hover:bg-slate-100 shrink-0 h-8 w-8 bg-slate-50" onClick={() => navigate(-1)}>
+                                <ChevronLeft className="w-5 h-5 text-[#1E3A8A]" />
+                            </Button>
+                            <h1 className="text-lg font-bold text-[#1E3A8A] font-serif tracking-tight truncate flex-1">
+                                {t('yatra.title')}
+                            </h1>
                         </div>
-                    </div>
-                </div>
-
-                {/* FLOATING MAP CONTROLS */}
-                <div className="absolute right-4 bottom-24 lg:bottom-12 z-10 flex flex-col gap-3">
-                        <Button
-                            variant="secondary"
-                            size="icon"
-                            className="h-12 w-12 rounded-full bg-white shadow-xl hover:bg-slate-50 text-[#1E3A8A] border border-slate-100"
-                            onClick={() => triggerCenterFullRoute()}
-                            title="View Full Route"
-                        >
-                            <Globe className="w-5 h-5" />
-                        </Button>
-                        <Button
-                            variant="secondary"
-                            size="icon"
-                            className="h-12 w-12 rounded-full bg-white shadow-xl hover:bg-slate-50 text-[#1E3A8A] border border-slate-100"
-                            onClick={() => triggerForceFocus()}
-                            title="My Location"
-                        >
-                            <Navigation2 className="w-5 h-5" />
-                        </Button>
-                        <Button
-                            variant="secondary"
-                            size="icon"
-                            className="h-12 w-12 rounded-full bg-white shadow-xl hover:bg-slate-50 text-[#1E3A8A] border border-slate-100 lg:hidden"
-                            onClick={() => setIsMobileSheetOpen(true)}
-                            title="View Details"
-                        >
-                            <Layers className="w-5 h-5" />
-                        </Button>
-                    </div>
-
-                {/* MOBILE BOTTOM SHEET */}
-                <Drawer open={isMobileSheetOpen} onOpenChange={setIsMobileSheetOpen}>
-                    <DrawerContent className="h-[85vh] lg:hidden bg-[#faf8f2]">
-                        <DrawerHeader className="border-b border-border/50 pb-4">
-                            <DrawerTitle className="text-left text-[#1E3A8A] font-serif text-xl">{t('yatra.title')}</DrawerTitle>
-                            
+                        
+                        {/* Dropdown Row */}
+                        <div className="px-2 py-2 bg-[#faf8f2]/50">
                             <Select
                                 value={selectedSubRoute ? `${selectedRoute}:${selectedSubRoute}` : selectedRoute}
                                 onValueChange={(value) => {
@@ -373,21 +357,54 @@ const SwamiYatra = () => {
                                     setSelectedSubRoute(subRouteId === "all" || !subRouteId ? null : subRouteId);
                                 }}
                             >
-                                <SelectTrigger className="w-full mt-2 h-10 bg-white border-none shadow-sm focus:ring-1 focus:ring-[#FF9933]/20 text-sm font-semibold text-[#1E3A8A] rounded-xl">
-                                    <div className="flex items-center gap-2">
-                                        <Compass className="w-4 h-4 text-[#FF9933]" />
+                                <SelectTrigger className="w-full h-9 bg-white border border-slate-200/60 shadow-sm focus:ring-1 focus:ring-[#FF9933]/30 text-xs font-bold text-[#1E3A8A] rounded-xl hover:bg-slate-50 transition-all">
+                                    <div className="flex items-center gap-2 truncate">
+                                        <div className="bg-[#FF9933]/10 p-1 rounded-full">
+                                            <Compass className="w-3.5 h-3.5 text-[#FF9933] shrink-0" />
+                                        </div>
                                         <SelectValue placeholder={t('yatra.selectRoute')} />
                                     </div>
                                 </SelectTrigger>
-                                <SelectContent className="rounded-xl border border-border/50 shadow-xl">
-                                    <SelectItem value="swami-complete" className="font-bold">{t('yatra.routes.swamiCompleteViharan')}</SelectItem>
-                                    <SelectItem value="govind" className="font-bold">{t('yatra.routes.govind')}</SelectItem>
-                                    <SelectItem value="chakrapani" className="font-bold">{t('yatra.routes.chakrapani')}</SelectItem>
-                                    <SelectItem value="dattatray" className="font-bold">{t('yatra.routes.dattatray')}</SelectItem>
-                                    <SelectItem value="krishna" className="font-bold">{t('yatra.routes.krishna')}</SelectItem>
+                                <SelectContent className="rounded-xl border border-slate-100 shadow-xl backdrop-blur-2xl z-[60]">
+                                    <SelectItem value="swami-complete" className="font-bold py-2 text-xs focus:bg-accent/5">{t('yatra.routes.swamiCompleteViharan')}</SelectItem>
+                                    <SelectItem value="swami-complete:ekant" className="pl-6 py-1.5 text-[10px] font-medium focus:bg-accent/5">{t('yatra.routes.ekant')}</SelectItem>
+                                    <SelectItem value="swami-complete:purvardh" className="pl-6 py-1.5 text-[10px] font-medium focus:bg-accent/5">{t('yatra.routes.purvardh')}</SelectItem>
+                                    <SelectItem value="swami-complete:uttarardh" className="pl-6 py-1.5 text-[10px] font-medium focus:bg-accent/5">{t('yatra.routes.uttarardh')}</SelectItem>
+                                    <div className="h-px bg-border/50 my-1 mx-2" />
+                                    <SelectItem value="govind" className="font-bold py-2 text-xs focus:bg-accent/5">{t('yatra.routes.govind')}</SelectItem>
+                                    <SelectItem value="chakrapani" className="font-bold py-2 text-xs focus:bg-accent/5">{t('yatra.routes.chakrapani')}</SelectItem>
+                                    <SelectItem value="dattatray" className="font-bold py-2 text-xs focus:bg-accent/5">{t('yatra.routes.dattatray')}</SelectItem>
+                                    <SelectItem value="krishna" className="font-bold py-2 text-xs focus:bg-accent/5">{t('yatra.routes.krishna')}</SelectItem>
                                 </SelectContent>
                             </Select>
-                        </DrawerHeader>
+                        </div>
+                    </div>
+                </div>
+
+                {/* FLOATING MAP CONTROLS */}
+                <div className="absolute right-4 bottom-[280px] md:bottom-[130px] z-10 flex flex-col pointer-events-none">
+                    <div className="bg-white rounded shadow-[0_0_0_2px_rgba(0,0,0,0.1)] overflow-hidden flex flex-col pointer-events-auto">
+                        <button
+                            className="h-[29px] w-[29px] flex items-center justify-center hover:bg-black/5 text-[#333] transition-colors border-b border-black/10 outline-none"
+                            onClick={() => triggerCenterFullRoute()}
+                            title="View Full Route"
+                        >
+                            <Globe className="w-[15px] h-[15px]" strokeWidth={2.5} />
+                        </button>
+                        <button
+                            className="h-[29px] w-[29px] flex items-center justify-center hover:bg-black/5 text-[#333] transition-colors outline-none"
+                            onClick={() => triggerForceFocus()}
+                            title="My Location"
+                        >
+                            <Navigation2 className="w-[15px] h-[15px]" strokeWidth={2.5} />
+                        </button>
+                    </div>
+                </div>
+
+                {/* MOBILE BOTTOM SHEET */}
+                <Drawer open={isMobileSheetOpen} onOpenChange={setIsMobileSheetOpen} modal={false}>
+                    <DrawerContent className="h-auto max-h-[60vh] md:hidden bg-[#faf8f2]">
+                        <DrawerTitle className="sr-only">{t('yatra.title')}</DrawerTitle>
                         
                         <div className="p-4 overflow-y-auto">
                             <div className="flex items-center justify-between mb-4">

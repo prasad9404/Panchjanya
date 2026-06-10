@@ -6,7 +6,7 @@ import { Geolocation } from '@capacitor/geolocation';
 import { useLanguage } from '@/shared/contexts/LanguageContext';
 import { useYatraStore } from '@/store/useYatraStore';
 import { fetchRoute } from '@/shared/services/routeService';
-import { createSupercluster, locationsToGeoJSON, YatraFeature } from '@/shared/utils/clusterHelper';
+import { locationsToGeoJSON } from '@/shared/utils/clusterHelper';
 import * as turf from '@turf/turf';
 
 interface YatraMapProps {
@@ -15,9 +15,10 @@ interface YatraMapProps {
   centerOnFullRoute?: number;
   forceFocus?: number;
   langCode?: string;
+  onMarkerClick?: (id: string) => void;
 }
 
-export default function YatraMapMapLibre({ locations, highlightedId, centerOnFullRoute, forceFocus, langCode = 'en' }: YatraMapProps) {
+export default function YatraMapMapLibre({ locations, highlightedId, centerOnFullRoute, forceFocus, langCode = 'en', onMarkerClick }: YatraMapProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const markersRef = useRef<{ [id: string]: maplibregl.Marker }>({});
@@ -26,8 +27,6 @@ export default function YatraMapMapLibre({ locations, highlightedId, centerOnFul
   const { language } = useLanguage();
   const [mapLoaded, setMapLoaded] = useState(false);
   const { setCurrentRouteData, currentRouteData, setSelectedRoute } = useYatraStore();
-
-  const supercluster = useMemo(() => createSupercluster(), []);
 
   // Initialize MapLibre
   useEffect(() => {
@@ -42,11 +41,11 @@ export default function YatraMapMapLibre({ locations, highlightedId, centerOnFul
     });
 
     // Add standard controls
-    map.addControl(new maplibregl.NavigationControl({ showCompass: true, showZoom: true, visualizePitch: true }), 'top-right');
+    map.addControl(new maplibregl.NavigationControl({ showCompass: true, showZoom: true, visualizePitch: true }), 'bottom-right');
     map.addControl(new maplibregl.GeolocateControl({
         positionOptions: { enableHighAccuracy: true },
         trackUserLocation: true
-    }), 'top-right');
+    }), 'bottom-right');
 
     // Only initialize terrain on load, removed from style.load because we will do it below
     map.on('load', () => {
@@ -120,20 +119,18 @@ export default function YatraMapMapLibre({ locations, highlightedId, centerOnFul
           
           // Background
           if (id === 'background') {
-             map.setPaintProperty(layer.id, 'background-color', '#E5F0D9'); // Light Google Maps Green
+             map.setPaintProperty(layer.id, 'background-color', '#f4efe3'); // Requested Off-white background
           }
           // Water
           else if (id.includes('water') || ['river', 'stream', 'sea', 'ocean', 'lake'].some(w => id.includes(w))) {
-             if (layer.type === 'fill') map.setPaintProperty(layer.id, 'fill-color', '#A7D8FF');
-             if (layer.type === 'line') map.setPaintProperty(layer.id, 'line-color', '#A7D8FF');
+             if (layer.type === 'fill') map.setPaintProperty(layer.id, 'fill-color', '#8aa4be');
+             if (layer.type === 'line') map.setPaintProperty(layer.id, 'line-color', '#8aa4be');
           }
-          // Forest/Wood
-          else if (id.includes('wood') || id.includes('forest')) {
-             if (layer.type === 'fill') map.setPaintProperty(layer.id, 'fill-color', '#D8F0D0');
-          }
-          // Park/Grass/Pitch
-          else if (id.includes('park') || id.includes('grass') || id.includes('pitch')) {
-             if (layer.type === 'fill') map.setPaintProperty(layer.id, 'fill-color', '#CFECC7');
+          // Vegetation and Urban/Landuse
+          else if (
+              ['wood', 'forest', 'park', 'grass', 'pitch', 'landuse', 'residential', 'commercial', 'industrial', 'cemetery', 'hospital', 'school', 'college', 'university', 'urban', 'village', 'farmland', 'landcover', 'agriculture', 'meadow', 'scrub', 'heath', 'nature', 'recreation', 'golf', 'garden', 'greenfield', 'orchard'].some(w => id.includes(w))
+          ) {
+             if (layer.type === 'fill') map.setPaintProperty(layer.id, 'fill-color', '#d3f7e1');
           }
           // Buildings
           else if (id.includes('building')) {
@@ -148,11 +145,16 @@ export default function YatraMapMapLibre({ locations, highlightedId, centerOnFul
              if (layer.type === 'line') {
                  // If it's a casing (border)
                  if (id.includes('casing')) {
-                     map.setPaintProperty(layer.id, 'line-color', '#DADCE0');
+                     map.setPaintProperty(layer.id, 'line-color', '#e8eaed');
                  } else {
                      map.setPaintProperty(layer.id, 'line-color', '#FFFFFF');
                  }
              }
+          }
+          
+          // Hide Map Clutter (Road Numbers, Shields)
+          if (id.includes('shield') || id.includes('ref') || id.includes('highway_name') || id.includes('road_label')) {
+              map.setLayoutProperty(layer.id, 'visibility', 'none');
           }
           // Labels Color Overrides
           else if (layer.type === 'symbol') {
@@ -182,22 +184,12 @@ export default function YatraMapMapLibre({ locations, highlightedId, centerOnFul
     if (!style || !style.layers) return;
 
     const getLangExpression = (baseProp: string) => {
-      let primaryLang = ['coalesce', ['get', `${baseProp}:en`], ['get', baseProp]];
       if (langCode === 'mr') {
-         primaryLang = ['coalesce', ['get', `${baseProp}:mr`], ['get', `${baseProp}:hi`], ['get', `${baseProp}:en`], ['get', baseProp]];
+         return ['coalesce', ['get', `${baseProp}:mr`], ['get', `${baseProp}:hi`], ['get', `${baseProp}:en`], ['get', baseProp]];
       } else if (langCode === 'hi') {
-         primaryLang = ['coalesce', ['get', `${baseProp}:hi`], ['get', `${baseProp}:en`], ['get', baseProp]];
+         return ['coalesce', ['get', `${baseProp}:hi`], ['get', `${baseProp}:en`], ['get', baseProp]];
       }
-
-      if (langCode === 'en') return primaryLang;
-
-      // For Marathi/Hindi, show Dual Language (Primary \n English)
-      return [
-        'case',
-        ['all', ['has', `${baseProp}:en`], ['!=', primaryLang, ['get', `${baseProp}:en`]]],
-        ['concat', primaryLang, '\n', ['get', `${baseProp}:en`]],
-        primaryLang
-      ];
+      return ['coalesce', ['get', `${baseProp}:en`], ['get', baseProp]];
     };
 
     style.layers.forEach((layer: any) => {
@@ -256,66 +248,32 @@ export default function YatraMapMapLibre({ locations, highlightedId, centerOnFul
     getRoute();
   }, [locations, userLocation, mapLoaded, setCurrentRouteData]);
 
-  // Load supercluster data
+  // Manage all markers without clustering
   useEffect(() => {
-    supercluster.load(locationsToGeoJSON(locations));
-    updateClusters();
-  }, [locations, supercluster]);
-
-  const updateClusters = () => {
     if (!mapRef.current || !mapLoaded) return;
     const map = mapRef.current;
-    const bounds = map.getBounds();
-    const zoom = Math.round(map.getZoom());
-    
-    const bbox: [number, number, number, number] = [
-      bounds.getWest(), bounds.getSouth(),
-      bounds.getEast(), bounds.getNorth()
-    ];
-
-    const clusters = supercluster.getClusters(bbox, zoom);
 
     const newMarkersRef: { [id: string]: maplibregl.Marker } = {};
 
-    clusters.forEach(cluster => {
-      const isCluster = cluster.properties && 'cluster' in cluster.properties && cluster.properties.cluster;
-      const coords = cluster.geometry.coordinates;
-      const clusterId = isCluster ? `cluster_${cluster.properties.cluster_id}` : `marker_${(cluster.properties as YatraLocation).id}`;
-
-      let marker = markersRef.current[clusterId];
+    locations.forEach(loc => {
+      const markerId = `marker_${loc.id}`;
+      const isHighlighted = loc.id === highlightedId;
+      let marker = markersRef.current[markerId];
 
       if (!marker) {
-        const el = document.createElement('div');
-        
-        if (isCluster) {
-          const props = cluster.properties as any;
-          el.className = 'w-10 h-10 bg-landing-primary rounded-full flex items-center justify-center text-white font-bold shadow-lg ring-4 ring-white/50 cursor-pointer transition-transform hover:scale-110';
-          el.style.backgroundColor = '#1E3A8A'; // Deep blue
-          el.textContent = props.point_count_abbreviated;
-          
-          el.addEventListener('click', (e) => {
-            e.stopPropagation();
-            const expansionZoom = supercluster.getClusterExpansionZoom(props.cluster_id);
-            map.flyTo({
-              center: [coords[0], coords[1]],
-              zoom: expansionZoom
-            });
-          });
-        } else {
-          const loc = cluster.properties as YatraLocation;
-          const isHighlighted = loc.id === highlightedId;
-          
+          const el = document.createElement('div');
           el.className = 'custom-yatra-marker cursor-pointer relative';
           el.style.width = '48px';
           el.style.height = '48px';
-          el.style.transform = `scale(${isHighlighted ? 1.25 : 1})`;
-          el.style.transition = 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
           
-          // Custom Pin Image
+          const inner = document.createElement('div');
+          inner.className = 'marker-inner w-full h-full relative';
+          inner.style.transition = 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
+          inner.style.transformOrigin = 'bottom center';
+          
           const img = document.createElement('img');
           img.src = '/icons/pins/5 Shri_Chakradhar_Swami_Pin/Shri_Chakradhar_Swami_Pin.svg';
           img.className = 'w-full h-full block transition-all drop-shadow-md';
-          if (isHighlighted) img.style.filter = 'drop-shadow(0 0 10px rgba(255, 153, 51, 0.8))';
           
           const seqDiv = document.createElement('div');
           seqDiv.className = 'absolute top-[40%] left-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center font-bold text-[#0f3c6e] pointer-events-none';
@@ -323,25 +281,52 @@ export default function YatraMapMapLibre({ locations, highlightedId, centerOnFul
           seqDiv.style.fontSize = String(loc.sequence).length > 2 ? '9px' : '11px';
           seqDiv.textContent = String(loc.sequence);
           
-          el.appendChild(img);
-          el.appendChild(seqDiv);
+          inner.appendChild(img);
+          inner.appendChild(seqDiv);
 
           // Name Tag on Highlight
-          if (isHighlighted) {
-             const badge = document.createElement('div');
-             badge.className = 'absolute bottom-[52px] left-1/2 -translate-x-1/2 px-3 py-1 bg-white rounded-lg shadow-lg border border-slate-200 text-xs font-bold whitespace-nowrap z-50';
-             badge.style.color = '#1E3A8A';
-             badge.textContent = loc.name;
-             el.appendChild(badge);
-          }
-        }
+          const badge = document.createElement('div');
+          badge.className = 'marker-badge absolute bottom-[52px] left-1/2 -translate-x-1/2 px-3 py-1 bg-white rounded-lg shadow-lg border border-slate-200 text-xs font-bold whitespace-nowrap z-50 transition-opacity';
+          badge.style.color = '#1E3A8A';
+          badge.textContent = loc.name;
+          badge.style.opacity = '0';
+          badge.style.pointerEvents = 'none';
+          inner.appendChild(badge);
+          
+          el.appendChild(inner);
 
-        marker = new maplibregl.Marker({ element: el })
-          .setLngLat([coords[0], coords[1]])
-          .addTo(map);
+          const handleClick = (e: Event) => {
+             e.stopPropagation();
+             if (onMarkerClick) onMarkerClick(loc.id);
+          };
+          el.addEventListener('click', handleClick);
+          el.addEventListener('touchend', handleClick);
+
+          marker = new maplibregl.Marker({ element: el, anchor: 'bottom' })
+            .setLngLat([loc.longitude, loc.latitude])
+            .addTo(map);
+      }
+
+      // Update highlight state for existing or new marker
+      const inner = marker.getElement().querySelector('.marker-inner') as HTMLElement;
+      if (inner) {
+          inner.style.transform = `scale(${isHighlighted ? 1.25 : 1})`;
       }
       
-      newMarkersRef[clusterId] = marker;
+      const el = marker.getElement();
+      el.style.zIndex = isHighlighted ? '50' : '1';
+      
+      const img = el.querySelector('img');
+      if (img) {
+          img.style.filter = isHighlighted ? 'drop-shadow(0 0 10px rgba(255, 153, 51, 0.8))' : 'none';
+      }
+
+      const badge = el.querySelector('.marker-badge') as HTMLElement;
+      if (badge) {
+         badge.style.opacity = isHighlighted ? '1' : '0';
+      }
+
+      newMarkersRef[markerId] = marker;
     });
 
     // Remove old markers not in current view
@@ -352,24 +337,8 @@ export default function YatraMapMapLibre({ locations, highlightedId, centerOnFul
     });
 
     markersRef.current = newMarkersRef;
-  };
 
-  // Bind map events to update clusters
-  useEffect(() => {
-    const map = mapRef.current;
-    if (!map || !mapLoaded) return;
-    
-    map.on('move', updateClusters);
-    map.on('zoom', updateClusters);
-    
-    // Initial call
-    updateClusters();
-    
-    return () => {
-      map.off('move', updateClusters);
-      map.off('zoom', updateClusters);
-    };
-  }, [mapLoaded, locations]);
+  }, [locations, mapLoaded, highlightedId]);
 
   // Track user location natively
   useEffect(() => {
@@ -439,7 +408,8 @@ export default function YatraMapMapLibre({ locations, highlightedId, centerOnFul
       const bbox = turf.bbox(geojson) as [number, number, number, number];
       
       if (bbox) {
-          map.fitBounds(bbox, { padding: 80, duration: 2500, pitch: 0, bearing: 0 });
+          const leftPadding = window.innerWidth >= 1024 ? 460 : 80;
+          map.fitBounds(bbox, { padding: { top: 80, bottom: 80, left: leftPadding, right: 80 }, duration: 2500, pitch: 0, bearing: 0 });
       }
       return;
     }
@@ -462,6 +432,7 @@ export default function YatraMapMapLibre({ locations, highlightedId, centerOnFul
             zoom: 16.5, 
             pitch: 65, 
             bearing: targetBearing,
+            padding: { top: 0, bottom: 0, left: window.innerWidth >= 1024 ? 420 : 0, right: 0 },
             duration: 2500,
             essential: true
         });
@@ -471,6 +442,17 @@ export default function YatraMapMapLibre({ locations, highlightedId, centerOnFul
 
   return (
     <div className="w-full h-full relative z-0 bg-[#faf8f2]">
+      <style>{`
+        .maplibregl-ctrl-bottom-right {
+          bottom: 100px !important;
+          right: 16px !important;
+        }
+        @media (min-width: 768px) {
+          .maplibregl-ctrl-bottom-right {
+            bottom: 30px !important;
+          }
+        }
+      `}</style>
       <div ref={mapContainer} className="w-full h-full outline-none" />
     </div>
   );
