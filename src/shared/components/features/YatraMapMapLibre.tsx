@@ -7,7 +7,8 @@ import { useLanguage } from '@/shared/contexts/LanguageContext';
 import { useYatraStore } from '@/store/useYatraStore';
 import { fetchRoute } from '@/shared/services/routeService';
 import { locationsToGeoJSON } from '@/shared/utils/clusterHelper';
-import * as turf from '@turf/turf';
+import * as turfImport from '@turf/turf';
+const turf = turfImport as any;
 
 interface YatraMapProps {
   locations: YatraLocation[];
@@ -26,7 +27,10 @@ export default function YatraMapMapLibre({ locations, highlightedId, centerOnFul
   const [userLocation, setUserLocation] = useState<{ lat: number, lng: number } | null>(null);
   const { language } = useLanguage();
   const [mapLoaded, setMapLoaded] = useState(false);
-  const { setCurrentRouteData, currentRouteData, setSelectedRoute } = useYatraStore();
+  const { setCurrentRouteData, currentRouteData, setSelectedRoute, currentIndex, setIsAnimating } = useYatraStore();
+  const lastIndexRef = useRef(currentIndex);
+  const activeMarkerRef = useRef<maplibregl.Marker | null>(null);
+  const animationRef = useRef<number | null>(null);
 
   // Initialize MapLibre
   useEffect(() => {
@@ -57,11 +61,30 @@ export default function YatraMapMapLibre({ locations, highlightedId, centerOnFul
         data: { type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates: [] } }
       });
 
-      // Glow layer
+      // Background line
       map.addLayer({
-        id: 'route-glow',
+        id: 'route-line-bg',
         type: 'line',
         source: 'route',
+        layout: { 'line-join': 'round', 'line-cap': 'round' },
+        paint: {
+          'line-color': '#1E3A8A', // Deep Blue path
+          'line-width': 5,
+          'line-opacity': 0.3
+        }
+      });
+
+      // Active glow layer source
+      map.addSource('route-active', {
+        type: 'geojson',
+        data: { type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates: [] } }
+      });
+
+      // Active Glow layer
+      map.addLayer({
+        id: 'route-glow-active',
+        type: 'line',
+        source: 'route-active',
         layout: { 'line-join': 'round', 'line-cap': 'round' },
         paint: {
           'line-color': '#FF9933', // Saffron glow
@@ -71,23 +94,23 @@ export default function YatraMapMapLibre({ locations, highlightedId, centerOnFul
         }
       });
 
-      // Main line
+      // Active Main line
       map.addLayer({
-        id: 'route-line',
+        id: 'route-line-active',
         type: 'line',
-        source: 'route',
+        source: 'route-active',
         layout: { 'line-join': 'round', 'line-cap': 'round' },
         paint: {
-          'line-color': '#1E3A8A', // Deep Blue path
+          'line-color': '#FF9933', // Saffron
           'line-width': 5,
         }
       });
       
-      // Direction Arrows
+      // Direction Arrows on Active Line
       map.addLayer({
-        id: 'route-arrows',
+        id: 'route-arrows-active',
         type: 'symbol',
-        source: 'route',
+        source: 'route-active',
         layout: {
           'symbol-placement': 'line',
           'text-field': '▶',
@@ -96,7 +119,7 @@ export default function YatraMapMapLibre({ locations, highlightedId, centerOnFul
           'text-keep-upright': false
         },
         paint: {
-          'text-color': '#FF9933', // Saffron arrows
+          'text-color': '#1E3A8A',
           'text-halo-color': '#ffffff',
           'text-halo-width': 2
         }
@@ -201,7 +224,7 @@ export default function YatraMapMapLibre({ locations, highlightedId, centerOnFul
     });
   }, [langCode, mapLoaded]);
 
-  // Update Route geometry via ORS with Animation
+  // Update Route geometry via ORS
   useEffect(() => {
     const getRoute = async () => {
       const route = await fetchRoute(locations, userLocation);
@@ -209,44 +232,140 @@ export default function YatraMapMapLibre({ locations, highlightedId, centerOnFul
         setCurrentRouteData(route);
         const source = mapRef.current.getSource('route') as maplibregl.GeoJSONSource;
         if (source) {
-          // Animate route drawing
-          const totalPoints = route.coordinates.length;
-          let currentPoint = 0;
-          
-          const animateLine = () => {
-            if (currentPoint < totalPoints) {
-              const currentCoords = route.coordinates.slice(0, currentPoint + 1);
-              source.setData({
-                type: 'Feature',
-                properties: {},
-                geometry: {
-                  type: 'LineString',
-                  coordinates: currentCoords
-                }
-              });
-              currentPoint += Math.max(1, Math.floor(totalPoints / 60)); // 60 frames roughly
-              requestAnimationFrame(animateLine);
-            } else {
-              // Ensure final coordinates are perfectly set
-              source.setData({
-                type: 'Feature',
-                properties: {},
-                geometry: {
-                  type: 'LineString',
-                  coordinates: route.coordinates
-                }
-              });
+          source.setData({
+            type: 'Feature',
+            properties: {},
+            geometry: {
+              type: 'LineString',
+              coordinates: route.coordinates
             }
-          };
-          
-          // Clear line first
-          source.setData({ type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates: [] } });
-          requestAnimationFrame(animateLine);
+          });
         }
       }
     };
     getRoute();
   }, [locations, userLocation, mapLoaded, setCurrentRouteData]);
+
+  // Calculate distances of locations along the route
+  const locationDistances = useMemo(() => {
+    if (!currentRouteData || !locations.length || currentRouteData.coordinates.length < 2) return [];
+    const line = turf.lineString(currentRouteData.coordinates);
+    let lastDist = 0;
+    return locations.map(loc => {
+      const pt = turf.point([loc.longitude, loc.latitude]);
+      const snapped = turf.nearestPointOnLine(line, pt);
+      const sliced = turf.lineSlice(turf.point(currentRouteData.coordinates[0]), snapped, line);
+      let dist = turf.length(sliced);
+      if (dist < lastDist) dist = lastDist; // enforce monotonicity
+      lastDist = dist;
+      return dist;
+    });
+  }, [currentRouteData, locations]);
+
+  // Active marker element
+  useEffect(() => {
+    if (!mapRef.current || !mapLoaded) return;
+    if (!activeMarkerRef.current) {
+        const el = document.createElement('div');
+        el.className = 'w-5 h-5 bg-white rounded-full border-[4px] border-[#1E3A8A] shadow-[0_0_15px_rgba(255,153,51,0.8)] z-[60]';
+        activeMarkerRef.current = new maplibregl.Marker({ element: el }).setLngLat([0, 0]);
+    }
+  }, [mapLoaded]);
+
+  // Route Animation logic
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !mapLoaded || !currentRouteData || locationDistances.length === 0 || !activeMarkerRef.current) return;
+    
+    const sourceActive = map.getSource('route-active') as maplibregl.GeoJSONSource;
+    if (!sourceActive) return;
+
+    const line = turf.lineString(currentRouteData.coordinates);
+    
+    // Initial load, route change jump, or jumping multiple places
+    if (lastIndexRef.current === currentIndex || Math.abs(lastIndexRef.current - currentIndex) > 1 || locationDistances[lastIndexRef.current] === undefined) {
+      const dist = locationDistances[currentIndex] || 0;
+      if (dist > 0) {
+        const activeLine = turf.lineSliceAlong(line, 0, dist);
+        sourceActive.setData(activeLine);
+        const pt = turf.along(line, dist);
+        activeMarkerRef.current.setLngLat(pt.geometry.coordinates as [number, number]).addTo(map);
+      } else {
+        sourceActive.setData({ type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates: [] } });
+        const pt = turf.point(currentRouteData.coordinates[0] || [locations[0].longitude, locations[0].latitude]);
+        activeMarkerRef.current.setLngLat(pt.geometry.coordinates as [number, number]).addTo(map);
+      }
+      lastIndexRef.current = currentIndex;
+      return;
+    }
+
+    if (animationRef.current) cancelAnimationFrame(animationRef.current);
+    
+    const startDist = locationDistances[lastIndexRef.current] || 0;
+    const endDist = locationDistances[currentIndex] || 0;
+    
+    // Fit map bounds to show both the start and end pins of this segment
+    const activeLineForBounds = turf.lineSliceAlong(line, Math.min(startDist, endDist), Math.max(startDist, endDist));
+    const bbox = turf.bbox(activeLineForBounds) as [number, number, number, number];
+    
+    // Check if bbox is valid (if locations are same, bbox will have 0 width/height)
+    if (bbox[0] !== bbox[2] || bbox[1] !== bbox[3]) {
+        const isDesktop = window.innerWidth >= 1024;
+        const isMobile = window.innerWidth < 768;
+        map.fitBounds(bbox, {
+            padding: { 
+                top: 100, 
+                bottom: isMobile ? 320 : 100, 
+                left: isDesktop ? 460 : 60, 
+                right: 60 
+            },
+            duration: 1500,
+            essential: true,
+            maxZoom: 15 // Ensure it doesn't zoom too closely if pins are very near
+        });
+    }
+
+    const duration = 1500; // 1.5 seconds animation
+    const startTime = performance.now();
+    
+    setIsAnimating(true);
+    
+    const animate = (currentTime: number) => {
+        let progress = (currentTime - startTime) / duration;
+        if (progress > 1) progress = 1;
+        
+        // easeInOutCubic
+        const ease = progress < 0.5 ? 4 * progress * progress * progress : 1 - Math.pow(-2 * progress + 2, 3) / 2;
+        const currentDist = startDist + (endDist - startDist) * ease;
+        
+        // Update line
+        if (currentDist > 0) {
+            const activeLine = turf.lineSliceAlong(line, 0, currentDist);
+            sourceActive.setData(activeLine);
+        } else {
+            sourceActive.setData({ type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates: [] } });
+        }
+        
+        // Update active marker
+        const pt = turf.along(line, currentDist);
+        const coords = pt.geometry.coordinates as [number, number];
+        activeMarkerRef.current?.setLngLat(coords).addTo(map);
+        
+        if (progress < 1) {
+            animationRef.current = requestAnimationFrame(animate);
+        } else {
+            setIsAnimating(false);
+            lastIndexRef.current = currentIndex;
+            animationRef.current = null;
+        }
+    };
+    
+    animationRef.current = requestAnimationFrame(animate);
+    
+    return () => {
+        if (animationRef.current) cancelAnimationFrame(animationRef.current);
+    };
+  }, [currentIndex, currentRouteData, locationDistances, mapLoaded, setIsAnimating, locations]);
 
   // Manage all markers without clustering
   useEffect(() => {
@@ -414,7 +533,7 @@ export default function YatraMapMapLibre({ locations, highlightedId, centerOnFul
       return;
     }
 
-    if (highlightedId) {
+    if (highlightedId && !animationRef.current) {
       const loc = locations.find(l => l.id === highlightedId);
       if (loc) {
         // Calculate bearing towards next location if it exists

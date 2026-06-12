@@ -54,6 +54,7 @@ const SwamiYatra = () => {
         searchedPlace,
         currentIndex,
         isMobileSheetOpen,
+        isAnimating,
         forceFocusTimestamp,
         centerFullRouteTimestamp,
         setSelectedRoute,
@@ -290,7 +291,7 @@ const SwamiYatra = () => {
                             <div className="flex items-center gap-2">
                                 <Button
                                     variant="outline" size="icon" className="h-8 w-8 rounded-full"
-                                    disabled={currentIndex === 0}
+                                    disabled={currentIndex === 0 || isAnimating}
                                     onClick={() => setCurrentIndex(Math.max(0, currentIndex - 1))}
                                 >
                                     <ChevronLeft className="w-4 h-4" />
@@ -300,7 +301,7 @@ const SwamiYatra = () => {
                                 </span>
                                 <Button
                                     variant="outline" size="icon" className="h-8 w-8 rounded-full"
-                                    disabled={currentIndex >= filteredPlaces.length - 1}
+                                    disabled={currentIndex >= filteredPlaces.length - 1 || isAnimating}
                                     onClick={() => setCurrentIndex(Math.min(filteredPlaces.length - 1, currentIndex + 1))}
                                 >
                                     <ChevronRight className="w-4 h-4" />
@@ -412,7 +413,7 @@ const SwamiYatra = () => {
                                 <div className="flex items-center gap-2">
                                     <Button
                                         variant="outline" size="icon" className="h-8 w-8 rounded-full"
-                                        disabled={currentIndex === 0}
+                                        disabled={currentIndex === 0 || isAnimating}
                                         onClick={() => setCurrentIndex(Math.max(0, currentIndex - 1))}
                                     >
                                         <ChevronLeft className="w-4 h-4" />
@@ -422,7 +423,7 @@ const SwamiYatra = () => {
                                     </span>
                                     <Button
                                         variant="outline" size="icon" className="h-8 w-8 rounded-full"
-                                        disabled={currentIndex >= filteredPlaces.length - 1}
+                                        disabled={currentIndex >= filteredPlaces.length - 1 || isAnimating}
                                         onClick={() => setCurrentIndex(Math.min(filteredPlaces.length - 1, currentIndex + 1))}
                                     >
                                         <ChevronRight className="w-4 h-4" />

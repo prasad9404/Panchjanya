@@ -12,6 +12,7 @@ interface YatraStoreState {
   selectedSubRoute: string | null;
   searchedPlace: any | null;
   currentIndex: number;
+  isAnimating: boolean;
   
   // Panel States
   isMobileSheetOpen: boolean;
@@ -31,6 +32,7 @@ interface YatraStoreState {
   setCurrentIndex: (index: number) => void;
   setIsMobileSheetOpen: (isOpen: boolean) => void;
   setIsSidebarOpen: (isOpen: boolean) => void;
+  setIsAnimating: (is: boolean) => void;
   triggerForceFocus: () => void;
   triggerCenterFullRoute: () => void;
   setCurrentRouteData: (data: RouteData | null) => void;
@@ -41,6 +43,7 @@ export const useYatraStore = create<YatraStoreState>((set) => ({
   selectedSubRoute: null,
   searchedPlace: null,
   currentIndex: 0,
+  isAnimating: false,
   
   isMobileSheetOpen: false,
   isSidebarOpen: true,
@@ -57,6 +60,7 @@ export const useYatraStore = create<YatraStoreState>((set) => ({
   
   setIsMobileSheetOpen: (isOpen) => set({ isMobileSheetOpen: isOpen }),
   setIsSidebarOpen: (isOpen) => set({ isSidebarOpen: isOpen }),
+  setIsAnimating: (is) => set({ isAnimating: is }),
   
   triggerForceFocus: () => set({ forceFocusTimestamp: Date.now() }),
   triggerCenterFullRoute: () => set({ centerFullRouteTimestamp: Date.now() }),
