@@ -17,9 +17,10 @@ interface YatraMapProps {
   forceFocus?: number;
   langCode?: string;
   onMarkerClick?: (id: string) => void;
+  isMobileSheetOpen?: boolean;
 }
 
-export default function YatraMapMapLibre({ locations, highlightedId, centerOnFullRoute, forceFocus, langCode = 'en', onMarkerClick }: YatraMapProps) {
+export default function YatraMapMapLibre({ locations, highlightedId, centerOnFullRoute, forceFocus, langCode = 'en', onMarkerClick, isMobileSheetOpen }: YatraMapProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const markersRef = useRef<{ [id: string]: maplibregl.Marker }>({});
@@ -42,14 +43,14 @@ export default function YatraMapMapLibre({ locations, highlightedId, centerOnFul
       center: [82.9739, 25.3176],
       zoom: 5,
       attributionControl: false,
+      pitchWithRotate: false,
+      dragRotate: false,
+      touchPitch: false,
     });
 
     // Add standard controls
-    map.addControl(new maplibregl.NavigationControl({ showCompass: true, showZoom: true, visualizePitch: true }), 'bottom-right');
-    map.addControl(new maplibregl.GeolocateControl({
-        positionOptions: { enableHighAccuracy: true },
-        trackUserLocation: true
-    }), 'bottom-right');
+    map.addControl(new maplibregl.NavigationControl({ showCompass: true, showZoom: true, visualizePitch: false }), 'bottom-right');
+
 
     // Only initialize terrain on load, removed from style.load because we will do it below
     map.on('load', () => {
@@ -296,6 +297,7 @@ export default function YatraMapMapLibre({ locations, highlightedId, centerOnFul
         activeMarkerRef.current.setLngLat(pt.geometry.coordinates as [number, number]).addTo(map);
       }
       lastIndexRef.current = currentIndex;
+      setIsAnimating(false);
       return;
     }
 
@@ -514,8 +516,6 @@ export default function YatraMapMapLibre({ locations, highlightedId, centerOnFul
       map.flyTo({ 
         center: [userLocation.lng, userLocation.lat], 
         zoom: 16, 
-        pitch: 60, 
-        bearing: map.getBearing(),
         duration: 2000,
         essential: true
       });
@@ -528,7 +528,7 @@ export default function YatraMapMapLibre({ locations, highlightedId, centerOnFul
       
       if (bbox) {
           const leftPadding = window.innerWidth >= 1024 ? 460 : 80;
-          map.fitBounds(bbox, { padding: { top: 80, bottom: 80, left: leftPadding, right: 80 }, duration: 2500, pitch: 0, bearing: 0 });
+          map.fitBounds(bbox, { padding: { top: 80, bottom: 80, left: leftPadding, right: 80 }, duration: 2500 });
       }
       return;
     }
@@ -549,8 +549,6 @@ export default function YatraMapMapLibre({ locations, highlightedId, centerOnFul
         map.flyTo({ 
             center: [loc.longitude, loc.latitude], 
             zoom: 16.5, 
-            pitch: 65, 
-            bearing: targetBearing,
             padding: { top: 0, bottom: 0, left: window.innerWidth >= 1024 ? 420 : 0, right: 0 },
             duration: 2500,
             essential: true
@@ -563,8 +561,9 @@ export default function YatraMapMapLibre({ locations, highlightedId, centerOnFul
     <div className="w-full h-full relative z-0 bg-[#faf8f2]">
       <style>{`
         .maplibregl-ctrl-bottom-right {
-          bottom: 100px !important;
+          bottom: ${isMobileSheetOpen ? '320px' : '100px'} !important;
           right: 16px !important;
+          transition: bottom 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
         @media (min-width: 768px) {
           .maplibregl-ctrl-bottom-right {

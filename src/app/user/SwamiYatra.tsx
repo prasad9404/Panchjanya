@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/shared/components/ui/button";
-import { ChevronLeft, Share2, Compass, MapPin, ChevronRight, Navigation2, Layers, Search, Globe } from "lucide-react";
+import { ChevronLeft, Share2, Compass, MapPin, ChevronRight, Navigation2, Search, Globe } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import YatraMapMapLibre from "@/shared/components/features/YatraMapMapLibre";
 import type { YatraLocation } from "@/shared/components/features/YatraMap";
@@ -203,20 +203,11 @@ const SwamiYatra = () => {
                                 setIsMobileSheetOpen(true);
                             }
                         }}
+                        isMobileSheetOpen={isMobileSheetOpen}
                     />
                 </div>
 
-                {/* TOP RIGHT FLOATING UI */}
-                <div className="absolute top-4 right-4 z-10 flex gap-2 pointer-events-none hidden md:flex">
-                    <Button variant="secondary" className="pointer-events-auto bg-white hover:bg-slate-50 text-[#1E3A8A] font-medium text-xs px-4 h-10 rounded-full shadow-lg border border-slate-100">
-                        <Globe className="w-4 h-4 mr-2" />
-                        भाषा / Language
-                    </Button>
-                    <Button variant="secondary" className="pointer-events-auto bg-white hover:bg-slate-50 text-[#1E3A8A] font-medium text-xs px-4 h-10 rounded-full shadow-lg border border-slate-100">
-                        <Layers className="w-4 h-4 mr-2" />
-                        लेयर / Layers
-                    </Button>
-                </div>
+
 
                 {/* DESKTOP/TABLET SIDE PANEL */}
                 <AnimatePresence initial={false}>
@@ -249,9 +240,14 @@ const SwamiYatra = () => {
                                 <h1 className="text-lg font-bold text-[#1E3A8A] font-serif tracking-tight">
                                     {t('yatra.title')}
                                 </h1>
-                                <Button variant="ghost" size="icon" className="rounded-full hover:bg-slate-200 h-8 w-8 shrink-0">
-                                    <Share2 className="w-4 h-4 text-[#1E3A8A]" />
-                                </Button>
+                                <div className="flex items-center gap-1">
+                                    <Button variant="ghost" size="icon" className="rounded-full hover:bg-slate-200 h-8 w-8 shrink-0" onClick={() => triggerCenterFullRoute()} title="View Full Route">
+                                        <Globe className="w-4 h-4 text-[#1E3A8A]" />
+                                    </Button>
+                                    <Button variant="ghost" size="icon" className="rounded-full hover:bg-slate-200 h-8 w-8 shrink-0">
+                                        <Share2 className="w-4 h-4 text-[#1E3A8A]" />
+                                    </Button>
+                                </div>
                             </div>
 
                     {/* Route Selector */}
@@ -291,7 +287,7 @@ const SwamiYatra = () => {
                             <div className="flex items-center gap-2">
                                 <Button
                                     variant="outline" size="icon" className="h-8 w-8 rounded-full"
-                                    disabled={currentIndex === 0 || isAnimating}
+                                    disabled={currentIndex === 0}
                                     onClick={() => setCurrentIndex(Math.max(0, currentIndex - 1))}
                                 >
                                     <ChevronLeft className="w-4 h-4" />
@@ -301,7 +297,7 @@ const SwamiYatra = () => {
                                 </span>
                                 <Button
                                     variant="outline" size="icon" className="h-8 w-8 rounded-full"
-                                    disabled={currentIndex >= filteredPlaces.length - 1 || isAnimating}
+                                    disabled={currentIndex >= filteredPlaces.length - 1}
                                     onClick={() => setCurrentIndex(Math.min(filteredPlaces.length - 1, currentIndex + 1))}
                                 >
                                     <ChevronRight className="w-4 h-4" />
@@ -339,13 +335,19 @@ const SwamiYatra = () => {
                     <div className="bg-white/95 backdrop-blur-xl rounded-2xl shadow-lg pointer-events-auto border border-slate-100 flex flex-col overflow-hidden">
                         
                         {/* Title and Back Button Row */}
-                        <div className="flex items-center gap-2 px-2 py-2 border-b border-slate-100/60 bg-white">
+                        <div className="flex items-center gap-1 px-2 py-2 border-b border-slate-100/60 bg-white">
                             <Button variant="ghost" size="icon" className="rounded-full hover:bg-slate-100 shrink-0 h-8 w-8 bg-slate-50" onClick={() => navigate(-1)}>
                                 <ChevronLeft className="w-5 h-5 text-[#1E3A8A]" />
                             </Button>
-                            <h1 className="text-lg font-bold text-[#1E3A8A] font-serif tracking-tight truncate flex-1">
+                            <h1 className="text-lg font-bold text-[#1E3A8A] font-serif tracking-tight truncate flex-1 px-1">
                                 {t('yatra.title')}
                             </h1>
+                            <Button variant="ghost" size="icon" className="rounded-full hover:bg-slate-100 shrink-0 h-8 w-8 bg-slate-50" onClick={() => triggerCenterFullRoute()} title="View Full Route">
+                                <Globe className="w-4 h-4 text-[#1E3A8A]" />
+                            </Button>
+                            <Button variant="ghost" size="icon" className="rounded-full hover:bg-slate-100 shrink-0 h-8 w-8 bg-slate-50" onClick={() => triggerForceFocus()} title="My Location">
+                                <Navigation2 className="w-4 h-4 text-[#1E3A8A]" />
+                            </Button>
                         </div>
                         
                         {/* Dropdown Row */}
@@ -382,25 +384,7 @@ const SwamiYatra = () => {
                     </div>
                 </div>
 
-                {/* FLOATING MAP CONTROLS */}
-                <div className="absolute right-4 bottom-[280px] md:bottom-[130px] z-10 flex flex-col pointer-events-none">
-                    <div className="bg-white rounded shadow-[0_0_0_2px_rgba(0,0,0,0.1)] overflow-hidden flex flex-col pointer-events-auto">
-                        <button
-                            className="h-[29px] w-[29px] flex items-center justify-center hover:bg-black/5 text-[#333] transition-colors border-b border-black/10 outline-none"
-                            onClick={() => triggerCenterFullRoute()}
-                            title="View Full Route"
-                        >
-                            <Globe className="w-[15px] h-[15px]" strokeWidth={2.5} />
-                        </button>
-                        <button
-                            className="h-[29px] w-[29px] flex items-center justify-center hover:bg-black/5 text-[#333] transition-colors outline-none"
-                            onClick={() => triggerForceFocus()}
-                            title="My Location"
-                        >
-                            <Navigation2 className="w-[15px] h-[15px]" strokeWidth={2.5} />
-                        </button>
-                    </div>
-                </div>
+
 
                 {/* MOBILE BOTTOM SHEET */}
                 <Drawer open={isMobileSheetOpen} onOpenChange={setIsMobileSheetOpen} modal={false}>
@@ -413,7 +397,7 @@ const SwamiYatra = () => {
                                 <div className="flex items-center gap-2">
                                     <Button
                                         variant="outline" size="icon" className="h-8 w-8 rounded-full"
-                                        disabled={currentIndex === 0 || isAnimating}
+                                        disabled={currentIndex === 0}
                                         onClick={() => setCurrentIndex(Math.max(0, currentIndex - 1))}
                                     >
                                         <ChevronLeft className="w-4 h-4" />
@@ -423,7 +407,7 @@ const SwamiYatra = () => {
                                     </span>
                                     <Button
                                         variant="outline" size="icon" className="h-8 w-8 rounded-full"
-                                        disabled={currentIndex >= filteredPlaces.length - 1 || isAnimating}
+                                        disabled={currentIndex >= filteredPlaces.length - 1}
                                         onClick={() => setCurrentIndex(Math.min(filteredPlaces.length - 1, currentIndex + 1))}
                                     >
                                         <ChevronRight className="w-4 h-4" />
