@@ -88,7 +88,7 @@ export default function YatraMapMapLibre({ locations, highlightedId, centerOnFul
         source: 'route-active',
         layout: { 'line-join': 'round', 'line-cap': 'round' },
         paint: {
-          'line-color': '#FF9933', // Saffron glow
+          'line-color': '#d97706', // amber-600 glow
           'line-width': 12,
           'line-opacity': 0.4,
           'line-blur': 6
@@ -102,7 +102,7 @@ export default function YatraMapMapLibre({ locations, highlightedId, centerOnFul
         source: 'route-active',
         layout: { 'line-join': 'round', 'line-cap': 'round' },
         paint: {
-          'line-color': '#FF9933', // Saffron
+          'line-color': '#d97706', // amber-600
           'line-width': 5,
         }
       });
@@ -268,7 +268,7 @@ export default function YatraMapMapLibre({ locations, highlightedId, centerOnFul
     if (!mapRef.current || !mapLoaded) return;
     if (!activeMarkerRef.current) {
         const el = document.createElement('div');
-        el.className = 'w-5 h-5 bg-white rounded-full border-[4px] border-[#1E3A8A] shadow-[0_0_15px_rgba(255,153,51,0.8)] z-[60]';
+        el.className = 'w-5 h-5 bg-white rounded-full border-[4px] border-[#1E3A8A] shadow-[0_0_15px_rgba(217,119,6,0.8)] z-[60]';
         activeMarkerRef.current = new maplibregl.Marker({ element: el }).setLngLat([0, 0]);
     }
   }, [mapLoaded]);
@@ -439,7 +439,7 @@ export default function YatraMapMapLibre({ locations, highlightedId, centerOnFul
       
       const img = el.querySelector('img');
       if (img) {
-          img.style.filter = isHighlighted ? 'drop-shadow(0 0 10px rgba(255, 153, 51, 0.8))' : 'none';
+          img.style.filter = isHighlighted ? 'drop-shadow(0 0 10px rgba(217, 119, 6, 0.8))' : 'none';
       }
 
       const badge = el.querySelector('.marker-badge') as HTMLElement;
@@ -500,7 +500,7 @@ export default function YatraMapMapLibre({ locations, highlightedId, centerOnFul
 
     if (!userMarkerRef.current) {
       const el = document.createElement('div');
-      el.className = 'w-5 h-5 bg-[#FF9933] rounded-full border-2 border-white shadow-[0_0_10px_rgba(0,0,0,0.5)] z-50 animate-pulse';
+      el.className = 'w-5 h-5 bg-[#d97706] rounded-full border-2 border-white shadow-[0_0_10px_rgba(0,0,0,0.5)] z-50 animate-pulse';
       userMarkerRef.current = new maplibregl.Marker({ element: el }).setLngLat([userLocation.lng, userLocation.lat]).addTo(map);
     } else {
       userMarkerRef.current.setLngLat([userLocation.lng, userLocation.lat]);

@@ -143,7 +143,7 @@ const SwamiYatra = () => {
                         <span className={`px-2 py-0.5 rounded-full text-[8px] sm:text-[9px] font-bold uppercase tracking-wider ${
                             place.status === 'completed' 
                                 ? 'bg-emerald-500 text-white' 
-                                : (place.status === 'current' ? 'bg-[#FF9933] text-white' : 'bg-muted/80 text-foreground backdrop-blur-sm')
+                                : (place.status === 'current' ? 'bg-amber-600 text-white' : 'bg-muted/80 text-foreground backdrop-blur-sm')
                         }`}>
                             {place.status === 'completed' ? t('yatra.visited') : (place.status === 'current' ? t('yatra.active') : t('yatra.upcoming'))}
                         </span>
@@ -260,9 +260,9 @@ const SwamiYatra = () => {
                                 setSelectedSubRoute(subRouteId === "all" || !subRouteId ? null : subRouteId);
                             }}
                         >
-                            <SelectTrigger className="w-full h-11 bg-slate-50 border border-slate-200 shadow-sm focus:ring-1 focus:ring-[#FF9933]/20 text-sm font-semibold text-[#1E3A8A] rounded-2xl hover:bg-slate-100 transition-colors">
+                            <SelectTrigger className="w-full h-11 bg-slate-50 border border-slate-200 shadow-sm focus:ring-1 focus:ring-amber-600/20 text-sm font-semibold text-[#1E3A8A] rounded-2xl hover:bg-slate-100 transition-colors">
                                 <div className="flex items-center gap-2">
-                                    <Compass className="w-4 h-4 text-[#FF9933]" />
+                                    <Compass className="w-4 h-4 text-amber-600" />
                                     <SelectValue placeholder={t('yatra.selectRoute')} />
                                 </div>
                             </SelectTrigger>
@@ -360,10 +360,10 @@ const SwamiYatra = () => {
                                     setSelectedSubRoute(subRouteId === "all" || !subRouteId ? null : subRouteId);
                                 }}
                             >
-                                <SelectTrigger className="w-full h-9 bg-white border border-slate-200/60 shadow-sm focus:ring-1 focus:ring-[#FF9933]/30 text-xs font-bold text-[#1E3A8A] rounded-xl hover:bg-slate-50 transition-all">
+                                <SelectTrigger className="w-full h-9 bg-white border border-slate-200/60 shadow-sm focus:ring-1 focus:ring-amber-600/30 text-xs font-bold text-[#1E3A8A] rounded-xl hover:bg-slate-50 transition-all">
                                     <div className="flex items-center gap-2 truncate">
-                                        <div className="bg-[#FF9933]/10 p-1 rounded-full">
-                                            <Compass className="w-3.5 h-3.5 text-[#FF9933] shrink-0" />
+                                        <div className="bg-amber-600/10 p-1 rounded-full">
+                                            <Compass className="w-3.5 h-3.5 text-amber-600 shrink-0" />
                                         </div>
                                         <SelectValue placeholder={t('yatra.selectRoute')} />
                                     </div>
