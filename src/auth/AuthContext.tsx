@@ -86,7 +86,7 @@ function getAuthErrorMessage(error: AuthError | unknown): string {
     'auth/wrong-password': 'Incorrect password. Please try again.',
     'auth/invalid-credential': 'Incorrect mobile number or password.',
     'auth/invalid-email': 'Invalid mobile number format.',
-    'auth/email-already-in-use': 'This mobile number is already registered. Please login.',
+    'auth/email-already-in-use': 'This email is already registered. Please login instead.',
     'auth/weak-password': 'Password must be at least 8 characters.',
     'auth/too-many-requests': 'Too many failed attempts. Please try again later.',
     'auth/network-request-failed': 'Network error. Please check your connection.',
@@ -224,7 +224,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Non-critical — proceed; Firestore rules will reject duplicate writes
     }
     if (mobileExists) {
-      throw new Error('This mobile number is already registered. Please login instead.');
+      throw new Error('This email is already registered. Please login instead.');
     }
 
     try {

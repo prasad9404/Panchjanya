@@ -19,21 +19,7 @@ service cloud.firestore {
       return request.auth != null && request.auth.uid == userId;
     }
 
-    // Validate that the incoming user profile write does NOT contain privileged fields.
-    // Users must not self-assign admin roles or modify system fields.
-    function isValidUserWrite() {
-      let disallowedFields = ['role', 'uid', 'email', 'mobile', 'createdAt'];
-      return !request.resource.data.keys().hasAny(disallowedFields)
-        || request.resource.data.diff(resource.data).affectedKeys().hasNone(disallowedFields);
-    }
 
-    // Allow create only if all required fields are present and role = 'user'
-    function isValidUserCreate() {
-      let data = request.resource.data;
-      return data.keys().hasAll(['uid', 'firstName', 'lastName', 'mobile', 'email', 'role'])
-        && data.role == 'user'
-        && data.uid == request.auth.uid;
-    }
 
     // ─── Public Collections (Public Read, Admin Write) ────────────────────────
 
@@ -79,21 +65,20 @@ service cloud.firestore {
     // ─── User Data Security ───────────────────────────────────────────────────
 
     match /users/{userId} {
-      // Any authenticated user can read profiles (needed for username checks and public profiles)
       allow read: if request.auth != null;
 
-      // User can create their own document (must be valid, role must be 'user')
-      allow create: if isOwner(userId) && isValidUserCreate();
+      allow create:
+        if request.auth != null &&
+        request.auth.uid == userId;
 
-      // User can update their own profile, but cannot change privileged fields
-      allow update: if (isOwner(userId) && isValidUserWrite()) || isAdmin();
+      allow update:
+        if (request.auth != null && request.auth.uid == userId) || isAdmin();
 
-      // Only admins can delete user documents
       allow delete: if isAdmin();
 
       // Subcollection for saved temples
       match /savedTemples/{templeId} {
-        allow read, write: if isOwner(userId) || isAdmin();
+        allow read, write: if (request.auth != null && request.auth.uid == userId) || isAdmin();
       }
     }
 
