@@ -1,40 +1,89 @@
-import { useState } from "react";
+/**
+ * UserVerifyIdentity.tsx
+ *
+ * OTP verification page — currently a UI placeholder.
+ * In the updated auth flow, registration completes in UserRegister.tsx,
+ * so this page is not part of the main registration path.
+ * It is preserved here for future real SMS OTP integration via Firebase Phone Auth.
+ *
+ * For now, "Verify Code" skips ahead to the language selection.
+ */
+
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { AuthBackground } from "./components/AuthBackground";
 import { GradientButton } from "./components/GradientButton";
-import { Fingerprint, ChevronLeft } from "lucide-react";
+import { Fingerprint, ChevronLeft, RotateCcw } from "lucide-react";
+
+const OTP_RESEND_SECONDS = 59;
 
 export default function UserVerifyIdentity() {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
   const [otp, setOtp] = useState(["", "", "", ""]);
+  const [countdown, setCountdown] = useState(OTP_RESEND_SECONDS);
+  const [canResend, setCanResend] = useState(false);
+  const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
-  const handleVerify = () => {
-    setIsLoading(true);
-    setTimeout(() => {
-      setIsLoading(false);
-      navigate("/auth/language");
-    }, 1500);
-  };
+  // Countdown timer for OTP resend
+  useEffect(() => {
+    if (countdown <= 0) {
+      setCanResend(true);
+      return;
+    }
+    const interval = setInterval(() => {
+      setCountdown((c) => c - 1);
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [countdown]);
 
   const handleOtpChange = (index: number, value: string) => {
-    if (value.length > 1) return;
+    // Only allow single digit
+    if (!/^\d?$/.test(value)) return;
     const newOtp = [...otp];
     newOtp[index] = value;
     setOtp(newOtp);
-    
-    // Auto-focus next input
+
+    // Auto-advance to next input
     if (value && index < 3) {
-      const nextInput = document.getElementById(`otp-${index + 1}`);
-      nextInput?.focus();
+      inputRefs.current[index + 1]?.focus();
     }
   };
+
+  const handleKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Backspace" && !otp[index] && index > 0) {
+      inputRefs.current[index - 1]?.focus();
+    }
+  };
+
+  const handleVerify = () => {
+    const code = otp.join("");
+    if (code.length < 4) return;
+    setIsLoading(true);
+    // TODO: Replace with real Firebase Phone Auth verifyCode() call
+    setTimeout(() => {
+      setIsLoading(false);
+      navigate("/auth/language");
+    }, 1000);
+  };
+
+  const handleResend = () => {
+    if (!canResend) return;
+    setOtp(["", "", "", ""]);
+    setCountdown(OTP_RESEND_SECONDS);
+    setCanResend(false);
+    inputRefs.current[0]?.focus();
+    // TODO: Replace with real Firebase Phone Auth resendOtp() call
+    console.log("🔄 [VerifyIdentity] Resending OTP...");
+  };
+
+  const isComplete = otp.every((d) => d !== "");
 
   return (
     <AuthBackground showMandala={true}>
       <div className="flex-1 flex flex-col px-6 pt-10 pb-12 z-10 w-full max-w-lg mx-auto items-center">
-        {/* ⚛️ Logo Container - Standard Circular Version */}
+        {/* ⚛️ Logo Container */}
         <motion.div
            initial={{ opacity: 0, scale: 0.9 }}
            animate={{ opacity: 1, scale: 1 }}
@@ -64,21 +113,22 @@ export default function UserVerifyIdentity() {
           </p>
         </div>
 
+        {/* OTP Input Grid */}
         <div className="flex justify-center gap-3 mb-10">
           {otp.map((digit, i) => (
             <input
               key={i}
               id={`otp-${i}`}
+              ref={(el) => { inputRefs.current[i] = el; }}
               type="text"
+              inputMode="numeric"
               maxLength={1}
+              aria-label={`OTP digit ${i + 1}`}
               className="w-12 h-14 bg-white/60 backdrop-blur-md border border-slate-100 rounded-xl text-center text-xl font-black text-blue-950 focus:border-amber-500 outline-none transition-all shadow-[0_4px_12px_rgba(0,0,0,0.02)]"
               value={digit}
               onChange={(e) => handleOtpChange(i, e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Backspace" && !otp[i] && i > 0) {
-                  document.getElementById(`otp-${i - 1}`)?.focus();
-                }
-              }}
+              onKeyDown={(e) => handleKeyDown(i, e)}
+              disabled={isLoading}
             />
           ))}
         </div>
@@ -86,20 +136,32 @@ export default function UserVerifyIdentity() {
         <div className="w-full max-w-[18rem] space-y-5">
           <GradientButton 
             onClick={handleVerify} 
-            isLoading={isLoading} 
+            isLoading={isLoading}
+            disabled={!isComplete || isLoading}
             className="w-full h-12 sm:h-14 bg-gradient-to-r from-blue-950 to-[#133E7C] shadow-[0_8px_20px_rgba(19,62,124,0.15)] rounded-[1.2rem]"
           >
             <span className="font-bold text-[12px] sm:text-[13px] tracking-[0.15em] uppercase text-white">Verify Code</span>
           </GradientButton>
           
           <div className="text-center">
-            <button className="text-[9px] font-black uppercase tracking-[0.4em] text-blue-900/40 hover:text-blue-900 transition-colors">
-              Resend Code in 0:59
-            </button>
+            {canResend ? (
+              <button
+                type="button"
+                onClick={handleResend}
+                className="flex items-center gap-1.5 mx-auto text-[9px] font-black uppercase tracking-[0.4em] text-blue-900/70 hover:text-blue-900 transition-colors"
+              >
+                <RotateCcw className="w-3 h-3" /> Resend Code
+              </button>
+            ) : (
+              <span className="text-[9px] font-black uppercase tracking-[0.4em] text-blue-900/30">
+                Resend in 0:{String(countdown).padStart(2, "0")}
+              </span>
+            )}
           </div>
         </div>
 
         <button
+          type="button"
           onClick={() => navigate(-1)}
           className="mt-auto flex items-center gap-1.5 text-[9px] font-black uppercase tracking-[0.4em] text-slate-300 hover:text-blue-900 transition-all"
         >

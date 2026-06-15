@@ -2,22 +2,45 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Helper: Check if user is an authenticated admin via custom claim
+    // ─── Helper Functions ─────────────────────────────────────────────────────
+
+    // Check if the request is from an authenticated admin (via custom claim)
     function isAdmin() {
       return request.auth != null && request.auth.token.admin == true;
     }
 
-    // Helper: Check if the request is for the current user's own data
+    // Check if the request is from a super admin (via custom claim)
+    function isSuperAdmin() {
+      return request.auth != null && request.auth.token.superAdmin == true;
+    }
+
+    // Check if the request is from the document's owner
     function isOwner(userId) {
       return request.auth != null && request.auth.uid == userId;
     }
 
-    // Public collections (Public Read, Admin Write)
+    // Validate that the incoming user profile write does NOT contain privileged fields.
+    // Users must not self-assign admin roles or modify system fields.
+    function isValidUserWrite() {
+      let disallowedFields = ['role', 'uid', 'email', 'mobile', 'createdAt'];
+      return !request.resource.data.keys().hasAny(disallowedFields)
+        || request.resource.data.diff(resource.data).affectedKeys().hasNone(disallowedFields);
+    }
+
+    // Allow create only if all required fields are present and role = 'user'
+    function isValidUserCreate() {
+      let data = request.resource.data;
+      return data.keys().hasAll(['uid', 'firstName', 'lastName', 'mobile', 'email', 'role'])
+        && data.role == 'user'
+        && data.uid == request.auth.uid;
+    }
+
+    // ─── Public Collections (Public Read, Admin Write) ────────────────────────
+
     match /temples/{id} {
       allow read: if true;
       allow write: if isAdmin();
 
-      // Architecture and Present hotspots subcollections
       match /architecture_hotspots/{hotspotId} {
         allow read: if true;
         allow write: if isAdmin();
@@ -37,6 +60,7 @@ service cloud.firestore {
       allow read: if true;
       allow write: if isAdmin();
     }
+
     match /sthan_types/{id} {
       allow read: if true;
       allow write: if isAdmin();
@@ -52,17 +76,29 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
-    // User data security
+    // ─── User Data Security ───────────────────────────────────────────────────
+
     match /users/{userId} {
-      allow read, write: if isOwner(userId) || isAdmin();
-      
+      // Any authenticated user can read profiles (needed for username checks and public profiles)
+      allow read: if request.auth != null;
+
+      // User can create their own document (must be valid, role must be 'user')
+      allow create: if isOwner(userId) && isValidUserCreate();
+
+      // User can update their own profile, but cannot change privileged fields
+      allow update: if (isOwner(userId) && isValidUserWrite()) || isAdmin();
+
+      // Only admins can delete user documents
+      allow delete: if isAdmin();
+
       // Subcollection for saved temples
       match /savedTemples/{templeId} {
         allow read, write: if isOwner(userId) || isAdmin();
       }
     }
 
-    // Default deny
+    // ─── Default Deny ─────────────────────────────────────────────────────────
+    // All other collections: admin-only
     match /{document=**} {
       allow read, write: if isAdmin();
     }

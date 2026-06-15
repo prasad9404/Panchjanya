@@ -1,26 +1,30 @@
-import { useState, useRef, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { AuthBackground } from "./components/AuthBackground";
 import { GradientButton } from "./components/GradientButton";
 import { AuthInputField } from "./components/AuthInputField";
 import {
-  User, Mail, Lock, Phone, MapPin,
   ChevronRight, ChevronLeft, Camera,
-  CheckCircle2, AlertCircle, Info,
-  Fingerprint, Heart, ShieldCheck, Sparkles, ArrowRight, Flower2
+  CheckCircle2, Sparkles, ArrowRight, AlertCircle
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-
-type OnboardingStep = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
+import { useAuth } from "@/auth/AuthContext";
+import type { SpiritualProfile } from "@/auth/userService";
+import { useTranslation } from "react-i18next";
 
 export default function UserOnboarding() {
   const navigate = useNavigate();
+  const { completeSpiritualOnboarding, user } = useAuth();
+  const { i18n } = useTranslation();
+  const selectedLanguage = localStorage.getItem("panchajanya_lang") || i18n.language || "mr";
+
   const [step, setStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
+  const [globalError, setGlobalError] = useState("");
 
   // Form State
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<SpiritualProfile & { agreedToTerms: boolean }>({
     status: "" as "Naam Dharak" | "Vasnik" | "Bhikshuk" | "",
     naamMantra: false,
     guruvaryaName: "",
@@ -34,12 +38,31 @@ export default function UserOnboarding() {
     dikshaGuruvaryaName: "",
     dikshaGuruvaryaPlace: "",
     dikshaGuruvaryaYear: "",
-    selfie: null as string | null,
-    agreedToTerms: false
+    agreedToTerms: false,
   });
 
   const nextStep = () => setStep((p) => p + 1);
   const prevStep = () => setStep((p) => Math.max(p - 1, 1));
+
+  // Called on the final step when user taps "Complete Registration"
+  const handleCompleteOnboarding = async () => {
+    if (!formData.agreedToTerms) return;
+    setGlobalError("");
+    setIsLoading(true);
+
+    try {
+      const { agreedToTerms, ...spiritualProfile } = formData;
+      await completeSpiritualOnboarding(spiritualProfile, selectedLanguage);
+      // Advance to success screen (step 4)
+      nextStep();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Failed to save details. Please try again.";
+      setGlobalError(message);
+      console.error("❌ [UserOnboarding] Error:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <AuthBackground showMandala={true}>
@@ -80,7 +103,23 @@ export default function UserOnboarding() {
           </div>
         )}
 
+        {/* 🚨 Global Error Banner */}
+        <AnimatePresence>
+          {globalError && (
+            <motion.div
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              className="mb-4 flex items-start gap-2.5 p-3.5 bg-red-50 border border-red-200 rounded-xl"
+            >
+              <AlertCircle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
+              <p className="text-[11px] font-semibold text-red-700 leading-relaxed">{globalError}</p>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         <AnimatePresence mode="wait">
+          {/* ─── STEP 1: Spiritual Status ─────────────────────────────────── */}
           {step === 1 && (
             <motion.div
               key="step1"
@@ -118,7 +157,7 @@ export default function UserOnboarding() {
                 </motion.div>
               </div>
 
-              {/* 2. Passage Content Block below Logo */}
+              {/* 2. Passage Content Block */}
               <motion.div 
                 initial={{ opacity: 0, scale: 0.98 }}
                 animate={{ opacity: 1, scale: 1 }}
@@ -146,13 +185,14 @@ export default function UserOnboarding() {
                     Select Your Spiritual Status
                   </motion.h3>
                   <div className="grid gap-3">
-                    {["Naam Dharak", "Vasnik", "Bhikshuk"].map((status, index) => (
+                    {(["Naam Dharak", "Vasnik", "Bhikshuk"] as const).map((status, index) => (
                       <motion.button
                         key={status}
                         initial={{ opacity: 0, y: 15 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 1 + (index * 0.1) }}
-                        onClick={() => setFormData({ ...formData, status: status as any })}
+                        type="button"
+                        onClick={() => setFormData({ ...formData, status })}
                         className={cn(
                           "w-full h-14 px-5 rounded-[1.2rem] border flex items-center justify-between group transition-all duration-500",
                           formData.status === status
@@ -192,6 +232,7 @@ export default function UserOnboarding() {
             </motion.div>
           )}
 
+          {/* ─── STEP 2: Spiritual Details ───────────────────────────────── */}
           {step === 2 && (
             <motion.div
               key="step2"
@@ -214,6 +255,7 @@ export default function UserOnboarding() {
                         <span className="text-[9px] text-slate-400 font-medium">Spiritual Initiation Status</span>
                       </div>
                       <button
+                        type="button"
                         onClick={() => setFormData({ ...formData, naamMantra: !formData.naamMantra })}
                         className={cn("w-12 h-7 rounded-full p-1 transition-all duration-500", formData.naamMantra ? "bg-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.3)]" : "bg-slate-200")}
                       >
@@ -232,6 +274,7 @@ export default function UserOnboarding() {
                       <div className="flex items-center justify-between p-3 bg-slate-50/50 rounded-xl">
                         <span className="font-bold text-xs text-blue-950 uppercase tracking-tight">Taken Naam Mantra?</span>
                         <button
+                          type="button"
                           onClick={() => setFormData({ ...formData, naamMantra: !formData.naamMantra })}
                           className={cn("w-10 h-6 rounded-full p-1 transition-all", formData.naamMantra ? "bg-amber-500" : "bg-slate-200")}
                         >
@@ -251,10 +294,11 @@ export default function UserOnboarding() {
                       <div className="flex flex-col gap-3">
                         <span className="text-[9px] font-black text-blue-900/40 uppercase tracking-[0.2em] px-1">Studied Mode?</span>
                         <div className="flex gap-3">
-                          {["Observable", "Online"].map((mode) => (
+                          {(["Observable", "Online"] as const).map((mode) => (
                             <button
                               key={mode}
-                              onClick={() => setFormData({ ...formData, vidyaStudiedMode: mode as any })}
+                              type="button"
+                              onClick={() => setFormData({ ...formData, vidyaStudiedMode: mode })}
                               className={cn(
                                 "flex-1 py-3 rounded-xl border font-bold text-xs transition-all",
                                 formData.vidyaStudiedMode === mode 
@@ -299,6 +343,7 @@ export default function UserOnboarding() {
             </motion.div>
           )}
 
+          {/* ─── STEP 3: Photo + Terms ────────────────────────────────────── */}
           {step === 3 && (
             <motion.div
               key="step3"
@@ -327,11 +372,13 @@ export default function UserOnboarding() {
               <div className="p-5 bg-white/40 backdrop-blur-md border border-slate-100 rounded-[1.5rem]">
                 <div className="flex items-start gap-4">
                   <button
+                    type="button"
                     onClick={() => setFormData({ ...formData, agreedToTerms: !formData.agreedToTerms })}
                     className={cn(
                       "w-5 h-5 rounded-md border transition-all flex items-center justify-center shrink-0 mt-0.5",
                       formData.agreedToTerms ? "bg-blue-900 border-blue-900 text-white" : "border-slate-200 bg-white"
                     )}
+                    aria-label="Agree to terms"
                   >
                     {formData.agreedToTerms && <CheckCircle2 className="w-3 h-3" />}
                   </button>
@@ -343,19 +390,24 @@ export default function UserOnboarding() {
 
               <div className="pt-4">
                 <GradientButton
-                  onClick={nextStep}
-                  disabled={!formData.agreedToTerms}
+                  onClick={handleCompleteOnboarding}
+                  disabled={!formData.agreedToTerms || isLoading}
                   className="w-full h-12 sm:h-14 bg-gradient-to-r from-blue-950 to-[#133E7C] shadow-[0_8px_20px_rgba(19,62,124,0.15)] rounded-[1.2rem]"
                 >
-                  <div className="flex items-center gap-2">
-                    <span className="font-bold text-[12px] sm:text-[13px] tracking-[0.12em] uppercase text-white">Complete Registration</span>
-                    <Sparkles className="w-4 h-4 text-amber-300" />
-                  </div>
+                  {isLoading ? (
+                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-[12px] sm:text-[13px] tracking-[0.12em] uppercase text-white">Complete Registration</span>
+                      <Sparkles className="w-4 h-4 text-amber-300" />
+                    </div>
+                  )}
                 </GradientButton>
               </div>
             </motion.div>
           )}
 
+          {/* ─── STEP 4: Success ─────────────────────────────────────────── */}
           {step === 4 && (
             <motion.div
               key="step4"
@@ -380,7 +432,7 @@ export default function UserOnboarding() {
                 <p className="text-slate-400 font-medium text-base">Your spiritual profile is ready.</p>
               </div>
               <GradientButton 
-                onClick={() => navigate("/dashboard")} 
+                onClick={() => navigate("/dashboard", { replace: true })} 
                 className="w-full max-w-[18rem] h-12 sm:h-14 bg-gradient-to-r from-blue-950 to-[#133E7C] shadow-[0_8px_20px_rgba(19,62,124,0.15)] rounded-[1.2rem]"
               >
                 <div className="flex items-center gap-2">
@@ -393,7 +445,12 @@ export default function UserOnboarding() {
         </AnimatePresence>
 
         {step > 1 && step < 4 && (
-          <button onClick={prevStep} className="mt-8 mx-auto flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest text-slate-300 hover:text-blue-900 transition-colors">
+          <button
+            type="button"
+            onClick={prevStep}
+            disabled={isLoading}
+            className="mt-8 mx-auto flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest text-slate-300 hover:text-blue-900 transition-colors"
+          >
             <ChevronLeft className="w-3.5 h-3.5" /> Go Back
           </button>
         )}

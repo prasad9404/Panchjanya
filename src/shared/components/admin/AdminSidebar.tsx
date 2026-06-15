@@ -1,5 +1,5 @@
 import React from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
   Users,
@@ -26,6 +26,16 @@ interface AdminSidebarProps {
 export default function AdminSidebar({ isCollapsed, setIsCollapsed }: AdminSidebarProps) {
   const { signOut, user } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    try {
+      await signOut();
+      navigate("/admin/login", { replace: true });
+    } catch (error) {
+      console.error("❌ [AdminSidebar] Logout failed:", error);
+    }
+  };
 
   const navLinks = [
     { label: "Dashboard", href: "/admin/dashboard", icon: <LayoutDashboard className="h-5 w-5 flex-shrink-0" /> },
@@ -98,7 +108,7 @@ export default function AdminSidebar({ isCollapsed, setIsCollapsed }: AdminSideb
             }}
           />
           <button
-            onClick={() => signOut()}
+          onClick={handleLogout}
             className="flex items-center gap-2 px-2 py-2 rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors w-full group/sidebar"
           >
             <LogOut className="h-5 w-5 flex-shrink-0" />

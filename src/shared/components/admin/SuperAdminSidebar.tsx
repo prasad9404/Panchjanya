@@ -24,6 +24,15 @@ const SuperAdminSidebar = ({ isCollapsed, setIsCollapsed }: SidebarProps) => {
   const location = useLocation();
   const { signOut, user } = useAuth();
 
+  const handleLogout = async () => {
+    try {
+      await signOut();
+      navigate("/admin/login", { replace: true });
+    } catch (error) {
+      console.error("❌ [SuperAdminSidebar] Logout failed:", error);
+    }
+  };
+
   const menuItems = [
     { label: 'Overview', href: '/super-admin', icon: <LayoutDashboard className="h-5 w-5 flex-shrink-0" /> },
     { label: 'User Management', href: '/super-admin/users', icon: <Users className="h-5 w-5 flex-shrink-0" /> },
@@ -81,7 +90,7 @@ const SuperAdminSidebar = ({ isCollapsed, setIsCollapsed }: SidebarProps) => {
 
         <div className="flex flex-col gap-2 border-t border-gray-100 dark:border-gray-800 pt-4">
           <button
-            onClick={() => signOut()}
+            onClick={handleLogout}
             className="flex items-center gap-2 px-2 py-2 rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors w-full group/sidebar"
           >
             <LogOut className="h-5 w-5 flex-shrink-0" />

@@ -1,16 +1,28 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
+import { useAuth } from "@/auth/AuthContext";
 
 export default function UserSplash() {
   const navigate = useNavigate();
+  const { user, loading } = useAuth();
 
   useEffect(() => {
+    // Wait for Firebase to resolve the initial auth state before navigating.
+    if (loading) return;
+
     const timer = setTimeout(() => {
-      navigate("/auth/welcome");
+      if (user) {
+        // Already authenticated — skip the entire auth flow
+        navigate("/dashboard", { replace: true });
+      } else {
+        // Not logged in — begin the onboarding welcome flow
+        navigate("/auth/welcome", { replace: true });
+      }
     }, 3500);
+
     return () => clearTimeout(timer);
-  }, [navigate]);
+  }, [navigate, user, loading]);
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center relative overflow-hidden bg-[#FDFCF7]">

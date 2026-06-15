@@ -9,20 +9,26 @@ import {
   Settings as SettingsIcon,
   LogOut,
   HelpCircle,
+  Pencil,
+  User as UserIcon,
 } from "lucide-react";
 import { Button } from "@/shared/components/ui/button";
 import { Card } from "@/shared/components/ui/card";
+import { Skeleton } from "@/shared/components/ui/skeleton";
+import { Progress } from "@/shared/components/ui/progress";
 import { useAuth } from "@/auth/AuthContext";
 import { useState, useEffect } from "react";
 import { collection, query, onSnapshot } from "firebase/firestore";
 import { db } from "@/auth/firebase";
 import { useLanguage } from "@/shared/contexts/LanguageContext";
+import { EditProfileModal } from "./components/EditProfileModal";
 
 const Profile = () => {
   const navigate = useNavigate();
   const { t } = useLanguage();
-  const { user } = useAuth();
+  const { user, userProfile, profileLoading, signOut } = useAuth();
   const [savedCount, setSavedCount] = useState(0);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   // Get real-time count of saved temples
   useEffect(() => {
@@ -41,29 +47,39 @@ const Profile = () => {
     return () => unsubscribe();
   }, [user]);
 
-  // Mock user data - replace with actual user data from context/auth
-  const userData = {
-    name: user?.displayName || "Aditya Vardhan",
-    joinDate: "Oct 2023",
-    avatar: user?.photoURL || "/placeholder-avatar.jpg",
-    isVerified: true,
-    stats: {
-      sthanas: 12,
-      yatras: 4,
-      karma: "3k",
-    },
-    completedYatras: ["Kashi", "Ayodhya"],
+  const handleLogout = async () => {
+    try {
+      await signOut();
+      navigate("/auth/login", { replace: true });
+    } catch (error) {
+      console.error("❌ [Profile] Logout failed:", error);
+    }
   };
 
-  const handleLogout = () => {
-    // Implement logout logic
-    console.log("Logging out...");
-    navigate("/auth/splash");
-  };
+  // If loading, show skeleton
+  if (profileLoading) {
+    return (
+      <div className="min-h-full flex-1 flex flex-col p-6 items-center pt-20">
+        <Skeleton className="w-32 h-32 rounded-full mb-6" />
+        <Skeleton className="h-8 w-48 mb-2" />
+        <Skeleton className="h-4 w-32" />
+      </div>
+    );
+  }
+
+  // Calculate joined date
+  const joinedDate = userProfile?.createdAt 
+    ? new Intl.DateTimeFormat('en-US', { month: 'short', year: 'numeric' }).format(userProfile.createdAt.toDate())
+    : "Recently";
+
+  // Calculate completion percentage
+  const fields = ['firstName', 'lastName', 'profileImage', 'bio', 'city', 'district', 'state', 'whatsapp', 'username'];
+  const filledFields = fields.filter(f => !!(userProfile as any)?.[f]);
+  const completionPercentage = Math.round((filledFields.length / fields.length) * 100);
 
   return (
-    <div className="min-h-full flex-1 font-sans">
-      {/* Header */}
+    <div className="min-h-full flex-1 font-sans bg-gray-50/50 pb-20">
+      
       {/* Header */}
       <div className="sticky top-0 z-40 px-4 py-4 flex items-center justify-between bg-white/95 backdrop-blur-sm border-b border-gray-100">
         <Button
@@ -83,208 +99,216 @@ const Profile = () => {
       </div>
 
       {/* Profile Section */}
-      <div className="px-6 py-8 flex flex-col items-center">
+      <div className="px-6 py-8 flex flex-col items-center bg-white border-b border-gray-100">
         {/* Avatar with Verified Badge */}
         <div className="relative mb-4">
-          <div className="w-32 h-32 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center overflow-hidden border-4 border-white">
-            <img
-              src={userData.avatar}
-              alt={userData.name}
-              className="w-full h-full object-cover"
-              onError={(e) => {
-                (e.target as HTMLImageElement).style.display = "none";
-              }}
-            />
-            <div className="absolute inset-0 flex items-center justify-center text-white text-4xl font-bold">
-              {userData.name.charAt(0)}
-            </div>
+          <div className="w-32 h-32 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center overflow-hidden border-4 border-white shadow-md">
+            {userProfile?.profileImage ? (
+               <img
+                 src={userProfile.profileImage}
+                 alt={userProfile.displayName}
+                 className="w-full h-full object-cover"
+               />
+            ) : (
+               <UserIcon className="w-16 h-16 text-white/80" />
+            )}
           </div>
 
           {/* Verified Badge */}
-          {userData.isVerified && (
-            <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-white rounded-full px-3 py-1 border border-gray-200 flex items-center gap-1">
+          {userProfile?.role !== 'user' && (
+            <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-white rounded-full px-3 py-1 border border-gray-200 flex items-center gap-1 shadow-sm whitespace-nowrap">
               <CheckCircle className="w-4 h-4 text-amber-500 fill-amber-500" />
               <span className="text-xs font-bold uppercase tracking-wide text-gray-700">
-                {t("profile.verified")}
+                {userProfile?.role === 'super_admin' ? 'Super Admin' : 'Admin'}
               </span>
             </div>
           )}
         </div>
 
         {/* User Name and Join Date */}
-        <h2 className="text-2xl font-heading font-bold text-[#0f3c6e] mt-6 mb-1">
-          {userData.name}
+        <h2 className="text-2xl font-heading font-bold text-[#0f3c6e] mt-6 mb-1 text-center">
+          {userProfile?.displayName || "Sthana Vasi"}
         </h2>
+        {userProfile?.username && (
+           <p className="text-sm font-medium text-blue-600 mb-1">@{userProfile.username}</p>
+        )}
         <p className="text-sm text-gray-500">
-          {t("profile.explorerSince")} {userData.joinDate}
+          {t("profile.explorerSince")} {joinedDate}
         </p>
 
-        {/* Stats */}
-        <div className="flex items-center gap-12 mt-6">
-          <div className="text-center">
-            <div className="text-2xl font-bold text-[#0f3c6e]">
-              {userData.stats.sthanas}
+        {/* Edit Button */}
+        <Button 
+          variant="outline" 
+          className="mt-6 gap-2 rounded-full border-gray-300 shadow-sm"
+          onClick={() => setIsEditModalOpen(true)}
+        >
+          <Pencil className="w-4 h-4" />
+          Edit Profile
+        </Button>
+
+        {/* Profile Completion Bar */}
+        {completionPercentage < 100 && (
+          <div className="w-full max-w-xs mt-8">
+            <div className="flex justify-between text-xs mb-2 font-medium text-gray-600">
+              <span>Profile Completion</span>
+              <span>{completionPercentage}%</span>
             </div>
-            <div className="text-xs uppercase tracking-wider text-gray-500">
-              {t("profile.sthanas")}
-            </div>
+            <Progress value={completionPercentage} className="h-2 bg-gray-100" />
           </div>
-          <div className="w-px h-10 bg-gray-300"></div>
-          <div className="text-center">
-            <div className="text-2xl font-bold text-[#0f3c6e]">
-              {userData.stats.yatras}
+        )}
+        
+        {userProfile?.bio && (
+           <p className="mt-8 text-center text-sm text-gray-600 max-w-md italic">"{userProfile.bio}"</p>
+        )}
+
+      </div>
+
+      <div className="max-w-3xl mx-auto mt-6 space-y-6">
+        {/* Spiritual Journey Section */}
+        <div className="px-6">
+          <h3 className="mb-3 text-sm font-bold uppercase tracking-wider text-[#0f3c6e]">
+            {t("profile.spiritualJourney")}
+          </h3>
+
+          <Card
+            className="mb-3 p-4 bg-white border-none rounded-xl hover:shadow-xl transition-shadow cursor-pointer shadow-sm"
+            onClick={() => navigate("/saved")}
+          >
+            <div className="flex items-center gap-4">
+              <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center flex-shrink-0">
+                <Bookmark className="w-5 h-5 text-[#0f3c6e]" />
+              </div>
+              <div className="flex-1">
+                <h4 className="text-base font-bold text-[#0f3c6e]">
+                  {t("profile.mySavedSthanas")}
+                </h4>
+                <p className="text-xs text-gray-500">
+                  {savedCount} {t("profile.placesBookmarked")}
+                </p>
+              </div>
+              <ChevronRight className="w-5 h-5 text-amber-500" />
             </div>
-            <div className="text-xs uppercase tracking-wider text-gray-500">
-              {t("profile.yatras")}
+          </Card>
+
+          <Card
+            className="p-4 bg-white border-none rounded-xl hover:shadow-xl transition-shadow cursor-pointer shadow-sm"
+            onClick={() => navigate("/raj-viharan")}
+          >
+            <div className="flex items-center gap-4">
+              <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center flex-shrink-0">
+                <CheckCircle className="w-5 h-5 text-[#0f3c6e]" />
+              </div>
+              <div className="flex-1">
+                <h4 className="text-base font-bold text-[#0f3c6e]">
+                  {t("profile.completedYatras")}
+                </h4>
+                <p className="text-xs text-gray-500">
+                  Track your spiritual journeys
+                </p>
+              </div>
+              <ChevronRight className="w-5 h-5 text-amber-500" />
             </div>
-          </div>
+          </Card>
+        </div>
+
+        {/* Seva & Support Section */}
+        <div className="px-6">
+          <h3 className="mb-3 text-sm font-bold uppercase tracking-wider text-[#0f3c6e]">
+            {t("profile.sevaSupport")}
+          </h3>
+
+          <Card
+            className="p-4 bg-white border-none rounded-xl hover:shadow-xl transition-shadow cursor-pointer shadow-sm"
+            onClick={() => navigate("/donations")}
+          >
+            <div className="flex items-center gap-4">
+              <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center flex-shrink-0">
+                <HandHeart className="w-5 h-5 text-[#0f3c6e]" />
+              </div>
+              <div className="flex-1">
+                <h4 className="text-base font-bold text-[#0f3c6e]">
+                  {t("profile.donationHistory")}
+                </h4>
+                <p className="text-xs text-gray-500">
+                  {t("profile.donationHistoryDesc")}
+                </p>
+              </div>
+              <ChevronRight className="w-5 h-5 text-amber-500" />
+            </div>
+          </Card>
+
+          <Card
+            className="mt-3 p-4 bg-white border-none rounded-xl hover:shadow-xl transition-shadow cursor-pointer shadow-sm"
+            onClick={() => navigate("/help-center")}
+          >
+            <div className="flex items-center gap-4">
+              <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center flex-shrink-0">
+                <HelpCircle className="w-5 h-5 text-[#0f3c6e]" />
+              </div>
+              <div className="flex-1">
+                <h4 className="text-base font-bold text-[#0f3c6e]">
+                  {t("profile.helpCenter")}
+                </h4>
+                <p className="text-xs text-gray-500">
+                  {t("profile.helpCenterDesc")}
+                </p>
+              </div>
+              <ChevronRight className="w-5 h-5 text-amber-500" />
+            </div>
+          </Card>
+        </div>
+
+        {/* Preferences Section */}
+        <div className="px-6">
+          <h3 className="mb-3 text-sm font-bold uppercase tracking-wider text-[#0f3c6e]">
+            {t("profile.preferences")}
+          </h3>
+
+          <Card
+            className="p-4 bg-white border-none rounded-xl hover:shadow-xl transition-shadow cursor-pointer shadow-sm"
+            onClick={() => navigate("/settings")}
+          >
+            <div className="flex items-center gap-4">
+              <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center flex-shrink-0">
+                <SettingsIcon className="w-5 h-5 text-[#0f3c6e]" />
+              </div>
+              <div className="flex-1">
+                <h4 className="text-base font-bold text-[#0f3c6e]">
+                  {t("common.settings")}
+                </h4>
+                <p className="text-xs text-gray-500">
+                  {t("profile.settingsDesc")}
+                </p>
+              </div>
+              <ChevronRight className="w-5 h-5 text-amber-500" />
+            </div>
+          </Card>
+        </div>
+
+        {/* Log Out Button */}
+        <div className="px-6 pb-6">
+          <Card
+            className="p-4 bg-white border-none rounded-xl hover:shadow-xl transition-shadow cursor-pointer shadow-sm"
+            onClick={handleLogout}
+          >
+            <div className="flex items-center gap-4">
+              <div className="w-10 h-10 bg-red-50 rounded-lg flex items-center justify-center flex-shrink-0">
+                <LogOut className="w-5 h-5 text-red-500" />
+              </div>
+              <div className="flex-1">
+                <h4 className="text-base font-bold text-red-500">
+                  {t("common.logout")}
+                </h4>
+              </div>
+            </div>
+          </Card>
         </div>
       </div>
 
-      {/* Spiritual Journey Section */}
-      <div className="px-6 mb-6">
-        <h3 className="mb-3 text-sm font-bold uppercase tracking-wider text-[#0f3c6e]">
-          {t("profile.spiritualJourney")}
-        </h3>
-
-        {/* My Saved Sthanas */}
-        <Card
-          className="mb-3 p-4 bg-white border-none rounded-xl hover:shadow-xl transition-shadow cursor-pointer"
-          onClick={() => navigate("/saved")}
-        >
-          <div className="flex items-center gap-4">
-            <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center flex-shrink-0">
-              <Bookmark className="w-5 h-5 text-[#0f3c6e]" />
-            </div>
-            <div className="flex-1">
-              <h4 className="text-base font-bold text-[#0f3c6e]">
-                {t("profile.mySavedSthanas")}
-              </h4>
-              <p className="text-xs text-gray-500">
-                {savedCount} {t("profile.placesBookmarked")}
-              </p>
-            </div>
-            <ChevronRight className="w-5 h-5 text-amber-500" />
-          </div>
-        </Card>
-
-        {/* Completed Yatras */}
-        <Card
-          className="p-4 bg-white border-none rounded-xl hover:shadow-xl transition-shadow cursor-pointer"
-          onClick={() => navigate("/raj-viharan")}
-        >
-          <div className="flex items-center gap-4">
-            <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center flex-shrink-0">
-              <CheckCircle className="w-5 h-5 text-[#0f3c6e]" />
-            </div>
-            <div className="flex-1">
-              <h4 className="text-base font-bold text-[#0f3c6e]">
-                {t("profile.completedYatras")}
-              </h4>
-              <p className="text-xs text-gray-500">
-                {userData.completedYatras.join(` ${t("common.and")} `)} {t("profile.completed")}
-              </p>
-            </div>
-            <ChevronRight className="w-5 h-5 text-amber-500" />
-          </div>
-        </Card>
-      </div>
-
-      {/* Seva & Support Section */}
-      <div className="px-6 mb-6">
-        <h3 className="mb-3 text-sm font-bold uppercase tracking-wider text-[#0f3c6e]">
-          {t("profile.sevaSupport")}
-        </h3>
-
-        {/* Donation History */}
-        <Card
-          className="p-4 bg-white border-none rounded-xl hover:shadow-xl transition-shadow cursor-pointer"
-          onClick={() => navigate("/donations")}
-        >
-          <div className="flex items-center gap-4">
-            <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center flex-shrink-0">
-              <HandHeart className="w-5 h-5 text-[#0f3c6e]" />
-            </div>
-            <div className="flex-1">
-              <h4 className="text-base font-bold text-[#0f3c6e]">
-                {t("profile.donationHistory")}
-              </h4>
-              <p className="text-xs text-gray-500">
-                {t("profile.donationHistoryDesc")}
-              </p>
-            </div>
-            <ChevronRight className="w-5 h-5 text-amber-500" />
-          </div>
-        </Card>
-
-        {/* Help Center */}
-        <Card
-          className="mt-3 p-4 bg-white border-none rounded-xl hover:shadow-xl transition-shadow cursor-pointer"
-          onClick={() => navigate("/help-center")}
-        >
-          <div className="flex items-center gap-4">
-            <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center flex-shrink-0">
-              <HelpCircle className="w-5 h-5 text-[#0f3c6e]" />
-            </div>
-            <div className="flex-1">
-              <h4 className="text-base font-bold text-[#0f3c6e]">
-                {t("profile.helpCenter")}
-              </h4>
-              <p className="text-xs text-gray-500">
-                {t("profile.helpCenterDesc")}
-              </p>
-            </div>
-            <ChevronRight className="w-5 h-5 text-amber-500" />
-          </div>
-        </Card>
-      </div>
-
-      {/* Preferences Section */}
-      <div className="px-6 mb-6">
-        <h3 className="mb-3 text-sm font-bold uppercase tracking-wider text-[#0f3c6e]">
-          {t("profile.preferences")}
-        </h3>
-
-        {/* Settings */}
-        <Card
-          className="p-4 bg-white border-none rounded-xl hover:shadow-xl transition-shadow cursor-pointer"
-          onClick={() => navigate("/settings")}
-        >
-          <div className="flex items-center gap-4">
-            <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center flex-shrink-0">
-              <SettingsIcon className="w-5 h-5 text-[#0f3c6e]" />
-            </div>
-            <div className="flex-1">
-              <h4 className="text-base font-bold text-[#0f3c6e]">
-                {t("common.settings")}
-              </h4>
-              <p className="text-xs text-gray-500">
-                {t("profile.settingsDesc")}
-              </p>
-            </div>
-            <ChevronRight className="w-5 h-5 text-amber-500" />
-          </div>
-        </Card>
-      </div>
-
-      {/* Log Out Button */}
-      <div className="px-6">
-        <Card
-          className="p-4 bg-white border-none rounded-xl hover:shadow-xl transition-shadow cursor-pointer"
-          onClick={handleLogout}
-        >
-          <div className="flex items-center gap-4">
-            <div className="w-10 h-10 bg-red-50 rounded-lg flex items-center justify-center flex-shrink-0">
-              <LogOut className="w-5 h-5 text-red-500" />
-            </div>
-            <div className="flex-1">
-              <h4 className="text-base font-bold text-red-500">
-                {t("common.logout")}
-              </h4>
-            </div>
-          </div>
-        </Card>
-      </div>
+      <EditProfileModal 
+        open={isEditModalOpen} 
+        onOpenChange={setIsEditModalOpen} 
+      />
     </div>
   );
 };

@@ -32,6 +32,10 @@ export default function YatraMapMapLibre({ locations, highlightedId, centerOnFul
   const lastIndexRef = useRef(currentIndex);
   const activeMarkerRef = useRef<maplibregl.Marker | null>(null);
   const animationRef = useRef<number | null>(null);
+  const locationsRef = useRef(locations);
+  useEffect(() => {
+    locationsRef.current = locations;
+  }, [locations]);
 
   // Initialize MapLibre
   useEffect(() => {
@@ -284,8 +288,8 @@ export default function YatraMapMapLibre({ locations, highlightedId, centerOnFul
 
     // Viewport paddings to avoid overlapping overlay elements
     const padding = {
-      top: isMobile ? 140 : 110, // Mobile top header safe offset
-      bottom: isMobile ? 310 : 100, // Mobile bottom sheet safe offset
+      top: isMobile ? 180 : 130, // Increased top padding to ensure highlighted pin badge is fully visible below top header
+      bottom: isMobile ? 320 : 110, // Mobile bottom sheet safe offset
       left: isDesktop ? 460 : 60, // Desktop left panel safe offset
       right: 60
     };
@@ -621,7 +625,7 @@ export default function YatraMapMapLibre({ locations, highlightedId, centerOnFul
       
       if (bbox) {
           const leftPadding = window.innerWidth >= 1024 ? 460 : 80;
-          map.fitBounds(bbox, { padding: { top: 80, bottom: 80, left: leftPadding, right: 80 }, duration: 2500 });
+          map.fitBounds(bbox, { padding: { top: 120, bottom: 120, left: leftPadding, right: 80 }, duration: 2500 });
       }
       return;
     }
@@ -649,11 +653,37 @@ export default function YatraMapMapLibre({ locations, highlightedId, centerOnFul
     return () => window.removeEventListener('resize', handleResize);
   }, [mapLoaded, highlightedId, locations, fitActiveSegment]);
 
+  // Replace Compass with Reset Zoom
+  useEffect(() => {
+    if (!mapLoaded || !mapContainer.current || !mapRef.current) return;
+    
+    const compassBtn = mapContainer.current.querySelector('.maplibregl-ctrl-compass');
+    if (compassBtn && !compassBtn.hasAttribute('data-reset-zoom')) {
+       compassBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#555" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin: 6px auto; display: block;" class="lucide lucide-rotate-ccw"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>`;
+       compassBtn.setAttribute('title', 'Reset Zoom');
+       compassBtn.setAttribute('aria-label', 'Reset Zoom');
+       compassBtn.setAttribute('data-reset-zoom', 'true');
+       
+       const newBtn = compassBtn.cloneNode(true) as HTMLButtonElement;
+       compassBtn.parentNode?.replaceChild(newBtn, compassBtn);
+       
+       newBtn.addEventListener('click', () => {
+           const currentLocs = locationsRef.current;
+           if (currentLocs.length > 0) {
+               const geojson = turf.featureCollection(locationsToGeoJSON(currentLocs));
+               const bbox = turf.bbox(geojson) as [number, number, number, number];
+               const leftPadding = window.innerWidth >= 1024 ? 460 : 80;
+               mapRef.current?.fitBounds(bbox, { padding: { top: 120, bottom: 120, left: leftPadding, right: 80 }, duration: 1500 });
+           }
+       });
+    }
+  }, [mapLoaded]);
+
   return (
     <div className="w-full h-full relative z-0 bg-[#faf8f2]">
       <style>{`
         .maplibregl-ctrl-bottom-right {
-          bottom: ${isMobileSheetOpen ? '320px' : '100px'} !important;
+          bottom: ${isMobileSheetOpen ? '180px' : '100px'} !important;
           right: 16px !important;
           transition: bottom 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }

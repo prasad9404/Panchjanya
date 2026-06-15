@@ -1,17 +1,21 @@
 import React from "react";
-import { auth } from "@/auth/firebase";
-import { signOut } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/shared/components/ui/button";
 import { LogOut, Search, Bell, Plus } from "lucide-react";
 import { Input } from "@/shared/components/ui/input";
+import { useAuth } from "@/auth/AuthContext";
 
 export default function AdminTopbar() {
   const navigate = useNavigate();
+  const { signOut } = useAuth();
 
   const handleLogout = async () => {
-    await signOut(auth);
-    navigate("/admin/login");
+    try {
+      await signOut();
+      navigate("/admin/login", { replace: true });
+    } catch (error) {
+      console.error("❌ [AdminTopbar] Logout failed:", error);
+    }
   };
 
   return (

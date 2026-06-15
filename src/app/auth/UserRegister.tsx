@@ -1,20 +1,33 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { AuthBackground } from "./components/AuthBackground";
 import { GradientButton } from "./components/GradientButton";
 import { AuthInputField } from "./components/AuthInputField";
 import {
-  ArrowLeft, User, Lock, Mail, Sparkles,
-  Info, Compass, ChevronRight, ArrowRight,
-  MapPin, Phone
+  User, Lock, ArrowRight,
+  MapPin, Phone, AlertCircle, Eye, EyeOff
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAuth, RegistrationData } from "@/auth/AuthContext";
+import { isValidMobile, isStrongPassword } from "@/auth/userService";
 
 export default function UserRegister() {
   const navigate = useNavigate();
+  const { signUp, user, loading } = useAuth();
+
+  // Guard: already logged in → go to dashboard
+  useEffect(() => {
+    if (!loading && user) {
+      navigate("/dashboard", { replace: true });
+    }
+  }, [user, loading, navigate]);
+
   const [isLoading, setIsLoading] = useState(false);
-  const [formData, setFormData] = useState({
+  const [showPassword, setShowPassword] = useState(false);
+  const [globalError, setGlobalError] = useState("");
+
+  const [formData, setFormData] = useState<RegistrationData>({
     firstName: "",
     lastName: "",
     gender: "",
@@ -24,34 +37,66 @@ export default function UserRegister() {
     city: "",
     whatsapp: "",
     mobile: "",
-    age: ""
+    age: "",
+    password: "",
   });
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
-  const handleRegister = (e: React.FormEvent) => {
-    e.preventDefault();
-    setErrors({});
-    const newErrors: { [key: string]: string } = {};
-    if (!formData.firstName) newErrors.firstName = "Required";
-    if (!formData.lastName) newErrors.lastName = "Required";
-    if (!formData.mobile) newErrors.mobile = "Required";
+  const update = (field: keyof RegistrationData) => (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData((prev) => ({ ...prev, [field]: e.target.value }));
+    if (errors[field]) setErrors((prev) => ({ ...prev, [field]: "" }));
+    if (globalError) setGlobalError("");
+  };
 
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors);
-      return;
+  const validate = (): boolean => {
+    const newErrors: { [key: string]: string } = {};
+
+    if (!formData.firstName.trim()) newErrors.firstName = "Required";
+    if (!formData.lastName.trim()) newErrors.lastName = "Required";
+
+    const mobileDigits = formData.mobile.replace(/[\s\-+]/g, "").replace(/^91/, "");
+    if (!formData.mobile) {
+      newErrors.mobile = "Required";
+    } else if (!isValidMobile(formData.mobile)) {
+      newErrors.mobile = "Enter a valid 10-digit mobile number";
     }
+
+    if (!formData.password) {
+      newErrors.password = "Required";
+    } else {
+      const check = isStrongPassword(formData.password);
+      if (!check.valid) newErrors.password = check.message;
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleRegister = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setGlobalError("");
+    if (!validate()) return;
+
     setIsLoading(true);
-    setTimeout(() => {
+    try {
+      await signUp(formData);
+      // Registration + Firestore profile creation succeeded.
+      // Navigate to language selection → then onboarding.
+      navigate("/auth/language", { replace: true });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Registration failed. Please try again.";
+      setGlobalError(message);
+      console.error("❌ [UserRegister] Registration failed:", error);
+    } finally {
       setIsLoading(false);
-      navigate("/auth/verify-identity");
-    }, 1500);
+    }
   };
 
   return (
     <AuthBackground showMandala={true}>
 
       <div className="flex-1 flex flex-col px-6 pt-6 pb-12 z-10 w-full max-w-lg mx-auto items-center">
-        {/* ⚛️ Logo Container - Standard Circular Version */}
+        {/* ⚛️ Logo Container */}
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -80,27 +125,48 @@ export default function UserRegister() {
           </p>
         </motion.div>
 
+        {/* 🚨 Global Error Banner */}
+        <AnimatePresence>
+          {globalError && (
+            <motion.div
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              className="w-full max-w-[22rem] mb-4 flex items-start gap-2.5 p-3.5 bg-red-50 border border-red-200 rounded-xl"
+            >
+              <AlertCircle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
+              <p className="text-[11px] font-semibold text-red-700 leading-relaxed">{globalError}</p>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         {/* 🥛 Registration Form */}
-        <form onSubmit={handleRegister} className="w-full space-y-5 max-w-[22rem] pb-10">
+        <form onSubmit={handleRegister} className="w-full space-y-5 max-w-[22rem] pb-10" noValidate>
+          {/* Name Row */}
           <div className="grid grid-cols-2 gap-3">
             <AuthInputField
               topLabel="FIRST NAME"
               label="Siddharth"
               icon={<User />}
               value={formData.firstName}
-              onChange={e => setFormData({ ...formData, firstName: e.target.value })}
+              onChange={update("firstName")}
               error={errors.firstName}
+              autoComplete="given-name"
+              disabled={isLoading}
             />
             <AuthInputField
               topLabel="LAST NAME"
               label="Sharma"
               icon={<User />}
               value={formData.lastName}
-              onChange={e => setFormData({ ...formData, lastName: e.target.value })}
+              onChange={update("lastName")}
               error={errors.lastName}
+              autoComplete="family-name"
+              disabled={isLoading}
             />
           </div>
 
+          {/* Gender + Age */}
           <div className="grid grid-cols-[1.2fr_0.8fr] gap-3">
             <div className="space-y-2">
               <div className="flex justify-between items-center px-1">
@@ -112,6 +178,7 @@ export default function UserRegister() {
                     key={g}
                     type="button"
                     onClick={() => setFormData({ ...formData, gender: g })}
+                    disabled={isLoading}
                     className={cn(
                       "flex-1 h-12 rounded-xl border font-bold text-xs transition-all duration-300",
                       formData.gender === g
@@ -129,28 +196,33 @@ export default function UserRegister() {
               topLabel="AGE"
               label="24"
               type="number"
+              inputMode="numeric"
               value={formData.age}
-              onChange={e => setFormData({ ...formData, age: e.target.value })}
+              onChange={update("age")}
               error={errors.age}
+              disabled={isLoading}
             />
           </div>
 
+          {/* Location */}
           <div className="grid grid-cols-2 gap-3">
             <AuthInputField
               topLabel="STATE"
               label="Maharashtra"
               icon={<MapPin className="w-4 h-4" />}
               value={formData.state}
-              onChange={e => setFormData({ ...formData, state: e.target.value })}
+              onChange={update("state")}
               error={errors.state}
+              disabled={isLoading}
             />
             <AuthInputField
               topLabel="DISTRICT"
               label="Sambhajinagar"
               icon={<MapPin className="w-4 h-4" />}
               value={formData.district}
-              onChange={e => setFormData({ ...formData, district: e.target.value })}
+              onChange={update("district")}
               error={errors.district}
+              disabled={isLoading}
             />
           </div>
 
@@ -160,37 +232,68 @@ export default function UserRegister() {
               label="Paithan"
               icon={<MapPin className="w-4 h-4" />}
               value={formData.taluka}
-              onChange={e => setFormData({ ...formData, taluka: e.target.value })}
+              onChange={update("taluka")}
               error={errors.taluka}
+              disabled={isLoading}
             />
             <AuthInputField
               topLabel="CITY / VILLAGE"
               label="Paithan"
               icon={<MapPin className="w-4 h-4" />}
               value={formData.city}
-              onChange={e => setFormData({ ...formData, city: e.target.value })}
+              onChange={update("city")}
               error={errors.city}
+              disabled={isLoading}
             />
           </div>
 
+          {/* Contact */}
           <AuthInputField
             topLabel="WHATSAPP NUMBER"
             label="+91 XXXXX XXXXX"
             icon={<Phone />}
             type="tel"
+            inputMode="numeric"
             value={formData.whatsapp}
-            onChange={e => setFormData({ ...formData, whatsapp: e.target.value })}
+            onChange={update("whatsapp")}
             error={errors.whatsapp}
+            autoComplete="tel"
+            disabled={isLoading}
           />
 
           <AuthInputField
-            topLabel="MOBILE NUMBER"
+            topLabel="MOBILE NUMBER *"
             label="+91 XXXXX XXXXX"
             icon={<Phone />}
             type="tel"
+            inputMode="numeric"
             value={formData.mobile}
-            onChange={e => setFormData({ ...formData, mobile: e.target.value })}
+            onChange={update("mobile")}
             error={errors.mobile}
+            autoComplete="tel"
+            disabled={isLoading}
+          />
+
+          {/* Password */}
+          <AuthInputField
+            topLabel="CREATE PASSWORD *"
+            label="Min. 8 chars, include a number"
+            type={showPassword ? "text" : "password"}
+            icon={
+              <button
+                type="button"
+                aria-label={showPassword ? "Hide password" : "Show password"}
+                onClick={() => setShowPassword((v) => !v)}
+                className="text-slate-300 hover:text-blue-900 transition-colors"
+              >
+                {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+              </button>
+            }
+            value={formData.password}
+            onChange={update("password")}
+            error={errors.password}
+            autoComplete="new-password"
+            disabled={isLoading}
           />
 
           <div className="pt-4">
@@ -203,7 +306,7 @@ export default function UserRegister() {
                 <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
               ) : (
                 <div className="flex items-center gap-2.5">
-                  <span className="font-bold text-[12px] sm:text-[13px] tracking-[0.12em] uppercase text-white">CONTINUE TO VERIFY</span>
+                  <span className="font-bold text-[12px] sm:text-[13px] tracking-[0.12em] uppercase text-white">Create Account</span>
                   <ArrowRight className="w-4 h-4 text-white" />
                 </div>
               )}
@@ -217,7 +320,9 @@ export default function UserRegister() {
             Already part of the heritage?
           </p>
           <button
+            type="button"
             onClick={() => navigate("/auth/login")}
+            disabled={isLoading}
             className="flex items-center gap-1.5 mx-auto mt-2 text-primary font-black uppercase tracking-widest text-[11px] hover:underline underline-offset-4"
           >
             Back to Login <ArrowRight className="w-3.5 h-3.5" />
@@ -227,4 +332,3 @@ export default function UserRegister() {
     </AuthBackground>
   );
 }
-

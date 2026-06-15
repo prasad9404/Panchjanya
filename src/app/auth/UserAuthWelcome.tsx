@@ -1,14 +1,24 @@
 import { useNavigate } from "react-router-dom";
+import { useEffect } from "react";
 import { motion, useMotionValue, useTransform } from "framer-motion";
 import { AuthBackground } from "./components/AuthBackground";
 import { GradientButton } from "./components/GradientButton";
 import { useTranslation } from "react-i18next";
 import { Sparkles, ArrowRight, Flower2 } from "lucide-react";
+import { useAuth } from "@/auth/AuthContext";
 
 export default function UserAuthWelcome() {
   const navigate = useNavigate();
+  const { user, loading } = useAuth();
   const { i18n } = useTranslation();
   const lang = i18n.language || localStorage.getItem("panchajanya_lang") || "mr";
+
+  // Guard: if already logged in, skip welcome and go to dashboard
+  useEffect(() => {
+    if (!loading && user) {
+      navigate("/dashboard", { replace: true });
+    }
+  }, [user, loading, navigate]);
 
   const t = {
     mr: {

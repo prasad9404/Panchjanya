@@ -80,7 +80,7 @@ const MultiStepFormDemo = lazy(() => import("@/app/demo/MultiStepFormDemo"));
 const DashboardDemo = lazy(() => import("@/app/demo/DashboardDemo"));
 const FormLayoutDemo = lazy(() => import("@/app/demo/FormLayoutDemo"));
 
-// User Auth Flow (Frontend Only)
+// User Auth Flow
 const UserSplash = lazy(() => import("@/app/auth/UserSplash"));
 const UserLanguage = lazy(() => import("@/app/auth/UserLanguage"));
 const UserAuthWelcome = lazy(() => import("@/app/auth/UserAuthWelcome"));
@@ -88,6 +88,7 @@ const UserLogin = lazy(() => import("@/app/auth/UserLogin"));
 const UserRegister = lazy(() => import("@/app/auth/UserRegister"));
 const UserVerifyIdentity = lazy(() => import("@/app/auth/UserVerifyIdentity"));
 const UserOnboarding = lazy(() => import("@/app/auth/UserOnboarding"));
+const UserRecover = lazy(() => import("@/app/auth/UserRecover"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -171,15 +172,18 @@ const App = () => {
                   <Suspense fallback={<PageLoader />}>
                     <SthanTypesProvider>
                     <Routes>
-                      {/* ---------------------- USER AUTH (FRONTEND ONLY DEMO) ---------------------- */}
+                      {/* ---------------------- USER AUTH (PUBLIC) ---------------------- */}
                       <Route path="/" element={<UserSplash />} />
                       <Route path="/auth/splash" element={<UserSplash />} />
-                      <Route path="/auth/language" element={<UserLanguage />} />
                       <Route path="/auth/welcome" element={<UserAuthWelcome />} />
                       <Route path="/auth/login" element={<UserLogin />} />
                       <Route path="/auth/register" element={<UserRegister />} />
                       <Route path="/auth/verify-identity" element={<UserVerifyIdentity />} />
-                      <Route path="/auth/onboarding" element={<UserOnboarding />} />
+                      <Route path="/auth/recover" element={<UserRecover />} />
+
+                      {/* ---------------------- USER AUTH (PROTECTED - require login) ---------------------- */}
+                      <Route path="/auth/language" element={<PrivateRoute><UserLanguage /></PrivateRoute>} />
+                      <Route path="/auth/onboarding" element={<PrivateRoute><UserOnboarding /></PrivateRoute>} />
 
                       {/* ---------------------- ADMIN AUTH ---------------------- */}
                       <Route path="/admin/login" element={<AdminLogin />} />
@@ -309,40 +313,43 @@ const App = () => {
                         }
                       />
 
+
                       {/* ---------------------- USER ROUTES WITH LAYOUT ---------------------- */}
                       <Route element={<Layout />}>
-                        <Route path="/dashboard" element={<Dashboard />} />
-                        <Route path="/dashboard/sthana-vandan" element={<SthanaVandan />} />
-                        <Route path="/raj-viharan" element={<SwamiYatra />} />
-                        <Route path="/explore" element={<Explore />} />
+                        {/* Truly public pages — no auth needed */}
                         <Route path="/about" element={<About />} />
                         <Route path="/share" element={<Share />} />
-                        <Route path="/settings" element={<Settings />} />
-                        <Route path="/profile" element={<Profile />} />
-                        <Route path="/saved" element={<Saved />} />
-                        <Route path="/literature" element={<Literature />} />
-                        <Route path="/vandan-history" element={<VandanHistory />} />
-                        <Route path="/whats-new" element={<WhatsNew />} />
-                        <Route path="/jigyasa" element={<Jigyasa />} />
-                        <Route path="/e-library" element={<ELibrary />} />
                         <Route path="/help-center" element={<HelpCenter />} />
+
+                        {/* Protected user pages — require authentication */}
+                        <Route path="/explore" element={<PrivateRoute><Explore /></PrivateRoute>} />
+                        <Route path="/dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
+                        <Route path="/dashboard/sthana-vandan" element={<PrivateRoute><SthanaVandan /></PrivateRoute>} />
+                        <Route path="/raj-viharan" element={<PrivateRoute><SwamiYatra /></PrivateRoute>} />
+                        <Route path="/settings" element={<PrivateRoute><Settings /></PrivateRoute>} />
+                        <Route path="/profile" element={<PrivateRoute><Profile /></PrivateRoute>} />
+                        <Route path="/saved" element={<PrivateRoute><Saved /></PrivateRoute>} />
+                        <Route path="/literature" element={<PrivateRoute><Literature /></PrivateRoute>} />
+                        <Route path="/vandan-history" element={<PrivateRoute><VandanHistory /></PrivateRoute>} />
+                        <Route path="/whats-new" element={<PrivateRoute><WhatsNew /></PrivateRoute>} />
+                        <Route path="/jigyasa" element={<PrivateRoute><Jigyasa /></PrivateRoute>} />
+                        <Route path="/e-library" element={<PrivateRoute><ELibrary /></PrivateRoute>} />
                       </Route>
 
-                      {/* ---------------------- MEDIA PLAYERS (FULLSCREEN) ---------------------- */}
-                      <Route path="/audio/:id" element={<AudioPlayer />} />
-                      <Route path="/video/:id" element={<VideoPlayer />} />
+                      {/* ---------------------- MEDIA PLAYERS (FULLSCREEN, AUTH REQUIRED) ---------------------- */}
+                      <Route path="/audio/:id" element={<PrivateRoute><AudioPlayer /></PrivateRoute>} />
+                      <Route path="/video/:id" element={<PrivateRoute><VideoPlayer /></PrivateRoute>} />
 
-                      
-                      {/* ---------------------- ARCHIVAL ARCHIVES (USER) ---------------------- */}
-                      <Route path="/architectural-archives" element={<ArchivalArchiveLanding />} />
-                      <Route path="/architectural-archive/:id" element={<ArchiveDetail />} />
-                      <Route path="/architectural-archive/:archiveId/:id/architecture" element={<TempleArchitecture />} />
-                      <Route path="/architectural-archive/:archiveId/:id/architecture-view" element={<ArchitectureViewer />} />
+                      {/* ---------------------- ARCHIVAL ARCHIVES (AUTH REQUIRED) ---------------------- */}
+                      <Route path="/architectural-archives" element={<PrivateRoute><ArchivalArchiveLanding /></PrivateRoute>} />
+                      <Route path="/architectural-archive/:id" element={<PrivateRoute><ArchiveDetail /></PrivateRoute>} />
+                      <Route path="/architectural-archive/:archiveId/:id/architecture" element={<PrivateRoute><TempleArchitecture /></PrivateRoute>} />
+                      <Route path="/architectural-archive/:archiveId/:id/architecture-view" element={<PrivateRoute><ArchitectureViewer /></PrivateRoute>} />
 
-                      {/* ---------------------- TEMPLE ARCHITECTURE (USER) ---------------------- */}
-                      <Route path="/temple/:id/architecture" element={<TempleArchitecture />} />
-                      <Route path="/temple/:id/architecture-view" element={<ArchitectureViewer />} />
-                      <Route path="/temple/:id/architecture/sthana/:sthanaId" element={<SthanaDetail />} />
+                      {/* ---------------------- TEMPLE ARCHITECTURE (AUTH REQUIRED) ---------------------- */}
+                      <Route path="/temple/:id/architecture" element={<PrivateRoute><TempleArchitecture /></PrivateRoute>} />
+                      <Route path="/temple/:id/architecture-view" element={<PrivateRoute><ArchitectureViewer /></PrivateRoute>} />
+                      <Route path="/temple/:id/architecture/sthana/:sthanaId" element={<PrivateRoute><SthanaDetail /></PrivateRoute>} />
 
                       {/* ---------------------- ADMIN ARCHITECTURE ---------------------- */}
                       <Route
@@ -364,16 +371,16 @@ const App = () => {
 
                       <Route
                         path="/admin/demo/multistep"
-                        element={<MultiStepFormDemo />}
+                        element={<PrivateRoute adminRequired={true}><MultiStepFormDemo /></PrivateRoute>}
                       />
                       <Route
                         path="/admin/demo/dashboard"
-                        element={<DashboardDemo />}
+                        element={<PrivateRoute adminRequired={true}><DashboardDemo /></PrivateRoute>}
                       />
 
                       <Route
                         path="/admin/demo/form-layout"
-                        element={<FormLayoutDemo />}
+                        element={<PrivateRoute adminRequired={true}><FormLayoutDemo /></PrivateRoute>}
                       />
 
                       {/* ---------------------- SUPER ADMIN ROUTES ---------------------- */}

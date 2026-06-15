@@ -359,8 +359,9 @@ const SwamiYatra = () => {
                                     setSelectedSubRoute(subRouteId === "all" || !subRouteId ? null : subRouteId);
                                 }}
                             >
-                                <SelectTrigger className="rounded-full hover:bg-accent/10 shrink-0 h-8 w-8 bg-background flex items-center justify-center border-none shadow-none focus:ring-0 focus:ring-offset-0 p-0 [&>svg]:hidden" title={t('yatra.selectRoute')}>
-                                    <Compass className="w-5 h-5 text-landing-primary dark:text-primary" />
+                                <SelectTrigger className="rounded-full hover:bg-accent/10 h-8 bg-background flex items-center border border-input shadow-sm focus:ring-0 focus:ring-offset-0 px-3 gap-1.5 text-xs font-semibold text-landing-primary dark:text-primary transition-colors max-w-[140px] [&>span]:line-clamp-1 [&>svg:last-child]:hidden" title={t('yatra.selectRoute')}>
+                                    <Compass className="w-4 h-4 shrink-0 text-amber-600" />
+                                    <SelectValue placeholder={t('yatra.selectRoute')} />
                                 </SelectTrigger>
                                 <SelectContent className="rounded-xl border border-border shadow-xl backdrop-blur-2xl z-[60] min-w-[200px]">
                                     <SelectItem value="swami-complete" className="font-bold py-2 text-xs focus:bg-accent/5">{t('yatra.routes.swamiCompleteViharan')}</SelectItem>
