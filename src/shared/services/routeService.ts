@@ -1,4 +1,37 @@
 import { YatraLocation } from '@/shared/components/features/YatraMap';
+import * as turf from '@turf/turf';
+
+const generateCurvedFallback = (coords: [number, number][]): [number, number][] => {
+  let curvedCoords: [number, number][] = [];
+  for (let i = 0; i < coords.length - 1; i++) {
+      const start = coords[i];
+      const end = coords[i+1];
+      const distance = (turf as any).distance(start, end);
+      
+      if (distance < 1) {
+          curvedCoords.push(start);
+          if (i === coords.length - 2) curvedCoords.push(end);
+          continue;
+      }
+
+      const midpoint = (turf as any).midpoint(start, end);
+      const bearing = (turf as any).bearing(start, end);
+      
+      const offsetDist = distance * 0.06; // 6% curve offset (less curved, matching reference)
+      const offsetPoint = (turf as any).destination(midpoint, offsetDist, bearing + 90);
+      
+      const line = (turf as any).lineString([start, offsetPoint.geometry.coordinates as [number, number], end]);
+      const curved = (turf as any).bezierSpline(line, { sharpness: 0.85 });
+      
+      const segmentCoords = curved.geometry.coordinates as [number, number][];
+      if (i < coords.length - 2) {
+          curvedCoords = curvedCoords.concat(segmentCoords.slice(0, -1));
+      } else {
+          curvedCoords = curvedCoords.concat(segmentCoords);
+      }
+  }
+  return curvedCoords.length > 0 ? curvedCoords : coords;
+};
 
 const ORS_API_KEY = import.meta.env.VITE_ORS_API_KEY;
 
@@ -20,11 +53,11 @@ export const fetchRoute = async (locations: YatraLocation[], userLocation?: { la
 
   if (coords.length < 2) return null;
 
-  // Fallback to straight line if no API key is provided
+  // Fallback to curved arc if no API key is provided
   if (!ORS_API_KEY) {
-    console.warn("No OpenRouteService API key found. Falling back to straight-line direct routing.");
+    console.warn("No OpenRouteService API key found. Falling back to curved arc routing.");
     return {
-      coordinates: coords,
+      coordinates: generateCurvedFallback(coords),
       distance: 0,
       duration: 0
     };
@@ -46,7 +79,7 @@ export const fetchRoute = async (locations: YatraLocation[], userLocation?: { la
     if (!response.ok) {
       console.error("OpenRouteService API error:", response.statusText);
       return {
-        coordinates: coords, // fallback
+        coordinates: generateCurvedFallback(coords), // fallback
         distance: 0,
         duration: 0
       };
@@ -66,7 +99,7 @@ export const fetchRoute = async (locations: YatraLocation[], userLocation?: { la
   }
 
   return {
-    coordinates: coords,
+    coordinates: generateCurvedFallback(coords),
     distance: 0,
     duration: 0
   };

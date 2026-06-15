@@ -69,9 +69,9 @@ export default function YatraMapMapLibre({ locations, highlightedId, centerOnFul
         source: 'route',
         layout: { 'line-join': 'round', 'line-cap': 'round' },
         paint: {
-          'line-color': '#1E3A8A', // Deep Blue path
-          'line-width': 5,
-          'line-opacity': 0.3
+          'line-color': '#0f3c6e', // Faint solid blue background line
+          'line-width': 3,
+          'line-opacity': 0.15
         }
       });
 
@@ -81,7 +81,7 @@ export default function YatraMapMapLibre({ locations, highlightedId, centerOnFul
         data: { type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates: [] } }
       });
 
-      // Active Glow layer
+      // Active Glow layer (Underneath active line)
       map.addLayer({
         id: 'route-glow-active',
         type: 'line',
@@ -89,9 +89,9 @@ export default function YatraMapMapLibre({ locations, highlightedId, centerOnFul
         layout: { 'line-join': 'round', 'line-cap': 'round' },
         paint: {
           'line-color': '#d97706', // amber-600 glow
-          'line-width': 12,
-          'line-opacity': 0.4,
-          'line-blur': 6
+          'line-width': 8,
+          'line-opacity': 0.3,
+          'line-blur': 4
         }
       });
 
@@ -103,7 +103,8 @@ export default function YatraMapMapLibre({ locations, highlightedId, centerOnFul
         layout: { 'line-join': 'round', 'line-cap': 'round' },
         paint: {
           'line-color': '#d97706', // amber-600
-          'line-width': 5,
+          'line-width': 2.5,
+          'line-dasharray': [4, 5]
         }
       });
       
@@ -114,15 +115,13 @@ export default function YatraMapMapLibre({ locations, highlightedId, centerOnFul
         source: 'route-active',
         layout: {
           'symbol-placement': 'line',
-          'text-field': '▶',
-          'text-size': 20,
-          'symbol-spacing': 100,
+          'text-field': '>', // Using standard ASCII '>' chevron to guarantee glyph rendering
+          'text-size': 16,
+          'symbol-spacing': 35,
           'text-keep-upright': false
         },
         paint: {
-          'text-color': '#1E3A8A',
-          'text-halo-color': '#ffffff',
-          'text-halo-width': 2
+          'text-color': '#d97706' // amber-600
         }
       });
       // Add 3D Terrain Source (AWS Terrain)
@@ -249,18 +248,30 @@ export default function YatraMapMapLibre({ locations, highlightedId, centerOnFul
 
   // Calculate distances of locations along the route
   const locationDistances = useMemo(() => {
-    if (!currentRouteData || !locations.length || currentRouteData.coordinates.length < 2) return [];
-    const line = turf.lineString(currentRouteData.coordinates);
-    let lastDist = 0;
-    return locations.map(loc => {
-      const pt = turf.point([loc.longitude, loc.latitude]);
-      const snapped = turf.nearestPointOnLine(line, pt);
-      const sliced = turf.lineSlice(turf.point(currentRouteData.coordinates[0]), snapped, line);
-      let dist = turf.length(sliced);
-      if (dist < lastDist) dist = lastDist; // enforce monotonicity
-      lastDist = dist;
-      return dist;
-    });
+    if (!currentRouteData || !locations.length || !currentRouteData.coordinates) return [];
+    const validCoords = currentRouteData.coordinates.filter((c: any) => Array.isArray(c) && c.length >= 2 && !isNaN(c[0]) && !isNaN(c[1]));
+    if (validCoords.length < 2) return [];
+    
+    try {
+      const line = turf.lineString(validCoords as [number, number][]);
+      let lastDist = 0;
+      return locations.map(loc => {
+        try {
+          const pt = turf.point([loc.longitude, loc.latitude]);
+          const snapped = turf.nearestPointOnLine(line, pt);
+          const sliced = turf.lineSlice(turf.point(validCoords[0] as [number, number]), snapped, line);
+          let dist = turf.length(sliced);
+          if (dist < lastDist || isNaN(dist)) dist = lastDist; // enforce monotonicity
+          lastDist = dist;
+          return dist;
+        } catch (e) {
+          return lastDist;
+        }
+      });
+    } catch (e) {
+      console.error("Error creating lineString for distances:", e);
+      return [];
+    }
   }, [currentRouteData, locations]);
 
   // Active marker element
@@ -268,7 +279,11 @@ export default function YatraMapMapLibre({ locations, highlightedId, centerOnFul
     if (!mapRef.current || !mapLoaded) return;
     if (!activeMarkerRef.current) {
         const el = document.createElement('div');
-        el.className = 'w-5 h-5 bg-white rounded-full border-[4px] border-[#1E3A8A] shadow-[0_0_15px_rgba(217,119,6,0.8)] z-[60]';
+        el.className = 'relative flex items-center justify-center w-6 h-6 z-[60]';
+        el.innerHTML = `
+          <div class="absolute inset-0 rounded-full bg-[#d97706] animate-ping opacity-75"></div>
+          <div class="relative w-4 h-4 bg-white rounded-full border-[3px] border-[#d97706] shadow-[0_0_15px_rgba(217,119,6,0.8)]"></div>
+        `;
         activeMarkerRef.current = new maplibregl.Marker({ element: el }).setLngLat([0, 0]);
     }
   }, [mapLoaded]);
@@ -281,20 +296,33 @@ export default function YatraMapMapLibre({ locations, highlightedId, centerOnFul
     const sourceActive = map.getSource('route-active') as maplibregl.GeoJSONSource;
     if (!sourceActive) return;
 
-    const line = turf.lineString(currentRouteData.coordinates);
+    const validCoords = currentRouteData.coordinates.filter((c: any) => Array.isArray(c) && c.length >= 2 && !isNaN(c[0]) && !isNaN(c[1]));
+    if (validCoords.length < 2) return;
+
+    let line: any;
+    try {
+        line = turf.lineString(validCoords as [number, number][]);
+    } catch (e) {
+        console.error("Error creating route lineString:", e);
+        return;
+    }
     
     // Initial load, route change jump, or jumping multiple places
     if (lastIndexRef.current === currentIndex || Math.abs(lastIndexRef.current - currentIndex) > 1 || locationDistances[lastIndexRef.current] === undefined) {
       const dist = locationDistances[currentIndex] || 0;
       if (dist > 0) {
-        const activeLine = turf.lineSliceAlong(line, 0, dist);
-        sourceActive.setData(activeLine);
-        const pt = turf.along(line, dist);
-        activeMarkerRef.current.setLngLat(pt.geometry.coordinates as [number, number]).addTo(map);
+        try {
+          const activeLine = turf.lineSliceAlong(line, 0, dist);
+          sourceActive.setData(activeLine);
+          const pt = turf.along(line, dist);
+          activeMarkerRef.current.setLngLat(pt.geometry.coordinates as [number, number]).addTo(map);
+        } catch (e) {
+          console.error("Error drawing active line:", e);
+        }
       } else {
         sourceActive.setData({ type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates: [] } });
-        const pt = turf.point(currentRouteData.coordinates[0] || [locations[0].longitude, locations[0].latitude]);
-        activeMarkerRef.current.setLngLat(pt.geometry.coordinates as [number, number]).addTo(map);
+        const startCoord = validCoords[0] as [number, number];
+        activeMarkerRef.current.setLngLat(startCoord || [locations[0].longitude, locations[0].latitude]).addTo(map);
       }
       lastIndexRef.current = currentIndex;
       setIsAnimating(false);
@@ -306,25 +334,26 @@ export default function YatraMapMapLibre({ locations, highlightedId, centerOnFul
     const startDist = locationDistances[lastIndexRef.current] || 0;
     const endDist = locationDistances[currentIndex] || 0;
     
-    // Fit map bounds to show both the start and end pins of this segment
-    const activeLineForBounds = turf.lineSliceAlong(line, Math.min(startDist, endDist), Math.max(startDist, endDist));
-    const bbox = turf.bbox(activeLineForBounds) as [number, number, number, number];
-    
-    // Check if bbox is valid (if locations are same, bbox will have 0 width/height)
-    if (bbox[0] !== bbox[2] || bbox[1] !== bbox[3]) {
-        const isDesktop = window.innerWidth >= 1024;
-        const isMobile = window.innerWidth < 768;
-        map.fitBounds(bbox, {
-            padding: { 
-                top: 100, 
-                bottom: isMobile ? 320 : 100, 
-                left: isDesktop ? 460 : 60, 
-                right: 60 
-            },
-            duration: 1500,
-            essential: true,
-            maxZoom: 15 // Ensure it doesn't zoom too closely if pins are very near
-        });
+    if (startDist !== endDist) {
+        try {
+            const activeLineForBounds = turf.lineSliceAlong(line, Math.min(startDist, endDist), Math.max(startDist, endDist));
+            const bbox = turf.bbox(activeLineForBounds) as [number, number, number, number];
+            const isDesktop = window.innerWidth >= 1024;
+            const isMobile = window.innerWidth < 768;
+            map.fitBounds(bbox, {
+                padding: { 
+                    top: 100, 
+                    bottom: isMobile ? 320 : 100, 
+                    left: isDesktop ? 460 : 60, 
+                    right: 60 
+                },
+                duration: 1500,
+                essential: true,
+                maxZoom: 15
+            });
+        } catch (e) {
+            console.error("Error calculating bounds for animation:", e);
+        }
     }
 
     const duration = 1500; // 1.5 seconds animation
@@ -342,16 +371,24 @@ export default function YatraMapMapLibre({ locations, highlightedId, centerOnFul
         
         // Update line
         if (currentDist > 0) {
-            const activeLine = turf.lineSliceAlong(line, 0, currentDist);
-            sourceActive.setData(activeLine);
+            try {
+                const activeLine = turf.lineSliceAlong(line, 0, currentDist);
+                sourceActive.setData(activeLine);
+            } catch (e) {
+                // Silent fallback
+            }
         } else {
             sourceActive.setData({ type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates: [] } });
         }
         
         // Update active marker
-        const pt = turf.along(line, currentDist);
-        const coords = pt.geometry.coordinates as [number, number];
-        activeMarkerRef.current?.setLngLat(coords).addTo(map);
+        try {
+            const pt = turf.along(line, currentDist);
+            const coords = pt.geometry.coordinates as [number, number];
+            activeMarkerRef.current?.setLngLat(coords).addTo(map);
+        } catch (e) {
+            // Silent fallback
+        }
         
         if (progress < 1) {
             animationRef.current = requestAnimationFrame(animate);

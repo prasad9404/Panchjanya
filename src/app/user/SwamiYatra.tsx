@@ -128,28 +128,28 @@ const SwamiYatra = () => {
 
     // Card component for rendering location details
     const LocationCard = ({ place, index }: { place: any, index: number }) => (
-        <Card className={`overflow-hidden rounded-2xl border border-border/50 shadow-sm bg-card relative ${place.status === 'current' ? 'ring-2 ring-primary ring-offset-2 ring-offset-background' : ''}`}>
+        <Card className={`overflow-hidden rounded-2xl border border-border shadow-sm bg-card hover:shadow-xl transition-all duration-300 group relative ${place.status === 'current' ? 'ring-2 ring-primary ring-offset-2 ring-offset-background' : ''}`}>
             <div className="flex flex-row sm:flex-col">
                 <div className="w-28 xs:w-32 sm:w-full h-28 xs:h-32 sm:h-44 md:h-52 relative overflow-hidden flex-shrink-0">
                     <LazyImage
                         src={place.image || "/placeholder-temple.jpg"}
                         alt={place.title || ""}
-                        containerClassName={cn("w-full h-full transition-all duration-300", place.fitMode === 'contain' ? "bg-slate-50" : "bg-muted")}
-                        className={cn("w-full h-full transition-all duration-700 hover:scale-105 object-center", place.fitMode === 'contain' ? "object-contain" : "object-cover")}
+                        containerClassName={cn("w-full h-full transition-all duration-300", place.fitMode === 'contain' ? "bg-slate-50 dark:bg-slate-900" : "bg-muted")}
+                        className={cn("w-full h-full transition-transform duration-700 group-hover:scale-105 object-center", place.fitMode === 'contain' ? "object-contain" : "object-cover")}
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent hidden sm:block"></div>
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent hidden sm:block pointer-events-none"></div>
                     
                     <div className="absolute top-2 left-2 sm:top-3 sm:left-3">
                         <span className={`px-2 py-0.5 rounded-full text-[8px] sm:text-[9px] font-bold uppercase tracking-wider ${
                             place.status === 'completed' 
                                 ? 'bg-emerald-500 text-white' 
-                                : (place.status === 'current' ? 'bg-amber-600 text-white' : 'bg-muted/80 text-foreground backdrop-blur-sm')
+                                : (place.status === 'current' ? 'bg-amber-600 text-white' : 'bg-background/80 text-foreground backdrop-blur-sm')
                         }`}>
                             {place.status === 'completed' ? t('yatra.visited') : (place.status === 'current' ? t('yatra.active') : t('yatra.upcoming'))}
                         </span>
                     </div>
 
-                    <div className="absolute bottom-3 left-4 right-4 hidden sm:block">
+                    <div className="absolute bottom-3 left-4 right-4 hidden sm:block pointer-events-none">
                         <h3 className="font-heading font-bold text-lg sm:text-xl text-white leading-tight">
                             {place.title}
                         </h3>
@@ -158,7 +158,7 @@ const SwamiYatra = () => {
                 
                 <div className="flex-1 p-3 sm:p-5 md:p-6 flex flex-col justify-between min-w-0">
                     <div className="space-y-1.5 sm:space-y-4">
-                        <h3 className="font-heading font-bold text-sm xs:text-base text-landing-primary dark:text-primary leading-tight sm:hidden block truncate">
+                        <h3 className="font-heading font-bold text-sm xs:text-base text-landing-primary dark:text-primary leading-tight sm:hidden block truncate group-hover:text-primary transition-colors">
                             {place.title}
                         </h3>
                         <p className="text-[11px] xs:text-xs sm:text-sm text-muted-foreground leading-relaxed line-clamp-2 sm:line-clamp-none">
@@ -173,7 +173,7 @@ const SwamiYatra = () => {
                                     const url = getLocationUrl(place.locationLink, place.latitude, place.longitude);
                                     if (url) window.open(url, '_blank');
                                 }}
-                                className="w-full bg-[#1E3A8A] hover:bg-[#1E3A8A]/90 text-white font-bold rounded-xl h-8 xs:h-9 sm:h-11 transition-all shadow-md active:scale-[0.98] text-[10px] xs:text-xs sm:text-sm flex items-center justify-center gap-1.5"
+                                className="w-full bg-landing-primary hover:bg-landing-primary/90 text-white font-bold rounded-xl h-8 xs:h-9 sm:h-11 transition-all shadow-md active:scale-[0.98] text-[10px] xs:text-xs sm:text-sm flex items-center justify-center gap-1.5"
                             >
                                 <Navigation2 className="w-3.5 h-3.5" /> {t('yatra.openInNavigation')}
                             </Button>
@@ -197,6 +197,7 @@ const SwamiYatra = () => {
                         forceFocus={forceFocusTimestamp}
                         langCode={langCode}
                         onMarkerClick={(id) => {
+                            if (isAnimating) return;
                             const index = filteredPlaces.findIndex(p => p.id === id);
                             if (index !== -1) {
                                 setCurrentIndex(index);
@@ -206,8 +207,6 @@ const SwamiYatra = () => {
                         isMobileSheetOpen={isMobileSheetOpen}
                     />
                 </div>
-
-
 
                 {/* DESKTOP/TABLET SIDE PANEL */}
                 <AnimatePresence initial={false}>
@@ -219,39 +218,39 @@ const SwamiYatra = () => {
                         className="hidden md:flex absolute top-4 left-4 h-[calc(100vh-32px)] w-[360px] lg:w-[400px] flex-col z-20 pointer-events-none"
                     >
                         {/* Unified Side Panel */}
-                        <div className="bg-white rounded-3xl shadow-2xl flex-1 overflow-hidden flex flex-col pointer-events-auto border border-slate-200">
+                        <div className="bg-card dark:bg-card rounded-3xl card-shadow-md flex-1 overflow-hidden flex flex-col pointer-events-auto border border-border">
                             
                             {/* Search Bar Section */}
-                            <div className="px-3 py-3 flex items-center border-b border-slate-100 bg-white shrink-0 z-10">
-                                <Button variant="ghost" size="icon" className="rounded-full hover:bg-slate-100 shrink-0 mr-1" onClick={() => navigate(-1)}>
-                                    <ChevronLeft className="w-6 h-6 text-[#1E3A8A]" />
+                            <div className="px-3 py-3 flex items-center border-b border-border bg-card shrink-0 z-10">
+                                <Button variant="ghost" size="icon" className="rounded-full hover:bg-accent/10 shrink-0 mr-1" onClick={() => navigate(-1)}>
+                                    <ChevronLeft className="w-6 h-6 text-landing-primary dark:text-primary" />
                                 </Button>
                                 <div className="flex-1">
                                     <TempleSearch onPlaceSelect={handlePlaceSelect} />
                                 </div>
-                                <div className="h-6 w-px bg-slate-200 mx-2" />
-                                <Button variant="ghost" size="icon" className="rounded-full hover:bg-slate-100 text-[#1E3A8A] shrink-0" onClick={() => triggerForceFocus()}>
+                                <div className="h-6 w-px bg-border mx-2" />
+                                <Button variant="ghost" size="icon" className="rounded-full hover:bg-accent/10 text-landing-primary dark:text-primary shrink-0" onClick={() => triggerForceFocus()}>
                                     <Navigation2 className="w-5 h-5" />
                                 </Button>
                             </div>
 
                             {/* Header */}
-                            <div className="px-5 py-4 flex items-center justify-between border-b border-slate-100 bg-slate-50/50 shrink-0">
-                                <h1 className="text-lg font-bold text-[#1E3A8A] font-serif tracking-tight">
+                            <div className="px-5 py-4 flex items-center justify-between border-b border-border bg-muted/30 shrink-0">
+                                <h1 className="text-lg font-bold text-landing-primary dark:text-primary font-heading tracking-tight">
                                     {t('yatra.title')}
                                 </h1>
                                 <div className="flex items-center gap-1">
-                                    <Button variant="ghost" size="icon" className="rounded-full hover:bg-slate-200 h-8 w-8 shrink-0" onClick={() => triggerCenterFullRoute()} title="View Full Route">
-                                        <Globe className="w-4 h-4 text-[#1E3A8A]" />
+                                    <Button variant="ghost" size="icon" className="rounded-full hover:bg-accent/10 h-8 w-8 shrink-0" onClick={() => triggerCenterFullRoute()} title="View Full Route">
+                                        <Globe className="w-4 h-4 text-landing-primary dark:text-primary" />
                                     </Button>
-                                    <Button variant="ghost" size="icon" className="rounded-full hover:bg-slate-200 h-8 w-8 shrink-0">
-                                        <Share2 className="w-4 h-4 text-[#1E3A8A]" />
+                                    <Button variant="ghost" size="icon" className="rounded-full hover:bg-accent/10 h-8 w-8 shrink-0">
+                                        <Share2 className="w-4 h-4 text-landing-primary dark:text-primary" />
                                     </Button>
                                 </div>
                             </div>
 
                     {/* Route Selector */}
-                    <div className="p-4 space-y-3 border-b border-slate-100">
+                    <div className="p-4 space-y-3 border-b border-border">
                         <Select
                             value={selectedSubRoute ? `${selectedRoute}:${selectedSubRoute}` : selectedRoute}
                             onValueChange={(value) => {
@@ -260,13 +259,13 @@ const SwamiYatra = () => {
                                 setSelectedSubRoute(subRouteId === "all" || !subRouteId ? null : subRouteId);
                             }}
                         >
-                            <SelectTrigger className="w-full h-11 bg-slate-50 border border-slate-200 shadow-sm focus:ring-1 focus:ring-amber-600/20 text-sm font-semibold text-[#1E3A8A] rounded-2xl hover:bg-slate-100 transition-colors">
+                            <SelectTrigger className="w-full h-11 bg-background border border-border shadow-sm focus:ring-1 focus:ring-primary/20 text-sm font-semibold text-landing-primary dark:text-primary rounded-2xl hover:bg-accent/5 transition-colors">
                                 <div className="flex items-center gap-2">
                                     <Compass className="w-4 h-4 text-amber-600" />
                                     <SelectValue placeholder={t('yatra.selectRoute')} />
                                 </div>
                             </SelectTrigger>
-                            <SelectContent className="rounded-2xl border border-slate-100 shadow-xl backdrop-blur-xl">
+                            <SelectContent className="rounded-2xl border border-border shadow-xl backdrop-blur-xl">
                                 <SelectItem value="swami-complete" className="font-bold py-3 text-sm focus:bg-accent/5">{t('yatra.routes.swamiCompleteViharan')}</SelectItem>
                                 <SelectItem value="swami-complete:ekant" className="pl-6 py-2 text-xs font-medium focus:bg-accent/5">{t('yatra.routes.ekant')}</SelectItem>
                                 <SelectItem value="swami-complete:purvardh" className="pl-6 py-2 text-xs font-medium focus:bg-accent/5">{t('yatra.routes.purvardh')}</SelectItem>
@@ -281,32 +280,32 @@ const SwamiYatra = () => {
                     </div>
 
                     {/* Itinerary List */}
-                    <div className="flex-1 overflow-y-auto p-4 bg-[#faf8f2] space-y-4">
+                    <div className="flex-1 overflow-y-auto p-4 bg-background space-y-4">
                         <div className="flex items-center justify-between">
-                            <h2 className="font-bold text-lg text-[#1E3A8A]">{t('yatra.itinerary')}</h2>
+                            <h2 className="font-heading font-bold text-lg text-landing-primary dark:text-primary">{t('yatra.itinerary')}</h2>
                             <div className="flex items-center gap-2">
                                 <Button
-                                    variant="outline" size="icon" className="h-8 w-8 rounded-full"
-                                    disabled={currentIndex === 0}
+                                    variant="outline" size="icon" className="h-8 w-8 rounded-full border-border hover:bg-accent/5 disabled:opacity-50"
+                                    disabled={currentIndex === 0 || isAnimating}
                                     onClick={() => setCurrentIndex(Math.max(0, currentIndex - 1))}
                                 >
-                                    <ChevronLeft className="w-4 h-4" />
+                                    <ChevronLeft className="w-4 h-4 text-foreground" />
                                 </Button>
                                 <span className="text-xs font-bold text-muted-foreground tabular-nums">
                                     {filteredPlaces.length > 0 ? `${currentIndex + 1} / ${filteredPlaces.length}` : "0/0"}
                                 </span>
                                 <Button
-                                    variant="outline" size="icon" className="h-8 w-8 rounded-full"
-                                    disabled={currentIndex >= filteredPlaces.length - 1}
+                                    variant="outline" size="icon" className="h-8 w-8 rounded-full border-border hover:bg-accent/5 disabled:opacity-50"
+                                    disabled={currentIndex >= filteredPlaces.length - 1 || isAnimating}
                                     onClick={() => setCurrentIndex(Math.min(filteredPlaces.length - 1, currentIndex + 1))}
                                 >
-                                    <ChevronRight className="w-4 h-4" />
+                                    <ChevronRight className="w-4 h-4 text-foreground" />
                                 </Button>
                             </div>
                         </div>
 
                         {filteredPlaces.length === 0 ? (
-                            <div className="text-center py-12 bg-white rounded-2xl border border-border">
+                            <div className="text-center py-12 bg-card rounded-2xl border border-border shadow-sm">
                                 <MapPin className="w-8 h-8 text-muted-foreground/40 mx-auto mb-2" />
                                 <p className="text-sm text-muted-foreground">{t('yatra.noPlacesDiscovered')}</p>
                             </div>
@@ -332,26 +331,26 @@ const SwamiYatra = () => {
                 
                 {/* MOBILE TOP HEADER */}
                 <div className="md:hidden absolute top-2 left-2 right-2 z-10 pointer-events-none">
-                    <div className="bg-white/95 backdrop-blur-xl rounded-2xl shadow-lg pointer-events-auto border border-slate-100 flex flex-col overflow-hidden">
+                    <div className="bg-card/95 backdrop-blur-xl rounded-2xl shadow-md pointer-events-auto border border-border flex flex-col overflow-hidden">
                         
                         {/* Title and Back Button Row */}
-                        <div className="flex items-center gap-1 px-2 py-2 border-b border-slate-100/60 bg-white">
-                            <Button variant="ghost" size="icon" className="rounded-full hover:bg-slate-100 shrink-0 h-8 w-8 bg-slate-50" onClick={() => navigate(-1)}>
-                                <ChevronLeft className="w-5 h-5 text-[#1E3A8A]" />
+                        <div className="flex items-center gap-1 px-2 py-2 border-b border-border bg-card/95">
+                            <Button variant="ghost" size="icon" className="rounded-full hover:bg-accent/10 shrink-0 h-8 w-8 bg-background" onClick={() => navigate(-1)}>
+                                <ChevronLeft className="w-5 h-5 text-landing-primary dark:text-primary" />
                             </Button>
-                            <h1 className="text-lg font-bold text-[#1E3A8A] font-serif tracking-tight truncate flex-1 px-1">
+                            <h1 className="text-lg font-bold text-landing-primary dark:text-primary font-heading tracking-tight truncate flex-1 px-1">
                                 {t('yatra.title')}
                             </h1>
-                            <Button variant="ghost" size="icon" className="rounded-full hover:bg-slate-100 shrink-0 h-8 w-8 bg-slate-50" onClick={() => triggerCenterFullRoute()} title="View Full Route">
-                                <Globe className="w-4 h-4 text-[#1E3A8A]" />
+                            <Button variant="ghost" size="icon" className="rounded-full hover:bg-accent/10 shrink-0 h-8 w-8 bg-background" onClick={() => triggerCenterFullRoute()} title="View Full Route">
+                                <Globe className="w-4 h-4 text-landing-primary dark:text-primary" />
                             </Button>
-                            <Button variant="ghost" size="icon" className="rounded-full hover:bg-slate-100 shrink-0 h-8 w-8 bg-slate-50" onClick={() => triggerForceFocus()} title="My Location">
-                                <Navigation2 className="w-4 h-4 text-[#1E3A8A]" />
+                            <Button variant="ghost" size="icon" className="rounded-full hover:bg-accent/10 shrink-0 h-8 w-8 bg-background" onClick={() => triggerForceFocus()} title="My Location">
+                                <Navigation2 className="w-4 h-4 text-landing-primary dark:text-primary" />
                             </Button>
                         </div>
                         
                         {/* Dropdown Row */}
-                        <div className="px-2 py-2 bg-[#faf8f2]/50">
+                        <div className="px-2 py-2 bg-background/50">
                             <Select
                                 value={selectedSubRoute ? `${selectedRoute}:${selectedSubRoute}` : selectedRoute}
                                 onValueChange={(value) => {
@@ -360,7 +359,7 @@ const SwamiYatra = () => {
                                     setSelectedSubRoute(subRouteId === "all" || !subRouteId ? null : subRouteId);
                                 }}
                             >
-                                <SelectTrigger className="w-full h-9 bg-white border border-slate-200/60 shadow-sm focus:ring-1 focus:ring-amber-600/30 text-xs font-bold text-[#1E3A8A] rounded-xl hover:bg-slate-50 transition-all">
+                                <SelectTrigger className="w-full h-9 bg-card border border-border shadow-sm focus:ring-1 focus:ring-primary/20 text-xs font-bold text-landing-primary dark:text-primary rounded-xl hover:bg-accent/5 transition-all">
                                     <div className="flex items-center gap-2 truncate">
                                         <div className="bg-amber-600/10 p-1 rounded-full">
                                             <Compass className="w-3.5 h-3.5 text-amber-600 shrink-0" />
@@ -368,7 +367,7 @@ const SwamiYatra = () => {
                                         <SelectValue placeholder={t('yatra.selectRoute')} />
                                     </div>
                                 </SelectTrigger>
-                                <SelectContent className="rounded-xl border border-slate-100 shadow-xl backdrop-blur-2xl z-[60]">
+                                <SelectContent className="rounded-xl border border-border shadow-xl backdrop-blur-2xl z-[60]">
                                     <SelectItem value="swami-complete" className="font-bold py-2 text-xs focus:bg-accent/5">{t('yatra.routes.swamiCompleteViharan')}</SelectItem>
                                     <SelectItem value="swami-complete:ekant" className="pl-6 py-1.5 text-[10px] font-medium focus:bg-accent/5">{t('yatra.routes.ekant')}</SelectItem>
                                     <SelectItem value="swami-complete:purvardh" className="pl-6 py-1.5 text-[10px] font-medium focus:bg-accent/5">{t('yatra.routes.purvardh')}</SelectItem>
@@ -384,33 +383,31 @@ const SwamiYatra = () => {
                     </div>
                 </div>
 
-
-
                 {/* MOBILE BOTTOM SHEET */}
                 <Drawer open={isMobileSheetOpen} onOpenChange={setIsMobileSheetOpen} modal={false}>
-                    <DrawerContent className="h-auto max-h-[60vh] md:hidden bg-[#faf8f2]">
+                    <DrawerContent className="h-auto max-h-[60vh] md:hidden bg-card border-t border-border">
                         <DrawerTitle className="sr-only">{t('yatra.title')}</DrawerTitle>
                         
-                        <div className="p-4 overflow-y-auto">
+                        <div className="p-4 overflow-y-auto pb-main-mobile">
                             <div className="flex items-center justify-between mb-4">
-                                <h2 className="font-bold text-lg text-[#1E3A8A]">{t('yatra.itinerary')}</h2>
+                                <h2 className="font-heading font-bold text-lg text-landing-primary dark:text-primary">{t('yatra.itinerary')}</h2>
                                 <div className="flex items-center gap-2">
                                     <Button
-                                        variant="outline" size="icon" className="h-8 w-8 rounded-full"
-                                        disabled={currentIndex === 0}
+                                        variant="outline" size="icon" className="h-8 w-8 rounded-full border-border hover:bg-accent/5 disabled:opacity-50"
+                                        disabled={currentIndex === 0 || isAnimating}
                                         onClick={() => setCurrentIndex(Math.max(0, currentIndex - 1))}
                                     >
-                                        <ChevronLeft className="w-4 h-4" />
+                                        <ChevronLeft className="w-4 h-4 text-foreground" />
                                     </Button>
                                     <span className="text-xs font-bold text-muted-foreground tabular-nums">
                                         {filteredPlaces.length > 0 ? `${currentIndex + 1}/${filteredPlaces.length}` : "0/0"}
                                     </span>
                                     <Button
-                                        variant="outline" size="icon" className="h-8 w-8 rounded-full"
-                                        disabled={currentIndex >= filteredPlaces.length - 1}
+                                        variant="outline" size="icon" className="h-8 w-8 rounded-full border-border hover:bg-accent/5 disabled:opacity-50"
+                                        disabled={currentIndex >= filteredPlaces.length - 1 || isAnimating}
                                         onClick={() => setCurrentIndex(Math.min(filteredPlaces.length - 1, currentIndex + 1))}
                                     >
-                                        <ChevronRight className="w-4 h-4" />
+                                        <ChevronRight className="w-4 h-4 text-foreground" />
                                     </Button>
                                 </div>
                             </div>
