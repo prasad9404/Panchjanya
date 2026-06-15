@@ -27,7 +27,7 @@ const PrivateRoute = ({
   adminRequired = false,
   superAdminRequired = false,
 }: Props) => {
-  const { user, isAdmin, isSuperAdmin, loading } = useAuth();
+  const { user, userProfile, isAdmin, isSuperAdmin, loading, profileLoading } = useAuth();
   const location = useLocation();
 
   // ── bfcache Guard ─────────────────────────────────────────────────────────
@@ -47,7 +47,7 @@ const PrivateRoute = ({
 
   // ── Wait for Firebase to resolve the initial auth session ─────────────────
   // This prevents a split-second render of protected content before auth is confirmed.
-  if (loading) {
+  if (loading || profileLoading) {
     return <PageLoader />;
   }
 
@@ -63,6 +63,16 @@ const PrivateRoute = ({
       return <Navigate to="/admin/login" replace />;
     }
     return <Navigate to="/auth/login" replace />;
+  }
+
+  // ── Onboarding Guard ──────────────────────────────────────────────────────
+  // If user is authenticated but hasn't completed onboarding, restrict access
+  // unless they are currently on the language or onboarding pages.
+  if (userProfile && !userProfile.onboardingComplete && !adminRequired && !superAdminRequired) {
+    const currentPath = location.pathname;
+    if (currentPath !== "/auth/language" && currentPath !== "/auth/onboarding") {
+      return <Navigate to="/auth/onboarding" replace />;
+    }
   }
 
   // ── Authenticated but insufficient privileges ─────────────────────────────

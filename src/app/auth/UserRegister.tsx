@@ -16,15 +16,19 @@ export default function UserRegister() {
   const navigate = useNavigate();
   const { signUp, user, loading } = useAuth();
 
+  const [isRegistering, setIsRegistering] = useState(false);
+
   // Guard: already logged in → go to dashboard
   useEffect(() => {
-    if (!loading && user) {
+    if (!loading && user && !isRegistering) {
       navigate("/dashboard", { replace: true });
     }
-  }, [user, loading, navigate]);
+  }, [user, loading, navigate, isRegistering]);
 
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [globalError, setGlobalError] = useState("");
 
   const [formData, setFormData] = useState<RegistrationData>({
@@ -68,6 +72,10 @@ export default function UserRegister() {
       if (!check.valid) newErrors.password = check.message;
     }
 
+    if (formData.password !== confirmPassword) {
+      newErrors.confirmPassword = "Passwords do not match";
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -78,6 +86,7 @@ export default function UserRegister() {
     if (!validate()) return;
 
     setIsLoading(true);
+    setIsRegistering(true);
     try {
       await signUp(formData);
       // Registration + Firestore profile creation succeeded.
@@ -87,6 +96,7 @@ export default function UserRegister() {
       const message = error instanceof Error ? error.message : "Registration failed. Please try again.";
       setGlobalError(message);
       console.error("❌ [UserRegister] Registration failed:", error);
+      setIsRegistering(false); // only reset on failure, success navigates away
     } finally {
       setIsLoading(false);
     }
@@ -292,6 +302,30 @@ export default function UserRegister() {
             value={formData.password}
             onChange={update("password")}
             error={errors.password}
+            autoComplete="new-password"
+            disabled={isLoading}
+          />
+
+          <AuthInputField
+            topLabel="CONFIRM PASSWORD *"
+            label="Re-enter password"
+            type={showConfirmPassword ? "text" : "password"}
+            icon={
+              <button
+                type="button"
+                aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+                onClick={() => setShowConfirmPassword((v) => !v)}
+                className="text-slate-300 hover:text-blue-900 transition-colors"
+              >
+                {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+              </button>
+            }
+            value={confirmPassword}
+            onChange={(e) => {
+              setConfirmPassword(e.target.value);
+              if (errors.confirmPassword) setErrors((prev) => ({ ...prev, confirmPassword: "" }));
+            }}
+            error={errors.confirmPassword}
             autoComplete="new-password"
             disabled={isLoading}
           />

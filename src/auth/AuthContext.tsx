@@ -18,6 +18,7 @@ import {
   signOut as firebaseSignOut,
   updateProfile as updateFirebaseProfile,
   sendPasswordResetEmail,
+  deleteUser,
   AuthError,
 } from 'firebase/auth';
 import { auth } from '@/auth/firebase';
@@ -231,15 +232,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const email = mobileToEmail(mobile);
 
       // 1. Create Firebase Auth account
+      console.info(`[AuthContext] Initiating createUserWithEmailAndPassword for ${email}`);
       const credential = await createUserWithEmailAndPassword(auth, email, password);
       const { user: firebaseUser } = credential;
+      console.info(`✅ [AuthContext] Firebase Auth account created successfully (UID: ${firebaseUser.uid})`);
 
-      // 2. Set display name in Firebase Auth
-      await updateFirebaseProfile(firebaseUser, {
-        displayName: `${firstName.trim()} ${lastName.trim()}`,
-      });
-
-      // 3. Create Firestore user document
+      // 2. Prepare profile data
       const profileData: CreateUserProfileData = {
         firstName,
         lastName,
@@ -256,9 +254,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         preferredLanguage: 'mr',
         onboardingComplete: false,
       };
-      await createUserProfile(firebaseUser.uid, profileData);
 
-      console.log(`✅ [AuthContext] Registered new user: ${firebaseUser.uid}`);
+      // 3. Create Firestore user document FIRST (critical path)
+      console.info(`[AuthContext] Initiating Firestore user document creation for UID: ${firebaseUser.uid}`);
+      try {
+        await createUserProfile(firebaseUser.uid, profileData);
+        console.info(`✅ [AuthContext] Firestore user document created successfully for UID: ${firebaseUser.uid}`);
+      } catch (profileError) {
+        console.error('❌ [AuthContext] Failed to create Firestore profile, rolling back Auth:', profileError);
+        await deleteUser(firebaseUser);
+        throw new Error('Failed to create user profile. Please try again.');
+      }
+
+      // 4. Set display name in Firebase Auth (non-critical, do not block or rollback on failure)
+      updateFirebaseProfile(firebaseUser, {
+        displayName: `${firstName.trim()} ${lastName.trim()}`,
+      }).then(() => {
+        console.info(`✅ [AuthContext] Firebase Auth profile displayName updated.`);
+      }).catch(err => {
+        console.error(`⚠️ [AuthContext] Non-critical failure updating Auth profile displayName:`, err);
+      });
+
+      console.info(`✅ [AuthContext] Registration flow successfully completed for: ${firebaseUser.uid}`);
     } catch (error) {
       console.error('❌ [AuthContext] signUp error:', error);
       throw new Error(getAuthErrorMessage(error));
@@ -289,7 +306,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setIsSuperAdmin(false);
 
       console.log('✅ [AuthContext] Signed out. Storage cleared.');
-      // Navigation is handled by the calling component, not here.
+      // 6. Hard redirect to login to wipe in-memory query cache and state completely
+      window.location.href = '/auth/login';
     } catch (error) {
       console.error('❌ [AuthContext] signOut error:', error);
       throw new Error('Failed to sign out. Please try again.');
@@ -339,14 +357,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     language: string
   ): Promise<void> => {
     if (!user) throw new Error('Not authenticated.');
+    console.info(`[AuthContext] Initiating saveSpiritualProfile for UID: ${user.uid}`);
     try {
       await saveSpiritualProfile(user.uid, spiritual, language);
       const updated = await getUserProfile(user.uid);
       setUserProfile(updated);
-      console.log(`✅ [AuthContext] Onboarding completed for uid: ${user.uid}`);
+      console.info(`✅ [AuthContext] Onboarding data saved successfully for UID: ${user.uid}`);
     } catch (error) {
       console.error('❌ [AuthContext] completeSpiritualOnboarding error:', error);
-      throw new Error('Failed to save spiritual details. Please try again.');
+      throw new Error('Unable to save onboarding details. Please retry onboarding.');
     }
   };
 

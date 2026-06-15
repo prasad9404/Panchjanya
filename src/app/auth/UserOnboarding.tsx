@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { AuthBackground } from "./components/AuthBackground";
@@ -15,13 +15,20 @@ import { useTranslation } from "react-i18next";
 
 export default function UserOnboarding() {
   const navigate = useNavigate();
-  const { completeSpiritualOnboarding, user } = useAuth();
+  const { completeSpiritualOnboarding, user, userProfile } = useAuth();
   const { i18n } = useTranslation();
   const selectedLanguage = localStorage.getItem("panchajanya_lang") || i18n.language || "mr";
 
   const [step, setStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   const [globalError, setGlobalError] = useState("");
+
+  // Guard: if already completed, don't allow them to stay on the form
+  useEffect(() => {
+    if (userProfile?.onboardingComplete && step !== 4) {
+      navigate("/dashboard", { replace: true });
+    }
+  }, [userProfile, navigate, step]);
 
   // Form State
   const [formData, setFormData] = useState<SpiritualProfile & { agreedToTerms: boolean }>({
@@ -398,7 +405,7 @@ export default function UserOnboarding() {
                     <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                   ) : (
                     <div className="flex items-center gap-2">
-                      <span className="font-bold text-[12px] sm:text-[13px] tracking-[0.12em] uppercase text-white">Complete Registration</span>
+                      <span className="font-bold text-[12px] sm:text-[13px] tracking-[0.12em] uppercase text-white">Save Profile</span>
                       <Sparkles className="w-4 h-4 text-amber-300" />
                     </div>
                   )}
@@ -428,8 +435,8 @@ export default function UserOnboarding() {
                 </div>
               </div>
               <div>
-                <h2 className="text-xl sm:text-2xl font-black text-blue-950 font-serif mb-2 bg-clip-text text-transparent bg-gradient-to-b from-blue-950 via-blue-900 to-[#133E7C] uppercase italic">Registration Successful!</h2>
-                <p className="text-slate-400 font-medium text-base">Your spiritual profile is ready.</p>
+                <h2 className="text-xl sm:text-2xl font-black text-blue-950 font-serif mb-2 bg-clip-text text-transparent bg-gradient-to-b from-blue-950 via-blue-900 to-[#133E7C] uppercase italic">Profile Saved Successfully!</h2>
+                <p className="text-slate-400 font-medium text-base">Your spiritual journey begins now.</p>
               </div>
               <GradientButton 
                 onClick={() => navigate("/dashboard", { replace: true })} 

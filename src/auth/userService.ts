@@ -171,8 +171,18 @@ export async function createUserProfile(
     updatedAt: serverTimestamp() as Timestamp,
   };
 
-  await setDoc(userRef, profile);
-  console.log(`✅ [userService] Created profile for uid: ${uid}`);
+  try {
+    await setDoc(userRef, profile);
+    console.info(`✅ [userService] Created profile for uid: ${uid}. Data:`, {
+      name: profile.displayName,
+      mobile: profile.mobile,
+      state: profile.state,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error(`❌ [userService] Error creating profile for uid: ${uid}`, error);
+    throw error;
+  }
 }
 
 /**
@@ -196,13 +206,18 @@ export async function updateUserProfile(
   data: UpdateUserProfileData
 ): Promise<void> {
   const userRef = doc(db, 'users', uid);
-  // Safety: strip fields users should not self-modify
-  const { ...safeData } = data;
-  await updateDoc(userRef, {
-    ...safeData,
-    updatedAt: serverTimestamp(),
-  });
-  console.log(`✅ [userService] Updated profile for uid: ${uid}`);
+  // Safety: strip fields users should not self-modify at runtime
+  const { role, uid: _uid, email, mobile, createdAt, ...safeData } = data as any;
+  try {
+    await updateDoc(userRef, {
+      ...safeData,
+      updatedAt: serverTimestamp(),
+    });
+    console.info(`✅ [userService] Updated profile for uid: ${uid}. Fields:`, Object.keys(safeData));
+  } catch (error) {
+    console.error(`❌ [userService] Error updating profile for uid: ${uid}`, error);
+    throw error;
+  }
 }
 
 /**
@@ -214,13 +229,18 @@ export async function saveSpiritualProfile(
   preferredLanguage: string,
 ): Promise<void> {
   const userRef = doc(db, 'users', uid);
-  await updateDoc(userRef, {
-    spiritualProfile,
-    preferredLanguage,
-    onboardingComplete: true,
-    updatedAt: serverTimestamp(),
-  });
-  console.log(`✅ [userService] Saved spiritual profile for uid: ${uid}`);
+  try {
+    await updateDoc(userRef, {
+      spiritualProfile,
+      preferredLanguage,
+      onboardingComplete: true,
+      updatedAt: serverTimestamp(),
+    });
+    console.info(`✅ [userService] Saved spiritual profile for uid: ${uid}. Status: ${spiritualProfile.status}`);
+  } catch (error) {
+    console.error(`❌ [userService] Error saving spiritual profile for uid: ${uid}`, error);
+    throw error;
+  }
 }
 
 /**

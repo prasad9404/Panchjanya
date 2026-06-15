@@ -5,18 +5,18 @@ service cloud.firestore {
     // ─── Helper Functions ─────────────────────────────────────────────────────
 
     // Check if the request is from an authenticated admin (via custom claim)
-    function isAdmin() {
-      return request.auth != null && request.auth.token.admin == true;
+    function isAdmin(req) {
+      return req.auth != null && req.auth.token.admin == true;
     }
 
     // Check if the request is from a super admin (via custom claim)
-    function isSuperAdmin() {
-      return request.auth != null && request.auth.token.superAdmin == true;
+    function isSuperAdmin(req) {
+      return req.auth != null && req.auth.token.superAdmin == true;
     }
 
     // Check if the request is from the document's owner
-    function isOwner(userId) {
-      return request.auth != null && request.auth.uid == userId;
+    function isOwner(req, userId) {
+      return req.auth != null && req.auth.uid == userId;
     }
 
 
@@ -25,41 +25,41 @@ service cloud.firestore {
 
     match /temples/{id} {
       allow read: if true;
-      allow write: if isAdmin();
+      allow write: if isAdmin(request);
 
       match /architecture_hotspots/{hotspotId} {
         allow read: if true;
-        allow write: if isAdmin();
+        allow write: if isAdmin(request);
       }
       match /present_hotspots/{hotspotId} {
         allow read: if true;
-        allow write: if isAdmin();
+        allow write: if isAdmin(request);
       }
     }
 
     match /architectural_archives/{id} {
       allow read: if true;
-      allow write: if isAdmin();
+      allow write: if isAdmin(request);
     }
 
     match /architecture_entries/{id} {
       allow read: if true;
-      allow write: if isAdmin();
+      allow write: if isAdmin(request);
     }
 
     match /sthan_types/{id} {
       allow read: if true;
-      allow write: if isAdmin();
+      allow write: if isAdmin(request);
     }
 
     match /yatraPlaces/{id} {
       allow read: if true;
-      allow write: if isAdmin();
+      allow write: if isAdmin(request);
     }
 
     match /settings/{id} {
       allow read: if true;
-      allow write: if isAdmin();
+      allow write: if isAdmin(request);
     }
 
     // ─── User Data Security ───────────────────────────────────────────────────
@@ -72,20 +72,24 @@ service cloud.firestore {
         request.auth.uid == userId;
 
       allow update:
-        if (request.auth != null && request.auth.uid == userId) || isAdmin();
+        if (
+          request.auth != null && 
+          request.auth.uid == userId &&
+          !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'uid', 'email', 'mobile'])
+        ) || isAdmin(request);
 
-      allow delete: if isAdmin();
+      allow delete: if isAdmin(request);
 
       // Subcollection for saved temples
       match /savedTemples/{templeId} {
-        allow read, write: if (request.auth != null && request.auth.uid == userId) || isAdmin();
+        allow read, write: if (request.auth != null && request.auth.uid == userId) || isAdmin(request);
       }
     }
 
     // ─── Default Deny ─────────────────────────────────────────────────────────
     // All other collections: admin-only
     match /{document=**} {
-      allow read, write: if isAdmin();
+      allow read, write: if isAdmin(request);
     }
   }
 }
