@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useMemo } from 'react';
+import { useEffect, useRef, useState, useMemo, useCallback } from 'react';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { YatraLocation } from './YatraMap';
@@ -274,6 +274,80 @@ export default function YatraMapMapLibre({ locations, highlightedId, centerOnFul
     }
   }, [currentRouteData, locations]);
 
+  // Viewport-aware fit bounds function that centers active route segment (source & destination pins)
+  const fitActiveSegment = useCallback((index: number, duration = 1500) => {
+    const map = mapRef.current;
+    if (!map || !mapLoaded || locations.length === 0) return;
+
+    const isDesktop = window.innerWidth >= 1024;
+    const isMobile = window.innerWidth < 768;
+
+    // Viewport paddings to avoid overlapping overlay elements
+    const padding = {
+      top: isMobile ? 140 : 110, // Mobile top header safe offset
+      bottom: isMobile ? 310 : 100, // Mobile bottom sheet safe offset
+      left: isDesktop ? 460 : 60, // Desktop left panel safe offset
+      right: 60
+    };
+
+    if (locations.length >= 2) {
+      const p1 = locations[index];
+      // Neighboring pin: use previous pin, or next pin if at the start (index 0)
+      const p2 = locations[index - 1] || locations[index + 1];
+
+      if (p1 && p2) {
+        let boundsCoords = [
+          [p1.longitude, p1.latitude],
+          [p2.longitude, p2.latitude]
+        ];
+
+        // Slicing actual route if possible to include curved path in bounds
+        if (currentRouteData?.coordinates && locationDistances.length > 0) {
+          const d1 = locationDistances[index];
+          const d2 = locationDistances[index - 1] !== undefined ? locationDistances[index - 1] : locationDistances[index + 1];
+          if (d1 !== undefined && d2 !== undefined) {
+            try {
+              const validCoords = currentRouteData.coordinates.filter((c: any) => Array.isArray(c) && c.length >= 2 && !isNaN(c[0]) && !isNaN(c[1]));
+              if (validCoords.length >= 2) {
+                const line = turf.lineString(validCoords as [number, number][]);
+                const segment = turf.lineSliceAlong(line, Math.min(d1, d2), Math.max(d1, d2));
+                boundsCoords = segment.geometry.coordinates;
+              }
+            } catch (e) {
+              console.warn("Failed to slice route for bounds:", e);
+            }
+          }
+        }
+
+        try {
+          const geojson = turf.featureCollection(boundsCoords.map(c => turf.point(c)));
+          const bbox = turf.bbox(geojson) as [number, number, number, number];
+          map.fitBounds(bbox, {
+            padding,
+            duration,
+            essential: true,
+            maxZoom: 15
+          });
+          return;
+        } catch (e) {
+          console.error("Error fitting bounds:", e);
+        }
+      }
+    }
+
+    // Fallback: zoom to single pin with correct padding
+    const loc = locations[index];
+    if (loc) {
+      map.flyTo({
+        center: [loc.longitude, loc.latitude],
+        zoom: 15,
+        padding,
+        duration,
+        essential: true
+      });
+    }
+  }, [mapLoaded, locations, currentRouteData, locationDistances]);
+
   // Active marker element
   useEffect(() => {
     if (!mapRef.current || !mapLoaded) return;
@@ -335,25 +409,7 @@ export default function YatraMapMapLibre({ locations, highlightedId, centerOnFul
     const endDist = locationDistances[currentIndex] || 0;
     
     if (startDist !== endDist) {
-        try {
-            const activeLineForBounds = turf.lineSliceAlong(line, Math.min(startDist, endDist), Math.max(startDist, endDist));
-            const bbox = turf.bbox(activeLineForBounds) as [number, number, number, number];
-            const isDesktop = window.innerWidth >= 1024;
-            const isMobile = window.innerWidth < 768;
-            map.fitBounds(bbox, {
-                padding: { 
-                    top: 100, 
-                    bottom: isMobile ? 320 : 100, 
-                    left: isDesktop ? 460 : 60, 
-                    right: 60 
-                },
-                duration: 1500,
-                essential: true,
-                maxZoom: 15
-            });
-        } catch (e) {
-            console.error("Error calculating bounds for animation:", e);
-        }
+        fitActiveSegment(currentIndex, 1500);
     }
 
     const duration = 1500; // 1.5 seconds animation
@@ -571,28 +627,27 @@ export default function YatraMapMapLibre({ locations, highlightedId, centerOnFul
     }
 
     if (highlightedId && !animationRef.current) {
-      const loc = locations.find(l => l.id === highlightedId);
-      if (loc) {
-        // Calculate bearing towards next location if it exists
-        let targetBearing = 0;
-        const nextLoc = locations.find(l => l.sequence === loc.sequence + 1);
-        if (nextLoc) {
-            targetBearing = turf.bearing(
-                turf.point([loc.longitude, loc.latitude]),
-                turf.point([nextLoc.longitude, nextLoc.latitude])
-            );
-        }
-        
-        map.flyTo({ 
-            center: [loc.longitude, loc.latitude], 
-            zoom: 16.5, 
-            padding: { top: 0, bottom: 0, left: window.innerWidth >= 1024 ? 420 : 0, right: 0 },
-            duration: 2500,
-            essential: true
-        });
+      const idx = locations.findIndex(l => l.id === highlightedId);
+      if (idx !== -1) {
+        fitActiveSegment(idx, 2000);
       }
     }
-  }, [mapLoaded, highlightedId, centerOnFullRoute, forceFocus, userLocation, locations]);
+  }, [mapLoaded, highlightedId, centerOnFullRoute, forceFocus, userLocation, locations, fitActiveSegment]);
+
+  // Handle window resize to re-center bounds correctly
+  useEffect(() => {
+    if (!mapRef.current || !mapLoaded) return;
+    const handleResize = () => {
+      if (highlightedId) {
+        const idx = locations.findIndex(l => l.id === highlightedId);
+        if (idx !== -1) {
+          fitActiveSegment(idx, 500); // quick transition on resize
+        }
+      }
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [mapLoaded, highlightedId, locations, fitActiveSegment]);
 
   return (
     <div className="w-full h-full relative z-0 bg-[#faf8f2]">

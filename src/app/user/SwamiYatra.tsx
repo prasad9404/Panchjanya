@@ -103,6 +103,13 @@ const SwamiYatra = () => {
         return list;
     }, [places, selectedRoute, selectedSubRoute, searchedPlace]);
 
+    // Auto-open mobile panel on load, route change, or location index change
+    useEffect(() => {
+        if (filteredPlaces.length > 0) {
+            setIsMobileSheetOpen(true);
+        }
+    }, [filteredPlaces, currentIndex, setIsMobileSheetOpen]);
+
     const handlePlaceSelect = (place: google.maps.places.PlaceResult) => {
         if (place.geometry?.location) {
             const newPlace = {
@@ -130,7 +137,7 @@ const SwamiYatra = () => {
     const LocationCard = ({ place, index }: { place: any, index: number }) => (
         <Card className={`overflow-hidden rounded-2xl border border-border shadow-sm bg-card hover:shadow-xl transition-all duration-300 group relative ${place.status === 'current' ? 'ring-2 ring-primary ring-offset-2 ring-offset-background' : ''}`}>
             <div className="flex flex-row sm:flex-col">
-                <div className="w-28 xs:w-32 sm:w-full h-28 xs:h-32 sm:h-44 md:h-52 relative overflow-hidden flex-shrink-0">
+                <div className="w-20 xs:w-24 sm:w-full h-20 xs:h-24 sm:h-44 md:h-52 relative overflow-hidden flex-shrink-0">
                     <LazyImage
                         src={place.image || "/placeholder-temple.jpg"}
                         alt={place.title || ""}
@@ -139,8 +146,8 @@ const SwamiYatra = () => {
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent hidden sm:block pointer-events-none"></div>
                     
-                    <div className="absolute top-2 left-2 sm:top-3 sm:left-3">
-                        <span className={`px-2 py-0.5 rounded-full text-[8px] sm:text-[9px] font-bold uppercase tracking-wider ${
+                    <div className="absolute top-1.5 left-1.5 sm:top-3 sm:left-3">
+                        <span className={`px-1.5 py-0.5 rounded-full text-[7px] sm:text-[9px] font-bold uppercase tracking-wider ${
                             place.status === 'completed' 
                                 ? 'bg-emerald-500 text-white' 
                                 : (place.status === 'current' ? 'bg-amber-600 text-white' : 'bg-background/80 text-foreground backdrop-blur-sm')
@@ -156,7 +163,7 @@ const SwamiYatra = () => {
                     </div>
                 </div>
                 
-                <div className="flex-1 p-3 sm:p-5 md:p-6 flex flex-col justify-between min-w-0">
+                <div className="flex-1 p-2.5 sm:p-5 md:p-6 flex flex-col justify-between min-w-0">
                     <div className="space-y-1.5 sm:space-y-4">
                         <h3 className="font-heading font-bold text-sm xs:text-base text-landing-primary dark:text-primary leading-tight sm:hidden block truncate group-hover:text-primary transition-colors">
                             {place.title}
@@ -344,13 +351,6 @@ const SwamiYatra = () => {
                             <Button variant="ghost" size="icon" className="rounded-full hover:bg-accent/10 shrink-0 h-8 w-8 bg-background" onClick={() => triggerCenterFullRoute()} title="View Full Route">
                                 <Globe className="w-4 h-4 text-landing-primary dark:text-primary" />
                             </Button>
-                            <Button variant="ghost" size="icon" className="rounded-full hover:bg-accent/10 shrink-0 h-8 w-8 bg-background" onClick={() => triggerForceFocus()} title="My Location">
-                                <Navigation2 className="w-4 h-4 text-landing-primary dark:text-primary" />
-                            </Button>
-                        </div>
-                        
-                        {/* Dropdown Row */}
-                        <div className="px-2 py-2 bg-background/50">
                             <Select
                                 value={selectedSubRoute ? `${selectedRoute}:${selectedSubRoute}` : selectedRoute}
                                 onValueChange={(value) => {
@@ -359,15 +359,10 @@ const SwamiYatra = () => {
                                     setSelectedSubRoute(subRouteId === "all" || !subRouteId ? null : subRouteId);
                                 }}
                             >
-                                <SelectTrigger className="w-full h-9 bg-card border border-border shadow-sm focus:ring-1 focus:ring-primary/20 text-xs font-bold text-landing-primary dark:text-primary rounded-xl hover:bg-accent/5 transition-all">
-                                    <div className="flex items-center gap-2 truncate">
-                                        <div className="bg-amber-600/10 p-1 rounded-full">
-                                            <Compass className="w-3.5 h-3.5 text-amber-600 shrink-0" />
-                                        </div>
-                                        <SelectValue placeholder={t('yatra.selectRoute')} />
-                                    </div>
+                                <SelectTrigger className="rounded-full hover:bg-accent/10 shrink-0 h-8 w-8 bg-background flex items-center justify-center border-none shadow-none focus:ring-0 focus:ring-offset-0 p-0 [&>svg]:hidden" title={t('yatra.selectRoute')}>
+                                    <Compass className="w-5 h-5 text-landing-primary dark:text-primary" />
                                 </SelectTrigger>
-                                <SelectContent className="rounded-xl border border-border shadow-xl backdrop-blur-2xl z-[60]">
+                                <SelectContent className="rounded-xl border border-border shadow-xl backdrop-blur-2xl z-[60] min-w-[200px]">
                                     <SelectItem value="swami-complete" className="font-bold py-2 text-xs focus:bg-accent/5">{t('yatra.routes.swamiCompleteViharan')}</SelectItem>
                                     <SelectItem value="swami-complete:ekant" className="pl-6 py-1.5 text-[10px] font-medium focus:bg-accent/5">{t('yatra.routes.ekant')}</SelectItem>
                                     <SelectItem value="swami-complete:purvardh" className="pl-6 py-1.5 text-[10px] font-medium focus:bg-accent/5">{t('yatra.routes.purvardh')}</SelectItem>
@@ -388,8 +383,8 @@ const SwamiYatra = () => {
                     <DrawerContent className="h-auto max-h-[60vh] md:hidden bg-card border-t border-border">
                         <DrawerTitle className="sr-only">{t('yatra.title')}</DrawerTitle>
                         
-                        <div className="p-4 overflow-y-auto pb-main-mobile">
-                            <div className="flex items-center justify-between mb-4">
+                        <div className="px-4 py-3 overflow-y-auto pb-4">
+                            <div className="flex items-center justify-between mb-2.5">
                                 <h2 className="font-heading font-bold text-lg text-landing-primary dark:text-primary">{t('yatra.itinerary')}</h2>
                                 <div className="flex items-center gap-2">
                                     <Button
