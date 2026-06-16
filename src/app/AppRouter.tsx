@@ -72,7 +72,7 @@ const ManageYatra = lazy(() => import("@/app/admin/ManageYatra"));
 const RajViharanAdmin = lazy(() => import("@/app/admin/RajViharanAdmin"));
 const AbbreviationsManager = lazy(() => import("@/app/admin/AbbreviationsManager"));
 const SuperAdminDashboard = lazy(() => import("@/app/super-admin/SuperAdminDashboard"));
-const UserManagement = lazy(() => import("@/app/super-admin/UserManagement"));
+const UserManagement = lazy(() => import("@/app/admin/UserManagement"));
 const AdminManagement = lazy(() => import("@/app/super-admin/AdminManagement"));
 const ActivityLogs = lazy(() => import("@/app/super-admin/ActivityLogs"));
 
@@ -393,7 +393,7 @@ const App = () => {
                         }
                       />
                       <Route
-                        path="/super-admin/users"
+                        path="/admin/users"
                         element={
                           <PrivateRoute adminRequired={true}>
                             <UserManagement />
