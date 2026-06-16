@@ -22,7 +22,7 @@ const modules = {
 const formats = [
   'header',
   'bold', 'italic', 'underline', 'strike',
-  'list', 'bullet', 'link'
+  'list', 'link'
 ];
 
 export const RichTextEditor = ({ value, onChange, placeholder, className }: RichTextEditorProps) => {

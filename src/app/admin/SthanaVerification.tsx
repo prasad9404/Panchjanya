@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from "react";
-import { 
-  collection, 
-  query, 
-  where, 
-  getDocs, 
-  updateDoc, 
-  doc, 
+import {
+  collection,
+  query,
+  where,
+  getDocs,
+  updateDoc,
+  doc,
   Timestamp,
   arrayUnion,
   getDoc
@@ -13,11 +13,11 @@ import {
 import { db } from "@/auth/firebase";
 import { useAuth } from "@/auth/AuthContext";
 import { useToast } from "@/shared/hooks/use-toast";
-import { 
-  CheckCircle2, 
-  XCircle, 
-  Eye, 
-  Search, 
+import {
+  CheckCircle2,
+  XCircle,
+  Eye,
+  Search,
   Filter,
   MapPin,
   Calendar,
@@ -37,17 +37,20 @@ import {
   FileText,
   ExternalLink,
   Info,
-  X
+  X,
+  Wrench,
+  Globe,
+  CircleDot
 } from "lucide-react";
 import { Button } from "@/shared/components/ui/button";
 import { Input } from "@/shared/components/ui/input";
 import { Badge } from "@/shared/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/components/ui/tabs";
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle 
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle
 } from "@/shared/components/ui/dialog";
 import { Textarea } from "@/shared/components/ui/textarea";
 import { motion, AnimatePresence } from "framer-motion";
@@ -93,7 +96,7 @@ interface PendingSthana {
   latitude?: string | number;
   longitude?: string | number;
   hasArchitecture?: boolean;
-  
+
   // Sthan Details specific fields
   details?: any[];
   glanceItems?: any[];
@@ -115,20 +118,29 @@ interface PendingSthana {
   verifiedAt?: any;
 }
 
+export const getLocalizedString = (val: any): string => {
+  if (!val) return "";
+  if (typeof val === 'string') return val;
+  if (typeof val === 'object') {
+    return val.en || val.mr || val.hi || Object.values(val)[0] || "";
+  }
+  return String(val);
+};
+
 export default function SthanaVerification({ isSuperAdmin = false }: { isSuperAdmin?: boolean }) {
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
-  
+
   // Choose Layout
   const Layout = isSuperAdmin ? SuperAdminLayout : AdminLayout;
-  
+
   // Data States
   const [pendingSthanas, setPendingSthanas] = useState<PendingSthana[]>([]);
   const [changesRequested, setChangesRequested] = useState<PendingSthana[]>([]);
   const [approvedHistory, setApprovedHistory] = useState<PendingSthana[]>([]);
-  
+
   const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [selectedSthana, setSelectedSthana] = useState<PendingSthana | null>(null);
@@ -142,14 +154,14 @@ export default function SthanaVerification({ isSuperAdmin = false }: { isSuperAd
   const fetchSthanas = async () => {
     try {
       setLoading(true);
-      
+
       const qPending = query(collection(db, "temples"), where("status", "==", "COMPLETE"));
       const snapPending = await getDocs(qPending);
       const dataPending = snapPending.docs.map(d => ({ id: d.id, ...d.data() })) as PendingSthana[];
-      
+
       const actuallyPending = dataPending.filter(s => !s.reviewStatus || s.reviewStatus === "PENDING");
       const actuallyChangesRequested = dataPending.filter(s => s.reviewStatus === "CHANGES_REQUIRED");
-      
+
       const qHistory = query(collection(db, "temples"), where("status", "in", ["VERIFIED", "PUBLISHED"]));
       const snapHistory = await getDocs(qHistory);
       const dataHistory = snapHistory.docs.map(d => ({ id: d.id, ...d.data() })) as PendingSthana[];
@@ -176,7 +188,7 @@ export default function SthanaVerification({ isSuperAdmin = false }: { isSuperAd
     if (!user) return;
     const sthana = [...pendingSthanas, ...changesRequested].find(s => s.id === id);
     const hasUnresolved = sthana?.reviewComments?.some(c => c.status === "OPEN");
-    
+
     if (hasUnresolved) {
       toast({
         title: "Unresolved Comments",
@@ -236,7 +248,7 @@ export default function SthanaVerification({ isSuperAdmin = false }: { isSuperAd
       fetchSthanas();
       setSelectedSthana(null);
     } catch (error) {
-       console.error("Error requesting changes:", error);
+      console.error("Error requesting changes:", error);
     } finally {
       setIsSubmittingReview(false);
     }
@@ -261,7 +273,7 @@ export default function SthanaVerification({ isSuperAdmin = false }: { isSuperAd
 
       toast({ title: "Comment Added", description: "Your feedback has been recorded." });
       setNewComment("");
-      
+
       const updatedSnap = await getDoc(ref);
       if (updatedSnap.exists()) {
         setSelectedSthana({ id: updatedSnap.id, ...updatedSnap.data() } as PendingSthana);
@@ -332,6 +344,7 @@ export default function SthanaVerification({ isSuperAdmin = false }: { isSuperAd
         {/* --- FULL DATA READ-ONLY REVIEW DIALOG --- */}
         <Dialog open={!!selectedSthana} onOpenChange={(open) => !open && (setSelectedSthana(null), setNewComment(""))}>
           <DialogContent className="max-w-[95vw] w-[1400px] h-[95vh] p-0 overflow-hidden rounded-[2.5rem] border-none shadow-2xl" aria-describedby={undefined}>
+            <DialogTitle className="sr-only">{selectedSthana ? getLocalizedString(selectedSthana.name) : "Sthana Review"}</DialogTitle>
             {selectedSthana && (
               <div className="flex flex-col lg:flex-row h-full bg-white overflow-hidden scroll-smooth">
                 {/* --- LEFT PANEL: STHANA DETAILS --- */}
@@ -340,12 +353,12 @@ export default function SthanaVerification({ isSuperAdmin = false }: { isSuperAd
                   <div className="h-24 shrink-0 border-b border-slate-100 flex items-center justify-between px-10 bg-white/95 backdrop-blur-md z-30 shadow-sm sticky top-0">
                     <div className="flex items-center gap-5">
                       <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-white text-sm font-black shadow-xl shadow-blue-500/10" style={{ backgroundColor: getAvatarColor(selectedSthana.primaryAvatar) }}>
-                        {selectedSthana.name[0]}
+                        {getLocalizedString(selectedSthana.name)[0] || "?"}
                       </div>
                       <div>
-                        <h2 className="text-2xl font-black text-slate-900 tracking-tight line-clamp-1">{selectedSthana.name}</h2>
+                        <h2 className="text-2xl font-black text-slate-900 tracking-tight line-clamp-1">{getLocalizedString(selectedSthana.name)}</h2>
                         <div className="flex items-center gap-3 mt-1">
-                          <Badge variant="outline" className="text-[9px] font-black uppercase tracking-widest border-slate-200 bg-slate-50/50">{selectedSthana.sthanType}</Badge>
+                          <Badge variant="outline" className="text-[9px] font-black uppercase tracking-widest border-slate-200 bg-slate-50/50">{getLocalizedString(selectedSthana.sthanType)}</Badge>
                           <span className="w-1 h-1 rounded-full bg-slate-300"></span>
                           <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Reviewing Dataset</p>
                         </div>
@@ -355,8 +368,8 @@ export default function SthanaVerification({ isSuperAdmin = false }: { isSuperAd
                       <Badge className={cn(
                         "rounded-xl px-4 py-2 font-black text-[10px] uppercase tracking-widest border shadow-sm",
                         selectedSthana.reviewStatus === "CHANGES_REQUIRED" ? "bg-amber-50 text-amber-600 border-amber-100" :
-                        selectedSthana.status === "VERIFIED" ? "bg-emerald-50 text-emerald-600 border-emerald-100" :
-                        "bg-blue-50 text-blue-600 border-blue-100"
+                          selectedSthana.status === "VERIFIED" ? "bg-emerald-50 text-emerald-600 border-emerald-100" :
+                            "bg-blue-50 text-blue-600 border-blue-100"
                       )}>
                         {selectedSthana.reviewStatus || "PENDING"}
                       </Badge>
@@ -372,12 +385,12 @@ export default function SthanaVerification({ isSuperAdmin = false }: { isSuperAd
                             <div className="grid grid-cols-2 gap-x-10 gap-y-6">
                               <DataItem label="Core Name" value={selectedSthana.name} />
                               <DataItem label="Old/Alternate Name" value={selectedSthana.oldName || "N/A"} />
-                              <DataItem label={selectedSthana.todaysNameTitle || "Today's Name"} value={selectedSthana.todaysName || "N/A"} />
+                              <DataItem label={getLocalizedString(selectedSthana.todaysNameTitle) || "Today's Name"} value={selectedSthana.todaysName || "N/A"} />
                               <DataItem label="District" value={selectedSthana.district} />
                               <DataItem label="Taluka" value={selectedSthana.taluka} />
                               <DataItem label="Sthan Type" value={selectedSthana.sthanType} isBadge />
                               <DataItem label="Primary Avatar" value={selectedSthana.primaryAvatar} isBadge />
-                              
+
                               {selectedSthana.primarySubtype && selectedSthana.primarySubtype.length > 0 && (
                                 <div className="col-span-2 space-y-2">
                                   <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Avatar Subdivisions</label>
@@ -390,7 +403,7 @@ export default function SthanaVerification({ isSuperAdmin = false }: { isSuperAd
                                   </div>
                                 </div>
                               )}
-                              
+
                               {selectedSthana.relatedAvatars && selectedSthana.relatedAvatars.length > 0 && (
                                 <div className="col-span-2 space-y-2">
                                   <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Related Avatars</label>
@@ -428,174 +441,176 @@ export default function SthanaVerification({ isSuperAdmin = false }: { isSuperAd
 
                           <DataSection title="Sthan Descriptions" icon={<AlertCircle className="w-4 h-4" />}>
                             <div className="space-y-6">
-                               <DataItem label={selectedSthana.description_title || "Glance Description"} value={selectedSthana.description_text || selectedSthana.description || "No specific glance info."} isLongText />
-                               <DataItem label={selectedSthana.sthana_info_title || "Main Sthana Info"} value={selectedSthana.sthana_info_text || selectedSthana.sthanInfo || "No general description."} isLongText />
-                               <DataItem label="Architecture Description" value={selectedSthana.architectureDescription || "No architectural description."} isLongText />
-                               <DataItem label="Sthan Pothi (Global)" value={selectedSthana.sthanPothiDescription || selectedSthana.globalPothiDescription || "No global pothi entry."} isLongText />
-                               
-                               {selectedSthana.descriptionSections && selectedSthana.descriptionSections.length > 0 && (
-                                 <div className="pt-4 space-y-4">
-                                   {selectedSthana.descriptionSections.map((s, i) => (
-                                     <DataItem key={i} label={s.title || `Section ${i+1}`} value={s.content} isLongText />
-                                   ))}
-                                 </div>
-                               )}
+                              <DataItem label={getLocalizedString(selectedSthana.description_title) || "Glance Description"} value={selectedSthana.description_text || selectedSthana.description || "No specific glance info."} isLongText />
+                              <DataItem label={getLocalizedString(selectedSthana.sthana_info_title) || "Main Sthana Info"} value={selectedSthana.sthana_info_text || selectedSthana.sthanInfo || "No general description."} isLongText />
+                              <DataItem label={getLocalizedString(selectedSthana.description_title) || "Glance Description"} value={getLocalizedString(selectedSthana.description_text) || getLocalizedString(selectedSthana.description) || "No specific glance info."} isLongText />
+                              <DataItem label={getLocalizedString(selectedSthana.sthana_info_title) || "Main Sthana Info"} value={getLocalizedString(selectedSthana.sthana_info_text) || getLocalizedString(selectedSthana.sthanInfo) || "No general description."} isLongText />
+                              <DataItem label="Architecture Description" value={getLocalizedString(selectedSthana.architectureDescription) || "No architectural description."} isLongText />
+                              <DataItem label="Sthan Pothi (Global)" value={getLocalizedString(selectedSthana.sthanPothiDescription) || getLocalizedString(selectedSthana.globalPothiDescription) || "No global pothi entry."} isLongText />
+
+                              {selectedSthana.descriptionSections && selectedSthana.descriptionSections.length > 0 && (
+                                <div className="pt-4 space-y-4">
+                                  {selectedSthana.descriptionSections.map((s, i) => (
+                                    <DataItem key={i} label={getLocalizedString(s.title) || `Section ${i + 1}`} value={getLocalizedString(s.content)} isLongText />
+                                  ))}
+                                </div>
+                              )}
                             </div>
                           </DataSection>
                         </div>
 
                         <div className="space-y-8">
-                           <DataSection title="Media Gallery" icon={<ImageIcon className="w-4 h-4" />}>
-                              <div className="space-y-8">
-                                <div>
-                                  <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Sthan Photos</h4>
-                                  <div className="overflow-x-auto pb-2">
-                                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 min-w-[300px]">
-                                      {selectedSthana.sthanImages?.map((img, i) => (
-                                        <img key={i} src={img} className="aspect-square rounded-xl object-cover border border-slate-100 shadow-sm" />
-                                      ))}
-                                      {(!selectedSthana.sthanImages || selectedSthana.sthanImages.length === 0) && (
-                                        <div className="col-span-full aspect-[4/1] rounded-xl bg-slate-50 border border-dashed border-slate-200 flex items-center justify-center text-slate-300 text-[10px] font-black uppercase">No Sthan Images</div>
-                                      )}
-                                    </div>
-                                  </div>
-                                </div>
-                                <div>
-                                  <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Architecture Visuals</h4>
-                                  <div className="overflow-x-auto pb-2">
-                                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 min-w-[300px]">
-                                      {selectedSthana.architectureImages?.map((img, i) => (
-                                        <img key={i} src={img} className="aspect-square rounded-xl object-cover border border-slate-100 shadow-sm" />
-                                      ))}
-                                      {(!selectedSthana.architectureImages || selectedSthana.architectureImages.length === 0) && (
-                                        <p className="text-[10px] text-slate-400 font-bold italic col-span-full py-4 px-2">No arch visuals uploaded</p>
-                                      )}
-                                    </div>
-                                  </div>
-                                </div>
-                                <div>
-                                  <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Present Day Photos</h4>
-                                  <div className="overflow-x-auto pb-2">
-                                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 min-w-[300px]">
-                                      {selectedSthana.presentImages?.map((img, i) => (
-                                        <img key={i} src={img} className="aspect-square rounded-xl object-cover border border-slate-100 shadow-sm" />
-                                      ))}
-                                      {(!selectedSthana.presentImages || selectedSthana.presentImages.length === 0) && (
-                                        <p className="text-[10px] text-slate-400 font-bold italic col-span-full py-4 px-2">No present photos uploaded</p>
-                                      )}
-                                    </div>
+                          <DataSection title="Media Gallery" icon={<ImageIcon className="w-4 h-4" />}>
+                            <div className="space-y-8">
+                              <div>
+                                <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Sthan Photos</h4>
+                                <div className="overflow-x-auto pb-2">
+                                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 min-w-[300px]">
+                                    {selectedSthana.sthanImages?.map((img, i) => (
+                                      <img key={i} src={img} className="aspect-square rounded-xl object-cover border border-slate-100 shadow-sm" />
+                                    ))}
+                                    {(!selectedSthana.sthanImages || selectedSthana.sthanImages.length === 0) && (
+                                      <div className="col-span-full aspect-[4/1] rounded-xl bg-slate-50 border border-dashed border-slate-200 flex items-center justify-center text-slate-300 text-[10px] font-black uppercase">No Sthan Images</div>
+                                    )}
                                   </div>
                                 </div>
                               </div>
-                           </DataSection>
-
-                           {selectedSthana.glanceItems && selectedSthana.glanceItems.length > 0 && (
-                             <DataSection title="At a Glance" icon={<LayoutGrid className="w-4 h-4" />}>
-                               <div className="grid grid-cols-2 gap-4">
-                                  {selectedSthana.glanceItems.map((item, idx) => (
-                                    <div key={idx} className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100">
-                                      {item.icon && <img src={item.icon} alt="" className="w-5 h-5 opacity-70" />}
-                                      <span className="text-[11px] font-bold text-slate-700">{item.description}</span>
-                                    </div>
-                                  ))}
-                               </div>
-                             </DataSection>
-                           )}
-
-                           {(selectedSthana.contactName || selectedSthana.contactNumber) && (
-                             <DataSection title="Contact Information" icon={<User className="w-4 h-4" />}>
-                                <div className="space-y-4">
-                                   <div className="grid grid-cols-2 gap-6">
-                                      <DataItem label="Contact Person" value={selectedSthana.contactName || "N/A"} />
-                                      <DataItem label="Phone Number" value={selectedSthana.contactNumber || "N/A"} />
-                                   </div>
-                                   <DataItem label="Additional Contact Details" value={selectedSthana.contactDetails || "None"} isLongText />
+                              <div>
+                                <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Architecture Visuals</h4>
+                                <div className="overflow-x-auto pb-2">
+                                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 min-w-[300px]">
+                                    {selectedSthana.architectureImages?.map((img, i) => (
+                                      <img key={i} src={img} className="aspect-square rounded-xl object-cover border border-slate-100 shadow-sm" />
+                                    ))}
+                                    {(!selectedSthana.architectureImages || selectedSthana.architectureImages.length === 0) && (
+                                      <p className="text-[10px] text-slate-400 font-bold italic col-span-full py-4 px-2">No arch visuals uploaded</p>
+                                    )}
+                                  </div>
                                 </div>
-                             </DataSection>
-                           )}
+                              </div>
+                              <div>
+                                <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Present Day Photos</h4>
+                                <div className="overflow-x-auto pb-2">
+                                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 min-w-[300px]">
+                                    {selectedSthana.presentImages?.map((img, i) => (
+                                      <img key={i} src={img} className="aspect-square rounded-xl object-cover border border-slate-100 shadow-sm" />
+                                    ))}
+                                    {(!selectedSthana.presentImages || selectedSthana.presentImages.length === 0) && (
+                                      <p className="text-[10px] text-slate-400 font-bold italic col-span-full py-4 px-2">No present photos uploaded</p>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </DataSection>
+
+                          {selectedSthana.glanceItems && selectedSthana.glanceItems.length > 0 && (
+                            <DataSection title="At a Glance" icon={<LayoutGrid className="w-4 h-4" />}>
+                              <div className="grid grid-cols-2 gap-4">
+                                {selectedSthana.glanceItems.map((item, idx) => (
+                                  <div key={idx} className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100">
+                                    {item.icon && <img src={item.icon} alt="" className="w-5 h-5 opacity-70" />}
+                                    <span className="text-[11px] font-bold text-slate-700">{getLocalizedString(item.description)}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </DataSection>
+                          )}
+
+                          {(selectedSthana.contactName || selectedSthana.contactNumber) && (
+                            <DataSection title="Contact Information" icon={<User className="w-4 h-4" />}>
+                              <div className="space-y-4">
+                                <div className="grid grid-cols-2 gap-6">
+                                  <DataItem label="Contact Person" value={getLocalizedString(selectedSthana.contactName) || "N/A"} />
+                                  <DataItem label="Phone Number" value={selectedSthana.contactNumber || "N/A"} />
+                                </div>
+                                <DataItem label="Additional Contact Details" value={getLocalizedString(selectedSthana.contactDetails) || "None"} isLongText />
+                              </div>
+                            </DataSection>
+                          )}
                         </div>
                       </div>
 
                       {/* Sacred Points */}
                       {selectedSthana.details && selectedSthana.details.length > 0 && (
                         <div className="space-y-8">
-                           <div className="flex items-center gap-3 px-2">
-                              <div className="p-1.5 bg-blue-100 rounded-lg text-blue-600">
-                                <MapIcon className="w-4 h-4" />
-                              </div>
-                              <h3 className="text-sm font-black text-slate-900 uppercase tracking-[0.2em]">Sacred Points & Structures ({selectedSthana.details.length})</h3>
-                           </div>
-                           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                              {selectedSthana.details.map((detail, idx) => (
-                                <div key={idx} className="bg-white rounded-[2rem] border border-slate-100 p-6 shadow-sm hover:shadow-md transition-shadow flex flex-col gap-4">
-                                  <div className="flex items-start justify-between gap-3">
-                                    <div>
-                                      <h4 className="text-sm font-black text-slate-900 uppercase leading-snug">{detail.title || "Sacred Point"}</h4>
-                                      <Badge variant="secondary" className="mt-1 text-[8px] font-black uppercase tracking-widest">{detail.type || "Structure"}</Badge>
-                                    </div>
-                                    {detail.images?.[0] && <img src={detail.images[0]} className="w-16 h-16 rounded-xl object-cover shrink-0 border border-slate-50" />}
+                          <div className="flex items-center gap-3 px-2">
+                            <div className="p-1.5 bg-blue-100 rounded-lg text-blue-600">
+                              <MapIcon className="w-4 h-4" />
+                            </div>
+                            <h3 className="text-sm font-black text-slate-900 uppercase tracking-[0.2em]">Sacred Points & Structures ({selectedSthana.details.length})</h3>
+                          </div>
+                          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                            {selectedSthana.details.map((detail, idx) => (
+                              <div key={idx} className="bg-white rounded-[2rem] border border-slate-100 p-6 shadow-sm hover:shadow-md transition-shadow flex flex-col gap-4">
+                                <div className="flex items-start justify-between gap-3">
+                                  <div>
+                                    <h4 className="text-sm font-black text-slate-900 uppercase leading-snug">{getLocalizedString(detail.title) || "Sacred Point"}</h4>
+                                    <Badge variant="secondary" className="mt-1 text-[8px] font-black uppercase tracking-widest">{getLocalizedString(detail.type) || "Structure"}</Badge>
                                   </div>
-                                  <p className="text-[11px] text-slate-500 font-medium line-clamp-3 bg-slate-50/50 p-3 rounded-xl">{detail.description || "No detailed description provided."}</p>
-                                  {(detail.sthanPothiTitle || detail.sthanPothiDescription) && (
-                                    <div className="bg-blue-50/50 p-3 rounded-xl border border-blue-100/50">
-                                      <h5 className="text-[10px] font-black text-blue-700 uppercase tracking-widest mb-1 flex items-center gap-1">
-                                        <History className="w-3 h-3" /> {detail.sthanPothiTitle || "Sthan Pothi Entry"}
-                                      </h5>
-                                      <p className="text-[10px] text-slate-600 font-medium italic line-clamp-2">{detail.sthanPothiDescription}</p>
-                                    </div>
-                                  )}
-                                  {detail.leelas?.length > 0 && (
-                                    <div className="mt-auto pt-4 border-t border-slate-50 flex items-center justify-between">
-                                       <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{detail.leelas.length} Associated Leelas</span>
-                                    </div>
-                                  )}
+                                  {detail.images?.[0] && <img src={detail.images[0]} className="w-16 h-16 rounded-xl object-cover shrink-0 border border-slate-50" />}
                                 </div>
-                              ))}
-                           </div>
+                                <p className="text-[11px] text-slate-500 font-medium line-clamp-3 bg-slate-50/50 p-3 rounded-xl">{getLocalizedString(detail.description) || "No detailed description provided."}</p>
+                                {(detail.sthanPothiTitle || detail.sthanPothiDescription) && (
+                                  <div className="bg-blue-50/50 p-3 rounded-xl border border-blue-100/50">
+                                    <h5 className="text-[10px] font-black text-blue-700 uppercase tracking-widest mb-1 flex items-center gap-1">
+                                      <History className="w-3 h-3" /> {getLocalizedString(detail.sthanPothiTitle) || "Sthan Pothi Entry"}
+                                    </h5>
+                                    <p className="text-[10px] text-slate-600 font-medium italic line-clamp-2">{getLocalizedString(detail.sthanPothiDescription)}</p>
+                                  </div>
+                                )}
+                                {detail.leelas?.length > 0 && (
+                                  <div className="mt-auto pt-4 border-t border-slate-50 flex items-center justify-between">
+                                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{detail.leelas.length} Associated Leelas</span>
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                          </div>
                         </div>
                       )}
 
                       {/* Global Leelas */}
                       {selectedSthana.leelas && selectedSthana.leelas.length > 0 && (
                         <DataSection title="Global Leela References" icon={<History className="w-4 h-4" />}>
-                           <div className="space-y-4">
-                              {selectedSthana.leelas.map((leela, idx) => (
-                                <div key={idx} className="p-4 bg-slate-50 rounded-2xl border border-slate-100 flex items-center justify-between">
-                                   <div className="flex items-center gap-3">
-                                      <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 text-[10px] font-black">
-                                         {idx + 1}
-                                      </div>
-                                      <span className="text-sm font-bold text-slate-700">{leela.title || leela}</span>
-                                   </div>
-                                   <Badge variant="outline" className="text-[8px] font-black uppercase">Leela Record</Badge>
+                          <div className="space-y-4">
+                            {selectedSthana.leelas.map((leela, idx) => (
+                              <div key={idx} className="p-4 bg-slate-50 rounded-2xl border border-slate-100 flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                  <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 text-[10px] font-black">
+                                    {idx + 1}
+                                  </div>
+                                  <span className="text-sm font-bold text-slate-700">{getLocalizedString(leela.title || leela)}</span>
                                 </div>
-                              ))}
-                           </div>
+                                <Badge variant="outline" className="text-[8px] font-black uppercase">Leela Record</Badge>
+                              </div>
+                            ))}
+                          </div>
                         </DataSection>
                       )}
 
                       {/* Custom Content Blocks */}
                       {selectedSthana.customBlocks && selectedSthana.customBlocks.length > 0 && (
                         <div className="space-y-10">
-                           {selectedSthana.customBlocks.map((block, idx) => (
-                             <DataSection key={idx} title={block.title || `Content Block ${idx + 1}`} icon={<FileText className="w-4 h-4" />}>
-                                <p className="text-sm text-slate-600 leading-relaxed font-medium whitespace-pre-wrap">{block.content}</p>
-                             </DataSection>
-                           ))}
+                          {selectedSthana.customBlocks.map((block, idx) => (
+                            <DataSection key={idx} title={getLocalizedString(block.title) || `Content Block ${idx + 1}`} icon={<FileText className="w-4 h-4" />}>
+                              <p className="text-sm text-slate-600 leading-relaxed font-medium whitespace-pre-wrap">{getLocalizedString(block.content)}</p>
+                            </DataSection>
+                          ))}
                         </div>
                       )}
 
                       {/* Abbreviations */}
                       {selectedSthana.abbreviationItems && selectedSthana.abbreviationItems.length > 0 && (
                         <DataSection title="Terminology / Abbreviations" icon={<Info className="w-4 h-4" />}>
-                           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                              {selectedSthana.abbreviationItems.map((item: any, idx: number) => (
-                                <div key={idx} className="flex items-center gap-3 p-3 bg-white rounded-xl border border-slate-100 shadow-sm">
-                                  {item.icon && <img src={item.icon} alt="" className="w-5 h-5" />}
-                                  <span className="text-[10px] font-black text-slate-600 uppercase tracking-tight">{item.description}</span>
-                                </div>
-                              ))}
-                           </div>
+                          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                            {selectedSthana.abbreviationItems.map((item: any, idx: number) => (
+                              <div key={idx} className="flex items-center gap-3 p-3 bg-white rounded-xl border border-slate-100 shadow-sm">
+                                {item.icon && <img src={item.icon} alt="" className="w-5 h-5" />}
+                                <span className="text-[10px] font-black text-slate-600 uppercase tracking-tight">{getLocalizedString(item.description)}</span>
+                              </div>
+                            ))}
+                          </div>
                         </DataSection>
                       )}
                     </div>
@@ -633,8 +648,8 @@ export default function SthanaVerification({ isSuperAdmin = false }: { isSuperAd
                               </div>
                             </div>
                             <Badge className={cn(
-                               "rounded-lg text-[7px] font-black p-1 px-2 uppercase border shadow-none",
-                               c.status === "OPEN" ? "bg-amber-50 text-amber-600 border-amber-100" : "bg-emerald-50 text-emerald-600 border-emerald-100"
+                              "rounded-lg text-[7px] font-black p-1 px-2 uppercase border shadow-none",
+                              c.status === "OPEN" ? "bg-amber-50 text-amber-600 border-amber-100" : "bg-emerald-50 text-emerald-600 border-emerald-100"
                             )}>
                               {c.status}
                             </Badge>
@@ -653,17 +668,17 @@ export default function SthanaVerification({ isSuperAdmin = false }: { isSuperAd
 
                   {/* Action Bar & Comment Input */}
                   <div className="p-6 border-t border-slate-100 bg-white space-y-4 shadow-[0_-4px_20px_rgba(0,0,0,0.02)]">
-                    <Textarea 
-                       placeholder="Add a specific correction note..." 
-                       className="rounded-[1.5rem] border-slate-200 text-sm min-h-[120px] bg-slate-50/50 focus:bg-white transition-all resize-none shadow-none" 
-                       value={newComment} 
-                       onChange={(e) => setNewComment(e.target.value)} 
+                    <Textarea
+                      placeholder="Add a specific correction note..."
+                      className="rounded-[1.5rem] border-slate-200 text-sm min-h-[120px] bg-slate-50/50 focus:bg-white transition-all resize-none shadow-none"
+                      value={newComment}
+                      onChange={(e) => setNewComment(e.target.value)}
                     />
                     <div className="flex flex-col gap-3">
                       <Button className="w-full h-12 rounded-xl bg-slate-900 hover:bg-black text-white font-black text-[11px] uppercase tracking-[0.2em] gap-2 shadow-xl shadow-slate-900/10 transition-all active:scale-95" onClick={handleAddComment} disabled={!newComment.trim() || isSubmittingReview}>
-                         Post Comment <Send className="w-4 h-4" />
+                        Post Comment <Send className="w-4 h-4" />
                       </Button>
-                      
+
                       <div className="grid grid-cols-2 gap-3">
                         <Button variant="outline" className="rounded-xl border-slate-200 font-black text-[10px] uppercase tracking-widest text-slate-600 h-12 hover:bg-amber-50 hover:text-amber-700 transition-all" onClick={handleRequestChanges} disabled={isSubmittingReview}>
                           Request Fix
@@ -685,7 +700,7 @@ export default function SthanaVerification({ isSuperAdmin = false }: { isSuperAd
 }
 
 function ReviewList({ loading, items, searchQuery, viewMode, onViewDetails }: { loading: boolean; items: PendingSthana[]; searchQuery: string; viewMode: "grid" | "list"; onViewDetails: (s: PendingSthana) => void; }) {
-  const filtered = items.filter(s => s.name.toLowerCase().includes(searchQuery.toLowerCase()) || s.district.toLowerCase().includes(searchQuery.toLowerCase()));
+  const filtered = items.filter(s => getLocalizedString(s.name).toLowerCase().includes(searchQuery.toLowerCase()) || getLocalizedString(s.district).toLowerCase().includes(searchQuery.toLowerCase()));
   if (loading) return <LoadingGrid />;
   if (filtered.length === 0) return <EmptyState icon={<CheckCircle2 className="w-12 h-12 text-blue-100" />} title="Nothing to review" description="This queue is currently empty." />;
   return (
@@ -699,30 +714,53 @@ function ReviewList({ loading, items, searchQuery, viewMode, onViewDetails }: { 
   );
 }
 
-function ReviewCard({ sthana, viewMode, onView }: { sthana: PendingSthana; viewMode: "grid" | "list"; onView: () => void; }) {
+const statusConfig = {
+  PENDING:           { label: "Pending Review",   icon: Clock,         bg: "bg-blue-500",   text: "text-white" },
+  CHANGES_REQUIRED:  { label: "Fix Requested",    icon: Wrench,        bg: "bg-amber-500",  text: "text-white" },
+  APPROVED:          { label: "Approved",          icon: CheckCircle2,  bg: "bg-emerald-500", text: "text-white" },
+  VERIFIED:          { label: "Verified",          icon: ShieldCheck,   bg: "bg-emerald-600", text: "text-white" },
+  PUBLISHED:         { label: "Published",         icon: Globe,         bg: "bg-indigo-500", text: "text-white" },
+};
+
+const ReviewCard = React.forwardRef<HTMLDivElement, { sthana: PendingSthana; viewMode: "grid" | "list"; onView: () => void }>(function ReviewCard({ sthana, viewMode, onView }, ref) {
+  const statusKey = sthana.status === "VERIFIED" ? "VERIFIED"
+    : sthana.status === "PUBLISHED" ? "PUBLISHED"
+    : sthana.reviewStatus === "CHANGES_REQUIRED" ? "CHANGES_REQUIRED"
+    : sthana.reviewStatus === "APPROVED" ? "APPROVED"
+    : "PENDING";
+  const status = statusConfig[statusKey];
+  const StatusIcon = status.icon;
+  const openComments = sthana.reviewComments?.filter(c => c.status === "OPEN").length ?? 0;
+
   return (
-    <motion.div layout initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }} className={cn("group bg-white rounded-[2.5rem] border border-slate-100 overflow-hidden hover:shadow-2xl hover:shadow-slate-200/50 transition-all duration-500", viewMode === "list" ? "flex flex-col md:flex-row h-auto md:h-44" : "flex flex-col h-full")}>
+    <motion.div ref={ref} layout initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }} className={cn("group bg-white rounded-[2.5rem] border border-slate-100 overflow-hidden hover:shadow-2xl hover:shadow-slate-200/50 transition-all duration-500", viewMode === "list" ? "flex flex-col md:flex-row h-auto md:h-44" : "flex flex-col h-full")}>
       <div className={cn("relative shrink-0 overflow-hidden", viewMode === "list" ? "w-full md:w-56 h-44 md:h-full" : "h-40 w-full")}>
-        <img src={sthana.thumbnail || sthana.sthanImages?.[0] || "/placeholder-sthan.jpg"} alt={sthana.name} className="w-full h-full object-cover grayscale-[0.4] group-hover:grayscale-0 transition-all duration-700 group-hover:scale-105" />
-        <div className="absolute top-4 left-4">
-          <Badge className="bg-white/95 text-slate-900 border-none backdrop-blur shadow-sm rounded-lg py-1 px-3 text-[9px] font-black uppercase tracking-wider">{sthana.sthanType}</Badge>
+        <img src={sthana.thumbnail || sthana.sthanImages?.[0] || "/placeholder-sthan.jpg"} alt={getLocalizedString(sthana.name)} className="w-full h-full object-cover grayscale-[0.4] group-hover:grayscale-0 transition-all duration-700 group-hover:scale-105" />
+        {/* Sthan type — bottom left */}
+        <div className="absolute bottom-3 left-3">
+          <Badge className="bg-black/50 text-white border-none backdrop-blur-sm shadow-sm rounded-lg py-1 px-2.5 text-[8px] font-black uppercase tracking-wider">{getLocalizedString(sthana.sthanType)}</Badge>
+        </div>
+        {/* Status pill — top right */}
+        <div className={cn("absolute top-3 right-3 flex items-center gap-1.5 rounded-full px-2.5 py-1 shadow-lg", status.bg)}>
+          <StatusIcon className={cn("w-3 h-3", status.text)} />
+          <span className={cn("text-[8px] font-black uppercase tracking-wide", status.text)}>{status.label}</span>
         </div>
       </div>
       <div className="flex-1 p-6 flex flex-col justify-between">
         <div className="space-y-1">
-          <h3 className="text-lg font-black text-slate-900 tracking-tight transition-colors uppercase">{sthana.name}</h3>
+          <h3 className="text-lg font-black text-slate-900 tracking-tight transition-colors uppercase">{getLocalizedString(sthana.name)}</h3>
           <div className="flex items-center gap-1.5 text-slate-400">
             <MapPin className="w-3 h-3" />
-            <span className="text-[10px] font-black uppercase tracking-widest">{sthana.district}</span>
+            <span className="text-[10px] font-black uppercase tracking-widest">{getLocalizedString(sthana.district)}</span>
           </div>
         </div>
         <div className="flex items-center justify-between gap-3 mt-4 pt-4 border-t border-slate-50">
           <div className="flex items-center gap-2">
-            {sthana.reviewComments && sthana.reviewComments.length > 0 && (
-               <div className="flex items-center gap-1 text-amber-500">
-                  <MessageSquare className="w-3.5 h-3.5 fill-current" />
-                  <span className="text-[10px] font-black">{sthana.reviewComments.filter(c => c.status === "OPEN").length}</span>
-               </div>
+            {openComments > 0 && (
+              <div className="flex items-center gap-1 text-amber-500">
+                <MessageSquare className="w-3.5 h-3.5 fill-current" />
+                <span className="text-[10px] font-black">{openComments} open</span>
+              </div>
             )}
           </div>
           <Button variant="ghost" className="rounded-xl h-10 px-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-all gap-2" onClick={onView}>
@@ -732,7 +770,7 @@ function ReviewCard({ sthana, viewMode, onView }: { sthana: PendingSthana; viewM
       </div>
     </motion.div>
   );
-}
+});
 
 function HistoryTable({ items, navigate }: { items: PendingSthana[]; navigate: any }) {
   return (
@@ -753,25 +791,25 @@ function HistoryTable({ items, navigate }: { items: PendingSthana[]; navigate: a
               <tr key={item.id} className="group hover:bg-slate-50/30 transition-colors">
                 <td className="px-8 py-5">
                   <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center text-slate-400 text-[10px] font-black">{item.name[0]}</div>
+                    <div className="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center text-slate-400 text-[10px] font-black">{getLocalizedString(item.name)[0] || "?"}</div>
                     <div>
-                      <p className="text-sm font-bold text-slate-900 line-clamp-1">{item.name}</p>
-                      <p className="text-[9px] text-slate-400 font-black uppercase tracking-wider">{item.sthanType}</p>
+                      <p className="text-sm font-bold text-slate-900 line-clamp-1">{getLocalizedString(item.name)}</p>
+                      <p className="text-[9px] text-slate-400 font-black uppercase tracking-wider">{getLocalizedString(item.sthanType)}</p>
                     </div>
                   </div>
                 </td>
-                <td className="px-8 py-5 text-xs text-slate-500 font-medium">{item.district}, {item.taluka}</td>
+                <td className="px-8 py-5 text-xs text-slate-500 font-medium">{getLocalizedString(item.district)}, {getLocalizedString(item.taluka)}</td>
                 <td className="px-8 py-5">
                   <Badge variant="outline" className={cn("rounded-lg text-[9px] px-2.5 py-1 font-black uppercase tracking-widest border", item.status === 'PUBLISHED' ? "bg-blue-50 text-blue-600 border-blue-100" : "bg-emerald-50 text-emerald-600 border-emerald-100")}>{item.status}</Badge>
                 </td>
                 <td className="px-8 py-5">
-                   <div className="flex items-center gap-2">
-                      <User className="w-3 h-3 text-slate-300" />
-                      <span className="text-[10px] font-bold text-slate-500 uppercase tracking-tight">{item.verifiedBy ? "Verified Admin" : "Auto"}</span>
-                   </div>
-                   <div className="text-[9px] text-slate-400 font-bold tabular-nums">
-                      {item.verifiedAt?.toDate ? item.verifiedAt.toDate().toLocaleDateString() : 'N/A'}
-                   </div>
+                  <div className="flex items-center gap-2">
+                    <User className="w-3 h-3 text-slate-300" />
+                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-tight">{item.verifiedBy ? "Verified Admin" : "Auto"}</span>
+                  </div>
+                  <div className="text-[9px] text-slate-400 font-bold tabular-nums">
+                    {item.verifiedAt?.toDate ? item.verifiedAt.toDate().toLocaleDateString() : 'N/A'}
+                  </div>
                 </td>
                 <td className="px-8 py-5 text-right">
                   <Button variant="ghost" size="icon" className="rounded-xl h-9 w-9 text-slate-400 hover:text-blue-600" onClick={() => navigate(`/admin/temples/${item.id}/edit`)}>
@@ -788,36 +826,38 @@ function HistoryTable({ items, navigate }: { items: PendingSthana[]; navigate: a
   );
 }
 
-function DataSection({ title, icon, children }: { title: string; icon: React.ReactNode; children: React.ReactNode }) {
+function DataSection({ title, icon, children }: { title: any; icon: React.ReactNode; children: React.ReactNode }) {
   return (
     <div className="space-y-5">
       <div className="flex items-center gap-3">
         <div className="p-1.5 bg-slate-100 rounded-lg text-slate-500">{icon}</div>
-        <h3 className="text-xs font-black text-slate-900 uppercase tracking-[0.2em]">{title}</h3>
+        <h3 className="text-xs font-black text-slate-900 uppercase tracking-[0.2em]">{getLocalizedString(title)}</h3>
       </div>
       <div className="bg-white rounded-[2rem] border border-slate-100 p-8 shadow-sm">{children}</div>
     </div>
   );
 }
 
-function DataItem({ label, value, isBadge, isLongText }: { label: string; value: string; isBadge?: boolean; isLongText?: boolean }) {
-  if (!value) return null;
+function DataItem({ label, value, isBadge, isLongText }: { label: any; value: any; isBadge?: boolean; isLongText?: boolean }) {
+  const strValue = getLocalizedString(value);
+  const strLabel = getLocalizedString(label);
+  if (!strValue) return null;
   return (
     <div className="space-y-2">
-      <span className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] ml-1">{label}</span>
+      <span className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] ml-1">{strLabel}</span>
       {isLongText ? (
         <div className="text-sm text-slate-600 leading-relaxed font-medium bg-slate-50/50 p-5 rounded-[1.5rem] border border-slate-100/50 hover:bg-white hover:border-blue-100 transition-all duration-300">
-          {value.split('\n').map((line, i) => <p key={i} className={i > 0 ? "mt-2" : ""}>{line}</p>)}
+          {strValue.split('\n').map((line, i) => <p key={i} className={i > 0 ? "mt-2" : ""}>{line}</p>)}
         </div>
       ) : isBadge ? (
         <div className="flex">
           <Badge className="bg-blue-50/50 text-blue-600 border border-blue-100/50 shadow-none rounded-xl px-4 py-1.5 text-[10px] font-black uppercase tracking-tight">
-            {value}
+            {strValue}
           </Badge>
         </div>
       ) : (
         <p className="text-sm font-bold text-slate-800 bg-white px-4 py-2.5 rounded-xl border border-slate-50 shadow-[0_2px_4px_rgba(0,0,0,0.01)]">
-          {value}
+          {strValue}
         </p>
       )}
     </div>
@@ -827,7 +867,7 @@ function DataItem({ label, value, isBadge, isLongText }: { label: string; value:
 function LoadingGrid() {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      {[1,2,3,4,5,6].map(i => (
+      {[1, 2, 3, 4, 5, 6].map(i => (
         <div key={i} className="bg-white h-80 rounded-[2.5rem] animate-pulse border border-slate-50" />
       ))}
     </div>

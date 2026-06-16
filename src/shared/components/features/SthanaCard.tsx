@@ -11,7 +11,9 @@ import {
     ShieldCheck,
     CheckCircle2,
     FileEdit,
-    Clock
+    Clock,
+    MessageSquare,
+    Wrench
 } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -90,6 +92,26 @@ export const SthanaCard: React.FC<SthanaCardProps> = ({
                             );
                         })()}
                         
+                        {temple.reviewStatus === "CHANGES_REQUIRED" && (
+                            <span className="inline-flex items-center px-3 py-1 rounded-xl text-[10px] font-black uppercase tracking-widest border gap-1.5 shadow-sm bg-amber-50 text-amber-600 border-amber-100">
+                                <Wrench className="w-3.5 h-3.5" />
+                                Fix Requested
+                            </span>
+                        )}
+
+                        {(() => {
+                            const openComments = temple.reviewComments?.filter((c: any) => c.status === "OPEN").length || 0;
+                            if (openComments > 0) {
+                                return (
+                                    <span className="inline-flex items-center px-3 py-1 rounded-xl text-[10px] font-black uppercase tracking-widest border gap-1.5 shadow-sm bg-red-50 text-red-500 border-red-100">
+                                        <MessageSquare className="w-3.5 h-3.5" />
+                                        {openComments} Open
+                                    </span>
+                                );
+                            }
+                            return null;
+                        })()}
+
                         {isStandalone && (
                             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-slate-900 text-white text-[10px] font-black uppercase tracking-widest border border-slate-800 shadow-sm">
                                 <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
