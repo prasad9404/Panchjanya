@@ -1,0 +1,146 @@
+/* ============================================================
+   MapTiler / MapLibre GL JS — Custom Marker & Popup Styles
+   Brand Green: #2D6A4F  |  White border 2px  |  Subtle shadow
+   ============================================================ */
+
+/* ─── Base map container ─────────────────────────────────── */
+.map-wrap {
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+
+/* ─── Flat circular marker ───────────────────────────────── */
+.map-marker {
+  width: 20px;
+  height: 20px;
+  background-color: #2D6A4F;
+  border: 2px solid #ffffff;
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow:
+    0 2px 6px rgba(0, 0, 0, 0.25),
+    0 0 0 4px rgba(45, 106, 79, 0.15);
+  transition:
+    transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1),
+    box-shadow 0.2s ease,
+    background-color 0.2s ease;
+  will-change: transform;
+}
+
+.map-marker:hover {
+  transform: scale(1.35);
+  box-shadow:
+    0 4px 14px rgba(0, 0, 0, 0.3),
+    0 0 0 6px rgba(45, 106, 79, 0.2);
+}
+
+.map-marker.active {
+  background-color: #1a5e3f;
+  transform: scale(1.5);
+  box-shadow:
+    0 4px 18px rgba(0, 0, 0, 0.35),
+    0 0 0 8px rgba(45, 106, 79, 0.25);
+  z-index: 10 !important;
+}
+
+/* Pulse ring that shows when marker is "active" (clicked) */
+.map-marker.active::after {
+  content: '';
+  position: absolute;
+  inset: -6px;
+  border-radius: 50%;
+  border: 2px solid rgba(45, 106, 79, 0.5);
+  animation: marker-pulse 1.4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes marker-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0; transform: scale(1.7); }
+}
+
+/* ─── Popup card ─────────────────────────────────────────── */
+.maplibregl-popup {
+  max-width: 260px !important;
+}
+
+.maplibregl-popup-content {
+  padding: 0 !important;
+  border-radius: 12px !important;
+  box-shadow:
+    0 8px 24px rgba(0, 0, 0, 0.12),
+    0 2px 8px rgba(0, 0, 0, 0.08) !important;
+  overflow: hidden;
+  font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+  border: none !important;
+}
+
+/* Remove default MapLibre popup tip colour bleed */
+.maplibregl-popup-tip {
+  border-top-color: #ffffff !important;
+}
+
+/* Inner content wrapper */
+.popup-inner {
+  background: #ffffff;
+  padding: 14px 16px 12px;
+}
+
+.popup-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.popup-dot {
+  width: 10px;
+  height: 10px;
+  flex-shrink: 0;
+  background-color: #2D6A4F;
+  border-radius: 50%;
+  border: 1.5px solid #fff;
+  box-shadow: 0 0 0 2px rgba(45, 106, 79, 0.25);
+}
+
+.popup-name {
+  font-weight: 700;
+  font-size: 14px;
+  color: #1a1a1a;
+  line-height: 1.3;
+  margin: 0;
+}
+
+.popup-desc {
+  font-size: 12px;
+  color: #6b7280;
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* Close button */
+.maplibregl-popup-close-button {
+  font-size: 18px !important;
+  color: #9ca3af !important;
+  right: 8px !important;
+  top: 6px !important;
+  padding: 2px 6px !important;
+  border-radius: 4px;
+  transition: color 0.15s, background-color 0.15s;
+}
+.maplibregl-popup-close-button:hover {
+  color: #374151 !important;
+  background-color: #f3f4f6 !important;
+}
+
+/* ─── Navigation controls ────────────────────────────────── */
+.maplibregl-ctrl-group {
+  border-radius: 8px !important;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
+}
+
+.maplibregl-ctrl-group button {
+  width: 32px !important;
+  height: 32px !important;
+}

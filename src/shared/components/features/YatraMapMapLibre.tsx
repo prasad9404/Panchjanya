@@ -41,11 +41,14 @@ export default function YatraMapMapLibre({ locations, highlightedId, centerOnFul
   useEffect(() => {
     if (mapRef.current || !mapContainer.current) return;
 
+    const apiKey = import.meta.env.VITE_MAPTILER_KEY || 'OPcGOLHMRYAQgK1qMHaP';
+    const styleUrl = `https://api.maptiler.com/maps/019edf5e-9455-76c8-8965-9b59fa30781f/style.json?key=${apiKey}`;
+
     const map = new maplibregl.Map({
       container: mapContainer.current,
-      style: 'https://tiles.openfreemap.org/styles/liberty', // OpenFreeMap Liberty style
-      center: [82.9739, 25.3176],
-      zoom: 5,
+      style: styleUrl,
+      center: [80.00122, 21.51903], // Default center from dashboard
+      zoom: 4,
       attributionControl: false,
       pitchWithRotate: false,
       dragRotate: false,
@@ -66,16 +69,34 @@ export default function YatraMapMapLibre({ locations, highlightedId, centerOnFul
         data: { type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates: [] } }
       });
 
-      // Background line
+      // Background route line (full pilgrimage route)
       map.addLayer({
         id: 'route-line-bg',
         type: 'line',
         source: 'route',
         layout: { 'line-join': 'round', 'line-cap': 'round' },
         paint: {
-          'line-color': '#0f3c6e', // Faint solid blue background line
-          'line-width': 3,
-          'line-opacity': 0.15
+          'line-color': '#f59e0b',
+          'line-width': 5,
+          'line-opacity': 0.4,
+          'line-dasharray': [2, 2]
+        }
+      });
+
+      // Direction Arrows on full route
+      map.addLayer({
+        id: 'route-arrows-bg',
+        type: 'symbol',
+        source: 'route',
+        layout: {
+          'symbol-placement': 'line',
+          'symbol-spacing': 50,
+          'icon-image': 'arrow',
+          'icon-rotate': 0,
+          'icon-size': 0.7,
+        },
+        paint: {
+          'icon-opacity': 0.6
         }
       });
 
@@ -92,7 +113,7 @@ export default function YatraMapMapLibre({ locations, highlightedId, centerOnFul
         source: 'route-active',
         layout: { 'line-join': 'round', 'line-cap': 'round' },
         paint: {
-          'line-color': '#d97706', // amber-600 glow
+          'line-color': '#f59e0b',
           'line-width': 8,
           'line-opacity': 0.3,
           'line-blur': 4
@@ -106,9 +127,9 @@ export default function YatraMapMapLibre({ locations, highlightedId, centerOnFul
         source: 'route-active',
         layout: { 'line-join': 'round', 'line-cap': 'round' },
         paint: {
-          'line-color': '#d97706', // amber-600
-          'line-width': 2.5,
-          'line-dasharray': [4, 5]
+          'line-color': '#f59e0b',
+          'line-width': 5,
+          'line-dasharray': [2, 2]
         }
       });
       
@@ -119,80 +140,14 @@ export default function YatraMapMapLibre({ locations, highlightedId, centerOnFul
         source: 'route-active',
         layout: {
           'symbol-placement': 'line',
-          'text-field': '>', // Using standard ASCII '>' chevron to guarantee glyph rendering
-          'text-size': 16,
-          'symbol-spacing': 35,
-          'text-keep-upright': false
-        },
-        paint: {
-          'text-color': '#d97706' // amber-600
+          'symbol-spacing': 50,
+          'icon-image': 'arrow',
+          'icon-rotate': 0,
+          'icon-size': 0.7,
         }
       });
-      // Add 3D Terrain Source (AWS Terrain)
-      map.addSource('terrain', {
-        type: 'raster-dem',
-        tiles: ['https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png'],
-        encoding: 'terrarium',
-        tileSize: 256,
-        maxzoom: 14
-      });
-      map.setTerrain({ source: 'terrain', exaggeration: 1.5 });
 
-      // Theme overriding programmatically for Google Maps UX Look
-      const style = map.getStyle();
-      if (style && style.layers) {
-        style.layers.forEach((layer: any) => {
-          const id = layer.id.toLowerCase();
-          
-          // Background
-          if (id === 'background') {
-             map.setPaintProperty(layer.id, 'background-color', '#f4efe3'); // Requested Off-white background
-          }
-          // Water
-          else if (id.includes('water') || ['river', 'stream', 'sea', 'ocean', 'lake'].some(w => id.includes(w))) {
-             if (layer.type === 'fill') map.setPaintProperty(layer.id, 'fill-color', '#8aa4be');
-             if (layer.type === 'line') map.setPaintProperty(layer.id, 'line-color', '#8aa4be');
-          }
-          // Vegetation and Urban/Landuse
-          else if (
-              ['wood', 'forest', 'park', 'grass', 'pitch', 'landuse', 'residential', 'commercial', 'industrial', 'cemetery', 'hospital', 'school', 'college', 'university', 'urban', 'village', 'farmland', 'landcover', 'agriculture', 'meadow', 'scrub', 'heath', 'nature', 'recreation', 'golf', 'garden', 'greenfield', 'orchard'].some(w => id.includes(w))
-          ) {
-             if (layer.type === 'fill') map.setPaintProperty(layer.id, 'fill-color', '#d3f7e1');
-          }
-          // Buildings
-          else if (id.includes('building')) {
-             if (layer.type === 'fill') map.setPaintProperty(layer.id, 'fill-color', '#F3F3F3');
-             if (layer.type === 'fill-extrusion') {
-                 map.setPaintProperty(layer.id, 'fill-extrusion-color', '#F3F3F3');
-                 map.setPaintProperty(layer.id, 'fill-extrusion-opacity', 0.9);
-             }
-          }
-          // Roads
-          else if (id.includes('road') || id.includes('highway') || id.includes('tunnel') || id.includes('bridge')) {
-             if (layer.type === 'line') {
-                 // If it's a casing (border)
-                 if (id.includes('casing')) {
-                     map.setPaintProperty(layer.id, 'line-color', '#e8eaed');
-                 } else {
-                     map.setPaintProperty(layer.id, 'line-color', '#FFFFFF');
-                 }
-             }
-          }
-          
-          // Hide Map Clutter (Road Numbers, Shields)
-          if (id.includes('shield') || id.includes('ref') || id.includes('highway_name') || id.includes('road_label')) {
-              map.setLayoutProperty(layer.id, 'visibility', 'none');
-          }
-          // Labels Color Overrides
-          else if (layer.type === 'symbol') {
-             if (layer.paint && layer.paint['text-color']) {
-                 if (id.includes('place') || id.includes('city') || id.includes('town') || id.includes('poi')) {
-                     map.setPaintProperty(layer.id, 'text-color', '#202124');
-                 }
-             }
-          }
-        });
-      }
+      // No manual theme overriding needed as the MapTiler style handles UX look natively.
     });
 
     mapRef.current = map;

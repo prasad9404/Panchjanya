@@ -71,13 +71,13 @@ export const fetchRoute = async (locations: YatraLocation[], userLocation?: { la
         'Authorization': ORS_API_KEY
       },
       body: JSON.stringify({
-        coordinates: coords,
-        elevation: true,
+        coordinates: coords
       })
     });
 
     if (!response.ok) {
-      console.error("OpenRouteService API error:", response.statusText);
+      const errText = await response.text();
+      console.error('OpenRouteService API error:', response.status, errText);
       return {
         coordinates: generateCurvedFallback(coords), // fallback
         distance: 0,
