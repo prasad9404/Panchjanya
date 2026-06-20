@@ -47,6 +47,8 @@ import {
 } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import "@maplibre/maplibre-gl-leaflet";
+import "maplibre-gl/dist/maplibre-gl.css";
 import { useLanguage } from "@/shared/contexts/LanguageContext";
 import { useAuth } from "@/auth/AuthContext";
 import { cn } from "@/shared/lib/utils";
@@ -433,6 +435,25 @@ function TempleMarker({
       </Popup>
     </Marker>
   );
+}
+
+const MAPTILER_KEY = import.meta.env.VITE_MAPTILER_KEY || 'OPcGOLHMRYAQgK1qMHaP';
+const MAPTILER_STYLE_URL = `https://api.maptiler.com/maps/019edf5e-9455-76c8-8965-9b59fa30781f/style.json?key=${MAPTILER_KEY}`;
+
+function MapLibreLayer({ styleUrl }: { styleUrl: string }) {
+  const map = useMap();
+  useEffect(() => {
+    const gl = (L as any).maplibreGL({
+      style: styleUrl,
+      attribution: '&copy; <a href="https://www.maptiler.com/copyright/" target="_blank">MapTiler</a>'
+    }).addTo(map);
+    return () => {
+      if (map.hasLayer(gl)) {
+        map.removeLayer(gl);
+      }
+    };
+  }, [map, styleUrl]);
+  return null;
 }
 
 const Explore = () => {
@@ -941,7 +962,7 @@ const Explore = () => {
   };
 
   return (
-    <div className="relative h-[calc(100vh-80px)] w-full overflow-hidden bg-background animate-in fade-in duration-300">
+    <div className="relative h-[100dvh] w-full overflow-hidden bg-background animate-in fade-in duration-300">
       {/* Standard Header */}
       {/* Header Container */}
       <div className="absolute top-0 left-0 right-0 z-[400] flex flex-col pointer-events-none gap-1">
@@ -1185,10 +1206,7 @@ const Explore = () => {
           zoomControl={false}
           attributionControl={false}
         >
-          <TileLayer
-            url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png" // Cleaner, lighter map style without empty road shields
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
-          />
+          <MapLibreLayer styleUrl={MAPTILER_STYLE_URL} />
 
           <MapEffect temples={filteredTemples} resetTrigger={resetTrigger} />
 
