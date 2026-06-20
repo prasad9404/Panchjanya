@@ -77,9 +77,9 @@ export default function YatraMapMapLibre({ locations, highlightedId, centerOnFul
         layout: { 'line-join': 'round', 'line-cap': 'round' },
         paint: {
           'line-color': '#f59e0b',
-          'line-width': 5,
-          'line-opacity': 0.4,
-          'line-dasharray': [2, 2]
+          'line-width': 2.5,
+          'line-opacity': 0.3,
+          'line-dasharray': [1.5, 2.5]
         }
       });
 
@@ -90,13 +90,13 @@ export default function YatraMapMapLibre({ locations, highlightedId, centerOnFul
         source: 'route',
         layout: {
           'symbol-placement': 'line',
-          'symbol-spacing': 50,
+          'symbol-spacing': 60,
           'icon-image': 'arrow',
           'icon-rotate': 0,
-          'icon-size': 0.7,
+          'icon-size': 0.6,
         },
         paint: {
-          'icon-opacity': 0.6
+          'icon-opacity': 0.4
         }
       });
 
@@ -114,9 +114,9 @@ export default function YatraMapMapLibre({ locations, highlightedId, centerOnFul
         layout: { 'line-join': 'round', 'line-cap': 'round' },
         paint: {
           'line-color': '#f59e0b',
-          'line-width': 8,
-          'line-opacity': 0.3,
-          'line-blur': 4
+          'line-width': 6,
+          'line-opacity': 0.15,
+          'line-blur': 3
         }
       });
 
@@ -128,8 +128,9 @@ export default function YatraMapMapLibre({ locations, highlightedId, centerOnFul
         layout: { 'line-join': 'round', 'line-cap': 'round' },
         paint: {
           'line-color': '#f59e0b',
-          'line-width': 5,
-          'line-dasharray': [2, 2]
+          'line-width': 3,
+          'line-opacity': 0.8,
+          'line-dasharray': [1.5, 2]
         }
       });
       
@@ -143,7 +144,10 @@ export default function YatraMapMapLibre({ locations, highlightedId, centerOnFul
           'symbol-spacing': 50,
           'icon-image': 'arrow',
           'icon-rotate': 0,
-          'icon-size': 0.7,
+          'icon-size': 0.65,
+        },
+        paint: {
+          'icon-opacity': 0.85
         }
       });
 
