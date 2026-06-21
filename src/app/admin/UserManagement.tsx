@@ -61,6 +61,8 @@ import { cn } from "@/shared/lib/utils";
 import { db } from "@/auth/firebase";
 import { collection, onSnapshot, doc, updateDoc, deleteDoc, query, orderBy } from "firebase/firestore";
 import { useAuth } from "@/auth/AuthContext";
+import { violationService } from "@/services/violationService";
+import { SecurityViolation } from "@/services/securityService";
 
 type UserRole = 'Super Admin' | 'Admin' | 'Moderator' | 'Temple Manager' | 'Volunteer' | 'Registered User';
 type UserStatus = 'Active' | 'Suspended' | 'Blocked' | 'Pending';
@@ -101,6 +103,63 @@ export default function UserManagement() {
   // UI States
   const [viewUser, setViewUser] = useState<AppUser | null>(null);
   const [actionUser, setActionUser] = useState<{ user: AppUser, action: 'delete' | 'suspend' | 'block' | 'activate' | 'verify' } | null>(null);
+
+  // Security Tab State
+  const [activeTab, setActiveTab] = useState<'users' | 'security'>('users');
+  const [violations, setViolations] = useState<(SecurityViolation & { id: string })[]>([]);
+  const [secStats, setSecStats] = useState({ total: 0, critical: 0, blockedUsers: 0, today: 0 });
+  const [secLoading, setSecLoading] = useState(false);
+  const [secSearch, setSecSearch] = useState("");
+  const [secSeverity, setSecSeverity] = useState("All");
+  const [secPlatform, setSecPlatform] = useState("All");
+  
+  const [historyUser, setHistoryUser] = useState<AppUser | null>(null);
+  const [userViolations, setUserViolations] = useState<(SecurityViolation & { id: string })[]>([]);
+
+  const fetchViolations = async () => {
+    setSecLoading(true);
+    const v = await violationService.getAllViolations();
+    const s = await violationService.getViolationStats();
+    setViolations(v);
+    setSecStats(s);
+    setSecLoading(false);
+  };
+
+  useEffect(() => {
+    if (activeTab === 'security') {
+      fetchViolations();
+      const interval = setInterval(fetchViolations, 30000);
+      return () => clearInterval(interval);
+    }
+  }, [activeTab]);
+
+  const handleUnblock = async (userId: string) => {
+    try {
+      await violationService.unblockUser(userId);
+      toast({ title: "User Unblocked", description: "The user has been restored." });
+      if (activeTab === 'security') fetchViolations();
+      if (historyUser) fetchUserHistory(historyUser);
+    } catch (e) {
+      toast({ title: "Error", description: "Failed to unblock.", variant: "destructive" });
+    }
+  };
+
+  const handleBlock = async (userId: string) => {
+    try {
+      await violationService.blockUserInDB(userId, "manual_admin_block");
+      toast({ title: "User Blocked", description: "The user has been blocked." });
+      if (activeTab === 'security') fetchViolations();
+      if (historyUser) fetchUserHistory(historyUser);
+    } catch (e) {
+      toast({ title: "Error", description: "Failed to block.", variant: "destructive" });
+    }
+  };
+
+  const fetchUserHistory = async (u: AppUser) => {
+    setHistoryUser(u);
+    const v = await violationService.getUserViolations(u.id);
+    setUserViolations(v);
+  };
 
   useEffect(() => {
     const q = query(collection(db, "users"), orderBy("createdAt", "desc"));
@@ -244,6 +303,23 @@ export default function UserManagement() {
           </div>
         </div>
 
+        <div className="flex border-b border-gray-200 mt-4 mb-8">
+          <button
+            className={cn("px-6 py-3 font-bold text-sm border-b-2 transition-colors", activeTab === 'users' ? "border-blue-600 text-blue-600" : "border-transparent text-gray-500 hover:text-gray-700")}
+            onClick={() => setActiveTab('users')}
+          >
+            Users
+          </button>
+          <button
+            className={cn("px-6 py-3 font-bold text-sm border-b-2 transition-colors", activeTab === 'security' ? "border-blue-600 text-blue-600" : "border-transparent text-gray-500 hover:text-gray-700")}
+            onClick={() => setActiveTab('security')}
+          >
+            Security Violations
+          </button>
+        </div>
+
+        {activeTab === 'users' ? (
+          <>
         {/* Dashboard Statistics */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard title="Total Users" value={stats.total} icon={UserIcon} color="bg-blue-50 text-blue-600" loading={loading} />
@@ -385,6 +461,16 @@ export default function UserManagement() {
                             <p className="font-bold text-gray-900 group-hover/prof:text-blue-600 tracking-tight transition-colors flex items-center gap-1.5">
                               {user.name}
                               {user.isVerified && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />}
+                              {(user.violationCount || 0) > 0 && (
+                                <Badge className="bg-orange-100 text-orange-700 border-none px-1.5 py-0.5 text-[9px] uppercase font-black tracking-wider ml-2">
+                                  {user.violationCount} Violations
+                                </Badge>
+                              )}
+                              {(user.status === 'Blocked' || user.blocked) && (
+                                <Badge className="bg-red-600 text-white border-none px-1.5 py-0.5 text-[9px] uppercase font-black tracking-wider ml-1">
+                                  BLOCKED
+                                </Badge>
+                              )}
                             </p>
                             <p className="text-xs text-gray-500 font-medium">{user.email}</p>
                           </div>
@@ -431,6 +517,15 @@ export default function UserManagement() {
                             <DropdownMenuItem className="rounded-xl cursor-pointer font-semibold text-sm" onClick={() => setViewUser(user)}>
                               <Eye className="w-4 h-4 mr-2 text-gray-400" /> View Profile
                             </DropdownMenuItem>
+                            <DropdownMenuItem className="rounded-xl cursor-pointer font-semibold text-sm text-blue-600 focus:text-blue-700 focus:bg-blue-50" onClick={() => {
+                              setActiveTab('security');
+                              setSecSearch(user.email);
+                            }}>
+                              <ShieldCheck className="w-4 h-4 mr-2" /> View Violations
+                            </DropdownMenuItem>
+                            <DropdownMenuItem className="rounded-xl cursor-pointer font-semibold text-sm text-amber-600 focus:text-amber-700 focus:bg-amber-50" onClick={() => fetchUserHistory(user)}>
+                              <AlertCircle className="w-4 h-4 mr-2" /> Violation History
+                            </DropdownMenuItem>
                             <DropdownMenuSeparator className="bg-gray-100 my-1" />
                             
                             <DropdownMenuLabel className="text-[10px] font-black uppercase text-gray-400 tracking-widest px-2 py-1.5">Manage Status</DropdownMenuLabel>
@@ -449,9 +544,14 @@ export default function UserManagement() {
                                 <Clock className="w-4 h-4 mr-2" /> Suspend
                               </DropdownMenuItem>
                             )}
-                            {user.status !== 'Blocked' && (
-                              <DropdownMenuItem className="rounded-xl cursor-pointer text-sm font-semibold text-red-600 focus:text-red-700 focus:bg-red-50" onClick={() => setActionUser({ user, action: 'block' })}>
+                            {user.status !== 'Blocked' && !user.blocked && (
+                              <DropdownMenuItem className="rounded-xl cursor-pointer text-sm font-semibold text-red-600 focus:text-red-700 focus:bg-red-50" onClick={() => handleBlock(user.id)}>
                                 <Ban className="w-4 h-4 mr-2" /> Block User
+                              </DropdownMenuItem>
+                            )}
+                            {(user.status === 'Blocked' || user.blocked) && (
+                              <DropdownMenuItem className="rounded-xl cursor-pointer text-sm font-semibold text-emerald-600 focus:text-emerald-700 focus:bg-emerald-50" onClick={() => handleUnblock(user.id)}>
+                                <CheckCircle2 className="w-4 h-4 mr-2" /> Unblock User
                               </DropdownMenuItem>
                             )}
 
@@ -480,6 +580,21 @@ export default function UserManagement() {
             {/* Pagination controls would go here for extremely large sets. For now it's client-side filtered. */}
           </div>
         </div>
+          </>
+        ) : (
+          <SecurityTabContent 
+            violations={violations} 
+            stats={secStats} 
+            loading={secLoading}
+            search={secSearch}
+            setSearch={setSecSearch}
+            severity={secSeverity}
+            setSeverity={setSecSeverity}
+            platform={secPlatform}
+            setPlatform={setSecPlatform}
+            onUnblock={handleUnblock}
+          />
+        )}
       </div>
 
       {/* User Details Slide-out Sheet */}
@@ -626,6 +741,19 @@ export default function UserManagement() {
                     </ProfileSection>
                   )}
 
+                  {/* Section: Security */}
+                  {((viewUser.violationCount || 0) > 0 || viewUser.status === 'Blocked') && (
+                    <ProfileSection title="Security & Violations" icon={<AlertCircle className="w-3.5 h-3.5 text-red-500" />}>
+                      <div className="grid grid-cols-2 gap-4">
+                        <ProfileField label="Violation Count" value={String(viewUser.violationCount || 0)} />
+                        <ProfileField label="Account Status" value={viewUser.status} />
+                      </div>
+                      <div className="mt-4 pt-3 border-t border-gray-100 flex justify-between items-center">
+                        <p className="text-xs text-gray-500 italic">Manage via Security Dashboard</p>
+                      </div>
+                    </ProfileSection>
+                  )}
+
                   {/* Section: Account & Dates */}
                   <ProfileSection title="Account Details" icon={<Calendar className="w-3.5 h-3.5" />}>
                     <div className="grid grid-cols-2 gap-4">
@@ -704,6 +832,39 @@ export default function UserManagement() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      {/* Violation History Modal */}
+      <Sheet open={!!historyUser} onOpenChange={(open) => !open && setHistoryUser(null)}>
+        <SheetContent className="w-full sm:max-w-xl p-0 overflow-y-auto border-none shadow-2xl">
+          <SheetHeader className="p-6 pb-0 border-none">
+            <SheetTitle>Violation History</SheetTitle>
+            <SheetDescription>Security events for {historyUser?.name}</SheetDescription>
+          </SheetHeader>
+          <div className="p-6">
+            {userViolations.length === 0 ? (
+              <p className="text-gray-500 text-center py-10">No violations recorded.</p>
+            ) : (
+              <div className="space-y-4">
+                {userViolations.map(v => (
+                  <div key={v.id} className="p-4 rounded-xl border border-gray-100 bg-gray-50">
+                    <div className="flex justify-between items-start mb-2">
+                      <p className="font-bold text-sm text-gray-900">{v.type.replace(/_/g, ' ')}</p>
+                      <Badge className={cn("text-[10px] font-black uppercase shadow-none border-none", 
+                        v.severity === 'critical' ? 'bg-red-100 text-red-700' :
+                        v.severity === 'high' ? 'bg-orange-100 text-orange-700' :
+                        v.severity === 'medium' ? 'bg-amber-100 text-amber-700' : 'bg-gray-100 text-gray-700'
+                      )}>{v.severity}</Badge>
+                    </div>
+                    <p className="text-xs text-gray-500 mb-2">{new Date(v.timestamp).toLocaleString()}</p>
+                    <p className="text-xs text-gray-600 bg-white p-2 rounded-lg border border-gray-100 font-mono overflow-x-auto">
+                      {v.deviceInfo}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </SheetContent>
+      </Sheet>
     </AdminLayout>
   );
 }
@@ -745,6 +906,109 @@ function ProfileField({ label, value, colSpan }: { label: string; value?: string
     <div className={colSpan ? "col-span-2" : ""}>
       <p className="text-[9px] font-black uppercase tracking-widest text-gray-400 mb-1">{label}</p>
       <p className="text-sm font-bold text-gray-900 break-words">{value || <span className="text-gray-400 italic font-normal">—</span>}</p>
+    </div>
+  );
+}
+
+function SecurityTabContent({ 
+  violations, stats, loading, search, setSearch, 
+  severity, setSeverity, platform, setPlatform, onUnblock 
+}: any) {
+  const filtered = useMemo(() => {
+    return violations.filter((v: any) => {
+      const matchSearch = search === "" || 
+        v.userEmail?.toLowerCase().includes(search.toLowerCase()) || 
+        v.userName?.toLowerCase().includes(search.toLowerCase()) || 
+        v.type.toLowerCase().includes(search.toLowerCase());
+      const matchSeverity = severity === "All" || v.severity === severity;
+      const matchPlatform = platform === "All" || v.platform === platform.toLowerCase();
+      return matchSearch && matchSeverity && matchPlatform;
+    });
+  }, [violations, search, severity, platform]);
+
+  return (
+    <div className="space-y-6 animate-in fade-in zoom-in-95 duration-300">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <StatCard title="Total Violations" value={stats.total} icon={ShieldCheck} color="bg-blue-50 text-blue-600" loading={loading} />
+        <StatCard title="Critical Incidents" value={stats.critical} icon={AlertCircle} color="bg-red-50 text-red-600" loading={loading} />
+        <StatCard title="Blocked Users" value={stats.blockedUsers} icon={Ban} color="bg-amber-50 text-amber-600" loading={loading} />
+        <StatCard title="Violations Today" value={stats.today} icon={Activity} color="bg-indigo-50 text-indigo-600" loading={loading} />
+      </div>
+      
+      <div className="flex flex-col lg:flex-row gap-4 bg-white p-3 rounded-2xl border border-gray-200 shadow-sm">
+        <div className="relative flex-1 min-w-[200px]">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
+          <Input placeholder="Search by email, name or type..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-10 h-11 bg-gray-50 border-gray-200 rounded-xl w-full" />
+        </div>
+        <div className="flex items-center gap-3">
+          <select className="px-3 py-2 bg-gray-50 rounded-xl border border-gray-100 text-sm font-semibold outline-none" value={severity} onChange={e => setSeverity(e.target.value)}>
+            <option value="All">All Severities</option>
+            <option value="critical">Critical</option>
+            <option value="high">High</option>
+            <option value="medium">Medium</option>
+            <option value="low">Low</option>
+          </select>
+          <select className="px-3 py-2 bg-gray-50 rounded-xl border border-gray-100 text-sm font-semibold outline-none" value={platform} onChange={e => setPlatform(e.target.value)}>
+            <option value="All">All Platforms</option>
+            <option value="web">Web</option>
+            <option value="android">Android</option>
+            <option value="ios">iOS</option>
+          </select>
+        </div>
+      </div>
+
+      <div className="bg-white border border-gray-200 rounded-[2rem] overflow-hidden shadow-sm">
+        <div className="overflow-x-auto min-h-[300px]">
+          <table className="w-full text-left whitespace-nowrap">
+            <thead>
+              <tr className="border-b border-gray-100 bg-gray-50/80">
+                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-gray-400">Timestamp</th>
+                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-gray-400">User</th>
+                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-gray-400">Violation Type</th>
+                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-gray-400">Severity</th>
+                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-gray-400">Platform/IP</th>
+                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-gray-400 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-50">
+              {loading ? (
+                <tr><td colSpan={6} className="text-center py-10 text-gray-500">Loading violations...</td></tr>
+              ) : filtered.length === 0 ? (
+                <tr><td colSpan={6} className="text-center py-10 text-gray-500">No violations found</td></tr>
+              ) : (
+                filtered.map((v: any) => (
+                  <tr key={v.id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 text-sm text-gray-600">{new Date(v.timestamp).toLocaleString()}</td>
+                    <td className="px-6 py-4">
+                      <p className="font-bold text-gray-900 text-sm">{v.userName}</p>
+                      <p className="text-xs text-gray-500">{v.userEmail}</p>
+                    </td>
+                    <td className="px-6 py-4 text-sm font-semibold text-gray-700">{v.type.replace(/_/g, ' ')}</td>
+                    <td className="px-6 py-4">
+                      <Badge className={cn("text-[10px] font-black uppercase shadow-none border-none", 
+                        v.severity === 'critical' ? 'bg-red-100 text-red-700' :
+                        v.severity === 'high' ? 'bg-orange-100 text-orange-700' :
+                        v.severity === 'medium' ? 'bg-amber-100 text-amber-700' : 'bg-gray-100 text-gray-700'
+                      )}>{v.severity}</Badge>
+                    </td>
+                    <td className="px-6 py-4">
+                      <p className="font-semibold text-xs text-gray-700 uppercase">{v.platform}</p>
+                      <p className="text-xs text-gray-500">{v.ip}</p>
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      {v.userId !== 'anonymous' && v.blocked && (
+                        <Button size="sm" variant="outline" className="h-8 text-xs font-bold text-emerald-600 border-emerald-200 bg-emerald-50 hover:bg-emerald-100" onClick={() => onUnblock(v.userId)}>
+                          Unblock User
+                        </Button>
+                      )}
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   );
 }

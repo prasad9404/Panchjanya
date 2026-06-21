@@ -14,6 +14,12 @@ service cloud.firestore {
       return req.auth != null && req.auth.token.superAdmin == true;
     }
 
+    // Check if user has admin role in their document
+    function hasAdminRole(req) {
+      let userDoc = get(/databases/$(database)/documents/users/$(req.auth.uid));
+      return userDoc != null && (userDoc.data.role == 'admin' || userDoc.data.role == 'Admin' || userDoc.data.role == 'Super Admin');
+    }
+
     // Check if the request is from the document's owner
     function isOwner(req, userId) {
       return req.auth != null && req.auth.uid == userId;
@@ -62,6 +68,13 @@ service cloud.firestore {
       allow write: if isAdmin(request);
     }
 
+    // ─── Security Violations ──────────────────────────────────────────────────
+
+    match /securityViolations/{violationId} {
+      allow create: if request.auth != null;
+      allow read, update, delete: if isAdmin(request) || hasAdminRole(request);
+    }
+
     // ─── User Data Security ───────────────────────────────────────────────────
 
     match /users/{userId} {
@@ -76,9 +89,9 @@ service cloud.firestore {
           request.auth != null && 
           request.auth.uid == userId &&
           !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'uid', 'email', 'mobile'])
-        ) || isAdmin(request);
+        ) || isAdmin(request) || hasAdminRole(request);
 
-      allow delete: if isAdmin(request);
+      allow delete: if isAdmin(request) || hasAdminRole(request);
 
       // Subcollection for saved temples
       match /savedTemples/{templeId} {

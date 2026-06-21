@@ -105,6 +105,18 @@ All colors MUST be HSL.
 
   body {
     @apply bg-background text-foreground font-body;
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+  }
+
+  input, textarea {
+    -webkit-user-select: text;
+    user-select: text;
+  }
+
+  img, video {
+    -webkit-user-drag: none;
   }
 
   h1, h2, h3, h4, h5, h6 {

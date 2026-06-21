@@ -16,9 +16,16 @@ import { Button } from "@/shared/components/ui/button";
 import { useCapacitorApp } from "@/hooks/useCapacitorApp";
 import { Network } from '@capacitor/network';
 
-const CapacitorHandler = () => {
+import { useRootDetection } from "@/hooks/useRootDetection";
+import { useSecurity } from "@/hooks/useSecurity";
+import { ProtectedContent } from "@/components/ProtectedContent";
+import { useAuth } from "../auth/AuthContext";
 
+const CapacitorHandler = () => {
+  const { user } = useAuth();
   useCapacitorApp();
+  useRootDetection();
+  useSecurity(user);
   return null;
 };
 
@@ -34,6 +41,7 @@ const Share = lazy(() => import("./public/Share"));
 const Explore = lazy(() => import("./user/Explore"));
 const Settings = lazy(() => import("./user/Settings"));
 const NotFound = lazy(() => import("./public/NotFound"));
+const Blocked = lazy(() => import("@/pages/Blocked"));
 
 const TempleArchitecture = lazy(() => import("@/app/user/TempleArchitecture"));
 const ArchitectureViewer = lazy(() => import("@/app/user/ArchitectureViewer"));
@@ -163,17 +171,18 @@ const App = () => {
         <Sonner />
 
         <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-          <CapacitorHandler />
-
           <ThemeProvider>
             <LanguageProvider>
               <AuthProvider>
+                <CapacitorHandler />
                 <ErrorBoundary>
                   <Suspense fallback={<PageLoader />}>
                     <SthanTypesProvider>
+                    <ProtectedContent>
                     <Routes>
                       {/* ---------------------- USER AUTH (PUBLIC) ---------------------- */}
                       <Route path="/" element={<UserSplash />} />
+                      <Route path="/blocked" element={<Blocked />} />
                       <Route path="/auth/splash" element={<UserSplash />} />
                       <Route path="/auth/welcome" element={<UserAuthWelcome />} />
                       <Route path="/auth/login" element={<UserLogin />} />
@@ -428,6 +437,7 @@ const App = () => {
                       {/* ---------------------- 404 ---------------------- */}
                       <Route path="*" element={<NotFound />} />
                     </Routes>
+                    </ProtectedContent>
                     </SthanTypesProvider>
                   </Suspense>
                 </ErrorBoundary>
