@@ -22,10 +22,10 @@ import { ProtectedContent } from "@/components/ProtectedContent";
 import { useAuth } from "../auth/AuthContext";
 
 const CapacitorHandler = () => {
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   useCapacitorApp();
   useRootDetection();
-  useSecurity(user);
+  useSecurity(user, isAdmin);
   return null;
 };
 

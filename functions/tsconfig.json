@@ -9,7 +9,8 @@
         "target": "es2019",
         "lib": [
             "es2019"
-        ]
+        ],
+        "skipLibCheck": true
     },
     "compileOnSave": true,
     "include": [

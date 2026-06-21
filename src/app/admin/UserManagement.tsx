@@ -58,9 +58,11 @@ import {
 import { Skeleton } from "@/shared/components/ui/skeleton";
 import { useToast } from "@/shared/hooks/use-toast";
 import { cn } from "@/shared/lib/utils";
-import { db } from "@/auth/firebase";
+import { db, app } from "@/auth/firebase";
 import { collection, onSnapshot, doc, updateDoc, deleteDoc, query, orderBy } from "firebase/firestore";
+import { getFunctions, httpsCallable } from "firebase/functions";
 import { useAuth } from "@/auth/AuthContext";
+import { authService } from "@/services/authService";
 import { violationService } from "@/services/violationService";
 import { SecurityViolation } from "@/services/securityService";
 
@@ -118,6 +120,11 @@ export default function UserManagement() {
 
   const fetchViolations = async () => {
     setSecLoading(true);
+    const isValid = await authService.verifyAdminAccess();
+    if (!isValid) {
+      await authService.forceLogoutAndLock();
+      return;
+    }
     const v = await violationService.getAllViolations();
     const s = await violationService.getViolationStats();
     setViolations(v);
@@ -135,6 +142,11 @@ export default function UserManagement() {
 
   const handleUnblock = async (userId: string) => {
     try {
+      const isValid = await authService.verifyAdminAccess();
+      if (!isValid) {
+        await authService.forceLogoutAndLock();
+        return;
+      }
       await violationService.unblockUser(userId);
       toast({ title: "User Unblocked", description: "The user has been restored." });
       if (activeTab === 'security') fetchViolations();
@@ -146,6 +158,11 @@ export default function UserManagement() {
 
   const handleBlock = async (userId: string) => {
     try {
+      const isValid = await authService.verifyAdminAccess();
+      if (!isValid) {
+        await authService.forceLogoutAndLock();
+        return;
+      }
       await violationService.blockUserInDB(userId, "manual_admin_block");
       toast({ title: "User Blocked", description: "The user has been blocked." });
       if (activeTab === 'security') fetchViolations();
@@ -237,9 +254,17 @@ export default function UserManagement() {
 
   const handleUpdateRole = async (userId: string, newRole: UserRole) => {
     try {
-      await updateDoc(doc(db, "users", userId), { role: newRole });
-      toast({ title: "Role Updated", description: "User role has been successfully updated." });
+      const functionsInstance = getFunctions(app, 'asia-south1');
+      const assignAdminRole = httpsCallable(functionsInstance, 'assignAdminRole');
+      await assignAdminRole({ targetUid: userId, newRole });
+      toast({ title: "Role Updated", description: "User role has been successfully updated. Refreshing token..." });
+      
+      // If we updated our own role, we should refresh our token
+      if (currentUser && currentUser.uid === userId) {
+        await currentUser.getIdToken(true);
+      }
     } catch (e) {
+      console.error("Failed to assign role via Cloud Function:", e);
       toast({ title: "Error", description: "Failed to update role.", variant: "destructive" });
     }
   };

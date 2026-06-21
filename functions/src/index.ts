@@ -20,7 +20,8 @@ import * as admin from 'firebase-admin';
 import * as path from 'path';
 import * as os from 'os';
 import * as fs from 'fs/promises';
-import sharp from 'sharp';
+import * as sharp from 'sharp';
+import { onCall, HttpsError } from 'firebase-functions/v2/https';
 
 admin.initializeApp();
 
@@ -41,6 +42,7 @@ const VARIANT_SUFFIXES = ['_thumb.webp', '_medium.webp'];
 
 export const processUploadedMedia = functions.storage.onObjectFinalized(
     {
+        bucket: 'panchjanya-4a344.firebasestorage.app',
         region: 'asia-south1',  // Change to your region
         memory: '512MiB',
         timeoutSeconds: 120,
@@ -122,13 +124,7 @@ export const processUploadedMedia = functions.storage.onObjectFinalized(
                     },
                 });
 
-                // Get CDN URL for the variant
-                const [url] = await bucket.file(variantPath).getSignedUrl({
-                    action: 'read',
-                    expires: '01-01-2100',
-                });
-
-                // For public files: use getDownloadURL pattern via makePublic
+                // We don't need getSignedUrl anymore because we make the file public
                 await bucket.file(variantPath).makePublic();
                 const publicUrl = `https://storage.googleapis.com/${bucket.name}/${variantPath}`;
                 variantUrls[variant.name] = publicUrl;
@@ -154,6 +150,53 @@ export const processUploadedMedia = functions.storage.onObjectFinalized(
         } finally {
             // Always clean up the original tmp file
             await fs.unlink(tmpOriginal).catch(() => null);
+        }
+    }
+);
+
+// Admin Role Assignment
+export const assignAdminRole = onCall(
+    { region: 'asia-south1' },
+    async (request) => {
+        // Only allow admins or super admins to call this
+        if (!request.auth || (!request.auth.token.admin && !request.auth.token.superAdmin)) {
+            throw new HttpsError('permission-denied', 'Only admins can assign roles.');
+        }
+
+        const { targetUid, newRole } = request.data;
+
+        if (!targetUid || !newRole) {
+            throw new HttpsError('invalid-argument', 'Missing targetUid or newRole');
+        }
+
+        try {
+            // Set custom claim
+            const isAdmin = newRole === 'Admin' || newRole === 'Super Admin';
+            const isSuperAdmin = newRole === 'Super Admin';
+            await admin.auth().setCustomUserClaims(targetUid, { 
+                admin: isAdmin, 
+                superAdmin: isSuperAdmin,
+                role: newRole.toLowerCase() // Add role string just in case
+            });
+
+            // Update firestore document
+            await db.collection('users').doc(targetUid).update({
+                role: newRole
+            });
+
+            // Log the assignment
+            await db.collection('adminAuditLog').add({
+                action: 'assign_role',
+                targetUid,
+                newRole,
+                assignedBy: request.auth.uid,
+                timestamp: admin.firestore.FieldValue.serverTimestamp()
+            });
+
+            return { success: true };
+        } catch (error) {
+            console.error("Error assigning role:", error);
+            throw new HttpsError('internal', 'Error assigning role.');
         }
     }
 );

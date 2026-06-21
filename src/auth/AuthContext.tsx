@@ -21,7 +21,9 @@ import {
   deleteUser,
   AuthError,
 } from 'firebase/auth';
-import { auth } from '@/auth/firebase';
+import { auth, db } from '@/auth/firebase';
+import { onSnapshot, doc } from 'firebase/firestore';
+import { authService } from '@/services/authService';
 import {
   UserProfile,
   CreateUserProfileData,
@@ -113,62 +115,78 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isAdmin, setIsAdmin] = useState(false);
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
 
-  // ── Load Firestore profile when Firebase Auth user is available ────────────
-  const loadUserProfile = useCallback(async (firebaseUser: User) => {
-    setProfileLoading(true);
-    try {
-      const profile = await getUserProfile(firebaseUser.uid);
-      setUserProfile(profile);
-    } catch (err) {
-      console.error('❌ [AuthContext] Failed to load user profile:', err);
-      setUserProfile(null);
-    } finally {
-      setProfileLoading(false);
-    }
-  }, []);
-
-  // ── Listen to Firebase Auth state changes ─────────────────────────────────
+  // ── Listen to Firebase Auth state changes with Real-time Firestore ──────────
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+    let profileUnsubscribe: (() => void) | undefined;
+
+    const unsubscribeAuth = onAuthStateChanged(auth, async (currentUser) => {
       setUser(currentUser);
 
+      if (profileUnsubscribe) {
+        profileUnsubscribe();
+      }
+
       if (currentUser) {
-        // Load Firestore profile in parallel with claims check
-        loadUserProfile(currentUser);
+        setProfileLoading(true);
+        // Attach real-time listener to user document
+        profileUnsubscribe = onSnapshot(doc(db, 'users', currentUser.uid), async (docSnap) => {
+           if (docSnap.exists()) {
+             const profile = docSnap.data() as UserProfile;
+             setUserProfile(profile);
+             
+             // Check claims to match snapshot role
+             try {
+                const idTokenResult = await currentUser.getIdTokenResult();
+                const isUserAdmin = !!idTokenResult.claims.admin;
+                const isUserSuperAdmin = !!idTokenResult.claims.superAdmin;
+                
+                const contextRole = profile.role || 'user';
+                const isAdminContext = contextRole === 'admin' || contextRole === 'super_admin';
+                
+                if (isAdminContext && (isUserAdmin || isUserSuperAdmin)) {
+                  setIsSuperAdmin(isUserSuperAdmin || contextRole === 'super_admin');
+                  setIsAdmin(true);
+                } else {
+                  // Env fallback
+                  const adminEmail = import.meta.env.VITE_ADMIN_EMAIL;
+                  const superAdminEmail = import.meta.env.VITE_SUPER_ADMIN_EMAIL;
+                  if (!isUserSuperAdmin && superAdminEmail && currentUser.email === superAdminEmail) {
+                    setIsSuperAdmin(true);
+                    setIsAdmin(true);
+                  } else if (!isUserAdmin && adminEmail && currentUser.email === adminEmail) {
+                    setIsAdmin(true);
+                  } else {
+                    setIsAdmin(false);
+                    setIsSuperAdmin(false);
+                  }
+                }
+             } catch (error) {
+                console.error('❌ [AuthContext] Error checking admin claims:', error);
+                setIsAdmin(false);
+                setIsSuperAdmin(false);
+             }
+           } else {
+             // Check Env fallback for bootstrapping first admins who don't have a document yet
+             const adminEmail = import.meta.env.VITE_ADMIN_EMAIL;
+             const superAdminEmail = import.meta.env.VITE_SUPER_ADMIN_EMAIL;
+             const isEnvSuperAdmin = superAdminEmail && currentUser.email === superAdminEmail;
+             const isEnvAdmin = adminEmail && currentUser.email === adminEmail;
 
-        try {
-          const idTokenResult = await currentUser.getIdTokenResult();
-          const isUserAdmin = !!idTokenResult.claims.admin;
-          const isUserSuperAdmin = !!idTokenResult.claims.superAdmin;
+             if (isEnvSuperAdmin || isEnvAdmin) {
+                 setUserProfile({ role: isEnvSuperAdmin ? 'super_admin' : 'admin', onboardingComplete: true } as any);
+                 setIsSuperAdmin(!!isEnvSuperAdmin);
+                 setIsAdmin(true);
+             } else {
+                 // Document missing or deleted
+                 setUserProfile(null);
+                 setIsAdmin(false);
+                 setIsSuperAdmin(false);
+                 authService.forceLogoutAndLock();
+             }
+           }
+           setProfileLoading(false);
+        });
 
-          console.log(
-            `👤 %cAuth State Change: ${currentUser.email}`,
-            'color: #3b82f6; font-weight: bold;',
-            `(Admin: ${isUserAdmin}, Super: ${isUserSuperAdmin})`
-          );
-
-          // Env email fallback (dev only — not a security boundary)
-          const adminEmail = import.meta.env.VITE_ADMIN_EMAIL;
-          const superAdminEmail = import.meta.env.VITE_SUPER_ADMIN_EMAIL;
-
-          if (!isUserSuperAdmin && superAdminEmail && currentUser.email === superAdminEmail) {
-            console.warn("⚠️ Custom claim 'superAdmin' missing, falling back to VITE_SUPER_ADMIN_EMAIL.");
-            setIsSuperAdmin(true);
-            setIsAdmin(true);
-          } else {
-            setIsSuperAdmin(isUserSuperAdmin);
-            if (!isUserAdmin && adminEmail && currentUser.email === adminEmail) {
-              console.warn("⚠️ Custom claim 'admin' missing, falling back to VITE_ADMIN_EMAIL.");
-              setIsAdmin(true);
-            } else {
-              setIsAdmin(isUserAdmin || isUserSuperAdmin);
-            }
-          }
-        } catch (error) {
-          console.error('❌ [AuthContext] Error checking admin claims:', error);
-          setIsAdmin(false);
-          setIsSuperAdmin(false);
-        }
       } else {
         setUserProfile(null);
         setIsAdmin(false);
@@ -178,8 +196,62 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLoading(false);
     });
 
-    return () => unsubscribe();
-  }, [loadUserProfile]);
+    return () => {
+      unsubscribeAuth();
+      if (profileUnsubscribe) profileUnsubscribe();
+    };
+  }, []);
+
+  // ── Tamper Detection ──────────────────────────────────────────────────
+  useEffect(() => {
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key && (e.key.toLowerCase().includes('role') || e.key.toLowerCase().includes('admin'))) {
+        console.warn("Tamper attempt detected in localStorage");
+        authService.forceLogoutAndLock();
+      }
+    };
+    
+    // Scan immediately on mount
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && (key.toLowerCase().includes('role') || key.toLowerCase().includes('admin'))) {
+        authService.forceLogoutAndLock();
+      }
+    }
+
+    window.addEventListener('storage', handleStorage);
+    return () => window.removeEventListener('storage', handleStorage);
+  }, []);
+
+  // ── Session Timeout ───────────────────────────────────────────────────
+  useEffect(() => {
+    if (!isAdmin) return;
+    
+    let timeoutId: NodeJS.Timeout;
+    
+    const resetTimer = () => {
+      clearTimeout(timeoutId);
+      // 2 hours timeout
+      timeoutId = setTimeout(async () => {
+        const valid = await authService.verifyAdminAccess();
+        if (!valid) {
+          authService.forceLogoutAndLock();
+        } else {
+          resetTimer();
+        }
+      }, 2 * 60 * 60 * 1000); 
+    };
+
+    resetTimer();
+
+    const events = ['mousedown', 'keydown', 'scroll', 'touchstart'];
+    events.forEach(e => window.addEventListener(e, resetTimer));
+
+    return () => {
+      clearTimeout(timeoutId);
+      events.forEach(e => window.removeEventListener(e, resetTimer));
+    };
+  }, [isAdmin]);
 
   // ─── Sign In ────────────────────────────────────────────────────────────────
   const signIn = async (mobile: string, password: string): Promise<void> => {
