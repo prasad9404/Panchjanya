@@ -483,7 +483,7 @@ export default function UserManagement() {
                             </div>
                           )}
                           <div>
-                            <p className="font-bold text-gray-900 group-hover/prof:text-blue-600 tracking-tight transition-colors flex items-center gap-1.5">
+                            <div className="font-bold text-gray-900 group-hover/prof:text-blue-600 tracking-tight transition-colors flex items-center gap-1.5">
                               {user.name}
                               {user.isVerified && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />}
                               {(user.violationCount || 0) > 0 && (
@@ -496,7 +496,7 @@ export default function UserManagement() {
                                   BLOCKED
                                 </Badge>
                               )}
-                            </p>
+                            </div>
                             <p className="text-xs text-gray-500 font-medium">{user.email}</p>
                           </div>
                         </div>

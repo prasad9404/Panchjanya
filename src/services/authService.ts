@@ -21,7 +21,7 @@ export const authService = {
       // Fetch the latest document from Firestore
       const userDoc = await getDoc(doc(db, 'users', user.uid));
       const role = userDoc.exists() ? userDoc.data()?.role : 'user';
-      const isDocAdmin = role === 'admin' || role === 'super_admin';
+      const isDocAdmin = role === 'admin' || role === 'super_admin' || role === 'Admin' || role === 'Super Admin';
 
       // Check Env variables for bootstrapping
       const envAdmin = import.meta.env.VITE_ADMIN_EMAIL;
