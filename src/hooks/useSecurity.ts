@@ -104,10 +104,25 @@ export function useSecurity(user: any, isAdmin: boolean = false) {
         }
       };
 
+      // Fires when the OS screenshot tool, Snipping Tool, or a screen-recording
+      // overlay steals focus from the browser window. Not proof of capture, but
+      // a real auditable signal — logged at 'low' severity like copy-paste.
+      const handleVisibilityChange = () => {
+        if (document.hidden) {
+          securityService.reportViolation('screen_focus_lost', 'low');
+        }
+      };
+
+      const handleWindowBlur = () => {
+        securityService.reportViolation('window_blur', 'low');
+      };
+
       window.addEventListener('contextmenu', handleContextMenu);
       window.addEventListener('copy', handleCopyCut);
       window.addEventListener('cut', handleCopyCut);
       window.addEventListener('keydown', handleKeyDown);
+      document.addEventListener('visibilitychange', handleVisibilityChange);
+      window.addEventListener('blur', handleWindowBlur);
 
       // DevTools detection interval
       devtoolsInterval = setInterval(() => {
@@ -129,6 +144,8 @@ export function useSecurity(user: any, isAdmin: boolean = false) {
         window.removeEventListener('copy', handleCopyCut);
         window.removeEventListener('cut', handleCopyCut);
         window.removeEventListener('keydown', handleKeyDown);
+        document.removeEventListener('visibilitychange', handleVisibilityChange);
+        window.removeEventListener('blur', handleWindowBlur);
         if (devtoolsInterval) clearInterval(devtoolsInterval);
         if (pluginListener) {
           pluginListener.remove();

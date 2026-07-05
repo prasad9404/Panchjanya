@@ -1,9 +1,9 @@
+import React, { useEffect, useState, lazy, Suspense } from "react";
 import { Toaster } from "@/shared/components/ui/toaster";
 import { Toaster as Sonner } from "@/shared/components/ui/sonner";
 import { TooltipProvider } from "@/shared/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import { useEffect, useState, lazy, Suspense } from "react";
 import { PageLoader } from "@/shared/components/ui/PageLoader";
 import { ErrorBoundary } from "@/shared/components/layout/ErrorBoundary";
 import { AuthProvider } from "../auth/AuthContext";
@@ -15,11 +15,11 @@ import { WifiOff, RefreshCw } from "lucide-react";
 import { Button } from "@/shared/components/ui/button";
 import { useCapacitorApp } from "@/hooks/useCapacitorApp";
 import { Network } from '@capacitor/network';
-
 import { useRootDetection } from "@/hooks/useRootDetection";
 import { useSecurity } from "@/hooks/useSecurity";
 import { ProtectedContent } from "@/components/ProtectedContent";
 import { useAuth } from "../auth/AuthContext";
+import PrivateRoute from "@/shared/components/auth/PrivateRoute";
 
 const CapacitorHandler = () => {
   const { user, isAdmin } = useAuth();
@@ -29,7 +29,17 @@ const CapacitorHandler = () => {
   return null;
 };
 
-import PrivateRoute from "@/shared/components/auth/PrivateRoute";
+// Wraps all routes with a tiled watermark showing the logged-in user's email.
+// Since this sits inside AuthProvider, it can safely call useAuth().
+// Any leaked screenshot will carry the exact account email + brand name.
+const AppWatermark = ({ children }: { children: React.ReactNode }) => {
+  const { user } = useAuth();
+  const watermark = user?.email
+    ? `${user.email} \u2022 Panchjanya`
+    : undefined;
+  return <ProtectedContent watermarkText={watermark}>{children}</ProtectedContent>;
+};
+
 
 // Layout
 const Layout = lazy(() => import("../shared/components/layout/Layout"));
@@ -178,7 +188,7 @@ const App = () => {
                 <ErrorBoundary>
                   <Suspense fallback={<PageLoader />}>
                     <SthanTypesProvider>
-                    <ProtectedContent>
+                    <AppWatermark>
                     <Routes>
                       {/* ---------------------- USER AUTH (PUBLIC) ---------------------- */}
                       <Route path="/" element={<UserSplash />} />
@@ -437,7 +447,7 @@ const App = () => {
                       {/* ---------------------- 404 ---------------------- */}
                       <Route path="*" element={<NotFound />} />
                     </Routes>
-                    </ProtectedContent>
+                    </AppWatermark>
                     </SthanTypesProvider>
                   </Suspense>
                 </ErrorBoundary>

@@ -9,7 +9,11 @@ export type SecurityViolationType =
   | 'copy_paste_attempt' 
   | 'rooted_device' 
   | 'jailbroken_device'
-  | 'keyboard_shortcut';
+  | 'keyboard_shortcut'
+  // Web-level OS-focus signals: fires when screenshot tools or recording
+  // overlays steal window focus. Not conclusive proof but an auditable signal.
+  | 'screen_focus_lost'
+  | 'window_blur';
 
 export type SecuritySeverity = 'low' | 'medium' | 'high' | 'critical';
 
