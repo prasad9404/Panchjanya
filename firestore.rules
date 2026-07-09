@@ -85,21 +85,23 @@ service cloud.firestore {
         if request.auth != null &&
         request.auth.uid == userId;
 
+      // Own-user update: can change anything except protected identity fields
+      // Admin update: can change anything except role (includes blocking fields like blocked, violationCount, blockedReason, blockedAt)
       allow update:
         if (
-          request.auth != null && 
+          request.auth != null &&
           request.auth.uid == userId &&
           !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'uid', 'email', 'mobile'])
         ) || (
-          (isAdmin(request) || hasAdminRole(request)) && 
-          !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role'])
+          (isAdmin(request) || isSuperAdmin(request) || hasAdminRole(request)) &&
+          !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'uid', 'email'])
         );
 
-      allow delete: if isAdmin(request) || hasAdminRole(request);
+      allow delete: if isAdmin(request) || isSuperAdmin(request) || hasAdminRole(request);
 
       // Subcollection for saved temples
       match /savedTemples/{templeId} {
-        allow read, write: if (request.auth != null && request.auth.uid == userId) || isAdmin(request);
+        allow read, write: if (request.auth != null && request.auth.uid == userId) || isAdmin(request) || isSuperAdmin(request);
       }
     }
 
