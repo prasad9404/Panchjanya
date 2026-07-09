@@ -82,7 +82,7 @@ export const SafeHTML = ({ html, className }: SafeHTMLProps) => {
   // Call DOMPurify.sanitize directly inside dangerouslySetInnerHTML to satisfy static analyzers
   return (
     <div
-      className={cn("safe-html prose prose-slate max-w-none prose-a:no-underline", className)}
+      className={cn("safe-html prose prose-slate max-w-none prose-a:no-underline min-w-0 [overflow-wrap:anywhere] [word-break:break-word]", className)}
       dangerouslySetInnerHTML={{
         __html: DOMPurify.sanitize(linkified, {
           ADD_ATTR: ['target', 'rel', 'class'],

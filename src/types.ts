@@ -100,6 +100,12 @@ export interface TempleSection {
 
 export type SthanaStatus = "DRAFT" | "IN_PROGRESS" | "COMPLETE" | "VERIFIED" | "PUBLISHED";
 
+export interface ContactEntry {
+    id: string;
+    name: string;
+    number: string;
+}
+
 export interface Temple {
     id: string;
     name: MultilingualString;
@@ -107,8 +113,9 @@ export interface Temple {
     todaysNameTitle?: MultilingualString; // New: Dynamic label for today's name
     address?: MultilingualString;
     locationLink?: string; // New: Direction link or coordinates
-    contactName?: string;
-    contactNumber?: string;
+    contacts?: ContactEntry[];     // New: Multiple contacts
+    contactName?: string;          // Legacy: single contact (kept for backward compat)
+    contactNumber?: string;        // Legacy: single contact (kept for backward compat)
     contactDetails?: MultilingualString; // New: Additional contact info for Navigation
     city: MultilingualString;
     taluka?: MultilingualString;
@@ -195,21 +202,25 @@ export interface SthanDetail {
 
 export interface YatraPlace {
     id: string;
-    name: MultilingualString;
-    description: MultilingualString;
+    sthanId: string;
+    avatarId: string;
     sequence: number;
     status: "visited" | "stayed" | "revisited" | "current" | "upcoming";
+    route?: string;
+    subRoute?: string;
+    pinColor?: string;
+    
+    // Legacy fields (to be removed after migration)
+    name?: MultilingualString;
+    description?: MultilingualString;
     latitude?: number;
     longitude?: number;
     image?: string;
-    fitMode?: 'cover' | 'contain'; // New: Image fit preference
+    fitMode?: 'cover' | 'contain';
     time?: string;
     isLive?: boolean;
     attendees?: string;
-    route?: string;
-    subRoute?: string;
     locationLink?: string;
-    pinColor?: string;
 }
 
 export interface TempleSubmission {

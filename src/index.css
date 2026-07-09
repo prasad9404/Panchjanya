@@ -151,3 +151,24 @@ All colors MUST be HSL.
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
   }
 }
+
+/* Safe HTML rendered content — prevent overflow outside card containers */
+.safe-html,
+.safe-html * {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  max-width: 100%;
+}
+
+.safe-html img,
+.safe-html video,
+.safe-html table {
+  max-width: 100% !important;
+  height: auto;
+}
+
+.safe-html pre,
+.safe-html code {
+  white-space: pre-wrap;
+  word-break: break-all;
+}

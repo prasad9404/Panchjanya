@@ -15,6 +15,8 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/shared/components/ui/select";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/shared/components/ui/command";
+import { Popover, PopoverContent, PopoverTrigger } from "@/shared/components/ui/popover";
 import {
     Plus,
     Edit,
@@ -34,7 +36,8 @@ import {
     ChevronDown,
     Link,
     Map,
-    Image as ImageIcon
+    Image as ImageIcon,
+    Check
 } from "lucide-react";
 import { useToast } from "@/shared/hooks/use-toast";
 import { useAuth } from "@/auth/AuthContext";
@@ -46,8 +49,9 @@ import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import { cn } from "@/shared/lib/utils";
 import { ensureMultilingual } from "@/shared/services/translationService";
-import { getTranslatedValue } from "@/shared/utils/translationUtils";
+import { getTranslatedValue, getLangCode } from "@/shared/utils/translationUtils";
 import { useLanguage } from "@/shared/contexts/LanguageContext";
+import { useTemples } from "@/shared/hooks/useTemples";
 
 // Fix for default marker icons in Leaflet with React
 // @ts-ignore - access private property
@@ -105,6 +109,7 @@ function LocationPicker({ lat, lng, onSelect }: { lat?: number, lng?: number, on
 export default function RajViharanAdmin() {
     const navigate = useNavigate();
     const { language } = useLanguage();
+    const langCode = getLangCode(language);
     const [places, setPlaces] = useState<YatraPlace[]>([]);
     const [loading, setLoading] = useState(true);
     const [selectedPlace, setSelectedPlace] = useState<YatraPlace | null>(null);
@@ -113,18 +118,19 @@ export default function RajViharanAdmin() {
     const { toast } = useToast();
     const { user } = useAuth();
 
+    const { data: templesData } = useTemples();
+    const temples = templesData || [];
+    const [searchQuery, setSearchQuery] = useState("");
+    const [openSthanSelect, setOpenSthanSelect] = useState(false);
+
     // Form state
-    const [formData, setFormData] = useState<Partial<YatraPlace & { pinColor: string }>>({
-        name: { en: "" },
-        description: { en: "" },
-        latitude: 0,
-        longitude: 0,
+    const [formData, setFormData] = useState<Partial<YatraPlace>>({
+        sthanId: "",
+        avatarId: "",
         sequence: 1,
         status: "upcoming",
         route: "swami-complete",
         subRoute: "",
-        image: "",
-        locationLink: "",
         pinColor: "#D4AF37" // Default regal gold
     });
 
@@ -164,13 +170,10 @@ export default function RajViharanAdmin() {
         setSelectedPlace(place);
         setFormData({
             ...place,
-            // Ensure fields are never undefined for controlled inputs
-            name: ensureMultilingual(place.name),
-            description: ensureMultilingual(place.description),
-            locationLink: place.locationLink || "",
+            sthanId: place.sthanId || "",
+            avatarId: place.avatarId || "",
             subRoute: place.subRoute || "",
-            image: place.image || "",
-            pinColor: (place as any).pinColor || "#D4AF37",
+            pinColor: place.pinColor || "#D4AF37",
             status: place.status || "upcoming",
             route: place.route || "swami-complete"
         });
@@ -181,16 +184,12 @@ export default function RajViharanAdmin() {
     const handleAddNew = () => {
         setSelectedPlace(null);
         setFormData({
-            name: { en: "" },
-            description: { en: "" },
-            latitude: 19.8647, // Default coordinates
-            longitude: 75.7714,
+            sthanId: "",
+            avatarId: "",
             sequence: places.length > 0 ? Math.max(...places.map(p => p.sequence)) + 1 : 1,
             status: "upcoming",
             route: "swami-complete",
             subRoute: "",
-            image: "",
-            locationLink: "",
             pinColor: "#D4AF37"
         });
         setIsEditing(true);
@@ -205,10 +204,10 @@ export default function RajViharanAdmin() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        if (!formData.name || !formData.latitude || !formData.longitude) {
+        if (!formData.sthanId) {
             toast({
                 title: "Error",
-                description: "Please fill in all required fields (Name, Latitude, Longitude)",
+                description: "Please select a Sthan from the directory",
                 variant: "destructive"
             });
             return;
@@ -366,6 +365,51 @@ export default function RajViharanAdmin() {
         }
     };
 
+    const handleMigrateData = async () => {
+        if (!confirm("Run migration? This will link yatraPlaces to temples by name and flag unmatched records.")) return;
+        
+        try {
+            let matchedCount = 0;
+            let unmatchedCount = 0;
+            
+            for (const place of places) {
+                // If already migrated, skip
+                if (place.sthanId) continue;
+                
+                const yNameEn = (place as any).name?.en?.toLowerCase().trim() || "";
+                const yNameMr = (place as any).name?.mr?.toLowerCase().trim() || "";
+                
+                // Attempt to match with Sthan Directory (temples)
+                const match = temples.find(t => {
+                    const tNameEn = t.name?.en?.toLowerCase().trim() || "";
+                    const tNameMr = t.name?.mr?.toLowerCase().trim() || "";
+                    return (yNameEn && (tNameEn === yNameEn || tNameEn.includes(yNameEn))) || 
+                           (yNameMr && (tNameMr === yNameMr || tNameMr.includes(yNameMr)));
+                });
+                
+                if (match) {
+                    await updateDoc(doc(db, "yatraPlaces", place.id), {
+                        sthanId: match.id,
+                        avatarId: 'chakradhar-swami'
+                    });
+                    matchedCount++;
+                } else {
+                    console.warn(`Unmatched Yatra Place: ${yNameEn || yNameMr}`, place);
+                    unmatchedCount++;
+                }
+            }
+            
+            toast({ 
+                title: "Migration Complete", 
+                description: `Matched: ${matchedCount}. Unmatched: ${unmatchedCount}. Check console for unmatched records.` 
+            });
+            fetchPlaces();
+        } catch (error) {
+            console.error("Migration failed:", error);
+            toast({ title: "Migration Failed", variant: "destructive" });
+        }
+    };
+
     return (
         <AdminLayout>
             <div className="space-y-6 pb-20">
@@ -400,6 +444,9 @@ export default function RajViharanAdmin() {
                     </div>
                     {!isEditing && (
                         <div className="flex gap-3">
+                            <Button onClick={handleMigrateData} variant="outline" className="border-blue-200 text-blue-600 hover:bg-blue-50">
+                                Run Data Migration
+                            </Button>
                             <div className="relative group">
                                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-blue-500 transition-colors" />
                                 <Input className="pl-9 w-64 rounded-full border-slate-200 focus:ring-blue-500 shadow-sm" placeholder="Search routes..." />
@@ -417,7 +464,7 @@ export default function RajViharanAdmin() {
                 </div>
 
                 {isEditing ? (
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 animate-in fade-in slide-in-from-top-4 duration-500">
+                    <div className="max-w-3xl mx-auto animate-in fade-in slide-in-from-top-4 duration-500">
                         {/* Editor Card */}
                         <Card className="border-slate-200 lg:sticky lg:top-8 h-fit shadow-md">
                             <CardHeader className="bg-slate-50 border-b border-slate-100 flex flex-row items-center justify-between">
@@ -431,80 +478,70 @@ export default function RajViharanAdmin() {
                             <CardContent className="p-6">
                                 <form onSubmit={handleSubmit} className="space-y-6">
                                     <div className="space-y-2">
-                                        <Label htmlFor="name">Place Name *</Label>
-                                        <Input
-                                            id="name"
-                                            value={formData.name?.en || ""}
-                                            onChange={e => setFormData({ 
-                                                ...formData, 
-                                                name: { ...ensureMultilingual(formData.name), en: e.target.value } 
-                                            })}
-                                            placeholder="Enter place name..."
-                                            required
-                                            className="h-11 shadow-sm"
-                                        />
+                                        <Label>Linked Sthan Directory Entry *</Label>
+                                        <Popover open={openSthanSelect} onOpenChange={setOpenSthanSelect}>
+                                            <PopoverTrigger asChild>
+                                                <Button
+                                                    variant="outline"
+                                                    role="combobox"
+                                                    aria-expanded={openSthanSelect}
+                                                    className="w-full justify-between h-11 bg-white font-normal shadow-sm"
+                                                >
+                                                    {formData.sthanId
+                                                        ? getTranslatedValue(temples.find(t => t.id === formData.sthanId)?.name, langCode) || "Unknown Sthan"
+                                                        : "Select Sthan from Directory..."}
+                                                    <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                                </Button>
+                                            </PopoverTrigger>
+                                            <PopoverContent className="w-[400px] p-0" align="start">
+                                                <Command>
+                                                    <CommandInput 
+                                                        placeholder="Search Sthan by name..." 
+                                                        value={searchQuery}
+                                                        onValueChange={setSearchQuery}
+                                                    />
+                                                    <CommandList>
+                                                        <CommandEmpty>No Sthan found.</CommandEmpty>
+                                                        <CommandGroup>
+                                                            {temples.map(temple => (
+                                                                <CommandItem
+                                                                    key={temple.id}
+                                                                    value={getTranslatedValue(temple.name, 'en')}
+                                                                    onSelect={() => {
+                                                                        setFormData(prev => ({ ...prev, sthanId: temple.id }));
+                                                                        setOpenSthanSelect(false);
+                                                                    }}
+                                                                >
+                                                                    <Check
+                                                                        className={cn(
+                                                                            "mr-2 h-4 w-4",
+                                                                            formData.sthanId === temple.id ? "opacity-100" : "opacity-0"
+                                                                        )}
+                                                                    />
+                                                                    <div className="flex flex-col">
+                                                                        <span>{getTranslatedValue(temple.name, langCode) || getTranslatedValue(temple.name, 'en')}</span>
+                                                                        <span className="text-xs text-slate-500 truncate">{temple.district?.en}, {temple.city?.en}</span>
+                                                                    </div>
+                                                                </CommandItem>
+                                                            ))}
+                                                        </CommandGroup>
+                                                    </CommandList>
+                                                </Command>
+                                            </PopoverContent>
+                                        </Popover>
+                                        {!formData.sthanId && <p className="text-[10px] text-red-500 font-medium">Required field.</p>}
                                     </div>
 
                                     <div className="space-y-2">
-                                        <Label htmlFor="description">Description (History/Significance)</Label>
-                                        <Textarea
-                                            id="description"
-                                            value={formData.description?.en || ""}
-                                            onChange={e => setFormData({ 
-                                                ...formData, 
-                                                description: { ...ensureMultilingual(formData.description), en: e.target.value } 
-                                            })}
-                                            placeholder="Describe the historical or spiritual significance..."
-                                            rows={4}
-                                            className="resize-none shadow-sm"
-                                        />
-                                    </div>
-
-                                    <div className="space-y-2">
-                                        <Label htmlFor="locationLink" className="flex items-center gap-2">
-                                            <Link className="w-4 h-4 text-blue-600" /> Google Maps Link
-                                        </Label>
+                                        <Label htmlFor="avatarId">Avatar / Deity (Optional)</Label>
                                         <Input
-                                            id="locationLink"
-                                            value={formData.locationLink}
-                                            onChange={e => setFormData({ ...formData, locationLink: e.target.value })}
-                                            placeholder="Paste Google Maps URL here..."
+                                            id="avatarId"
+                                            value={formData.avatarId || ""}
+                                            onChange={e => setFormData({ ...formData, avatarId: e.target.value })}
+                                            placeholder="e.g., chakradhar-swami, dattatray-prabhu"
                                             className="h-11 shadow-sm"
                                         />
-                                        <p className="text-[10px] text-slate-400">Publicly accessible link to the location.</p>
-                                    </div>
-
-                                    <div className="space-y-4">
-                                        <Label className="flex items-center gap-2">
-                                            <Map className="w-4 h-4 text-blue-600" /> Internal Map Coordinates (Required)
-                                        </Label>
-                                        <LocationPicker
-                                            lat={formData.latitude}
-                                            lng={formData.longitude}
-                                            onSelect={(lat, lng) => setFormData({ ...formData, latitude: lat, longitude: lng })}
-                                        />
-                                        <div className="grid grid-cols-2 gap-4">
-                                            <div className="space-y-1.5">
-                                                <Label className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Latitude</Label>
-                                                <Input
-                                                    type="number" step="any"
-                                                    className="h-11 shadow-sm"
-                                                    value={formData.latitude}
-                                                    onChange={e => setFormData({ ...formData, latitude: parseFloat(e.target.value) })}
-                                                    required
-                                                />
-                                            </div>
-                                            <div className="space-y-1.5">
-                                                <Label className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Longitude</Label>
-                                                <Input
-                                                    type="number" step="any"
-                                                    className="h-11 shadow-sm"
-                                                    value={formData.longitude}
-                                                    onChange={e => setFormData({ ...formData, longitude: parseFloat(e.target.value) })}
-                                                    required
-                                                />
-                                            </div>
-                                        </div>
+                                        <p className="text-[10px] text-slate-400">Specify which avatar's journey this belongs to.</p>
                                     </div>
 
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -607,50 +644,6 @@ export default function RajViharanAdmin() {
                             </CardContent>
                         </Card>
 
-                        {/* Media Card */}
-                        <div className="space-y-8">
-                            <Card className="border-slate-200 shadow-md overflow-hidden">
-                                <CardHeader className="bg-slate-50 border-b border-slate-100">
-                                    <div className="flex items-center gap-2">
-                                        <div className="p-1.5 bg-blue-100 text-blue-700 rounded-lg">
-                                            <Plus className="w-4 h-4" />
-                                        </div>
-                                        <CardTitle className="text-lg font-bold text-slate-900">Place Image</CardTitle>
-                                    </div>
-                                </CardHeader>
-                                <CardContent className="p-6">
-                                    <ImageUpload
-                                        folderPath={`yatra/${formData.id || 'new'}`}
-                                        onUpload={(url) => setFormData({ ...formData, image: url })}
-                                        label="Upload Image"
-                                        fitMode={formData.fitMode || 'cover'}
-                                        onFitModeChange={(mode) => setFormData({ ...formData, fitMode: mode })}
-                                    />
-                                    {formData.image && (
-                                        <div className="mt-6 rounded-2xl overflow-hidden border border-slate-200 relative group shadow-lg bg-slate-50 flex items-center justify-center">
-                                            <img 
-                                                src={formData.image} 
-                                                alt="Preview" 
-                                                className={cn(
-                                                    "w-full h-56 transition-all duration-300",
-                                                    formData.fitMode === 'contain' ? "object-contain" : "object-cover"
-                                                )} 
-                                            />
-                                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                                <Button
-                                                    variant="destructive"
-                                                    size="sm"
-                                                    onClick={() => setFormData({ ...formData, image: "" })}
-                                                    className="rounded-full animate-in zoom-in-50"
-                                                >
-                                                    Remove Image
-                                                </Button>
-                                            </div>
-                                        </div>
-                                    )}
-                                </CardContent>
-                            </Card>
-                        </div>
                     </div>
                 ) : (
                     <div className="space-y-8 animate-in fade-in duration-700">
@@ -697,7 +690,9 @@ export default function RajViharanAdmin() {
                                                                 ref={provided.innerRef}
                                                                 className="space-y-3 relative z-10"
                                                             >
-                                                                {places.map((place, index) => (
+                                                                {places.map((place, index) => {
+                                                                    const sthan = temples.find(t => t.id === place.sthanId);
+                                                                    return (
                                                                     <Draggable key={place.id} draggableId={place.id} index={index}>
                                                                         {(provided, snapshot) => (
                                                                             <div
@@ -718,14 +713,14 @@ export default function RajViharanAdmin() {
                                                                                     </span>
                                                                                 </div>
 
-                                                                                <div className="flex-1 bg-slate-50 p-2 md:p-3 rounded-2xl border border-slate-100 flex items-center justify-between gap-2 md:gap-3 transition-all hover:bg-white hover:shadow-md hover:border-blue-200">
+                                                                                <div className={cn("flex-1 bg-slate-50 p-2 md:p-3 rounded-2xl border border-slate-100 flex items-center justify-between gap-2 md:gap-3 transition-all hover:bg-white hover:shadow-md hover:border-blue-200", !sthan && "border-red-300 bg-red-50")}>
                                                                                     <div className="flex items-center gap-3">
                                                                                         <div {...provided.dragHandleProps} className="p-1 hover:bg-slate-100 rounded-lg cursor-grab active:cursor-grabbing transition-colors">
                                                                                             <GripVertical className="w-4 h-4 text-slate-300 group-hover:text-blue-400" />
                                                                                         </div>
                                                                                         <div className="w-16 h-12 rounded-xl bg-slate-200 overflow-hidden shrink-0 border border-slate-200">
-                                                                                            {place.image ? (
-                                                                                                <img src={place.image} alt={getTranslatedValue(place.name, language)} className="w-full h-full object-cover" />
+                                                                                            {sthan?.sthanImages?.[0] ? (
+                                                                                                <img src={sthan.sthanImages[0]} alt={getTranslatedValue(sthan.name, language)} className="w-full h-full object-cover" />
                                                                                             ) : (
                                                                                                 <div className="w-full h-full flex items-center justify-center bg-slate-100 text-slate-300">
                                                                                                     <MapPin className="w-5 h-5 opacity-30" />
@@ -734,8 +729,11 @@ export default function RajViharanAdmin() {
                                                                                         </div>
                                                                                         <div>
                                                                                             <div className="flex items-center gap-2">
-                                                                                                <p className="text-sm font-bold text-slate-900">{getTranslatedValue(place.name, language)}</p>
+                                                                                                <p className={cn("text-sm font-bold text-slate-900", !sthan && "text-red-600")}>
+                                                                                                    {sthan ? getTranslatedValue(sthan.name, language) : 'Warning: Linked Sthan Not Found'}
+                                                                                                </p>
                                                                                             </div>
+                                                                                            {place.avatarId && <p className="text-[10px] text-slate-500 truncate">{place.avatarId}</p>}
                                                                                             <p className="text-[10px] text-slate-400 font-medium flex items-center gap-1 uppercase tracking-tighter">
                                                                                                 {place.status}
                                                                                             </p>
@@ -771,7 +769,8 @@ export default function RajViharanAdmin() {
                                                                             </div>
                                                                         )}
                                                                     </Draggable>
-                                                                ))}
+                                                                    );
+                                                                })}
                                                                 {provided.placeholder}
 
                                                                 {/* Add Placeholder at end */}

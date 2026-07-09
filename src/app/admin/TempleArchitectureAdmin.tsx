@@ -5,7 +5,7 @@ import AdminLayout from "@/shared/components/admin/AdminLayout";
 import { SthanaIdentifier } from "@/shared/components/admin/SthanaIdentifier";
 
 import { v4 as uuidv4 } from "uuid";
-import { Hotspot, Leela, GlanceItem, AbbreviationItem, CustomBlock, DescriptionSection, SthanDetail, MultilingualString } from "@/types";
+import { Hotspot, Leela, GlanceItem, AbbreviationItem, CustomBlock, DescriptionSection, SthanDetail, MultilingualString, ContactEntry } from "@/types";
 import * as LucideIcons from "lucide-react";
 import { X, Save, Trash2, Upload, ArrowLeft, ZoomIn, ZoomOut, ChevronLeft, ChevronRight, Plus, ChevronDown, Image as ImageIcon, Info, MousePointer2, ExternalLink, FileText, Search, ArrowUp, ArrowDown, Check, Database, MapPin, Loader2, RefreshCw, Globe } from "lucide-react";
 import { Button } from "@/shared/components/ui/button";
@@ -297,8 +297,9 @@ export default function TempleArchitectureAdmin({
   const [customBlocks, setCustomBlocks] = useState<CustomBlock[]>([]);
   const [architectureDescription, setArchitectureDescription] = useState<MultilingualString>({ en: "", hi: "", mr: "" });
   const [contactDetails, setContactDetails] = useState<MultilingualString>({ en: "", hi: "", mr: "" });
-  const [contactName, setContactName] = useState("");
-  const [contactNumber, setContactNumber] = useState("");
+  const [contacts, setContacts] = useState<ContactEntry[]>([{ id: uuidv4(), name: "", number: "" }]);
+  const [contactName, setContactName] = useState(""); // legacy – kept for save compat
+  const [contactNumber, setContactNumber] = useState(""); // legacy – kept for save compat
   const [sthan, setSthan] = useState<MultilingualString>({ en: "", hi: "", mr: "" });
   const [sthanTypeId, setSthanTypeId] = useState("");
   const [sthanTypes, setSthanTypes] = useState<SthanType[]>([]);
@@ -568,6 +569,14 @@ export default function TempleArchitectureAdmin({
           })));
           setArchitectureDescription(ensureMultilingual(data.architectureDescription));
           setContactDetails(ensureMultilingual(data.contactDetails));
+          // Load contacts array; fall back to legacy single-contact fields
+          if (Array.isArray(data.contacts) && data.contacts.length > 0) {
+            setContacts(data.contacts);
+          } else if (data.contactName || data.contactNumber) {
+            setContacts([{ id: uuidv4(), name: data.contactName || "", number: data.contactNumber || "" }]);
+          } else {
+            setContacts([{ id: uuidv4(), name: "", number: "" }]);
+          }
           setContactName(data.contactName || "");
           setContactNumber(data.contactNumber || "");
           setSthan(ensureMultilingual(data.sthanType || data.sthan));
@@ -859,8 +868,9 @@ export default function TempleArchitectureAdmin({
       customBlocks,
       architectureDescription: safeML(architectureDescription, originalTempleData?.architectureDescription),
       contactDetails: safeML(contactDetails, originalTempleData?.contactDetails),
-      contactName,
-      contactNumber,
+      contacts,
+      contactName: contacts[0]?.name || contactName,
+      contactNumber: contacts[0]?.number || contactNumber,
       sthan: safeML(sthan, originalTempleData?.sthan),
       sthanType: safeML(sthan, originalTempleData?.sthanType), // Standardized field
       sthanTypeId,
@@ -1845,24 +1855,52 @@ export default function TempleArchitectureAdmin({
                       onChange={(val) => setDirectionsText(safeUpdateMultilingual(directions_text, activeLang, val))}
                     />
                   </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-2">
-                      <Label className="text-sm font-semibold text-slate-700">{t("admin.contactPerson")}<span className="text-slate-400 font-normal">{t("admin.optional")}</span></Label>
-                      <Input
-                        value={contactName}
-                        onChange={(e) => setContactName(e.target.value)}
-                        placeholder={t("admin.egMahant")}
-                        className="rounded-xl border-slate-200 focus:border-blue-500 focus:ring-blue-500"
-                      />
+                  {/* Multiple Contacts */}
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-sm font-semibold text-slate-700">
+                        {t("admin.contactPerson")} &amp; {t("admin.contactNumber")}
+                        <span className="text-slate-400 font-normal">{t("admin.optional")}</span>
+                      </Label>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        className="h-8 gap-1.5 rounded-lg border-blue-200 text-blue-700 hover:bg-blue-50 text-xs font-semibold"
+                        onClick={() => setContacts(prev => [...prev, { id: uuidv4(), name: "", number: "" }])}
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                        Add Contact
+                      </Button>
                     </div>
                     <div className="space-y-2">
-                      <Label className="text-sm font-semibold text-slate-700">{t("admin.contactNumber")}<span className="text-slate-400 font-normal">{t("admin.optional")}</span></Label>
-                      <Input
-                        value={contactNumber}
-                        onChange={(e) => setContactNumber(e.target.value)}
-                        placeholder={t("admin.egContact")}
-                        className="rounded-xl border-slate-200 focus:border-blue-500 focus:ring-blue-500"
-                      />
+                      {contacts.map((contact, idx) => (
+                        <div key={contact.id} className="flex items-center gap-2">
+                          <Input
+                            value={contact.name}
+                            onChange={(e) => setContacts(prev => prev.map(c => c.id === contact.id ? { ...c, name: e.target.value } : c))}
+                            placeholder={t("admin.egMahant")}
+                            className="rounded-xl border-slate-200 focus:border-blue-500 focus:ring-blue-500 flex-1"
+                          />
+                          <Input
+                            value={contact.number}
+                            onChange={(e) => setContacts(prev => prev.map(c => c.id === contact.id ? { ...c, number: e.target.value } : c))}
+                            placeholder={t("admin.egContact")}
+                            className="rounded-xl border-slate-200 focus:border-blue-500 focus:ring-blue-500 flex-1"
+                          />
+                          {contacts.length > 1 && (
+                            <Button
+                              type="button"
+                              size="icon"
+                              variant="ghost"
+                              className="h-9 w-9 rounded-lg text-red-400 hover:text-red-600 hover:bg-red-50 shrink-0"
+                              onClick={() => setContacts(prev => prev.filter(c => c.id !== contact.id))}
+                            >
+                              <X className="w-4 h-4" />
+                            </Button>
+                          )}
+                        </div>
+                      ))}
                     </div>
                   </div>
                   <div className="space-y-2">

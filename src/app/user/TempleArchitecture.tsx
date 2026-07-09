@@ -361,29 +361,38 @@ export default function TempleArchitecture() {
                                     ) : null}
                                 </div>
 
-                                {(temple.contactName || temple.contactNumber || (getTranslatedValue(temple.contactDetails, langCode).trim())) && (
-                                    <div className="mt-2 p-2 rounded-2xl border border-blue-100/50 space-y-4">
-                                        <div className="flex items-center gap-2">
-                                            <div className="w-1.5 h-1.5 rounded-full bg-blue-600" />
-                                            <span className="text-[10px] font-black text-blue-900 uppercase tracking-widest">{t('common.contactDetails')}</span>
+                                {(() => {
+                                    // Resolve contacts: prefer new array, fall back to legacy fields
+                                    const allContacts = (temple.contacts && temple.contacts.length > 0)
+                                        ? temple.contacts.filter(c => c.name || c.number)
+                                        : (temple.contactName || temple.contactNumber)
+                                            ? [{ id: 'legacy', name: temple.contactName || '', number: temple.contactNumber || '' }]
+                                            : [];
+                                    const hasAnyContact = allContacts.length > 0 || getTranslatedValue(temple.contactDetails, langCode).trim();
+                                    if (!hasAnyContact) return null;
+                                    return (
+                                        <div className="mt-2 p-2 rounded-2xl border border-blue-100/50 space-y-4">
+                                            <div className="flex items-center gap-2">
+                                                <div className="w-1.5 h-1.5 rounded-full bg-blue-600" />
+                                                <span className="text-[10px] font-black text-blue-900 uppercase tracking-widest">{t('common.contactDetails')}</span>
+                                            </div>
+                                            <div className="space-y-1.5">
+                                                {allContacts.map((c, i) => (
+                                                    <p key={c.id || i} className="text-sm font-serif text-slate-900 leading-tight">
+                                                        {c.name && c.number ? `${c.name} : ${c.number}` : (c.name || c.number)}
+                                                    </p>
+                                                ))}
+                                                {getTranslatedValue(temple.contactDetails, langCode).trim() && (
+                                                    <div className="flex gap-2 text-sm text-slate-700 leading-relaxed font-serif pt-1 border-t border-blue-100/50">
+                                                        <span className="font-bold text-slate-400 not-italic shrink-0">{t('common.note')}</span>
+                                                        <p className="italic">{getTranslatedValue(temple.contactDetails, langCode)}</p>
+                                                    </div>
+                                                )}
+                                            </div>
                                         </div>
-                                        <div className="space-y-2">
-                                            {(temple.contactName || temple.contactNumber) && (
-                                                <p className="text-sm font-serif text-slate-900 leading-tight">
-                                                    {temple.contactName && temple.contactNumber
-                                                        ? `${temple.contactName} : ${temple.contactNumber}`
-                                                        : (temple.contactName || temple.contactNumber)}
-                                                </p>
-                                            )}
-                                            {getTranslatedValue(temple.contactDetails, langCode).trim() && (
-                                                <div className="flex gap-2 text-sm text-slate-700 leading-relaxed font-serif pt-1 border-t border-blue-100/50">
-                                                    <span className="font-bold text-slate-400 not-italic shrink-0">{t('common.note')}</span>
-                                                    <p className="italic">{getTranslatedValue(temple.contactDetails, langCode)}</p>
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
-                                )}
+                                    );
+                                })()}
+
                             </div>
                         </DialogContent>
                     </Dialog>
@@ -531,14 +540,14 @@ export default function TempleArchitecture() {
                             <div className="absolute top-0 left-0 w-1 h-full bg-blue-900/10"></div>
                             <div className="grid grid-cols-2 gap-x-2 gap-y-2 md:gap-x-8 md:gap-y-5 pl-2 md:pl-3">
                                 {temple.glanceItems.map((item, idx) => (
-                                    <div key={item.id || idx} className="flex items-start gap-2.5 md:gap-3 p-1.5 md:p-2">
+                                    <div key={item.id || idx} className="flex items-start gap-2.5 md:gap-3 p-1.5 md:p-2 min-w-0">
                                         <div className="w-7 h-7 md:w-8 md:h-8 flex items-center justify-center shrink-0">
                                             {item.icon && (
                                                 <img src={item.icon} className="w-full h-full object-contain" alt="icon" />
                                             )}
                                         </div>
-                                        <div className="flex-1">
-                                            <p className="font-serif text-slate-700 leading-relaxed text-base md:text-lg">
+                                        <div className="flex-1 min-w-0">
+                                            <p className="font-serif text-slate-700 leading-relaxed text-base md:text-lg break-words overflow-wrap-anywhere">
                                                 {getTranslatedValue(item.description, langCode)}
                                             </p>
                                         </div>
@@ -561,7 +570,7 @@ export default function TempleArchitecture() {
                     {(getTranslatedValue(temple.sthana_info_text, langCode).trim() || getTranslatedValue(temple.sthana, langCode).trim()) && (
                         <div className="bg-white p-3 md:p-5 rounded-2xl border border-slate-100 relative overflow-hidden">
                             <div className="absolute top-0 left-0 w-1 h-full bg-orange-500/10"></div>
-                            <div className="pl-2">
+                            <div className="pl-2 min-w-0 overflow-hidden">
                                 <SafeHTML
                                     html={getTranslatedValue(temple.sthana_info_text, langCode) || getTranslatedValue(temple.sthana, langCode)}
                                 />
@@ -584,7 +593,7 @@ export default function TempleArchitecture() {
                                 </div>
                                 <div className="bg-white p-3 md:p-5 rounded-2xl border border-slate-100 relative overflow-hidden">
                                     <div className="absolute top-0 left-0 w-1 h-full bg-blue-500/10"></div>
-                                    <div className="pl-2">
+                                    <div className="pl-2 min-w-0 overflow-hidden">
                                         <SafeHTML html={getTranslatedValue(section.content, langCode)} />
                                     </div>
                                 </div>
@@ -604,7 +613,7 @@ export default function TempleArchitecture() {
                                 </div>
                                 <div className="bg-white p-3 md:p-5 rounded-2xl border border-slate-100 relative overflow-hidden">
                                     <div className="absolute top-0 left-0 w-1 h-full bg-emerald-500/10"></div>
-                                    <div className="pl-2">
+                                    <div className="pl-2 min-w-0 overflow-hidden">
                                         <SafeHTML html={getTranslatedValue(block.content, langCode)} />
                                     </div>
                                 </div>

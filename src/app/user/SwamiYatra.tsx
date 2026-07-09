@@ -16,6 +16,7 @@ import {
 import { useLanguage } from "@/shared/contexts/LanguageContext";
 import { getTranslatedValue, getLangCode } from "@/shared/utils/translationUtils";
 import { useYatraPlaces } from "@/shared/hooks/useYatraPlaces";
+import { useTemples } from "@/shared/hooks/useTemples";
 import { LazyImage } from "@/shared/components/ui/LazyImage";
 import { cn } from "@/shared/lib/utils";
 import { getLocationUrl } from "@/shared/utils/locationUtils";
@@ -46,7 +47,9 @@ const SwamiYatra = () => {
     const navigate = useNavigate();
     const { t, language } = useLanguage();
     const langCode = getLangCode(language);
-    const { data: rawPlaces = [], isLoading } = useYatraPlaces();
+    const { data: rawPlaces = [], isLoading: isPlacesLoading } = useYatraPlaces();
+    const { data: temples = [], isLoading: isTemplesLoading } = useTemples();
+    const isLoading = isPlacesLoading || isTemplesLoading;
 
     const {
         selectedRoute,
@@ -68,25 +71,35 @@ const SwamiYatra = () => {
 
     // 🕉️ Process and normalize places
     const places = useMemo(() => {
-        return rawPlaces.map((data) => ({
-            id: data.id,
-            name: getTranslatedValue(data.name, langCode),
-            latitude: data.latitude || 25.3176,
-            longitude: data.longitude || 83.0062,
-            sequence: data.sequence,
-            status: (data.status === "visited" ? "completed" :
-                ["stayed", "current", "revisited"].includes(data.status) ? "current" : "upcoming") as YatraLocation["status"],
-            title: getTranslatedValue(data.name, langCode),
-            description: getTranslatedValue(data.description, langCode) || t('yatra.description'),
-            image: data.image || "/placeholder-temple.jpg",
-            attendees: data.attendees || "",
-            route: data.route,
-            subRoute: data.subRoute,
-            locationLink: data.locationLink,
-            pinColor: data.pinColor,
-            fitMode: data.fitMode || 'cover'
-        }));
-    }, [rawPlaces, langCode]);
+        return rawPlaces.map((data) => {
+            const sthan = temples.find(t => t.id === data.sthanId);
+            const name = sthan ? getTranslatedValue(sthan.name, langCode) : getTranslatedValue(data.name, langCode) || "Unknown Sthan";
+            const description = sthan ? getTranslatedValue(sthan.history, langCode) : getTranslatedValue(data.description, langCode);
+            const latitude = sthan?.latitude || data.latitude || 25.3176;
+            const longitude = sthan?.longitude || data.longitude || 83.0062;
+            const image = sthan?.sthanImages?.[0] || data.image || "/placeholder-temple.jpg";
+            const locationLink = sthan?.locationLink || data.locationLink;
+
+            return {
+                id: data.id,
+                name: name,
+                latitude: latitude,
+                longitude: longitude,
+                sequence: data.sequence,
+                status: (data.status === "visited" ? "completed" :
+                    ["stayed", "current", "revisited"].includes(data.status) ? "current" : "upcoming") as YatraLocation["status"],
+                title: name,
+                description: description || t('yatra.description'),
+                image: image,
+                attendees: data.attendees || "",
+                route: data.route,
+                subRoute: data.subRoute,
+                locationLink: locationLink,
+                pinColor: data.pinColor,
+                fitMode: data.fitMode || 'cover'
+            };
+        });
+    }, [rawPlaces, temples, langCode, t]);
 
     const filteredPlaces = useMemo(() => {
         let list = places.filter(p => {
