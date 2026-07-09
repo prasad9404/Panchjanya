@@ -13,7 +13,9 @@ export type SecurityViolationType =
   // Web-level OS-focus signals: fires when screenshot tools or recording
   // overlays steal window focus. Not conclusive proof but an auditable signal.
   | 'screen_focus_lost'
-  | 'window_blur';
+  | 'window_blur'
+  | 'screenshot_detected'
+  | 'screen_recording_detected';
 
 export type SecuritySeverity = 'low' | 'medium' | 'high' | 'critical';
 

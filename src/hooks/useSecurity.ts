@@ -5,7 +5,7 @@ import { authService } from '../services/authService';
 
 export interface SecurityPluginInterface {
   addListener(
-    eventName: 'securityViolation',
+    eventName: 'securityViolation' | 'screenshotDetected' | 'screenRecordingDetected',
     listenerFunc: (info: { type: string; timestamp: number }) => void,
   ): Promise<PluginListenerHandle> & PluginListenerHandle;
   setAdminMode(options: { enable: boolean }): Promise<void>;
@@ -24,6 +24,8 @@ export function useSecurity(user: any, isAdmin: boolean = false) {
     if (!user) return; // Only activate if user is logged in
 
     let pluginListener: PluginListenerHandle | undefined;
+    let screenshotListener: PluginListenerHandle | undefined;
+    let screenRecordingListener: PluginListenerHandle | undefined;
     let devtoolsInterval: NodeJS.Timeout | undefined;
 
     const setupSecurity = async () => {
@@ -63,6 +65,16 @@ export function useSecurity(user: any, isAdmin: boolean = false) {
         try {
           pluginListener = await SecurityPlugin.addListener('securityViolation', (info) => {
             securityService.reportViolation(info.type as any, 'high');
+          });
+
+          screenshotListener = await SecurityPlugin.addListener('screenshotDetected', (info) => {
+            securityService.reportViolation('screenshot_detected', 'medium');
+          });
+
+          screenRecordingListener = await SecurityPlugin.addListener('screenRecordingDetected', (info) => {
+            // 'low' severity — DisplayManager fires for external monitors, Samsung DeX,
+            // HDMI/USB-C dongles, and split-screen too; treat as an informational audit signal.
+            securityService.reportViolation('screen_recording_detected', 'low');
           });
         } catch (e) {
           // Plugin might not be available on web
@@ -149,6 +161,12 @@ export function useSecurity(user: any, isAdmin: boolean = false) {
         if (devtoolsInterval) clearInterval(devtoolsInterval);
         if (pluginListener) {
           pluginListener.remove();
+        }
+        if (screenshotListener) {
+          screenshotListener.remove();
+        }
+        if (screenRecordingListener) {
+          screenRecordingListener.remove();
         }
         document.body.classList.remove('admin-mode');
       };

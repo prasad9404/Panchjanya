@@ -16,5 +16,13 @@
     "java.configuration.updateBuildConfiguration": "interactive",
     "java.import.exclusions": [
         "**/node_modules/**"
-    ]
+    ],
+    // Tell the Java Language Server where the Android source root is
+    // so it can resolve android.* imports and stop reporting classpath warnings.
+    "java.project.sourcePaths": [
+        "android/app/src/main/java"
+    ],
+    // Enable Gradle import so the extension loads the Android SDK classpath
+    "java.import.gradle.enabled": true,
+    "java.import.gradle.wrapper.enabled": true
 }
