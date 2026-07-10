@@ -133,7 +133,7 @@ export async function uploadFile(opts: UploadOptions): Promise<UploadResult> {
         storagePath,
         downloadUrl,
         variants: {},
-        owner: user.uid,
+        uploadedBy: user.uid,   // must match firestore.rules: request.resource.data.uploadedBy == request.auth.uid
         type,
         contentType: processedFile.type,
         sizeBytes: processedFile.size,

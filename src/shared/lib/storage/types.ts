@@ -25,7 +25,7 @@ export interface MediaDocument {
     };
 
     /** Firebase Auth UID of the uploader */
-    owner: string;
+    uploadedBy: string;
 
     /** Resource type for Firestore queries and Security Rules context */
     type: 'user-avatar' | 'post-image' | 'temple-hero' | 'temple-gallery' | 'temple-doc' | 'admin';

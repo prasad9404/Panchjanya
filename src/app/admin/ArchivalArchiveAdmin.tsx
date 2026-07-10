@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from "react";
-import { db } from "@/auth/firebase";
-import { collection, getDocs, doc, setDoc, deleteDoc } from "firebase/firestore";
+import { useAuth } from "@/auth/AuthContext";
 import AdminLayout from "@/shared/components/admin/AdminLayout";
 import { useNavigate, Link } from "react-router-dom";
-import { useAuth } from "@/auth/AuthContext";
+
 import { useToast } from "@/shared/hooks/use-toast";
 import { Button } from "@/shared/components/ui/button";
 import { Input } from "@/shared/components/ui/input";
@@ -32,15 +31,19 @@ export default function ArchivalArchiveAdmin() {
     const fetchArchives = async () => {
         try {
             setLoading(true);
-            const snapshot = await getDocs(collection(db, "architectural_archives"));
-            const data = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id })) as ArchitecturalArchive[];
-            
+            const token = await user?.getIdToken();
+            const res = await fetch("/api/admin/data?collection=architectural_archives", {
+                headers: token ? { "Authorization": `Bearer ${token}` } : {}
+            });
+            if (!res.ok) throw new Error(await res.text());
+            const data: ArchitecturalArchive[] = await res.json();
+
             const formatted = data.sort((a, b) => {
                 const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
                 const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
                 return dateB - dateA;
             });
-            
+
             setArchives(formatted);
         } catch (error) {
             console.error("Error fetching archives:", error);
@@ -74,12 +77,19 @@ export default function ArchivalArchiveAdmin() {
         };
 
         try {
-            await setDoc(doc(db, "architectural_archives", newId), newArchive);
+            const token = await user?.getIdToken();
+            const res = await fetch(`/api/admin/data?collection=architectural_archives&id=${newId}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json", ...(token ? { "Authorization": `Bearer ${token}` } : {}) },
+                body: JSON.stringify(newArchive),
+            });
+            if (!res.ok) throw new Error(await res.text());
             toast({ title: "Success", description: "Archive created." });
             setEditingId(newId);
             setEditForm(newArchive);
             fetchArchives();
         } catch (error) {
+            console.error("Failed to create archive:", error);
             toast({ title: "Error", description: "Failed to create archive.", variant: "destructive" });
         }
     };
@@ -88,16 +98,19 @@ export default function ArchivalArchiveAdmin() {
         if (!editingId) return;
         
         try {
-            const updated = {
-                ...editForm,
-                updatedAt: new Date().toISOString(),
-            };
-            
-            await setDoc(doc(db, "architectural_archives", editingId), updated, { merge: true });
+            const updated = { ...editForm, updatedAt: new Date().toISOString() };
+            const token = await user?.getIdToken();
+            const res = await fetch(`/api/admin/data?collection=architectural_archives&id=${editingId}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json", ...(token ? { "Authorization": `Bearer ${token}` } : {}) },
+                body: JSON.stringify(updated),
+            });
+            if (!res.ok) throw new Error(await res.text());
             toast({ title: "Success", description: "Archive updated." });
             setEditingId(null);
             fetchArchives();
         } catch (error) {
+            console.error("Failed to save archive:", error);
             toast({ title: "Error", description: "Failed to save archive.", variant: "destructive" });
         }
     };
@@ -106,10 +119,16 @@ export default function ArchivalArchiveAdmin() {
         if (!confirm(`Are you sure you want to delete '${name}'? This will NOT delete the child architectures, but they will be orphaned.`)) return;
 
         try {
-            await deleteDoc(doc(db, "architectural_archives", id));
+            const token = await user?.getIdToken();
+            const res = await fetch(`/api/admin/data?collection=architectural_archives&id=${id}`, {
+                method: "DELETE",
+                headers: token ? { "Authorization": `Bearer ${token}` } : {}
+            });
+            if (!res.ok) throw new Error(await res.text());
             toast({ title: "Deleted", description: "Archive removed successfully." });
             fetchArchives();
         } catch (error) {
+            console.error("Failed to delete archive:", error);
             toast({ title: "Error", description: "Failed to delete archive.", variant: "destructive" });
         }
     };
