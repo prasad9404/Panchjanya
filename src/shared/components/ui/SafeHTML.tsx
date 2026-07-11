@@ -82,7 +82,17 @@ export const SafeHTML = ({ html, className }: SafeHTMLProps) => {
   // Call DOMPurify.sanitize directly inside dangerouslySetInnerHTML to satisfy static analyzers
   return (
     <div
-      className={cn("safe-html prose prose-slate max-w-none prose-a:no-underline min-w-0 [overflow-wrap:anywhere] [word-break:break-word]", className)}
+      className={cn(
+        // prose: enables @tailwindcss/typography styles (headings, lists, etc.)
+        // safe-html: our own explicit list & formatting rules as a fallback
+        "safe-html prose prose-slate max-w-none prose-a:no-underline",
+        "prose-ul:list-disc prose-ol:list-decimal",
+        "prose-li:marker:text-slate-600",
+        "min-w-0 [overflow-wrap:anywhere] [word-break:break-word]",
+        // Allow text selection on content areas
+        "[user-select:text] [-webkit-user-select:text]",
+        className
+      )}
       dangerouslySetInnerHTML={{
         __html: DOMPurify.sanitize(linkified, {
           ADD_ATTR: ['target', 'rel', 'class'],
