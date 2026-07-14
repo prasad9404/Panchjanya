@@ -122,6 +122,31 @@ public class SecurityPlugin extends Plugin {
         call.resolve();
     }
 
+    @PluginMethod
+    public void requestMediaPermission(PluginCall call) {
+        if (getActivity() == null) {
+            call.reject("No activity available to request permission");
+            return;
+        }
+
+        // Run on UI thread to present permission dialog
+        getActivity().runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    if (getActivity() instanceof MainActivity) {
+                        ((MainActivity) getActivity()).requestMediaPermissionIfNeeded();
+                        call.resolve();
+                    } else {
+                        call.reject("Activity is not MainActivity");
+                    }
+                } catch (Exception e) {
+                    call.reject("Failed to request permission: " + e.getMessage());
+                }
+            }
+        });
+    }
+
     private void checkScreenshot(Uri uri) {
         if (getContext() == null || uri == null) return;
         try {

@@ -26,16 +26,12 @@ public class MainActivity extends BridgeActivity {
         // Register SecurityPlugin
         registerPlugin(SecurityPlugin.class);
 
-        // Request media read permission for screenshot ContentObserver detection.
-        // FLAG_SECURE blocking works independently of this — this only enables detection.
-        requestMediaPermissionIfNeeded();
-
         // Initial debug summary log
         logSecurityStatus("onCreate");
     }
 
     @Override
-    protected void onResume() {
+    public void onResume() {
         super.onResume();
 
         // Ensure FLAG_SECURE re-applies on every resume (protecting against OEM launcher resets)
@@ -48,7 +44,7 @@ public class MainActivity extends BridgeActivity {
         logSecurityStatus("onResume");
     }
 
-    private void requestMediaPermissionIfNeeded() {
+    public void requestMediaPermissionIfNeeded() {
         // API 33+ uses READ_MEDIA_IMAGES; API 23-32 uses READ_EXTERNAL_STORAGE
         String permission = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
                 ? Manifest.permission.READ_MEDIA_IMAGES
